@@ -1,3 +1,5 @@
+
+-- Migration: 20251104231248
 -- Criar tabela de perfis de usuários
 CREATE TABLE public.profiles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -184,3 +186,55 @@ USING (
     WHERE user_id = auth.uid() AND cargo = 'admin'
   )
 );
+
+-- Migration: 20251105000143
+-- Criar tabela de produtos adicionais
+CREATE TABLE public.produtos_adicionais (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  nome_produto TEXT NOT NULL,
+  preco_unitario NUMERIC NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE public.produtos_adicionais ENABLE ROW LEVEL SECURITY;
+
+-- Policies para produtos_adicionais
+CREATE POLICY "Todos podem ver produtos adicionais"
+  ON public.produtos_adicionais
+  FOR SELECT
+  USING (true);
+
+CREATE POLICY "Apenas admins podem inserir produtos adicionais"
+  ON public.produtos_adicionais
+  FOR INSERT
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.user_id = auth.uid()
+    AND profiles.cargo = 'admin'
+  ));
+
+CREATE POLICY "Apenas admins podem atualizar produtos adicionais"
+  ON public.produtos_adicionais
+  FOR UPDATE
+  USING (EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.user_id = auth.uid()
+    AND profiles.cargo = 'admin'
+  ));
+
+CREATE POLICY "Apenas admins podem deletar produtos adicionais"
+  ON public.produtos_adicionais
+  FOR DELETE
+  USING (EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.user_id = auth.uid()
+    AND profiles.cargo = 'admin'
+  ));
+
+-- Trigger para updated_at
+CREATE TRIGGER update_produtos_adicionais_updated_at
+  BEFORE UPDATE ON public.produtos_adicionais
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
