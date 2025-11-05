@@ -14,7 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      modelos_base: {
+        Row: {
+          created_at: string
+          id: string
+          imagem_modelo: string | null
+          nome_modelo: string
+          preco_base: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          imagem_modelo?: string | null
+          nome_modelo: string
+          preco_base: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          imagem_modelo?: string | null
+          nome_modelo?: string
+          preco_base?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      opcoes_componentes: {
+        Row: {
+          created_at: string
+          id: string
+          nome_opcao: string
+          preco_adicional: number
+          tipo_opcao: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome_opcao: string
+          preco_adicional: number
+          tipo_opcao: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome_opcao?: string
+          preco_adicional?: number
+          tipo_opcao?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      produtos_adicionais: {
+        Row: {
+          created_at: string
+          id: string
+          nome_produto: string
+          preco_unitario: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome_produto: string
+          preco_unitario: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome_produto?: string
+          preco_unitario?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          cargo: string
+          created_at: string
+          id: string
+          nome_vendedor: string
+          user_id: string
+        }
+        Insert: {
+          cargo: string
+          created_at?: string
+          id?: string
+          nome_vendedor: string
+          user_id: string
+        }
+        Update: {
+          cargo?: string
+          created_at?: string
+          id?: string
+          nome_vendedor?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
