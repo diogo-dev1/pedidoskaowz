@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 interface OpcaoComponente {
   id: string;
   nome_opcao: string;
-  tipo_opcao: 'Aço' | 'Empunhadura' | 'Acabamento' | 'Bainha';
+  tipo_opcao: 'Aço' | 'Empunhadura' | 'Acabamento' | 'Bainha' | 'Espaçador' | 'Variação' | 'Cor de Bainha';
   preco_adicional: number;
 }
 
@@ -24,7 +24,7 @@ interface ProdutoAdicional {
   preco_unitario: number;
 }
 
-const tiposOpcao = ['Aço', 'Empunhadura', 'Acabamento', 'Bainha'] as const;
+const tiposOpcao = ['Aço', 'Empunhadura', 'Acabamento', 'Bainha', 'Espaçador', 'Variação', 'Cor de Bainha'] as const;
 
 export default function GerenciarComponentes() {
   const [componentes, setComponentes] = useState<OpcaoComponente[]>([]);
