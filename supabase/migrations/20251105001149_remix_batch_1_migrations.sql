@@ -1,4 +1,6 @@
 
+-- Migration: 20251105000309
+
 -- Migration: 20251104231248
 -- Criar tabela de perfis de usuários
 CREATE TABLE public.profiles (
@@ -238,3 +240,4 @@ CREATE TRIGGER update_produtos_adicionais_updated_at
   BEFORE UPDATE ON public.produtos_adicionais
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_updated_at();
+
