@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Calculator, Check } from 'lucide-react';
+import { Calculator } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import ModelCard from '@/components/ModelCard';
+import ComponentCard from '@/components/ComponentCard';
+import ProdutoAdicionalCard from '@/components/ProdutoAdicionalCard';
 
 interface ModeloBase {
   id: string;
@@ -25,10 +27,17 @@ interface OpcaoComponente {
   preco_adicional: number;
 }
 
+interface ProdutoAdicional {
+  id: string;
+  nome_produto: string;
+  preco_unitario: number;
+}
+
 export default function Simulador() {
   const { profile } = useAuth();
   const [modelos, setModelos] = useState<ModeloBase[]>([]);
   const [componentes, setComponentes] = useState<OpcaoComponente[]>([]);
+  const [produtosAdicionais, setProdutosAdicionais] = useState<ProdutoAdicional[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Estados de seleção
@@ -39,6 +48,7 @@ export default function Simulador() {
   const [selectedBainha, setSelectedBainha] = useState<OpcaoComponente | null>(null);
   const [selectedLaser, setSelectedLaser] = useState(false);
   const [textLaser, setTextLaser] = useState('');
+  const [quantidadesProdutos, setQuantidadesProdutos] = useState<Record<string, number>>({});
 
   // Modal de finalização
   const [modalOpen, setModalOpen] = useState(false);
@@ -64,13 +74,15 @@ export default function Simulador() {
   }, []);
 
   const fetchData = async () => {
-    const [modelosRes, componentesRes] = await Promise.all([
+    const [modelosRes, componentesRes, produtosRes] = await Promise.all([
       supabase.from('modelos_base').select('*').order('nome_modelo'),
-      supabase.from('opcoes_componentes').select('*').order('tipo_opcao')
+      supabase.from('opcoes_componentes').select('*').order('tipo_opcao'),
+      supabase.from('produtos_adicionais').select('*').order('nome_produto')
     ]);
 
     if (modelosRes.data) setModelos(modelosRes.data);
     if (componentesRes.data) setComponentes(componentesRes.data as OpcaoComponente[]);
+    if (produtosRes.data) setProdutosAdicionais(produtosRes.data as ProdutoAdicional[]);
     setLoading(false);
   };
 
@@ -88,9 +100,14 @@ export default function Simulador() {
     const precoAcabamento = selectedAcabamento?.preco_adicional || 0;
     const precoBainha = selectedBainha?.preco_adicional || 0;
     const precoLaser = selectedLaser ? 30 : 0;
+    
+    const precoProdutosAdicionais = produtosAdicionais.reduce((total, produto) => {
+      const quantidade = quantidadesProdutos[produto.id] || 0;
+      return total + (produto.preco_unitario * quantidade);
+    }, 0);
 
-    return precoBase + precoAco + precoEmpunhadura + precoAcabamento + precoBainha + precoLaser;
-  }, [selectedModel, selectedAco, selectedEmpunhadura, selectedAcabamento, selectedBainha, selectedLaser]);
+    return precoBase + precoAco + precoEmpunhadura + precoAcabamento + precoBainha + precoLaser + precoProdutosAdicionais;
+  }, [selectedModel, selectedAco, selectedEmpunhadura, selectedAcabamento, selectedBainha, selectedLaser, produtosAdicionais, quantidadesProdutos]);
 
   const resetSimulacao = () => {
     setSelectedModel(null);
@@ -100,6 +117,7 @@ export default function Simulador() {
     setSelectedBainha(null);
     setSelectedLaser(false);
     setTextLaser('');
+    setQuantidadesProdutos({});
     setNomeCompleto('');
     setCpf('');
     setEmail('');
@@ -183,32 +201,16 @@ export default function Simulador() {
               <CardDescription>Selecione o modelo base da lâmina</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
                 {modelos.map((modelo) => (
-                  <Card
+                  <ModelCard
                     key={modelo.id}
-                    className={`cursor-pointer transition-all hover:shadow-lg ${
-                      selectedModel?.id === modelo.id ? 'ring-2 ring-accent shadow-lg' : ''
-                    }`}
+                    nome={modelo.nome_modelo}
+                    preco={modelo.preco_base}
+                    imagem={modelo.imagem_modelo}
+                    isSelected={selectedModel?.id === modelo.id}
                     onClick={() => setSelectedModel(modelo)}
-                  >
-                    {modelo.imagem_modelo && (
-                      <img
-                        src={modelo.imagem_modelo}
-                        alt={modelo.nome_modelo}
-                        className="w-full h-40 object-cover rounded-t-lg"
-                      />
-                    )}
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center justify-between">
-                        {modelo.nome_modelo}
-                        {selectedModel?.id === modelo.id && (
-                          <Check className="h-5 w-5 text-accent" />
-                        )}
-                      </CardTitle>
-                      <CardDescription>R$ {modelo.preco_base.toFixed(2)}</CardDescription>
-                    </CardHeader>
-                  </Card>
+                  />
                 ))}
               </div>
               {modelos.length === 0 && (
@@ -229,78 +231,62 @@ export default function Simulador() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Aço</Label>
-                  <Select
-                    value={selectedAco?.id || ''}
-                    onValueChange={(value) => setSelectedAco(acos.find(a => a.id === value) || null)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo de aço" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {acos.map((aco) => (
-                        <SelectItem key={aco.id} value={aco.id}>
-                          {aco.nome_opcao} (+R$ {aco.preco_adicional.toFixed(2)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="grid gap-2 grid-cols-2">
+                    {acos.map((aco) => (
+                      <ComponentCard
+                        key={aco.id}
+                        nome={aco.nome_opcao}
+                        preco={aco.preco_adicional}
+                        isSelected={selectedAco?.id === aco.id}
+                        onClick={() => setSelectedAco(aco)}
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Empunhadura</Label>
-                  <Select
-                    value={selectedEmpunhadura?.id || ''}
-                    onValueChange={(value) => setSelectedEmpunhadura(empunhaduras.find(e => e.id === value) || null)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a empunhadura" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {empunhaduras.map((emp) => (
-                        <SelectItem key={emp.id} value={emp.id}>
-                          {emp.nome_opcao} (+R$ {emp.preco_adicional.toFixed(2)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="grid gap-2 grid-cols-2">
+                    {empunhaduras.map((emp) => (
+                      <ComponentCard
+                        key={emp.id}
+                        nome={emp.nome_opcao}
+                        preco={emp.preco_adicional}
+                        isSelected={selectedEmpunhadura?.id === emp.id}
+                        onClick={() => setSelectedEmpunhadura(emp)}
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Acabamento</Label>
-                  <Select
-                    value={selectedAcabamento?.id || ''}
-                    onValueChange={(value) => setSelectedAcabamento(acabamentos.find(a => a.id === value) || null)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o acabamento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {acabamentos.map((acab) => (
-                        <SelectItem key={acab.id} value={acab.id}>
-                          {acab.nome_opcao} (+R$ {acab.preco_adicional.toFixed(2)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="grid gap-2 grid-cols-2">
+                    {acabamentos.map((acab) => (
+                      <ComponentCard
+                        key={acab.id}
+                        nome={acab.nome_opcao}
+                        preco={acab.preco_adicional}
+                        isSelected={selectedAcabamento?.id === acab.id}
+                        onClick={() => setSelectedAcabamento(acab)}
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Bainha</Label>
-                  <Select
-                    value={selectedBainha?.id || ''}
-                    onValueChange={(value) => setSelectedBainha(bainhas.find(b => b.id === value) || null)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a bainha" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {bainhas.map((bainha) => (
-                        <SelectItem key={bainha.id} value={bainha.id}>
-                          {bainha.nome_opcao} (+R$ {bainha.preco_adicional.toFixed(2)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="grid gap-2 grid-cols-2">
+                    {bainhas.map((bainha) => (
+                      <ComponentCard
+                        key={bainha.id}
+                        nome={bainha.nome_opcao}
+                        preco={bainha.preco_adicional}
+                        isSelected={selectedBainha?.id === bainha.id}
+                        onClick={() => setSelectedBainha(bainha)}
+                      />
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -336,6 +322,36 @@ export default function Simulador() {
                     />
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Seção 4: Produtos Adicionais */}
+          {selectedModel && produtosAdicionais.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>4. Produtos Adicionais</CardTitle>
+                <CardDescription>Adicione produtos complementares ao pedido</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+                  {produtosAdicionais.map((produto) => (
+                    <ProdutoAdicionalCard
+                      key={produto.id}
+                      nome={produto.nome_produto}
+                      precoUnitario={produto.preco_unitario}
+                      quantidade={quantidadesProdutos[produto.id] || 0}
+                      onAdd={() => setQuantidadesProdutos(prev => ({
+                        ...prev,
+                        [produto.id]: (prev[produto.id] || 0) + 1
+                      }))}
+                      onRemove={() => setQuantidadesProdutos(prev => ({
+                        ...prev,
+                        [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1)
+                      }))}
+                    />
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -399,6 +415,18 @@ export default function Simulador() {
                         <p className="text-sm">R$ 30,00</p>
                       </div>
                     )}
+
+                    {produtosAdicionais.map((produto) => {
+                      const quantidade = quantidadesProdutos[produto.id] || 0;
+                      if (quantidade === 0) return null;
+                      return (
+                        <div key={produto.id} className="pb-3 border-b">
+                          <p className="text-sm text-muted-foreground">{produto.nome_produto}</p>
+                          <p className="font-semibold">{quantidade}x R$ {produto.preco_unitario.toFixed(2)}</p>
+                          <p className="text-sm">R$ {(quantidade * produto.preco_unitario).toFixed(2)}</p>
+                        </div>
+                      );
+                    })}
 
                     <Button
                       onClick={() => setModalOpen(true)}
