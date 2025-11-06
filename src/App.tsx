@@ -10,7 +10,9 @@ import Auth from "./pages/Auth";
 import Simulador from "./pages/Simulador";
 import GerenciarModelos from "./pages/admin/GerenciarModelos";
 import GerenciarComponentes from "./pages/admin/GerenciarComponentes";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -21,8 +23,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <PWAInstallPrompt />
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/install" element={<Install />} />
             <Route
               path="/"
               element={
