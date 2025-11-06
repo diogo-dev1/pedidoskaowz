@@ -39,6 +39,18 @@ interface ProdutoAdicional {
   preco_unitario: number;
 }
 
+interface LaminaConfigurada {
+  id: string;
+  modelo: ModeloBase;
+  aco: OpcaoComponente | null;
+  empunhadura: OpcaoComponente | null;
+  acabamento: OpcaoComponente | null;
+  bainha: OpcaoComponente | null;
+  laser: boolean;
+  textoLaser: string;
+  subtotal: number;
+}
+
 export default function Simulador() {
   const { profile } = useAuth();
   const [modelos, setModelos] = useState<ModeloBase[]>([]);
@@ -46,7 +58,7 @@ export default function Simulador() {
   const [produtosAdicionais, setProdutosAdicionais] = useState<ProdutoAdicional[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Estados de seleção
+  // Estados de seleção para a lâmina atual
   const [selectedModel, setSelectedModel] = useState<ModeloBase | null>(null);
   const [selectedAco, setSelectedAco] = useState<OpcaoComponente | null>(null);
   const [selectedEmpunhadura, setSelectedEmpunhadura] = useState<OpcaoComponente | null>(null);
@@ -55,6 +67,10 @@ export default function Simulador() {
   const [selectedLaser, setSelectedLaser] = useState(false);
   const [textLaser, setTextLaser] = useState('');
   const [quantidadesProdutos, setQuantidadesProdutos] = useState<Record<string, number>>({});
+  
+  // Lista de lâminas configuradas
+  const [laminasConfiguradas, setLaminasConfiguradas] = useState<LaminaConfigurada[]>([]);
+  const [editandoLaminaId, setEditandoLaminaId] = useState<string | null>(null);
 
   // Modal de finalização
   const [modalOpen, setModalOpen] = useState(false);
@@ -101,24 +117,32 @@ export default function Simulador() {
   const acabamentos = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Acabamento'), [componentes]);
   const bainhas = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Bainha'), [componentes]);
 
-  // Cálculo do total em tempo real
-  const valorTotalCalculado = useMemo(() => {
+  // Cálculo do subtotal da lâmina atual
+  const subtotalLaminaAtual = useMemo(() => {
     const precoBase = selectedModel?.preco_base || 0;
     const precoAco = selectedAco?.preco_adicional || 0;
     const precoEmpunhadura = selectedEmpunhadura?.preco_adicional || 0;
     const precoAcabamento = selectedAcabamento?.preco_adicional || 0;
     const precoBainha = selectedBainha?.preco_adicional || 0;
     const precoLaser = selectedLaser ? 30 : 0;
+
+    return precoBase + precoAco + precoEmpunhadura + precoAcabamento + precoBainha + precoLaser;
+  }, [selectedModel, selectedAco, selectedEmpunhadura, selectedAcabamento, selectedBainha, selectedLaser]);
+
+  // Cálculo do total geral
+  const valorTotalCalculado = useMemo(() => {
+    const totalLaminas = laminasConfiguradas.reduce((total, lamina) => total + lamina.subtotal, 0);
+    const totalLaminaAtual = subtotalLaminaAtual;
     
     const precoProdutosAdicionais = produtosAdicionais.reduce((total, produto) => {
       const quantidade = quantidadesProdutos[produto.id] || 0;
       return total + (produto.preco_unitario * quantidade);
     }, 0);
 
-    return precoBase + precoAco + precoEmpunhadura + precoAcabamento + precoBainha + precoLaser + precoProdutosAdicionais;
-  }, [selectedModel, selectedAco, selectedEmpunhadura, selectedAcabamento, selectedBainha, selectedLaser, produtosAdicionais, quantidadesProdutos]);
+    return totalLaminas + totalLaminaAtual + precoProdutosAdicionais;
+  }, [laminasConfiguradas, subtotalLaminaAtual, produtosAdicionais, quantidadesProdutos]);
 
-  const resetSimulacao = () => {
+  const limparLaminaAtual = () => {
     setSelectedModel(null);
     setSelectedAco(null);
     setSelectedEmpunhadura(null);
@@ -126,6 +150,63 @@ export default function Simulador() {
     setSelectedBainha(null);
     setSelectedLaser(false);
     setTextLaser('');
+    setEditandoLaminaId(null);
+  };
+
+  const adicionarLamina = () => {
+    if (!selectedModel) {
+      toast.error('Selecione um modelo para adicionar a lâmina');
+      return;
+    }
+
+    const novaLamina: LaminaConfigurada = {
+      id: editandoLaminaId || crypto.randomUUID(),
+      modelo: selectedModel,
+      aco: selectedAco,
+      empunhadura: selectedEmpunhadura,
+      acabamento: selectedAcabamento,
+      bainha: selectedBainha,
+      laser: selectedLaser,
+      textoLaser: textLaser,
+      subtotal: subtotalLaminaAtual,
+    };
+
+    if (editandoLaminaId) {
+      setLaminasConfiguradas(prev => 
+        prev.map(l => l.id === editandoLaminaId ? novaLamina : l)
+      );
+      toast.success('Lâmina atualizada com sucesso!');
+    } else {
+      setLaminasConfiguradas(prev => [...prev, novaLamina]);
+      toast.success('Lâmina adicionada ao orçamento!');
+    }
+
+    limparLaminaAtual();
+  };
+
+  const editarLamina = (lamina: LaminaConfigurada) => {
+    setSelectedModel(lamina.modelo);
+    setSelectedAco(lamina.aco);
+    setSelectedEmpunhadura(lamina.empunhadura);
+    setSelectedAcabamento(lamina.acabamento);
+    setSelectedBainha(lamina.bainha);
+    setSelectedLaser(lamina.laser);
+    setTextLaser(lamina.textoLaser);
+    setEditandoLaminaId(lamina.id);
+    toast.info('Editando lâmina - faça as alterações e clique em "Atualizar Lâmina"');
+  };
+
+  const removerLamina = (id: string) => {
+    setLaminasConfiguradas(prev => prev.filter(l => l.id !== id));
+    if (editandoLaminaId === id) {
+      limparLaminaAtual();
+    }
+    toast.success('Lâmina removida do orçamento');
+  };
+
+  const resetSimulacao = () => {
+    limparLaminaAtual();
+    setLaminasConfiguradas([]);
     setQuantidadesProdutos({});
     setNomeCompleto('');
     setCpf('');
@@ -151,11 +232,43 @@ export default function Simulador() {
       return;
     }
 
+    if (laminasConfiguradas.length === 0 && !selectedModel) {
+      toast.error('Adicione pelo menos uma lâmina ao orçamento');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      // Montar descrição do pedido
-      const descricaoPedido = `${selectedModel?.nome_modelo || ''} ${selectedAco?.nome_opcao || ''} ${selectedAcabamento?.nome_opcao || ''} empunhadura em ${selectedEmpunhadura?.nome_opcao || ''} ${selectedBainha?.nome_opcao || ''}`;
+      // Montar descrições de todas as lâminas
+      const todasLaminas = [...laminasConfiguradas];
+      if (selectedModel) {
+        todasLaminas.push({
+          id: crypto.randomUUID(),
+          modelo: selectedModel,
+          aco: selectedAco,
+          empunhadura: selectedEmpunhadura,
+          acabamento: selectedAcabamento,
+          bainha: selectedBainha,
+          laser: selectedLaser,
+          textoLaser: textLaser,
+          subtotal: subtotalLaminaAtual,
+        });
+      }
+
+      const descricoesPedidos = todasLaminas.map((lamina, index) => {
+        const desc = `${lamina.modelo.nome_modelo} ${lamina.aco?.nome_opcao || ''} ${lamina.acabamento?.nome_opcao || ''} empunhadura em ${lamina.empunhadura?.nome_opcao || ''} ${lamina.bainha?.nome_opcao || ''}`;
+        return `Lâmina ${index + 1}: ${desc}`;
+      }).join('\n');
+
+      const linhasFormatadas = todasLaminas.map((lamina) => {
+        return `${nomeCompleto}, ${lamina.modelo.nome_modelo}, ${lamina.aco?.nome_opcao || ''}, ${lamina.acabamento?.nome_opcao || ''}, ${lamina.empunhadura?.nome_opcao || ''}, ${lamina.bainha?.nome_opcao || ''}`;
+      }).join('\n');
+
+      const personalizacoesLaser = todasLaminas
+        .filter(l => l.laser && l.textoLaser)
+        .map((l, index) => `Lâmina ${index + 1}: ${l.textoLaser}`)
+        .join('\n');
 
       // Montar texto formatado
       const texto = `1. NOME: ${nomeCompleto}
@@ -170,14 +283,15 @@ export default function Simulador() {
 10. CELULAR: ${celular}
 11. E-MAIL: ${email}
 12. DATA DE NASCIMENTO: ${dataNascimento}
-13. PEDIDO: ${descricaoPedido}
+13. PEDIDO:
+${descricoesPedidos}
 14. VALOR: ${valorTotalCalculado.toFixed(2)}
 15. FORMA DE PAGAMENTO: ${formaPagamento}
-16. PERSONALIZAÇÃO À LASER: ${selectedLaser ? textLaser : 'Não'}
+16. PERSONALIZAÇÃO À LASER: ${personalizacoesLaser || 'Não'}
 17. NOME PROPRIETÁRIO P/ CERTIFICADO: ${nomeCertificado || nomeCompleto}
 Vendedor: ${profile?.nome_vendedor || ''}
 
-${nomeCompleto}, ${selectedModel?.nome_modelo || ''}, ${selectedAco?.nome_opcao || ''}, ${selectedAcabamento?.nome_opcao || ''}, ${selectedEmpunhadura?.nome_opcao || ''}, ${selectedBainha?.nome_opcao || ''}`;
+${linhasFormatadas}`;
 
       setTextoFormatado(texto);
       setPedidoFinalizado(true);
@@ -428,7 +542,46 @@ ${nomeCompleto}, ${selectedModel?.nome_modelo || ''}, ${selectedAco?.nome_opcao 
 
         {/* Coluna Direita - Resumo Sticky */}
         <div className="lg:col-span-1">
-          <div className="sticky top-6">
+          <div className="sticky top-6 space-y-4">
+            {/* Lâminas já adicionadas */}
+            {laminasConfiguradas.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Lâminas Adicionadas ({laminasConfiguradas.length})</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {laminasConfiguradas.map((lamina, index) => (
+                    <div key={lamina.id} className="p-3 border rounded-lg">
+                      <div className="flex justify-between items-start mb-2">
+                        <p className="font-semibold text-sm">Lâmina {index + 1}</p>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => editarLamina(lamina)}
+                            className="h-7 px-2"
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removerLamina(lamina.id)}
+                            className="h-7 px-2 text-destructive"
+                          >
+                            Remover
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{lamina.modelo.nome_modelo}</p>
+                      <p className="text-sm font-semibold mt-1">R$ {lamina.subtotal.toFixed(2)}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Resumo da lâmina atual */}
             <Card className="border-2 shadow-lg">
               <CardHeader className="bg-accent/5">
                 <CardTitle className="text-3xl font-bold text-center">
@@ -437,8 +590,15 @@ ${nomeCompleto}, ${selectedModel?.nome_modelo || ''}, ${selectedAco?.nome_opcao 
                 <CardDescription className="text-center">Valor Total</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-6">
-                {selectedModel && (
+                {selectedModel ? (
                   <div className="space-y-3">
+                    <div className="flex justify-between items-center pb-3 border-b">
+                      <p className="text-sm font-semibold text-muted-foreground">
+                        {editandoLaminaId ? 'Editando Lâmina' : 'Lâmina Atual'}
+                      </p>
+                      <p className="text-sm font-semibold">R$ {subtotalLaminaAtual.toFixed(2)}</p>
+                    </div>
+
                     <div className="pb-3 border-b">
                       <p className="text-sm text-muted-foreground">Modelo</p>
                       <p className="font-semibold">{selectedModel.nome_modelo}</p>
@@ -485,33 +645,51 @@ ${nomeCompleto}, ${selectedModel?.nome_modelo || ''}, ${selectedAco?.nome_opcao 
                       </div>
                     )}
 
-                    {produtosAdicionais.map((produto) => {
-                      const quantidade = quantidadesProdutos[produto.id] || 0;
-                      if (quantidade === 0) return null;
-                      return (
-                        <div key={produto.id} className="pb-3 border-b">
-                          <p className="text-sm text-muted-foreground">{produto.nome_produto}</p>
-                          <p className="font-semibold">{quantidade}x R$ {produto.preco_unitario.toFixed(2)}</p>
-                          <p className="text-sm">R$ {(quantidade * produto.preco_unitario).toFixed(2)}</p>
-                        </div>
-                      );
-                    })}
-
-                    <Button
-                      onClick={() => setModalOpen(true)}
-                      className="w-full"
-                      size="lg"
-                      disabled={!selectedModel}
-                    >
-                      Revisar e Fechar Pedido
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={adicionarLamina}
+                        className="flex-1"
+                        variant="outline"
+                      >
+                        {editandoLaminaId ? 'Atualizar Lâmina' : 'Adicionar Lâmina'}
+                      </Button>
+                      {selectedModel && (
+                        <Button
+                          onClick={limparLaminaAtual}
+                          variant="ghost"
+                          size="icon"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                )}
-
-                {!selectedModel && (
+                ) : (
                   <p className="text-center text-muted-foreground py-8">
                     Selecione um modelo para começar
                   </p>
+                )}
+
+                {produtosAdicionais.map((produto) => {
+                  const quantidade = quantidadesProdutos[produto.id] || 0;
+                  if (quantidade === 0) return null;
+                  return (
+                    <div key={produto.id} className="pb-3 border-b">
+                      <p className="text-sm text-muted-foreground">{produto.nome_produto}</p>
+                      <p className="font-semibold">{quantidade}x R$ {produto.preco_unitario.toFixed(2)}</p>
+                      <p className="text-sm">R$ {(quantidade * produto.preco_unitario).toFixed(2)}</p>
+                    </div>
+                  );
+                })}
+
+                {(laminasConfiguradas.length > 0 || selectedModel) && (
+                  <Button
+                    onClick={() => setModalOpen(true)}
+                    className="w-full"
+                    size="lg"
+                  >
+                    Revisar e Fechar Pedido
+                  </Button>
                 )}
               </CardContent>
             </Card>
