@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Calculator } from 'lucide-react';
+import { Calculator, Copy, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ModelCard from '@/components/ModelCard';
 import ComponentCard from '@/components/ComponentCard';
@@ -68,6 +68,9 @@ export default function Simulador() {
   const [complemento, setComplemento] = useState('');
   const [nomeCertificado, setNomeCertificado] = useState('');
   const [formaPagamento, setFormaPagamento] = useState('');
+  const [dataNascimento, setDataNascimento] = useState('');
+  const [pedidoFinalizado, setPedidoFinalizado] = useState(false);
+  const [textoFormatado, setTextoFormatado] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -131,6 +134,9 @@ export default function Simulador() {
     setComplemento('');
     setNomeCertificado('');
     setFormaPagamento('');
+    setDataNascimento('');
+    setPedidoFinalizado(false);
+    setTextoFormatado('');
   };
 
   const handleFinalizarPedido = async () => {
@@ -142,39 +148,50 @@ export default function Simulador() {
     setSubmitting(true);
 
     try {
-      // Dados para a planilha de produção
-      const dadosProducao = {
-        modelo: selectedModel?.nome_modelo || '',
-        aco: selectedAco?.nome_opcao || '',
-        empunhadura: selectedEmpunhadura?.nome_opcao || '',
-        acabamento: selectedAcabamento?.nome_opcao || '',
-        bainha: selectedBainha?.nome_opcao || '',
-        textoLaser: selectedLaser ? textLaser : '',
-        nomeCertificado: nomeCertificado,
-      };
+      // Montar descrição do pedido
+      const descricaoPedido = `${selectedModel?.nome_modelo || ''} ${selectedAco?.nome_opcao || ''} ${selectedAcabamento?.nome_opcao || ''} empunhadura em ${selectedEmpunhadura?.nome_opcao || ''} ${selectedBainha?.nome_opcao || ''}`;
 
-      // Dados para a planilha de vendas
-      const dadosVendas = {
-        data: new Date().toLocaleDateString('pt-BR'),
-        nomeCompleto,
-        cpf,
-        endereco: `${endereco} ${numero}, ${bairro}, ${cidade}/${estado} - ${cep}${complemento ? ' - ' + complemento : ''}`,
-        valorTotal: valorTotalCalculado.toFixed(2),
-        formaPagamento,
-        vendedor: profile?.nome_vendedor || '',
-      };
+      // Montar texto formatado
+      const texto = `1. NOME: ${nomeCompleto}
+2. CPF: ${cpf}
+3. CEP: ${cep}
+4. ESTADO: ${estado}
+5. CIDADE: ${cidade}
+6. BAIRRO: ${bairro}
+7. ENDEREÇO: ${endereco}
+8. NÚMERO: ${numero}
+9. COMPLEMENTO: ${complemento}
+10. CELULAR: ${celular}
+11. E-MAIL: ${email}
+12. DATA DE NASCIMENTO: ${dataNascimento}
+13. PEDIDO: ${descricaoPedido}
+14. VALOR: ${valorTotalCalculado.toFixed(2)}
+15. FORMA DE PAGAMENTO: ${formaPagamento}
+16. PERSONALIZAÇÃO À LASER: ${selectedLaser ? textLaser : 'Não'}
+17. NOME PROPRIETÁRIO P/ CERTIFICADO: ${nomeCertificado || nomeCompleto}
+Vendedor: ${profile?.nome_vendedor || ''}
 
-      console.log('Dados da simulação:', { dadosProducao, dadosVendas });
+${nomeCompleto}, ${selectedModel?.nome_modelo || ''}, ${selectedAco?.nome_opcao || ''}, ${selectedAcabamento?.nome_opcao || ''}, ${selectedEmpunhadura?.nome_opcao || ''}, ${selectedBainha?.nome_opcao || ''}`;
 
-      toast.success('Pedido enviado para produção com sucesso!');
-      setModalOpen(false);
-      resetSimulacao();
+      setTextoFormatado(texto);
+      setPedidoFinalizado(true);
+      toast.success('Pedido finalizado com sucesso!');
     } catch (error) {
-      console.error('Erro ao enviar pedido:', error);
-      toast.error('Erro ao enviar pedido');
+      console.error('Erro ao finalizar pedido:', error);
+      toast.error('Erro ao finalizar pedido');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const copiarTexto = () => {
+    navigator.clipboard.writeText(textoFormatado);
+    toast.success('Texto copiado para a área de transferência!');
+  };
+
+  const fecharModal = () => {
+    setModalOpen(false);
+    resetSimulacao();
   };
 
   if (loading) {
@@ -454,62 +471,75 @@ export default function Simulador() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Finalizar Pedido</DialogTitle>
+            <DialogTitle>{pedidoFinalizado ? 'Pedido Finalizado' : 'Finalizar Pedido'}</DialogTitle>
             <DialogDescription>
-              Preencha os dados do cliente para enviar o pedido para produção
+              {pedidoFinalizado ? 'Copie as informações abaixo' : 'Preencha os dados do cliente para enviar o pedido para produção'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome Completo *</Label>
-                <Input
-                  id="nome"
-                  value={nomeCompleto}
-                  onChange={(e) => setNomeCompleto(e.target.value)}
-                  required
-                />
+          
+          {!pedidoFinalizado ? (
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome">Nome Completo *</Label>
+                  <Input
+                    id="nome"
+                    value={nomeCompleto}
+                    onChange={(e) => setNomeCompleto(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cpf">CPF</Label>
+                  <Input
+                    id="cpf"
+                    value={cpf}
+                    onChange={(e) => setCpf(e.target.value)}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="cpf">CPF</Label>
-                <Input
-                  id="cpf"
-                  value={cpf}
-                  onChange={(e) => setCpf(e.target.value)}
-                />
-              </div>
-            </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="celular">Celular</Label>
+                  <Input
+                    id="celular"
+                    value={celular}
+                    onChange={(e) => setCelular(e.target.value)}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="celular">Celular</Label>
-                <Input
-                  id="celular"
-                  value={celular}
-                  onChange={(e) => setCelular(e.target.value)}
-                />
-              </div>
-            </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="cep">CEP</Label>
-                <Input
-                  id="cep"
-                  value={cep}
-                  onChange={(e) => setCep(e.target.value)}
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                  <Input
+                    id="dataNascimento"
+                    value={dataNascimento}
+                    onChange={(e) => setDataNascimento(e.target.value)}
+                    placeholder="DD/MM/AAAA"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cep">CEP</Label>
+                  <Input
+                    id="cep"
+                    value={cep}
+                    onChange={(e) => setCep(e.target.value)}
+                  />
+                </div>
               </div>
-              <div className="space-y-2 md:col-span-2">
+
+              <div className="space-y-2">
                 <Label htmlFor="endereco">Endereço</Label>
                 <Input
                   id="endereco"
@@ -517,83 +547,97 @@ export default function Simulador() {
                   onChange={(e) => setEndereco(e.target.value)}
                 />
               </div>
-            </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="numero">Número</Label>
+                  <Input
+                    id="numero"
+                    value={numero}
+                    onChange={(e) => setNumero(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bairro">Bairro</Label>
+                  <Input
+                    id="bairro"
+                    value={bairro}
+                    onChange={(e) => setBairro(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cidade">Cidade</Label>
+                  <Input
+                    id="cidade"
+                    value={cidade}
+                    onChange={(e) => setCidade(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="estado">Estado</Label>
+                  <Input
+                    id="estado"
+                    value={estado}
+                    onChange={(e) => setEstado(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="complemento">Complemento</Label>
+                  <Input
+                    id="complemento"
+                    value={complemento}
+                    onChange={(e) => setComplemento(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="numero">Número</Label>
+                <Label htmlFor="certificado">Nome para Certificado</Label>
                 <Input
-                  id="numero"
-                  value={numero}
-                  onChange={(e) => setNumero(e.target.value)}
+                  id="certificado"
+                  value={nomeCertificado}
+                  onChange={(e) => setNomeCertificado(e.target.value)}
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="bairro">Bairro</Label>
+                <Label htmlFor="pagamento">Forma de Pagamento *</Label>
                 <Input
-                  id="bairro"
-                  value={bairro}
-                  onChange={(e) => setBairro(e.target.value)}
+                  id="pagamento"
+                  value={formaPagamento}
+                  onChange={(e) => setFormaPagamento(e.target.value)}
+                  placeholder="Ex: PIX, Cartão de Crédito, etc."
+                  required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="cidade">Cidade</Label>
-                <Input
-                  id="cidade"
-                  value={cidade}
-                  onChange={(e) => setCidade(e.target.value)}
-                />
+
+              <Button
+                onClick={handleFinalizarPedido}
+                disabled={submitting}
+                className="w-full"
+                size="lg"
+              >
+                {submitting ? 'Finalizando...' : 'Finalizar Pedido'}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-muted p-4 rounded-lg">
+                <pre className="text-sm whitespace-pre-wrap font-mono">{textoFormatado}</pre>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={copiarTexto} className="flex-1">
+                  Copiar Texto
+                </Button>
+                <Button onClick={fecharModal} variant="outline" className="flex-1">
+                  Fechar
+                </Button>
               </div>
             </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="estado">Estado</Label>
-                <Input
-                  id="estado"
-                  value={estado}
-                  onChange={(e) => setEstado(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="complemento">Complemento</Label>
-                <Input
-                  id="complemento"
-                  value={complemento}
-                  onChange={(e) => setComplemento(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="certificado">Nome para Certificado</Label>
-              <Input
-                id="certificado"
-                value={nomeCertificado}
-                onChange={(e) => setNomeCertificado(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="pagamento">Forma de Pagamento *</Label>
-              <Input
-                id="pagamento"
-                value={formaPagamento}
-                onChange={(e) => setFormaPagamento(e.target.value)}
-                placeholder="Ex: PIX, Cartão de Crédito, etc."
-                required
-              />
-            </div>
-
-            <Button
-              onClick={handleFinalizarPedido}
-              disabled={submitting}
-              className="w-full"
-              size="lg"
-            >
-              {submitting ? 'Enviando...' : 'Confirmar e Enviar para Produção'}
-            </Button>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
