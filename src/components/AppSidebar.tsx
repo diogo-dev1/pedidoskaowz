@@ -31,12 +31,12 @@ export function AppSidebar() {
   ] : [];
 
   return (
-    <Sidebar>
-      <SidebarContent>
+    <Sidebar className="border-r-0">
+      <SidebarContent className="bg-sidebar-background">
         {/* Menu Principal */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium">
-            {!isCollapsed && 'Menu'}
+          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70">
+            {!isCollapsed && 'Menu Principal'}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -49,8 +49,8 @@ export function AppSidebar() {
                       className={({ isActive }) =>
                         `flex items-center gap-3 transition-colors ${
                           isActive
-                            ? 'bg-foreground text-background font-medium'
-                            : 'hover:bg-secondary'
+                            ? 'bg-accent text-accent-foreground font-semibold'
+                            : 'text-sidebar-foreground hover:bg-sidebar-accent'
                         }`
                       }
                     >
@@ -67,9 +67,9 @@ export function AppSidebar() {
         {/* Menu Admin */}
         {adminItems.length > 0 && (
           <>
-            <Separator className="my-2" />
+            <Separator className="my-2 bg-sidebar-border" />
             <SidebarGroup>
-              <SidebarGroupLabel className="text-xs font-medium">
+              <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70">
                 {!isCollapsed && 'Administração'}
               </SidebarGroupLabel>
               <SidebarGroupContent>
@@ -82,8 +82,8 @@ export function AppSidebar() {
                           className={({ isActive }) =>
                             `flex items-center gap-3 transition-colors ${
                               isActive
-                                ? 'bg-foreground text-background font-medium'
-                                : 'hover:bg-secondary'
+                                ? 'bg-accent text-accent-foreground font-semibold'
+                                : 'text-sidebar-foreground hover:bg-sidebar-accent'
                             }`
                           }
                         >
@@ -101,21 +101,21 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* Footer com perfil e logout */}
-      <SidebarFooter>
-        <Separator className="mb-2" />
+      <SidebarFooter className="bg-sidebar-background">
+        <Separator className="mb-2 bg-sidebar-border" />
         {profile && !isCollapsed && (
           <div className="px-3 py-2 mb-2">
             <div className="flex items-center gap-2 mb-1">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <p className="text-sm font-medium truncate">{profile.nome_vendedor}</p>
+              <User className="h-4 w-4 text-sidebar-foreground/70" />
+              <p className="text-sm font-medium text-sidebar-foreground truncate">{profile.nome_vendedor}</p>
             </div>
-            <p className="text-xs text-muted-foreground capitalize pl-6">{profile.cargo}</p>
+            <p className="text-xs text-sidebar-foreground/60 capitalize pl-6">{profile.cargo}</p>
           </div>
         )}
         <Button
           onClick={signOut}
           variant="ghost"
-          className="w-full justify-start gap-3"
+          className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
           size="sm"
         >
           <LogOut className="h-5 w-5" />

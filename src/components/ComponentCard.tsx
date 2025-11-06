@@ -10,18 +10,22 @@ interface ComponentCardProps {
 export default function ComponentCard({ nome, preco, isSelected, onClick }: ComponentCardProps) {
   return (
     <div
-      className={`cursor-pointer transition-all border bg-card ${
-        isSelected ? 'border-foreground' : 'border-border hover:border-foreground/30'
+      className={`cursor-pointer transition-all bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-md ${
+        isSelected ? 'ring-2 ring-accent' : 'border border-border'
       }`}
       onClick={onClick}
     >
-      <div className="p-3">
+      <div className="p-4">
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">{nome}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">+R$ {preco.toFixed(2)}</div>
+            <h3 className="text-sm font-medium text-card-foreground truncate">{nome}</h3>
+            <p className="text-sm font-semibold text-accent mt-0.5">+R$ {preco.toFixed(2)}</p>
           </div>
-          {isSelected && <Check className="h-4 w-4 flex-shrink-0" />}
+          {isSelected && (
+            <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
+              <Check className="h-3 w-3 text-accent-foreground" />
+            </div>
+          )}
         </div>
       </div>
     </div>

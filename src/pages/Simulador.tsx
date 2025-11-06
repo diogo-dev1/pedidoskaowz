@@ -325,7 +325,7 @@ ${linhasFormatadas}`;
         <div className="px-4 py-6 space-y-8">
           {/* Seção 1: Escolha o Modelo */}
           <section>
-            <h2 className="text-lg font-medium mb-4">Escolha o Modelo</h2>
+            <h2 className="text-lg font-semibold text-accent mb-4">Escolha o Modelo</h2>
             <div className="grid gap-3 grid-cols-2">
               {modelos.map((modelo) => (
                 <ModelCard
@@ -348,9 +348,9 @@ ${linhasFormatadas}`;
           {/* Seção 2: Configure os Componentes */}
           {selectedModel && (
             <section>
-              <h2 className="text-lg font-medium mb-4">Configure os Componentes</h2>
+              <h2 className="text-lg font-semibold text-accent mb-4">Configure os Componentes</h2>
               <Accordion type="single" collapsible className="w-full space-y-2">
-                <AccordionItem value="aco" className="border border-border bg-card">
+                <AccordionItem value="aco" className="border border-border bg-card rounded-lg overflow-hidden">
                   <AccordionTrigger className="px-4 hover:no-underline">
                     <div className="flex items-center justify-between w-full pr-4">
                       <span className="font-normal">Aço</span>
@@ -376,7 +376,7 @@ ${linhasFormatadas}`;
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="empunhadura" className="border border-border bg-card">
+                <AccordionItem value="empunhadura" className="border border-border bg-card rounded-lg overflow-hidden">
                   <AccordionTrigger className="px-4 hover:no-underline">
                     <div className="flex items-center justify-between w-full pr-4">
                       <span className="font-normal">Empunhadura</span>
@@ -402,7 +402,7 @@ ${linhasFormatadas}`;
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="acabamento" className="border border-border bg-card">
+                <AccordionItem value="acabamento" className="border border-border bg-card rounded-lg overflow-hidden">
                   <AccordionTrigger className="px-4 hover:no-underline">
                     <div className="flex items-center justify-between w-full pr-4">
                       <span className="font-normal">Acabamento</span>
@@ -428,7 +428,7 @@ ${linhasFormatadas}`;
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="bainha" className="border border-border bg-card">
+                <AccordionItem value="bainha" className="border border-border bg-card rounded-lg overflow-hidden">
                   <AccordionTrigger className="px-4 hover:no-underline">
                     <div className="flex items-center justify-between w-full pr-4">
                       <span className="font-normal">Bainha</span>
@@ -460,8 +460,8 @@ ${linhasFormatadas}`;
           {/* Seção 3: Extras */}
           {selectedModel && (
             <section>
-              <h2 className="text-lg font-medium mb-4">Extras</h2>
-              <div className="border border-border bg-card p-4 space-y-4">
+              <h2 className="text-lg font-semibold text-accent mb-4">Extras</h2>
+              <div className="border border-border rounded-lg bg-card p-4 space-y-4">
                 <div className="flex items-center space-x-3">
                   <Checkbox
                     id="laser"
@@ -491,7 +491,7 @@ ${linhasFormatadas}`;
           {/* Seção 4: Produtos Adicionais */}
           {selectedModel && produtosAdicionais.length > 0 && (
             <section>
-              <h2 className="text-lg font-medium mb-4">Produtos Adicionais</h2>
+              <h2 className="text-lg font-semibold text-accent mb-4">Produtos Adicionais</h2>
               <div className="grid gap-3 grid-cols-2">
                 {produtosAdicionais.map((produto) => (
                   <ProdutoAdicionalCard
@@ -516,27 +516,27 @@ ${linhasFormatadas}`;
       </div>
 
       {/* Bottom bar fixo com resumo */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50">
         <div className="px-4 py-4 space-y-3">
           {/* Lâminas adicionadas - scroll horizontal */}
           {laminasConfiguradas.length > 0 && (
             <div className="overflow-x-auto pb-2">
               <div className="flex gap-2 min-w-max">
                 {laminasConfiguradas.map((lamina, index) => (
-                  <div key={lamina.id} className="flex-shrink-0 w-40 p-2 border border-border bg-card">
+                  <div key={lamina.id} className="flex-shrink-0 w-40 p-2 border border-border rounded bg-background">
                     <div className="flex justify-between items-start mb-1">
                       <p className="text-xs font-medium">Lâmina {index + 1}</p>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => removerLamina(lamina.id)}
-                        className="h-5 w-5 p-0"
+                        className="h-5 w-5 p-0 hover:bg-destructive hover:text-destructive-foreground"
                       >
                         <X className="h-3 w-3" />
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{lamina.modelo.nome_modelo}</p>
-                    <p className="text-xs font-medium mt-1">R$ {lamina.subtotal.toFixed(2)}</p>
+                    <p className="text-sm font-bold text-accent mt-1">R$ {lamina.subtotal.toFixed(2)}</p>
                   </div>
                 ))}
               </div>
@@ -546,8 +546,8 @@ ${linhasFormatadas}`;
           {/* Ações principais */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1">
-              <p className="text-xs text-muted-foreground">Total</p>
-              <p className="text-2xl font-medium tracking-tight">R$ {valorTotalCalculado.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">Total do Pedido</p>
+              <p className="text-2xl font-bold text-accent">R$ {valorTotalCalculado.toFixed(2)}</p>
             </div>
             
             {selectedModel && (
@@ -555,7 +555,7 @@ ${linhasFormatadas}`;
                 onClick={adicionarLamina}
                 variant="outline"
                 size="sm"
-                className="flex-shrink-0"
+                className="flex-shrink-0 border-accent text-accent hover:bg-accent hover:text-accent-foreground"
               >
                 {editandoLaminaId ? 'Atualizar' : 'Adicionar'}
               </Button>
@@ -565,7 +565,7 @@ ${linhasFormatadas}`;
               <Button
                 onClick={() => setModalOpen(true)}
                 size="sm"
-                className="flex-shrink-0"
+                className="flex-shrink-0 bg-accent hover:bg-accent/90"
               >
                 Fechar Pedido
               </Button>
