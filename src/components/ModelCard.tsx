@@ -1,4 +1,3 @@
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check } from 'lucide-react';
 
 interface ModelCardProps {
@@ -11,9 +10,9 @@ interface ModelCardProps {
 
 export default function ModelCard({ nome, preco, imagem, isSelected, onClick }: ModelCardProps) {
   return (
-    <Card
-      className={`cursor-pointer transition-all hover:shadow-md ${
-        isSelected ? 'ring-2 ring-accent shadow-md' : ''
+    <div
+      className={`cursor-pointer transition-all border bg-card ${
+        isSelected ? 'border-foreground' : 'border-border hover:border-foreground/30'
       }`}
       onClick={onClick}
     >
@@ -21,18 +20,18 @@ export default function ModelCard({ nome, preco, imagem, isSelected, onClick }: 
         <img
           src={imagem}
           alt={nome}
-          className="w-full h-24 object-cover rounded-t-lg"
+          className="w-full h-24 object-cover"
         />
       )}
-      <CardHeader className="p-3">
-        <CardTitle className="text-sm flex items-center justify-between">
-          <div>
-            <div className="font-semibold">{nome}</div>
+      <div className="p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="text-sm font-medium">{nome}</div>
             <div className="text-xs text-muted-foreground mt-1">R$ {preco.toFixed(2)}</div>
           </div>
-          {isSelected && <Check className="h-4 w-4 text-accent flex-shrink-0" />}
-        </CardTitle>
-      </CardHeader>
-    </Card>
+          {isSelected && <Check className="h-4 w-4 flex-shrink-0" />}
+        </div>
+      </div>
+    </div>
   );
 }

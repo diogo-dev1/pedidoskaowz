@@ -319,380 +319,264 @@ ${linhasFormatadas}`;
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Calculator className="h-8 w-8 text-accent" />
-          Simulador de Preços
-        </h1>
-        <p className="text-muted-foreground">Configure a faca personalizada e veja o preço em tempo real</p>
+    <div className="min-h-screen bg-background">
+      {/* Header minimalista fixo */}
+      <div className="sticky top-0 z-50 bg-background border-b border-border">
+        <div className="px-4 py-4">
+          <h1 className="text-xl font-medium tracking-tight">Simulador</h1>
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Coluna Esquerda - Configurador */}
-        <div className="lg:col-span-2 space-y-6">
+      {/* Container principal mobile-first */}
+      <div className="pb-24">
+        <div className="px-4 py-6 space-y-8">
           {/* Seção 1: Escolha o Modelo */}
-          <Card>
-            <CardHeader>
-              <CardTitle>1. Escolha o Modelo</CardTitle>
-              <CardDescription>Selecione o modelo base da lâmina</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
-                {modelos.map((modelo) => (
-                  <ModelCard
-                    key={modelo.id}
-                    nome={modelo.nome_modelo}
-                    preco={modelo.preco_base}
-                    imagem={modelo.imagem_modelo}
-                    isSelected={selectedModel?.id === modelo.id}
-                    onClick={() => setSelectedModel(modelo)}
-                  />
-                ))}
-              </div>
-              {modelos.length === 0 && (
-                <p className="text-center py-8 text-muted-foreground">
-                  Nenhum modelo cadastrado ainda.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <section>
+            <h2 className="text-lg font-medium mb-4">Escolha o Modelo</h2>
+            <div className="grid gap-3 grid-cols-2">
+              {modelos.map((modelo) => (
+                <ModelCard
+                  key={modelo.id}
+                  nome={modelo.nome_modelo}
+                  preco={modelo.preco_base}
+                  imagem={modelo.imagem_modelo}
+                  isSelected={selectedModel?.id === modelo.id}
+                  onClick={() => setSelectedModel(modelo)}
+                />
+              ))}
+            </div>
+            {modelos.length === 0 && (
+              <p className="text-center py-12 text-muted-foreground text-sm">
+                Nenhum modelo cadastrado
+              </p>
+            )}
+          </section>
 
           {/* Seção 2: Configure os Componentes */}
           {selectedModel && (
-            <Card>
-              <CardHeader>
-                <CardTitle>2. Configure os Componentes</CardTitle>
-                <CardDescription>Personalize sua faca com as opções disponíveis</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="aco">
-                    <AccordionTrigger>
-                      <div className="flex items-center justify-between w-full pr-4">
-                        <span>Aço</span>
-                        {selectedAco && (
-                          <span className="text-sm text-muted-foreground">
-                            {selectedAco.nome_opcao}
-                          </span>
-                        )}
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="grid gap-2 grid-cols-2 pt-2">
-                        {acos.map((aco) => (
-                          <ComponentCard
-                            key={aco.id}
-                            nome={aco.nome_opcao}
-                            preco={aco.preco_adicional}
-                            isSelected={selectedAco?.id === aco.id}
-                            onClick={() => setSelectedAco(aco)}
-                          />
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
+            <section>
+              <h2 className="text-lg font-medium mb-4">Configure os Componentes</h2>
+              <Accordion type="single" collapsible className="w-full space-y-2">
+                <AccordionItem value="aco" className="border border-border bg-card">
+                  <AccordionTrigger className="px-4 hover:no-underline">
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <span className="font-normal">Aço</span>
+                      {selectedAco && (
+                        <span className="text-sm text-muted-foreground">
+                          {selectedAco.nome_opcao}
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="grid gap-2 grid-cols-2 pt-2">
+                      {acos.map((aco) => (
+                        <ComponentCard
+                          key={aco.id}
+                          nome={aco.nome_opcao}
+                          preco={aco.preco_adicional}
+                          isSelected={selectedAco?.id === aco.id}
+                          onClick={() => setSelectedAco(aco)}
+                        />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
 
-                  <AccordionItem value="empunhadura">
-                    <AccordionTrigger>
-                      <div className="flex items-center justify-between w-full pr-4">
-                        <span>Empunhadura</span>
-                        {selectedEmpunhadura && (
-                          <span className="text-sm text-muted-foreground">
-                            {selectedEmpunhadura.nome_opcao}
-                          </span>
-                        )}
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="grid gap-2 grid-cols-2 pt-2">
-                        {empunhaduras.map((emp) => (
-                          <ComponentCard
-                            key={emp.id}
-                            nome={emp.nome_opcao}
-                            preco={emp.preco_adicional}
-                            isSelected={selectedEmpunhadura?.id === emp.id}
-                            onClick={() => setSelectedEmpunhadura(emp)}
-                          />
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                <AccordionItem value="empunhadura" className="border border-border bg-card">
+                  <AccordionTrigger className="px-4 hover:no-underline">
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <span className="font-normal">Empunhadura</span>
+                      {selectedEmpunhadura && (
+                        <span className="text-sm text-muted-foreground">
+                          {selectedEmpunhadura.nome_opcao}
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="grid gap-2 grid-cols-2 pt-2">
+                      {empunhaduras.map((emp) => (
+                        <ComponentCard
+                          key={emp.id}
+                          nome={emp.nome_opcao}
+                          preco={emp.preco_adicional}
+                          isSelected={selectedEmpunhadura?.id === emp.id}
+                          onClick={() => setSelectedEmpunhadura(emp)}
+                        />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
 
-                  <AccordionItem value="acabamento">
-                    <AccordionTrigger>
-                      <div className="flex items-center justify-between w-full pr-4">
-                        <span>Acabamento</span>
-                        {selectedAcabamento && (
-                          <span className="text-sm text-muted-foreground">
-                            {selectedAcabamento.nome_opcao}
-                          </span>
-                        )}
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="grid gap-2 grid-cols-2 pt-2">
-                        {acabamentos.map((acab) => (
-                          <ComponentCard
-                            key={acab.id}
-                            nome={acab.nome_opcao}
-                            preco={acab.preco_adicional}
-                            isSelected={selectedAcabamento?.id === acab.id}
-                            onClick={() => setSelectedAcabamento(acab)}
-                          />
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                <AccordionItem value="acabamento" className="border border-border bg-card">
+                  <AccordionTrigger className="px-4 hover:no-underline">
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <span className="font-normal">Acabamento</span>
+                      {selectedAcabamento && (
+                        <span className="text-sm text-muted-foreground">
+                          {selectedAcabamento.nome_opcao}
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="grid gap-2 grid-cols-2 pt-2">
+                      {acabamentos.map((acab) => (
+                        <ComponentCard
+                          key={acab.id}
+                          nome={acab.nome_opcao}
+                          preco={acab.preco_adicional}
+                          isSelected={selectedAcabamento?.id === acab.id}
+                          onClick={() => setSelectedAcabamento(acab)}
+                        />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
 
-                  <AccordionItem value="bainha">
-                    <AccordionTrigger>
-                      <div className="flex items-center justify-between w-full pr-4">
-                        <span>Bainha</span>
-                        {selectedBainha && (
-                          <span className="text-sm text-muted-foreground">
-                            {selectedBainha.nome_opcao}
-                          </span>
-                        )}
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="grid gap-2 grid-cols-2 pt-2">
-                        {bainhas.map((bainha) => (
-                          <ComponentCard
-                            key={bainha.id}
-                            nome={bainha.nome_opcao}
-                            preco={bainha.preco_adicional}
-                            isSelected={selectedBainha?.id === bainha.id}
-                            onClick={() => setSelectedBainha(bainha)}
-                          />
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </CardContent>
-            </Card>
+                <AccordionItem value="bainha" className="border border-border bg-card">
+                  <AccordionTrigger className="px-4 hover:no-underline">
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <span className="font-normal">Bainha</span>
+                      {selectedBainha && (
+                        <span className="text-sm text-muted-foreground">
+                          {selectedBainha.nome_opcao}
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="grid gap-2 grid-cols-2 pt-2">
+                      {bainhas.map((bainha) => (
+                        <ComponentCard
+                          key={bainha.id}
+                          nome={bainha.nome_opcao}
+                          preco={bainha.preco_adicional}
+                          isSelected={selectedBainha?.id === bainha.id}
+                          onClick={() => setSelectedBainha(bainha)}
+                        />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </section>
           )}
 
           {/* Seção 3: Extras */}
           {selectedModel && (
-            <Card>
-              <CardHeader>
-                <CardTitle>3. Extras</CardTitle>
-                <CardDescription>Adicione personalizações especiais</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2">
+            <section>
+              <h2 className="text-lg font-medium mb-4">Extras</h2>
+              <div className="border border-border bg-card p-4 space-y-4">
+                <div className="flex items-center space-x-3">
                   <Checkbox
                     id="laser"
                     checked={selectedLaser}
                     onCheckedChange={(checked) => setSelectedLaser(checked as boolean)}
                   />
-                  <Label htmlFor="laser" className="cursor-pointer">
-                    Personalização a Laser (Adiciona R$ 30,00)
+                  <Label htmlFor="laser" className="cursor-pointer text-sm font-normal">
+                    Personalização a Laser (+R$ 30)
                   </Label>
                 </div>
 
                 {selectedLaser && (
-                  <div className="space-y-2 ml-6">
-                    <Label htmlFor="texto-laser">Texto da Personalização</Label>
+                  <div className="space-y-2 pl-7">
                     <Input
                       id="texto-laser"
                       value={textLaser}
                       onChange={(e) => setTextLaser(e.target.value)}
-                      placeholder="Digite o texto para gravar a laser"
+                      placeholder="Texto para gravação"
+                      className="border-border"
                     />
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </section>
           )}
 
           {/* Seção 4: Produtos Adicionais */}
           {selectedModel && produtosAdicionais.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>4. Produtos Adicionais</CardTitle>
-                <CardDescription>Adicione produtos complementares ao pedido</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
-                  {produtosAdicionais.map((produto) => (
-                    <ProdutoAdicionalCard
-                      key={produto.id}
-                      nome={produto.nome_produto}
-                      precoUnitario={produto.preco_unitario}
-                      quantidade={quantidadesProdutos[produto.id] || 0}
-                      onAdd={() => setQuantidadesProdutos(prev => ({
-                        ...prev,
-                        [produto.id]: (prev[produto.id] || 0) + 1
-                      }))}
-                      onRemove={() => setQuantidadesProdutos(prev => ({
-                        ...prev,
-                        [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1)
-                      }))}
-                    />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <section>
+              <h2 className="text-lg font-medium mb-4">Produtos Adicionais</h2>
+              <div className="grid gap-3 grid-cols-2">
+                {produtosAdicionais.map((produto) => (
+                  <ProdutoAdicionalCard
+                    key={produto.id}
+                    nome={produto.nome_produto}
+                    precoUnitario={produto.preco_unitario}
+                    quantidade={quantidadesProdutos[produto.id] || 0}
+                    onAdd={() => setQuantidadesProdutos(prev => ({
+                      ...prev,
+                      [produto.id]: (prev[produto.id] || 0) + 1
+                    }))}
+                    onRemove={() => setQuantidadesProdutos(prev => ({
+                      ...prev,
+                      [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1)
+                    }))}
+                  />
+                ))}
+              </div>
+            </section>
           )}
         </div>
+      </div>
 
-        {/* Coluna Direita - Resumo Sticky */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-6 space-y-4">
-            {/* Lâminas já adicionadas */}
-            {laminasConfiguradas.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Lâminas Adicionadas ({laminasConfiguradas.length})</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {laminasConfiguradas.map((lamina, index) => (
-                    <div key={lamina.id} className="p-3 border rounded-lg">
-                      <div className="flex justify-between items-start mb-2">
-                        <p className="font-semibold text-sm">Lâmina {index + 1}</p>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => editarLamina(lamina)}
-                            className="h-7 px-2"
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removerLamina(lamina.id)}
-                            className="h-7 px-2 text-destructive"
-                          >
-                            Remover
-                          </Button>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{lamina.modelo.nome_modelo}</p>
-                      <p className="text-sm font-semibold mt-1">R$ {lamina.subtotal.toFixed(2)}</p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Resumo da lâmina atual */}
-            <Card className="border-2 shadow-lg">
-              <CardHeader className="bg-accent/5">
-                <CardTitle className="text-3xl font-bold text-center">
-                  R$ {valorTotalCalculado.toFixed(2)}
-                </CardTitle>
-                <CardDescription className="text-center">Valor Total</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-6">
-                {selectedModel ? (
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center pb-3 border-b">
-                      <p className="text-sm font-semibold text-muted-foreground">
-                        {editandoLaminaId ? 'Editando Lâmina' : 'Lâmina Atual'}
-                      </p>
-                      <p className="text-sm font-semibold">R$ {subtotalLaminaAtual.toFixed(2)}</p>
-                    </div>
-
-                    <div className="pb-3 border-b">
-                      <p className="text-sm text-muted-foreground">Modelo</p>
-                      <p className="font-semibold">{selectedModel.nome_modelo}</p>
-                      <p className="text-sm">R$ {selectedModel.preco_base.toFixed(2)}</p>
-                    </div>
-
-                    {selectedAco && (
-                      <div className="pb-3 border-b">
-                        <p className="text-sm text-muted-foreground">Aço</p>
-                        <p className="font-semibold">{selectedAco.nome_opcao}</p>
-                        <p className="text-sm">R$ {selectedAco.preco_adicional.toFixed(2)}</p>
-                      </div>
-                    )}
-
-                    {selectedEmpunhadura && (
-                      <div className="pb-3 border-b">
-                        <p className="text-sm text-muted-foreground">Empunhadura</p>
-                        <p className="font-semibold">{selectedEmpunhadura.nome_opcao}</p>
-                        <p className="text-sm">R$ {selectedEmpunhadura.preco_adicional.toFixed(2)}</p>
-                      </div>
-                    )}
-
-                    {selectedAcabamento && (
-                      <div className="pb-3 border-b">
-                        <p className="text-sm text-muted-foreground">Acabamento</p>
-                        <p className="font-semibold">{selectedAcabamento.nome_opcao}</p>
-                        <p className="text-sm">R$ {selectedAcabamento.preco_adicional.toFixed(2)}</p>
-                      </div>
-                    )}
-
-                    {selectedBainha && (
-                      <div className="pb-3 border-b">
-                        <p className="text-sm text-muted-foreground">Bainha</p>
-                        <p className="font-semibold">{selectedBainha.nome_opcao}</p>
-                        <p className="text-sm">R$ {selectedBainha.preco_adicional.toFixed(2)}</p>
-                      </div>
-                    )}
-
-                    {selectedLaser && (
-                      <div className="pb-3 border-b">
-                        <p className="text-sm text-muted-foreground">Laser</p>
-                        <p className="font-semibold">Sim</p>
-                        <p className="text-sm">R$ 30,00</p>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2">
+      {/* Bottom bar fixo com resumo */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
+        <div className="px-4 py-4 space-y-3">
+          {/* Lâminas adicionadas - scroll horizontal */}
+          {laminasConfiguradas.length > 0 && (
+            <div className="overflow-x-auto pb-2">
+              <div className="flex gap-2 min-w-max">
+                {laminasConfiguradas.map((lamina, index) => (
+                  <div key={lamina.id} className="flex-shrink-0 w-40 p-2 border border-border bg-card">
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="text-xs font-medium">Lâmina {index + 1}</p>
                       <Button
-                        onClick={adicionarLamina}
-                        className="flex-1"
-                        variant="outline"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removerLamina(lamina.id)}
+                        className="h-5 w-5 p-0"
                       >
-                        {editandoLaminaId ? 'Atualizar Lâmina' : 'Adicionar Lâmina'}
+                        <X className="h-3 w-3" />
                       </Button>
-                      {selectedModel && (
-                        <Button
-                          onClick={limparLaminaAtual}
-                          variant="ghost"
-                          size="icon"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
                     </div>
+                    <p className="text-xs text-muted-foreground truncate">{lamina.modelo.nome_modelo}</p>
+                    <p className="text-xs font-medium mt-1">R$ {lamina.subtotal.toFixed(2)}</p>
                   </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    Selecione um modelo para começar
-                  </p>
-                )}
+                ))}
+              </div>
+            </div>
+          )}
 
-                {produtosAdicionais.map((produto) => {
-                  const quantidade = quantidadesProdutos[produto.id] || 0;
-                  if (quantidade === 0) return null;
-                  return (
-                    <div key={produto.id} className="pb-3 border-b">
-                      <p className="text-sm text-muted-foreground">{produto.nome_produto}</p>
-                      <p className="font-semibold">{quantidade}x R$ {produto.preco_unitario.toFixed(2)}</p>
-                      <p className="text-sm">R$ {(quantidade * produto.preco_unitario).toFixed(2)}</p>
-                    </div>
-                  );
-                })}
-
-                {(laminasConfiguradas.length > 0 || selectedModel) && (
-                  <Button
-                    onClick={() => setModalOpen(true)}
-                    className="w-full"
-                    size="lg"
-                  >
-                    Revisar e Fechar Pedido
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+          {/* Ações principais */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-2xl font-medium tracking-tight">R$ {valorTotalCalculado.toFixed(2)}</p>
+            </div>
+            
+            {selectedModel && (
+              <Button
+                onClick={adicionarLamina}
+                variant="outline"
+                size="sm"
+                className="flex-shrink-0"
+              >
+                {editandoLaminaId ? 'Atualizar' : 'Adicionar'}
+              </Button>
+            )}
+            
+            {(laminasConfiguradas.length > 0 || selectedModel) && (
+              <Button
+                onClick={() => setModalOpen(true)}
+                size="sm"
+                className="flex-shrink-0"
+              >
+                Fechar Pedido
+              </Button>
+            )}
           </div>
         </div>
       </div>

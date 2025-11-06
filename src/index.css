@@ -8,91 +8,66 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 210 20% 12%;
-
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 210 20% 12%;
-
+    --card-foreground: 0 0% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 12%;
-
-    --primary: 210 40% 18%;
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 210 30% 92%;
-    --secondary-foreground: 210 40% 18%;
-
-    --muted: 210 25% 94%;
-    --muted-foreground: 210 15% 45%;
-
-    --accent: 207 90% 54%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 97%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 0 0% 97%;
+    --muted-foreground: 0 0% 50%;
+    --accent: 0 0% 10%;
     --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 210 20% 88%;
-    --input: 210 20% 88%;
-    --ring: 207 90% 54%;
-
-    --radius: 0.75rem;
-
-    --steel: 210 15% 65%;
-    --steel-dark: 210 20% 35%;
-    --gold: 45 93% 47%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 10%;
+    --radius: 0rem;
     
-    --sidebar-background: 210 25% 96%;
-    --sidebar-foreground: 210 20% 20%;
-    --sidebar-primary: 210 40% 18%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 207 90% 54%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 20% 88%;
-    --sidebar-ring: 207 90% 54%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 0 0% 10%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 97%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 0 0% 10%;
   }
-
+  
   .dark {
-    --background: 210 30% 8%;
-    --foreground: 210 20% 95%;
-
-    --card: 210 25% 12%;
-    --card-foreground: 210 20% 95%;
-
-    --popover: 210 25% 12%;
-    --popover-foreground: 210 20% 95%;
-
-    --primary: 207 90% 54%;
-    --primary-foreground: 210 30% 8%;
-
-    --secondary: 210 25% 18%;
-    --secondary-foreground: 210 20% 95%;
-
-    --muted: 210 25% 18%;
-    --muted-foreground: 210 15% 60%;
-
-    --accent: 207 90% 54%;
-    --accent-foreground: 210 30% 8%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 20% 95%;
-
-    --border: 210 25% 22%;
-    --input: 210 25% 22%;
-    --ring: 207 90% 54%;
-
-    --steel: 210 15% 55%;
-    --steel-dark: 210 20% 75%;
-    --gold: 45 93% 57%;
+    --background: 0 0% 10%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 10%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 100%;
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 100%;
     
-    --sidebar-background: 210 30% 10%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 207 90% 54%;
-    --sidebar-primary-foreground: 210 30% 8%;
-    --sidebar-accent: 210 25% 18%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 210 25% 22%;
-    --sidebar-ring: 207 90% 54%;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 0 0% 100%;
   }
 }
 
@@ -100,8 +75,18 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
+  
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  
+  /* Typography minimalista */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight;
+  }
+  
+  /* Scroll suave */
+  html {
+    scroll-behavior: smooth;
   }
 }
