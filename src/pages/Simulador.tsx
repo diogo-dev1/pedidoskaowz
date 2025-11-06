@@ -7,11 +7,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Calculator, Copy, X } from 'lucide-react';
+import { Calculator, Copy, X, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ModelCard from '@/components/ModelCard';
 import ComponentCard from '@/components/ComponentCard';
 import ProdutoAdicionalCard from '@/components/ProdutoAdicionalCard';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 interface ModeloBase {
   id: string;
@@ -245,66 +251,112 @@ ${nomeCompleto}, ${selectedModel?.nome_modelo || ''}, ${selectedAco?.nome_opcao 
                 <CardTitle>2. Configure os Componentes</CardTitle>
                 <CardDescription>Personalize sua faca com as opções disponíveis</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Aço</Label>
-                  <div className="grid gap-2 grid-cols-2">
-                    {acos.map((aco) => (
-                      <ComponentCard
-                        key={aco.id}
-                        nome={aco.nome_opcao}
-                        preco={aco.preco_adicional}
-                        isSelected={selectedAco?.id === aco.id}
-                        onClick={() => setSelectedAco(aco)}
-                      />
-                    ))}
-                  </div>
-                </div>
+              <CardContent>
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="aco">
+                    <AccordionTrigger>
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <span>Aço</span>
+                        {selectedAco && (
+                          <span className="text-sm text-muted-foreground">
+                            {selectedAco.nome_opcao}
+                          </span>
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid gap-2 grid-cols-2 pt-2">
+                        {acos.map((aco) => (
+                          <ComponentCard
+                            key={aco.id}
+                            nome={aco.nome_opcao}
+                            preco={aco.preco_adicional}
+                            isSelected={selectedAco?.id === aco.id}
+                            onClick={() => setSelectedAco(aco)}
+                          />
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
 
-                <div className="space-y-2">
-                  <Label>Empunhadura</Label>
-                  <div className="grid gap-2 grid-cols-2">
-                    {empunhaduras.map((emp) => (
-                      <ComponentCard
-                        key={emp.id}
-                        nome={emp.nome_opcao}
-                        preco={emp.preco_adicional}
-                        isSelected={selectedEmpunhadura?.id === emp.id}
-                        onClick={() => setSelectedEmpunhadura(emp)}
-                      />
-                    ))}
-                  </div>
-                </div>
+                  <AccordionItem value="empunhadura">
+                    <AccordionTrigger>
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <span>Empunhadura</span>
+                        {selectedEmpunhadura && (
+                          <span className="text-sm text-muted-foreground">
+                            {selectedEmpunhadura.nome_opcao}
+                          </span>
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid gap-2 grid-cols-2 pt-2">
+                        {empunhaduras.map((emp) => (
+                          <ComponentCard
+                            key={emp.id}
+                            nome={emp.nome_opcao}
+                            preco={emp.preco_adicional}
+                            isSelected={selectedEmpunhadura?.id === emp.id}
+                            onClick={() => setSelectedEmpunhadura(emp)}
+                          />
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
 
-                <div className="space-y-2">
-                  <Label>Acabamento</Label>
-                  <div className="grid gap-2 grid-cols-2">
-                    {acabamentos.map((acab) => (
-                      <ComponentCard
-                        key={acab.id}
-                        nome={acab.nome_opcao}
-                        preco={acab.preco_adicional}
-                        isSelected={selectedAcabamento?.id === acab.id}
-                        onClick={() => setSelectedAcabamento(acab)}
-                      />
-                    ))}
-                  </div>
-                </div>
+                  <AccordionItem value="acabamento">
+                    <AccordionTrigger>
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <span>Acabamento</span>
+                        {selectedAcabamento && (
+                          <span className="text-sm text-muted-foreground">
+                            {selectedAcabamento.nome_opcao}
+                          </span>
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid gap-2 grid-cols-2 pt-2">
+                        {acabamentos.map((acab) => (
+                          <ComponentCard
+                            key={acab.id}
+                            nome={acab.nome_opcao}
+                            preco={acab.preco_adicional}
+                            isSelected={selectedAcabamento?.id === acab.id}
+                            onClick={() => setSelectedAcabamento(acab)}
+                          />
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
 
-                <div className="space-y-2">
-                  <Label>Bainha</Label>
-                  <div className="grid gap-2 grid-cols-2">
-                    {bainhas.map((bainha) => (
-                      <ComponentCard
-                        key={bainha.id}
-                        nome={bainha.nome_opcao}
-                        preco={bainha.preco_adicional}
-                        isSelected={selectedBainha?.id === bainha.id}
-                        onClick={() => setSelectedBainha(bainha)}
-                      />
-                    ))}
-                  </div>
-                </div>
+                  <AccordionItem value="bainha">
+                    <AccordionTrigger>
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <span>Bainha</span>
+                        {selectedBainha && (
+                          <span className="text-sm text-muted-foreground">
+                            {selectedBainha.nome_opcao}
+                          </span>
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid gap-2 grid-cols-2 pt-2">
+                        {bainhas.map((bainha) => (
+                          <ComponentCard
+                            key={bainha.id}
+                            nome={bainha.nome_opcao}
+                            preco={bainha.preco_adicional}
+                            isSelected={selectedBainha?.id === bainha.id}
+                            onClick={() => setSelectedBainha(bainha)}
+                          />
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </CardContent>
             </Card>
           )}
