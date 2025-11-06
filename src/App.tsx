@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Simulador from "./pages/Simulador";
 import GerenciarModelos from "./pages/admin/GerenciarModelos";
 import GerenciarComponentes from "./pages/admin/GerenciarComponentes";
+import MensagensPadrao from "./pages/MensagensPadrao";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
@@ -53,6 +54,16 @@ const App = () => (
                 <ProtectedRoute requireAdmin>
                   <Layout>
                     <GerenciarComponentes />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mensagens"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <MensagensPadrao />
                   </Layout>
                 </ProtectedRoute>
               }

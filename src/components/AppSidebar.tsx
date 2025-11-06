@@ -1,5 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Calculator, Settings, LogOut, User } from 'lucide-react';
+import { Calculator, Settings, LogOut, User, MessageSquare } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
   Sidebar,
@@ -23,6 +23,7 @@ export function AppSidebar() {
 
   const mainItems = [
     { title: 'Simulador', url: '/', icon: Calculator },
+    { title: 'Mensagens Padrão', url: '/mensagens', icon: MessageSquare },
   ];
 
   const adminItems = profile?.cargo === 'admin' ? [

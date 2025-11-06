@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      mensagens_padrao: {
+        Row: {
+          conteudo: string
+          created_at: string
+          id: string
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conteudo: string
+          created_at?: string
+          id?: string
+          titulo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string
+          id?: string
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       modelos_base: {
         Row: {
           created_at: string
