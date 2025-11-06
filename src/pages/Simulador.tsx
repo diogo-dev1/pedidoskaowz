@@ -320,13 +320,6 @@ ${linhasFormatadas}`;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header minimalista fixo */}
-      <div className="sticky top-0 z-50 bg-background border-b border-border">
-        <div className="px-4 py-4">
-          <h1 className="text-xl font-medium tracking-tight">Simulador</h1>
-        </div>
-      </div>
-
       {/* Container principal mobile-first */}
       <div className="pb-24">
         <div className="px-4 py-6 space-y-8">
