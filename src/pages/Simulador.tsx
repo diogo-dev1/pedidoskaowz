@@ -91,6 +91,13 @@ export default function Simulador() {
   const [nomeCertificado, setNomeCertificado] = useState('');
   const [formaPagamento, setFormaPagamento] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
+  const [canal, setCanal] = useState('');
+  const [status, setStatus] = useState('Pendente');
+  const [origemCliente, setOrigemCliente] = useState('');
+  const [observacao, setObservacao] = useState('');
+  const [cupom, setCupom] = useState('');
+  const [corBainha, setCorBainha] = useState('');
+  const [observacaoLamina, setObservacaoLamina] = useState('');
   const [pedidoFinalizado, setPedidoFinalizado] = useState(false);
   const [textoFormatado, setTextoFormatado] = useState('');
   const [exportandoSheets, setExportandoSheets] = useState(false);
@@ -151,6 +158,8 @@ export default function Simulador() {
     setSelectedBainha(null);
     setSelectedLaser(false);
     setTextLaser('');
+    setCorBainha('');
+    setObservacaoLamina('');
     setEditandoLaminaId(null);
   };
 
@@ -223,6 +232,11 @@ export default function Simulador() {
     setNomeCertificado('');
     setFormaPagamento('');
     setDataNascimento('');
+    setCanal('');
+    setStatus('Pendente');
+    setOrigemCliente('');
+    setObservacao('');
+    setCupom('');
     setPedidoFinalizado(false);
     setTextoFormatado('');
   };
@@ -336,8 +350,10 @@ ${linhasFormatadas}`;
         empunhadura: lamina.empunhadura?.nome_opcao || '',
         acabamento: lamina.acabamento?.nome_opcao || '',
         bainha: lamina.bainha?.nome_opcao || '',
+        corBainha: corBainha,
         laser: lamina.laser,
         textoLaser: lamina.textoLaser,
+        observacaoLamina: observacaoLamina,
         subtotal: lamina.subtotal,
       }));
 
@@ -365,6 +381,11 @@ ${linhasFormatadas}`;
         dataNascimento,
         nomeCertificado: nomeCertificado || nomeCompleto,
         formaPagamento,
+        canal,
+        status,
+        origemCliente,
+        observacao,
+        cupom,
         laminas: laminasFormatadas,
         produtosAdicionais: produtosFormatados,
         valorTotal: valorTotalCalculado,
@@ -561,6 +582,28 @@ ${linhasFormatadas}`;
                     />
                   </div>
                 )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="cor-bainha" className="text-sm">Cor da Bainha</Label>
+                  <Input
+                    id="cor-bainha"
+                    value={corBainha}
+                    onChange={(e) => setCorBainha(e.target.value)}
+                    placeholder="Ex: Preto, Marrom, etc."
+                    className="border-border"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="obs-lamina" className="text-sm">Observação da Lâmina</Label>
+                  <Input
+                    id="obs-lamina"
+                    value={observacaoLamina}
+                    onChange={(e) => setObservacaoLamina(e.target.value)}
+                    placeholder="Observações sobre esta lâmina"
+                    className="border-border"
+                  />
+                </div>
               </div>
             </section>
           )}
@@ -795,6 +838,56 @@ ${linhasFormatadas}`;
                   onChange={(e) => setFormaPagamento(e.target.value)}
                   placeholder="Ex: PIX, Cartão de Crédito, etc."
                   required
+                />
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="canal">Canal</Label>
+                  <Input
+                    id="canal"
+                    value={canal}
+                    onChange={(e) => setCanal(e.target.value)}
+                    placeholder="Ex: WhatsApp, Instagram"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Input
+                    id="status"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    placeholder="Ex: Pendente, Pago"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="origem">Origem Cliente</Label>
+                  <Input
+                    id="origem"
+                    value={origemCliente}
+                    onChange={(e) => setOrigemCliente(e.target.value)}
+                    placeholder="Ex: Indicação, Redes Sociais"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="observacao">Observação</Label>
+                <Input
+                  id="observacao"
+                  value={observacao}
+                  onChange={(e) => setObservacao(e.target.value)}
+                  placeholder="Observações gerais do pedido"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cupom">Cupom</Label>
+                <Input
+                  id="cupom"
+                  value={cupom}
+                  onChange={(e) => setCupom(e.target.value)}
+                  placeholder="Código de cupom (se houver)"
                 />
               </div>
 

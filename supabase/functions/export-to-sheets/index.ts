@@ -91,14 +91,21 @@ interface ExportData {
   dataNascimento: string;
   nomeCertificado: string;
   formaPagamento: string;
+  canal: string;
+  status: string;
+  origemCliente: string;
+  observacao: string;
+  cupom: string;
   laminas: Array<{
     modelo: string;
     aco: string;
     empunhadura: string;
     acabamento: string;
     bainha: string;
+    corBainha: string;
     laser: boolean;
     textoLaser: string;
+    observacaoLamina: string;
     subtotal: number;
   }>;
   produtosAdicionais: Array<{
@@ -130,44 +137,33 @@ Deno.serve(async (req) => {
     // Get access token
     const accessToken = await getAccessToken(serviceAccountKey);
 
-    // Prepare row data
+    // Prepare timestamp
     const timestamp = new Date().toLocaleString('pt-BR');
     
-    // Format laminas as string
-    const laminasText = data.laminas.map((l, i) => 
-      `Lâmina ${i + 1}: ${l.modelo} ${l.aco} ${l.acabamento} ${l.empunhadura} ${l.bainha}${l.laser ? ` (Laser: ${l.textoLaser})` : ''} - R$ ${l.subtotal.toFixed(2)}`
-    ).join(' | ');
+    // Prepare item description for sales report
+    const itemDescricao = data.laminas.length > 0
+      ? `${data.laminas.length} Lâmina(s) Kaowz`
+      : 'Produtos diversos';
 
-    // Format produtos adicionais as string
-    const produtosText = data.produtosAdicionais.length > 0
-      ? data.produtosAdicionais.map(p => `${p.nome} (${p.quantidade}x R$ ${p.precoUnitario.toFixed(2)}) = R$ ${p.total.toFixed(2)}`).join(' | ')
-      : 'Nenhum';
-
-    const rowData = [
+    // ROW 1: Sales Report (Relatório de Vendas)
+    // Data | Nome | Canal | Vendedor | Valor (R$) | Forma de Pag. | Status | Origem Cliente | Item | OBS | Cupom
+    const salesRowData = [
       timestamp,
-      data.vendedor,
       data.nomeCompleto,
-      data.cpf,
-      data.email,
-      data.celular,
-      data.dataNascimento,
-      data.cep,
-      data.endereco,
-      data.numero,
-      data.bairro,
-      data.cidade,
-      data.estado,
-      data.complemento,
-      data.nomeCertificado,
-      laminasText,
-      produtosText,
-      `R$ ${data.valorTotal.toFixed(2)}`,
+      data.canal || '',
+      data.vendedor,
+      data.valorTotal.toFixed(2),
       data.formaPagamento,
+      data.status || 'Pendente',
+      data.origemCliente || '',
+      itemDescricao,
+      data.observacao || '',
+      data.cupom || '',
     ];
 
-    // Append to sheet
-    const appendResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:A:append?valueInputOption=RAW`,
+    // Append to Vendas sheet
+    const salesResponse = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Vendas!A:A:append?valueInputOption=RAW`,
       {
         method: 'POST',
         headers: {
@@ -175,19 +171,57 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          values: [rowData],
+          values: [salesRowData],
         }),
       }
     );
 
-    if (!appendResponse.ok) {
-      const errorText = await appendResponse.text();
-      console.error('Google Sheets API error:', errorText);
-      throw new Error(`Failed to append to sheet: ${errorText}`);
+    if (!salesResponse.ok) {
+      const errorText = await salesResponse.text();
+      console.error('Google Sheets API error (Vendas):', errorText);
+      throw new Error(`Failed to append to Vendas sheet: ${errorText}`);
     }
 
-    const result = await appendResponse.json();
-    console.log('Successfully exported to Google Sheets:', result);
+    // ROWS 2+: Blade Details (One row per blade)
+    // Modelo | Aço | Acabamento | Empunhadura | Bainha | Cor da Bainha | Observação | Personalização
+    const bladeRows = data.laminas.map((lamina) => [
+      timestamp,
+      data.nomeCompleto,
+      data.vendedor,
+      lamina.modelo,
+      lamina.aco,
+      lamina.acabamento,
+      lamina.empunhadura,
+      lamina.bainha,
+      lamina.corBainha || '',
+      lamina.observacaoLamina || '',
+      lamina.laser ? lamina.textoLaser : 'Não',
+      lamina.subtotal.toFixed(2),
+    ]);
+
+    if (bladeRows.length > 0) {
+      const bladesResponse = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Lâminas!A:A:append?valueInputOption=RAW`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            values: bladeRows,
+          }),
+        }
+      );
+
+      if (!bladesResponse.ok) {
+        const errorText = await bladesResponse.text();
+        console.error('Google Sheets API error (Lâminas):', errorText);
+        throw new Error(`Failed to append to Lâminas sheet: ${errorText}`);
+      }
+    }
+
+    console.log('Successfully exported to Google Sheets: 1 sales row + ' + bladeRows.length + ' blade rows');
 
     return new Response(
       JSON.stringify({ success: true, message: 'Dados exportados com sucesso!' }),
