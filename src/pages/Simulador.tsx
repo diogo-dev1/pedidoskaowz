@@ -93,6 +93,7 @@ export default function Simulador() {
   const [dataNascimento, setDataNascimento] = useState('');
   const [pedidoFinalizado, setPedidoFinalizado] = useState(false);
   const [textoFormatado, setTextoFormatado] = useState('');
+  const [exportandoSheets, setExportandoSheets] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -307,6 +308,82 @@ ${linhasFormatadas}`;
   const copiarTexto = () => {
     navigator.clipboard.writeText(textoFormatado);
     toast.success('Texto copiado para a área de transferência!');
+  };
+
+  const exportarParaSheets = async () => {
+    setExportandoSheets(true);
+
+    try {
+      // Montar dados para exportação
+      const todasLaminas = [...laminasConfiguradas];
+      if (selectedModel) {
+        todasLaminas.push({
+          id: crypto.randomUUID(),
+          modelo: selectedModel,
+          aco: selectedAco,
+          empunhadura: selectedEmpunhadura,
+          acabamento: selectedAcabamento,
+          bainha: selectedBainha,
+          laser: selectedLaser,
+          textoLaser: textLaser,
+          subtotal: subtotalLaminaAtual,
+        });
+      }
+
+      const laminasFormatadas = todasLaminas.map(lamina => ({
+        modelo: lamina.modelo.nome_modelo,
+        aco: lamina.aco?.nome_opcao || '',
+        empunhadura: lamina.empunhadura?.nome_opcao || '',
+        acabamento: lamina.acabamento?.nome_opcao || '',
+        bainha: lamina.bainha?.nome_opcao || '',
+        laser: lamina.laser,
+        textoLaser: lamina.textoLaser,
+        subtotal: lamina.subtotal,
+      }));
+
+      const produtosFormatados = produtosAdicionais
+        .filter(produto => (quantidadesProdutos[produto.id] || 0) > 0)
+        .map(produto => ({
+          nome: produto.nome_produto,
+          quantidade: quantidadesProdutos[produto.id],
+          precoUnitario: produto.preco_unitario,
+          total: produto.preco_unitario * quantidadesProdutos[produto.id],
+        }));
+
+      const exportData = {
+        nomeCompleto,
+        cpf,
+        email,
+        celular,
+        cep,
+        endereco,
+        numero,
+        bairro,
+        cidade,
+        estado,
+        complemento,
+        dataNascimento,
+        nomeCertificado: nomeCertificado || nomeCompleto,
+        formaPagamento,
+        laminas: laminasFormatadas,
+        produtosAdicionais: produtosFormatados,
+        valorTotal: valorTotalCalculado,
+        vendedor: profile?.nome_vendedor || '',
+      };
+
+      const { error } = await supabase.functions.invoke('export-to-sheets', {
+        body: exportData,
+      });
+
+      if (error) throw error;
+
+      toast.success('Pedido exportado para Google Sheets com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar para Google Sheets:', error);
+      toast.error('Erro ao exportar para Google Sheets. Verifique as configurações.');
+    } finally {
+      setExportandoSheets(false);
+    }
   };
 
   const fecharModal = () => {
@@ -735,11 +812,21 @@ ${linhasFormatadas}`;
               <div className="bg-muted p-4 rounded-lg">
                 <pre className="text-sm whitespace-pre-wrap font-mono">{textoFormatado}</pre>
               </div>
-              <div className="flex gap-2">
-                <Button onClick={copiarTexto} className="flex-1">
-                  Copiar Texto
-                </Button>
-                <Button onClick={fecharModal} variant="outline" className="flex-1">
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Button onClick={copiarTexto} className="flex-1">
+                    Copiar Texto
+                  </Button>
+                  <Button 
+                    onClick={exportarParaSheets} 
+                    disabled={exportandoSheets}
+                    variant="secondary" 
+                    className="flex-1"
+                  >
+                    {exportandoSheets ? 'Exportando...' : 'Exportar para Sheets'}
+                  </Button>
+                </div>
+                <Button onClick={fecharModal} variant="outline" className="w-full">
                   Fechar
                 </Button>
               </div>
