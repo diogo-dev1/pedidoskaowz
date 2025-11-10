@@ -101,6 +101,9 @@ export default function Simulador() {
   const [pedidoFinalizado, setPedidoFinalizado] = useState(false);
   const [textoFormatado, setTextoFormatado] = useState('');
   const [exportandoSheets, setExportandoSheets] = useState(false);
+  const [modalIAOpen, setModalIAOpen] = useState(false);
+  const [textoIA, setTextoIA] = useState('');
+  const [processandoIA, setProcessandoIA] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -239,6 +242,145 @@ export default function Simulador() {
     setCupom('');
     setPedidoFinalizado(false);
     setTextoFormatado('');
+  };
+
+  const processarTextoComIA = async () => {
+    if (!textoIA.trim()) {
+      toast.error('Cole os dados do pedido no campo de texto');
+      return;
+    }
+
+    setProcessandoIA(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('parse-order-data', {
+        body: { text: textoIA }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      const extractedData = data.data;
+
+      // Preencher dados do cliente
+      if (extractedData.cliente) {
+        if (extractedData.cliente.nomeCompleto) setNomeCompleto(extractedData.cliente.nomeCompleto);
+        if (extractedData.cliente.cpf) setCpf(extractedData.cliente.cpf);
+        if (extractedData.cliente.email) setEmail(extractedData.cliente.email);
+        if (extractedData.cliente.celular) setCelular(extractedData.cliente.celular);
+        if (extractedData.cliente.cep) setCep(extractedData.cliente.cep);
+        if (extractedData.cliente.endereco) setEndereco(extractedData.cliente.endereco);
+        if (extractedData.cliente.numero) setNumero(extractedData.cliente.numero);
+        if (extractedData.cliente.bairro) setBairro(extractedData.cliente.bairro);
+        if (extractedData.cliente.cidade) setCidade(extractedData.cliente.cidade);
+        if (extractedData.cliente.estado) setEstado(extractedData.cliente.estado);
+        if (extractedData.cliente.complemento) setComplemento(extractedData.cliente.complemento);
+        if (extractedData.cliente.dataNascimento) setDataNascimento(extractedData.cliente.dataNascimento);
+        if (extractedData.cliente.nomeCertificado) setNomeCertificado(extractedData.cliente.nomeCertificado);
+      }
+
+      // Preencher dados do pedido
+      if (extractedData.pedido) {
+        if (extractedData.pedido.canal) setCanal(extractedData.pedido.canal);
+        if (extractedData.pedido.status) setStatus(extractedData.pedido.status);
+        if (extractedData.pedido.origemCliente) setOrigemCliente(extractedData.pedido.origemCliente);
+        if (extractedData.pedido.observacao) setObservacao(extractedData.pedido.observacao);
+        if (extractedData.pedido.cupom) setCupom(extractedData.pedido.cupom);
+        if (extractedData.pedido.formaPagamento) setFormaPagamento(extractedData.pedido.formaPagamento);
+      }
+
+      // Processar lâminas
+      if (extractedData.laminas && extractedData.laminas.length > 0) {
+        const laminasProcessadas: LaminaConfigurada[] = [];
+
+        for (const laminaData of extractedData.laminas) {
+          // Encontrar modelo correspondente
+          const modelo = modelos.find(m => 
+            m.nome_modelo.toLowerCase().includes(laminaData.modelo?.toLowerCase() || '')
+          );
+
+          if (modelo) {
+            const aco = laminaData.aco ? acos.find(a => 
+              a.nome_opcao.toLowerCase().includes(laminaData.aco.toLowerCase())
+            ) : null;
+
+            const acabamento = laminaData.acabamento ? acabamentos.find(a => 
+              a.nome_opcao.toLowerCase().includes(laminaData.acabamento.toLowerCase())
+            ) : null;
+
+            const empunhadura = laminaData.empunhadura ? empunhaduras.find(e => 
+              e.nome_opcao.toLowerCase().includes(laminaData.empunhadura.toLowerCase())
+            ) : null;
+
+            const bainha = laminaData.bainha ? bainhas.find(b => 
+              b.nome_opcao.toLowerCase().includes(laminaData.bainha.toLowerCase())
+            ) : null;
+
+            const temLaser = !!laminaData.textoLaser;
+            const precoLaser = temLaser ? 30 : 0;
+
+            const subtotal = 
+              modelo.preco_base + 
+              (aco?.preco_adicional || 0) + 
+              (acabamento?.preco_adicional || 0) + 
+              (empunhadura?.preco_adicional || 0) + 
+              (bainha?.preco_adicional || 0) + 
+              precoLaser;
+
+            laminasProcessadas.push({
+              id: crypto.randomUUID(),
+              modelo,
+              aco: aco || null,
+              acabamento: acabamento || null,
+              empunhadura: empunhadura || null,
+              bainha: bainha || null,
+              laser: temLaser,
+              textoLaser: laminaData.textoLaser || '',
+              subtotal
+            });
+
+            // Preencher cor da bainha e observação da primeira lâmina
+            if (laminasProcessadas.length === 1) {
+              if (laminaData.corBainha) setCorBainha(laminaData.corBainha);
+              if (laminaData.observacao) setObservacaoLamina(laminaData.observacao);
+            }
+          }
+        }
+
+        setLaminasConfiguradas(laminasProcessadas);
+      }
+
+      // Processar produtos adicionais
+      if (extractedData.produtosAdicionais && extractedData.produtosAdicionais.length > 0) {
+        const novasQuantidades: Record<string, number> = {};
+        
+        for (const produtoData of extractedData.produtosAdicionais) {
+          const produto = produtosAdicionais.find(p => 
+            p.nome_produto.toLowerCase().includes(produtoData.nome?.toLowerCase() || '')
+          );
+          
+          if (produto) {
+            novasQuantidades[produto.id] = produtoData.quantidade || 1;
+          }
+        }
+
+        setQuantidadesProdutos(novasQuantidades);
+      }
+
+      toast.success('Dados preenchidos com sucesso!');
+      setModalIAOpen(false);
+      setTextoIA('');
+
+    } catch (error) {
+      console.error('Erro ao processar com IA:', error);
+      toast.error('Erro ao processar dados com IA');
+    } finally {
+      setProcessandoIA(false);
+    }
   };
 
   const handleFinalizarPedido = async () => {
@@ -421,6 +563,17 @@ ${linhasFormatadas}`;
       {/* Container principal mobile-first */}
       <div className="pb-24">
         <div className="px-4 py-6 space-y-8">
+          {/* Botão de Preencher com IA */}
+          <div className="flex justify-end">
+            <Button
+              onClick={() => setModalIAOpen(true)}
+              variant="outline"
+              className="gap-2"
+            >
+              ✨ Preencher com IA
+            </Button>
+          </div>
+
           {/* Seção 1: Escolha o Modelo */}
           <section>
             <h2 className="text-lg font-semibold text-accent mb-4">Escolha o Modelo</h2>
@@ -925,6 +1078,61 @@ ${linhasFormatadas}`;
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de IA para Preencher Dados */}
+      <Dialog open={modalIAOpen} onOpenChange={setModalIAOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Preencher Formulário com IA</DialogTitle>
+            <DialogDescription>
+              Cole os dados do pedido e a IA reconhecerá e preencherá automaticamente os campos do formulário.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="textoIA">Cole os dados do pedido aqui</Label>
+              <textarea
+                id="textoIA"
+                value={textoIA}
+                onChange={(e) => setTextoIA(e.target.value)}
+                placeholder="Cole aqui as informações do pedido, como:&#10;&#10;Cliente: João Silva&#10;CPF: 123.456.789-00&#10;Email: joao@email.com&#10;Telefone: (11) 98765-4321&#10;&#10;Pedido:&#10;- 1 Faca Bowie em aço 1095&#10;- Acabamento fosco&#10;- Empunhadura em madeira&#10;- Bainha em couro preta&#10;- Personalização: 'João Silva'&#10;&#10;Forma de pagamento: PIX&#10;Canal: WhatsApp"
+                className="w-full min-h-[300px] p-3 border border-border rounded-lg bg-background resize-none font-mono text-sm"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={processarTextoComIA}
+                disabled={processandoIA || !textoIA.trim()}
+                className="flex-1"
+              >
+                {processandoIA ? 'Processando...' : '✨ Processar com IA'}
+              </Button>
+              <Button
+                onClick={() => {
+                  setModalIAOpen(false);
+                  setTextoIA('');
+                }}
+                variant="outline"
+              >
+                Cancelar
+              </Button>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium mb-2">Dicas:</p>
+              <ul className="list-disc list-inside space-y-1 text-xs">
+                <li>Cole qualquer texto com informações do pedido</li>
+                <li>A IA extrairá automaticamente nomes, CPF, endereço, telefone, etc.</li>
+                <li>Informações sobre lâminas (modelo, aço, acabamento, etc.) serão reconhecidas</li>
+                <li>Produtos adicionais também podem ser detectados</li>
+                <li>Dados parciais também funcionam - a IA preenche o que conseguir identificar</li>
+              </ul>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
