@@ -15,7 +15,10 @@ interface Modelo {
   preco_base: number;
   imagem_modelo: string | null;
   apresentacao_venda: string | null;
+  categoria: string;
 }
+
+type Categoria = 'Todas' | 'EDC' | 'Campo' | 'Cozinha' | 'KZR';
 
 interface Midia {
   name: string;
@@ -24,6 +27,7 @@ interface Midia {
 
 export default function Catalogo() {
   const [modelos, setModelos] = useState<Modelo[]>([]);
+  const [categoriaAtiva, setCategoriaAtiva] = useState<Categoria>('Todas');
   const [modeloSelecionado, setModeloSelecionado] = useState<Modelo | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [preco, setPreco] = useState('');
@@ -203,12 +207,32 @@ export default function Catalogo() {
     carregarMidias(modeloSelecionado.id);
   };
 
+  const categorias: Categoria[] = ['Todas', 'EDC', 'Campo', 'Cozinha', 'KZR'];
+
+  const modelosFiltrados = categoriaAtiva === 'Todas' 
+    ? modelos 
+    : modelos.filter(m => m.categoria === categoriaAtiva);
+
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-6 text-foreground">Catálogo de Lâminas</h1>
       
+      {/* Botões de Filtro */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        {categorias.map((categoria) => (
+          <Button
+            key={categoria}
+            variant={categoriaAtiva === categoria ? 'default' : 'outline'}
+            onClick={() => setCategoriaAtiva(categoria)}
+            className="min-w-[100px]"
+          >
+            {categoria}
+          </Button>
+        ))}
+      </div>
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {modelos.map((modelo) => (
+        {modelosFiltrados.map((modelo) => (
           <Card
             key={modelo.id}
             className="cursor-pointer hover:shadow-lg transition-all"
@@ -227,9 +251,14 @@ export default function Catalogo() {
               <h3 className="font-semibold text-lg text-card-foreground truncate">
                 {modelo.nome_modelo}
               </h3>
-              <p className="text-accent font-bold mt-2">
-                R$ {modelo.preco_base.toFixed(2)}
-              </p>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-accent font-bold">
+                  R$ {modelo.preco_base.toFixed(2)}
+                </p>
+                <span className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded">
+                  {modelo.categoria}
+                </span>
+              </div>
             </CardContent>
           </Card>
         ))}
