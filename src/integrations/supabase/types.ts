@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalogo_modelos: {
+        Row: {
+          apresentacao_venda: string | null
+          categoria: string | null
+          created_at: string
+          id: string
+          imagem_modelo: string | null
+          nome_modelo: string
+          preco_base: number
+          updated_at: string
+        }
+        Insert: {
+          apresentacao_venda?: string | null
+          categoria?: string | null
+          created_at?: string
+          id?: string
+          imagem_modelo?: string | null
+          nome_modelo: string
+          preco_base: number
+          updated_at?: string
+        }
+        Update: {
+          apresentacao_venda?: string | null
+          categoria?: string | null
+          created_at?: string
+          id?: string
+          imagem_modelo?: string | null
+          nome_modelo?: string
+          preco_base?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mensagens_padrao: {
         Row: {
           conteudo: string

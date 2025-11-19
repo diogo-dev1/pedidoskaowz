@@ -44,7 +44,7 @@ export default function Catalogo() {
 
   const carregarModelos = async () => {
     const { data, error } = await supabase
-      .from('modelos_base')
+      .from('catalogo_modelos')
       .select('*')
       .order('nome_modelo');
 
@@ -107,7 +107,7 @@ export default function Catalogo() {
 
     setSalvando(true);
     const { error } = await supabase
-      .from('modelos_base')
+      .from('catalogo_modelos')
       .update({
         preco_base: parseFloat(preco),
         apresentacao_venda: apresentacao,
