@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, Download, Upload, X, Loader2 } from 'lucide-react';
+import { Copy, Download, Upload, X, Loader2, Search } from 'lucide-react';
 
 interface Modelo {
   id: string;
@@ -28,6 +28,7 @@ interface Midia {
 export default function Catalogo() {
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState<Categoria>('Todas');
+  const [buscaTexto, setBuscaTexto] = useState('');
   const [modeloSelecionado, setModeloSelecionado] = useState<Modelo | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [preco, setPreco] = useState('');
@@ -209,14 +210,26 @@ export default function Catalogo() {
 
   const categorias: Categoria[] = ['Todas', 'EDC', 'Campo', 'Cozinha', 'KZR'];
 
-  const modelosFiltrados = categoriaAtiva === 'Todas' 
-    ? modelos 
-    : modelos.filter(m => m.categoria === categoriaAtiva);
+  const modelosFiltrados = modelos
+    .filter(m => categoriaAtiva === 'Todas' || m.categoria === categoriaAtiva)
+    .filter(m => m.nome_modelo.toLowerCase().includes(buscaTexto.toLowerCase()));
 
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-6 text-foreground">Catálogo de Lâminas</h1>
       
+      {/* Campo de Busca */}
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Buscar modelos..."
+          value={buscaTexto}
+          onChange={(e) => setBuscaTexto(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       {/* Botões de Filtro */}
       <div className="flex flex-wrap gap-3 mb-6">
         {categorias.map((categoria) => (
