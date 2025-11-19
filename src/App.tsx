@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
 import Auth from "./pages/Auth";
 import Simulador from "./pages/Simulador";
+import Catalogo from "./pages/Catalogo";
 import GerenciarModelos from "./pages/admin/GerenciarModelos";
 import GerenciarComponentes from "./pages/admin/GerenciarComponentes";
 import MensagensPadrao from "./pages/MensagensPadrao";
@@ -54,6 +55,16 @@ const App = () => (
                 <ProtectedRoute requireAdmin>
                   <Layout>
                     <GerenciarComponentes />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/catalogo"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Catalogo />
                   </Layout>
                 </ProtectedRoute>
               }

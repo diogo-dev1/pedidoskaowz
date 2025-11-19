@@ -43,6 +43,7 @@ export type Database = {
       }
       modelos_base: {
         Row: {
+          apresentacao_venda: string | null
           created_at: string
           id: string
           imagem_modelo: string | null
@@ -51,6 +52,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          apresentacao_venda?: string | null
           created_at?: string
           id?: string
           imagem_modelo?: string | null
@@ -59,6 +61,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          apresentacao_venda?: string | null
           created_at?: string
           id?: string
           imagem_modelo?: string | null
