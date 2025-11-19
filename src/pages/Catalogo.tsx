@@ -244,7 +244,7 @@ export default function Catalogo() {
         ))}
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
         {modelosFiltrados.map((modelo) => (
           <Card
             key={modelo.id}
@@ -260,15 +260,15 @@ export default function Catalogo() {
                 />
               </div>
             )}
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-lg text-card-foreground truncate">
+            <CardContent className="p-2 sm:p-4">
+              <h3 className="font-semibold text-xs sm:text-lg text-card-foreground truncate">
                 {modelo.nome_modelo}
               </h3>
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-accent font-bold">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-1 mt-1 sm:mt-2">
+                <p className="text-accent font-bold text-sm sm:text-base">
                   R$ {modelo.preco_base.toFixed(2)}
                 </p>
-                <span className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded">
+                <span className="text-[10px] sm:text-xs bg-secondary text-secondary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                   {modelo.categoria}
                 </span>
               </div>
