@@ -58,7 +58,8 @@ export default function Simulador() {
   const [componentes, setComponentes] = useState<OpcaoComponente[]>([]);
   const [produtosAdicionais, setProdutosAdicionais] = useState<ProdutoAdicional[]>([]);
   const [loading, setLoading] = useState(true);
-  const [categoriaAtiva, setCategoriaAtiva] = useState<string>('EDC');
+  const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
+  const [buscaModelo, setBuscaModelo] = useState('');
 
   // Estados de seleção para a lâmina atual
   const [selectedModel, setSelectedModel] = useState<ModeloBase | null>(null);
@@ -130,12 +131,28 @@ export default function Simulador() {
   const acabamentos = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Acabamento'), [componentes]);
   const bainhas = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Bainha'), [componentes]);
 
-  // Filtrar modelos por categoria
+  // Filtrar modelos por categoria e busca
   const modelosFiltrados = useMemo(() => {
-    return modelos.filter(m => m.categoria === categoriaAtiva);
-  }, [modelos, categoriaAtiva]);
+    let filtrados = modelos;
+
+    // Filtro por categoria
+    if (categoriaAtiva) {
+      filtrados = filtrados.filter(m => m.categoria === categoriaAtiva);
+    }
+
+    // Filtro por busca
+    if (buscaModelo.trim()) {
+      const busca = buscaModelo.toLowerCase();
+      filtrados = filtrados.filter(m => 
+        m.nome_modelo.toLowerCase().includes(busca)
+      );
+    }
+
+    return filtrados;
+  }, [modelos, categoriaAtiva, buscaModelo]);
 
   const categorias = ['EDC', 'Campo', 'Cozinha', 'KZR', 'Upsell'];
+  const mostrarModelos = categoriaAtiva !== null || buscaModelo.trim() !== '';
 
   // Cálculo do subtotal da lâmina atual
   const subtotalLaminaAtual = useMemo(() => {
@@ -587,6 +604,17 @@ ${linhasFormatadas}`;
           <section>
             <h2 className="text-lg font-semibold text-accent mb-4">Escolha o Modelo</h2>
             
+            {/* Campo de Busca */}
+            <div className="mb-4">
+              <Input
+                type="text"
+                placeholder="Buscar modelo..."
+                value={buscaModelo}
+                onChange={(e) => setBuscaModelo(e.target.value)}
+                className="w-full"
+              />
+            </div>
+
             {/* Botões de Categoria */}
             <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
               {categorias.map((cat) => (
@@ -600,23 +628,41 @@ ${linhasFormatadas}`;
                   {cat}
                 </Button>
               ))}
+              {categoriaAtiva && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCategoriaAtiva(null)}
+                  className="whitespace-nowrap"
+                >
+                  Limpar
+                </Button>
+              )}
             </div>
 
-            <div className="grid gap-3 grid-cols-2">
-              {modelosFiltrados.map((modelo) => (
-                <ModelCard
-                  key={modelo.id}
-                  nome={modelo.nome_modelo}
-                  preco={modelo.preco_base}
-                  imagem={modelo.imagem_modelo}
-                  isSelected={selectedModel?.id === modelo.id}
-                  onClick={() => setSelectedModel(modelo)}
-                />
-              ))}
-            </div>
-            {modelosFiltrados.length === 0 && (
+            {mostrarModelos ? (
+              <>
+                <div className="grid gap-3 grid-cols-2">
+                  {modelosFiltrados.map((modelo) => (
+                    <ModelCard
+                      key={modelo.id}
+                      nome={modelo.nome_modelo}
+                      preco={modelo.preco_base}
+                      imagem={modelo.imagem_modelo}
+                      isSelected={selectedModel?.id === modelo.id}
+                      onClick={() => setSelectedModel(modelo)}
+                    />
+                  ))}
+                </div>
+                {modelosFiltrados.length === 0 && (
+                  <p className="text-center py-12 text-muted-foreground text-sm">
+                    Nenhum modelo encontrado
+                  </p>
+                )}
+              </>
+            ) : (
               <p className="text-center py-12 text-muted-foreground text-sm">
-                Nenhum modelo cadastrado nesta categoria
+                Use a busca ou selecione uma categoria para ver os modelos
               </p>
             )}
           </section>
