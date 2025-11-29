@@ -24,6 +24,7 @@ interface ModeloBase {
   nome_modelo: string;
   preco_base: number;
   imagem_modelo: string | null;
+  categoria: string | null;
 }
 
 interface OpcaoComponente {
@@ -57,6 +58,7 @@ export default function Simulador() {
   const [componentes, setComponentes] = useState<OpcaoComponente[]>([]);
   const [produtosAdicionais, setProdutosAdicionais] = useState<ProdutoAdicional[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categoriaAtiva, setCategoriaAtiva] = useState<string>('EDC');
 
   // Estados de seleção para a lâmina atual
   const [selectedModel, setSelectedModel] = useState<ModeloBase | null>(null);
@@ -127,6 +129,13 @@ export default function Simulador() {
   const empunhaduras = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Empunhadura'), [componentes]);
   const acabamentos = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Acabamento'), [componentes]);
   const bainhas = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Bainha'), [componentes]);
+
+  // Filtrar modelos por categoria
+  const modelosFiltrados = useMemo(() => {
+    return modelos.filter(m => m.categoria === categoriaAtiva);
+  }, [modelos, categoriaAtiva]);
+
+  const categorias = ['EDC', 'Campo', 'Cozinha', 'KZR', 'Upsell'];
 
   // Cálculo do subtotal da lâmina atual
   const subtotalLaminaAtual = useMemo(() => {
@@ -577,8 +586,24 @@ ${linhasFormatadas}`;
           {/* Seção 1: Escolha o Modelo */}
           <section>
             <h2 className="text-lg font-semibold text-accent mb-4">Escolha o Modelo</h2>
+            
+            {/* Botões de Categoria */}
+            <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+              {categorias.map((cat) => (
+                <Button
+                  key={cat}
+                  variant={categoriaAtiva === cat ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCategoriaAtiva(cat)}
+                  className="whitespace-nowrap"
+                >
+                  {cat}
+                </Button>
+              ))}
+            </div>
+
             <div className="grid gap-3 grid-cols-2">
-              {modelos.map((modelo) => (
+              {modelosFiltrados.map((modelo) => (
                 <ModelCard
                   key={modelo.id}
                   nome={modelo.nome_modelo}
@@ -589,9 +614,9 @@ ${linhasFormatadas}`;
                 />
               ))}
             </div>
-            {modelos.length === 0 && (
+            {modelosFiltrados.length === 0 && (
               <p className="text-center py-12 text-muted-foreground text-sm">
-                Nenhum modelo cadastrado
+                Nenhum modelo cadastrado nesta categoria
               </p>
             )}
           </section>
