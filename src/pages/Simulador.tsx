@@ -46,6 +46,7 @@ interface LaminaConfigurada {
   aco: OpcaoComponente | null;
   empunhadura: OpcaoComponente | null;
   acabamento: OpcaoComponente | null;
+  variacoesAcabamento: OpcaoComponente[];
   bainha: OpcaoComponente | null;
   laser: boolean;
   textoLaser: string;
@@ -66,6 +67,7 @@ export default function Simulador() {
   const [selectedAco, setSelectedAco] = useState<OpcaoComponente | null>(null);
   const [selectedEmpunhadura, setSelectedEmpunhadura] = useState<OpcaoComponente | null>(null);
   const [selectedAcabamento, setSelectedAcabamento] = useState<OpcaoComponente | null>(null);
+  const [selectedVariacoesAcabamento, setSelectedVariacoesAcabamento] = useState<OpcaoComponente[]>([]);
   const [selectedBainha, setSelectedBainha] = useState<OpcaoComponente | null>(null);
   const [selectedLaser, setSelectedLaser] = useState(false);
   const [textLaser, setTextLaser] = useState('');
@@ -128,7 +130,14 @@ export default function Simulador() {
   // Filtrar componentes por tipo
   const acos = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Aço'), [componentes]);
   const empunhaduras = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Empunhadura'), [componentes]);
-  const acabamentos = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Acabamento'), [componentes]);
+  const acabamentosBase = useMemo(() => 
+    componentes.filter(c => c.tipo_opcao === 'Acabamento' && (c.nome_opcao === 'Acetinado' || c.nome_opcao === 'Tactical')), 
+    [componentes]
+  );
+  const variacoesAcabamento = useMemo(() => 
+    componentes.filter(c => c.tipo_opcao === 'Acabamento' && c.nome_opcao !== 'Acetinado' && c.nome_opcao !== 'Tactical'), 
+    [componentes]
+  );
   const bainhas = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Bainha'), [componentes]);
 
   // Filtrar modelos por categoria e busca
@@ -160,11 +169,12 @@ export default function Simulador() {
     const precoAco = selectedAco?.preco_adicional || 0;
     const precoEmpunhadura = selectedEmpunhadura?.preco_adicional || 0;
     const precoAcabamento = selectedAcabamento?.preco_adicional || 0;
+    const precoVariacoes = selectedVariacoesAcabamento.reduce((total, variacao) => total + variacao.preco_adicional, 0);
     const precoBainha = selectedBainha?.preco_adicional || 0;
     const precoLaser = selectedLaser ? 30 : 0;
 
-    return precoBase + precoAco + precoEmpunhadura + precoAcabamento + precoBainha + precoLaser;
-  }, [selectedModel, selectedAco, selectedEmpunhadura, selectedAcabamento, selectedBainha, selectedLaser]);
+    return precoBase + precoAco + precoEmpunhadura + precoAcabamento + precoVariacoes + precoBainha + precoLaser;
+  }, [selectedModel, selectedAco, selectedEmpunhadura, selectedAcabamento, selectedVariacoesAcabamento, selectedBainha, selectedLaser]);
 
   // Cálculo do total geral
   const valorTotalCalculado = useMemo(() => {
@@ -184,6 +194,7 @@ export default function Simulador() {
     setSelectedAco(null);
     setSelectedEmpunhadura(null);
     setSelectedAcabamento(null);
+    setSelectedVariacoesAcabamento([]);
     setSelectedBainha(null);
     setSelectedLaser(false);
     setTextLaser('');
@@ -204,6 +215,7 @@ export default function Simulador() {
       aco: selectedAco,
       empunhadura: selectedEmpunhadura,
       acabamento: selectedAcabamento,
+      variacoesAcabamento: selectedVariacoesAcabamento,
       bainha: selectedBainha,
       laser: selectedLaser,
       textoLaser: textLaser,
@@ -228,6 +240,7 @@ export default function Simulador() {
     setSelectedAco(lamina.aco);
     setSelectedEmpunhadura(lamina.empunhadura);
     setSelectedAcabamento(lamina.acabamento);
+    setSelectedVariacoesAcabamento(lamina.variacoesAcabamento);
     setSelectedBainha(lamina.bainha);
     setSelectedLaser(lamina.laser);
     setTextLaser(lamina.textoLaser);
@@ -334,7 +347,7 @@ export default function Simulador() {
               a.nome_opcao.toLowerCase().includes(laminaData.aco.toLowerCase())
             ) : null;
 
-            const acabamento = laminaData.acabamento ? acabamentos.find(a => 
+            const acabamento = laminaData.acabamento ? acabamentosBase.find(a => 
               a.nome_opcao.toLowerCase().includes(laminaData.acabamento.toLowerCase())
             ) : null;
 
@@ -362,6 +375,7 @@ export default function Simulador() {
               modelo,
               aco: aco || null,
               acabamento: acabamento || null,
+              variacoesAcabamento: [],
               empunhadura: empunhadura || null,
               bainha: bainha || null,
               laser: temLaser,
@@ -432,6 +446,7 @@ export default function Simulador() {
           aco: selectedAco,
           empunhadura: selectedEmpunhadura,
           acabamento: selectedAcabamento,
+          variacoesAcabamento: selectedVariacoesAcabamento,
           bainha: selectedBainha,
           laser: selectedLaser,
           textoLaser: textLaser,
@@ -440,12 +455,16 @@ export default function Simulador() {
       }
 
       const descricoesPedidos = todasLaminas.map((lamina, index) => {
-        const desc = `${lamina.modelo.nome_modelo} ${lamina.aco?.nome_opcao || ''} ${lamina.acabamento?.nome_opcao || ''} empunhadura em ${lamina.empunhadura?.nome_opcao || ''} ${lamina.bainha?.nome_opcao || ''}`;
+        const variacoes = lamina.variacoesAcabamento.map(v => v.nome_opcao).join(' + ');
+        const acabamentoCompleto = lamina.acabamento?.nome_opcao + (variacoes ? ` + ${variacoes}` : '');
+        const desc = `${lamina.modelo.nome_modelo} ${lamina.aco?.nome_opcao || ''} ${acabamentoCompleto || ''} empunhadura em ${lamina.empunhadura?.nome_opcao || ''} ${lamina.bainha?.nome_opcao || ''}`;
         return `Lâmina ${index + 1}: ${desc}`;
       }).join('\n');
 
       const linhasFormatadas = todasLaminas.map((lamina) => {
-        return `${nomeCompleto}, ${lamina.modelo.nome_modelo}, ${lamina.aco?.nome_opcao || ''}, ${lamina.acabamento?.nome_opcao || ''}, ${lamina.empunhadura?.nome_opcao || ''}, ${lamina.bainha?.nome_opcao || ''}`;
+        const variacoes = lamina.variacoesAcabamento.map(v => v.nome_opcao).join(' + ');
+        const acabamentoCompleto = lamina.acabamento?.nome_opcao + (variacoes ? ` + ${variacoes}` : '');
+        return `${nomeCompleto}, ${lamina.modelo.nome_modelo}, ${lamina.aco?.nome_opcao || ''}, ${acabamentoCompleto || ''}, ${lamina.empunhadura?.nome_opcao || ''}, ${lamina.bainha?.nome_opcao || ''}`;
       }).join('\n');
 
       const personalizacoesLaser = todasLaminas
@@ -505,6 +524,7 @@ ${linhasFormatadas}`;
           aco: selectedAco,
           empunhadura: selectedEmpunhadura,
           acabamento: selectedAcabamento,
+          variacoesAcabamento: selectedVariacoesAcabamento,
           bainha: selectedBainha,
           laser: selectedLaser,
           textoLaser: textLaser,
@@ -512,18 +532,22 @@ ${linhasFormatadas}`;
         });
       }
 
-      const laminasFormatadas = todasLaminas.map(lamina => ({
-        modelo: lamina.modelo.nome_modelo,
-        aco: lamina.aco?.nome_opcao || '',
-        empunhadura: lamina.empunhadura?.nome_opcao || '',
-        acabamento: lamina.acabamento?.nome_opcao || '',
-        bainha: lamina.bainha?.nome_opcao || '',
-        corBainha: corBainha,
-        laser: lamina.laser,
-        textoLaser: lamina.textoLaser,
-        observacaoLamina: observacaoLamina,
-        subtotal: lamina.subtotal,
-      }));
+      const laminasFormatadas = todasLaminas.map(lamina => {
+        const variacoes = lamina.variacoesAcabamento.map(v => v.nome_opcao).join(' + ');
+        const acabamentoCompleto = lamina.acabamento?.nome_opcao + (variacoes ? ` + ${variacoes}` : '');
+        return {
+          modelo: lamina.modelo.nome_modelo,
+          aco: lamina.aco?.nome_opcao || '',
+          empunhadura: lamina.empunhadura?.nome_opcao || '',
+          acabamento: acabamentoCompleto || '',
+          bainha: lamina.bainha?.nome_opcao || '',
+          corBainha: corBainha,
+          laser: lamina.laser,
+          textoLaser: lamina.textoLaser,
+          observacaoLamina: observacaoLamina,
+          subtotal: lamina.subtotal,
+        };
+      });
 
       const produtosFormatados = produtosAdicionais
         .filter(produto => (quantidadesProdutos[produto.id] || 0) > 0)
@@ -736,16 +760,55 @@ ${linhasFormatadas}`;
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
-                    <div className="grid gap-2 grid-cols-2 pt-2">
-                      {acabamentos.map((acab) => (
-                        <ComponentCard
-                          key={acab.id}
-                          nome={acab.nome_opcao}
-                          preco={acab.preco_adicional}
-                          isSelected={selectedAcabamento?.id === acab.id}
-                          onClick={() => setSelectedAcabamento(acab)}
-                        />
-                      ))}
+                    <div className="space-y-4 pt-2">
+                      <div>
+                        <h3 className="text-sm font-medium mb-2">Acabamento Base</h3>
+                        <div className="grid gap-2 grid-cols-2">
+                          {acabamentosBase.map((acab) => (
+                            <ComponentCard
+                              key={acab.id}
+                              nome={acab.nome_opcao}
+                              preco={acab.preco_adicional}
+                              isSelected={selectedAcabamento?.id === acab.id}
+                              onClick={() => setSelectedAcabamento(acab)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {variacoesAcabamento.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-medium mb-2">Variações (opcional)</h3>
+                          <div className="space-y-2">
+                            {variacoesAcabamento.map((variacao) => {
+                              const isSelected = selectedVariacoesAcabamento.some(v => v.id === variacao.id);
+                              return (
+                                <div 
+                                  key={variacao.id}
+                                  className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                                    isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                                  }`}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setSelectedVariacoesAcabamento(prev => prev.filter(v => v.id !== variacao.id));
+                                    } else {
+                                      setSelectedVariacoesAcabamento(prev => [...prev, variacao]);
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox checked={isSelected} />
+                                    <span className="text-sm">{variacao.nome_opcao}</span>
+                                  </div>
+                                  <span className="text-sm font-medium">
+                                    +R$ {variacao.preco_adicional.toFixed(2)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
