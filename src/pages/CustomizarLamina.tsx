@@ -191,7 +191,7 @@ export default function CustomizarLamina() {
   const totalGeral = laminasCustomizadas.reduce((sum, l) => sum + l.subtotal, 0) + subtotalAtual;
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-zinc-50 overflow-x-hidden">
       {/* Header */}
       <header className="bg-black border-b border-white/10 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 md:py-4">
@@ -211,7 +211,7 @@ export default function CustomizarLamina() {
           </div>
         </div>
       </header>
-
+ 
       <div className="container mx-auto px-4 py-6">
         {/* Miniatura do modelo selecionado */}
         {!loading && modeloSelecionado && (
