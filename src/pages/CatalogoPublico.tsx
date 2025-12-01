@@ -139,57 +139,58 @@ export default function CatalogoPublico() {
   // Landing Page - Qualificação do Cliente
   if (mostrarLanding) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen bg-zinc-50">
         {/* Header */}
-        <header className="bg-black py-8">
+        <header className="bg-black border-b border-white/10 py-6">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-3 tracking-tight uppercase">
-              Catálogo <span className="text-accent">Kaowz</span>
+            <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 tracking-tight">
+              CATÁLOGO DE LÂMINAS
             </h1>
-            <p className="text-white/50 text-sm md:text-base uppercase tracking-widest">Ferramentas de Corte</p>
+            <p className="text-white/60 text-sm md:text-base">Encontre a faca perfeita para você</p>
           </div>
         </header>
 
-        <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="container mx-auto px-4 py-12 md:py-20">
           {/* Pergunta Principal */}
-          <div className="text-center mb-16 max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
-              Hoje nós produzimos <span className="text-accent">facas específicas</span> para algumas funções:
+          <div className="text-center mb-12 max-w-3xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 mb-4">
+              Hoje nós produzimos facas específicas para algumas funções:
             </h2>
-            <p className="text-xl text-white/70 mb-8">
+            <p className="text-lg text-zinc-600 mb-8">
               Qual tem mais interesse em conhecer primeiro?
             </p>
           </div>
 
           {/* Grid de Categorias */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto mb-20">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-8">
             {categoriasVenda.map((cat, idx) => {
               const Icon = cat.icon;
               return (
                 <div
                   key={idx}
-                  className="group cursor-pointer transition-all hover:-translate-y-2 duration-300"
+                  className="group cursor-pointer transition-all hover:scale-105 relative overflow-hidden rounded-lg"
                   onClick={() => selecionarCategoria(cat.categoria)}
                 >
-                  <div className="relative bg-zinc-900/50 backdrop-blur border border-white/10 hover:border-accent/50 rounded-2xl p-8 transition-all overflow-hidden">
-                    {/* Top accent line */}
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    
+                  {/* Diagonal stripes background */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-transparent">
+                    <div className="absolute top-0 right-0 w-full h-2 bg-gradient-to-r from-transparent via-accent to-accent"></div>
+                    <div className="absolute top-0 right-0 w-2 h-full bg-gradient-to-b from-accent to-transparent"></div>
+                  </div>
+                  
+                  {/* Card content */}
+                  <div className="relative bg-white border border-zinc-200 hover:border-accent hover:shadow-xl p-8 rounded-lg transition-all">
                     <div className="text-center">
-                      <div className="mb-6">
-                        <Icon className="h-20 w-20 mx-auto text-white/80 group-hover:text-accent transition-colors drop-shadow-[0_0_30px_rgba(253,181,40,0.3)]" />
-                      </div>
-                      <div className="mb-2">
-                        <p className="text-white/40 text-xs mb-2 uppercase tracking-[0.2em]">LINHA</p>
-                        <h3 className="text-accent font-black text-3xl mb-2 uppercase tracking-tight">
+                      <Icon className="h-16 w-16 mx-auto mb-4 text-accent drop-shadow-[0_0_20px_rgba(251,146,60,0.5)]" />
+                      <div className="mb-4">
+                        <p className="text-zinc-500 text-sm mb-1 uppercase tracking-wider">LINHA</p>
+                        <h3 className="text-accent font-bold text-2xl mb-1 uppercase tracking-wide drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
                           {cat.subtitulo}
                         </h3>
-                        <p className="text-white/90 text-sm font-medium mb-3">{cat.titulo}</p>
+                        <p className="text-zinc-900 text-sm font-medium">{cat.titulo}</p>
                       </div>
-                      <p className="text-white/50 text-xs mb-6 min-h-[2.5rem]">{cat.descricao}</p>
-                      <div className="inline-flex items-center gap-2 text-accent text-sm font-bold uppercase tracking-wide group-hover:gap-3 transition-all">
-                        <span>Explorar</span>
-                        <span className="text-xl">→</span>
+                      <p className="text-zinc-600 text-xs mb-4">{cat.descricao}</p>
+                      <div className="text-accent text-sm font-semibold group-hover:text-zinc-900 transition-colors">
+                        Ver modelos →
                       </div>
                     </div>
                   </div>
@@ -199,19 +200,20 @@ export default function CatalogoPublico() {
           </div>
 
           {/* Opção Ver Tudo */}
-          <div className="text-center mb-20">
+          <div className="text-center">
             <Button
+              variant="outline"
               size="lg"
               onClick={verTudo}
-              className="bg-transparent border-2 border-accent text-accent hover:bg-accent hover:text-black font-bold text-lg px-12 py-6 rounded-full uppercase tracking-wide transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(253,181,40,0.4)]"
+              className="min-w-[200px] border-accent text-accent hover:bg-accent hover:text-white font-semibold"
             >
-              Ver Todo o Catálogo
+              Ver todo o catálogo
             </Button>
           </div>
 
           {/* WhatsApp de Dúvidas */}
-          <div className="text-center pt-16 border-t border-white/10">
-            <p className="text-white/60 mb-6 text-lg">
+          <div className="text-center mt-12 pt-12 border-t border-zinc-200">
+            <p className="text-zinc-600 mb-4">
               Ficou com alguma dúvida? Fale conosco!
             </p>
             <Button
@@ -219,9 +221,9 @@ export default function CatalogoPublico() {
                 const url = `https://wa.me/5528999025695?text=${encodeURIComponent('Olá! Estou com dúvidas sobre qual categoria escolher.')}`;
                 window.open(url, '_blank');
               }}
-              className="bg-accent hover:bg-accent/90 text-black font-bold text-lg px-10 py-6 rounded-full uppercase tracking-wide shadow-[0_0_30px_rgba(253,181,40,0.3)] hover:shadow-[0_0_50px_rgba(253,181,40,0.5)] transition-all hover:scale-105"
+              className="bg-accent hover:bg-accent/90 text-white font-semibold"
             >
-              <MessageCircle className="h-5 w-5 mr-3" />
+              <MessageCircle className="h-5 w-5 mr-2" />
               Falar no WhatsApp
             </Button>
           </div>
@@ -232,32 +234,30 @@ export default function CatalogoPublico() {
 
   // Catálogo de Produtos
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-zinc-50">
       {/* Header */}
-      <header className="bg-black border-b border-white/10 sticky top-0 z-50 backdrop-blur-sm bg-black/80">
-        <div className="container mx-auto px-4 py-5">
+      <header className="bg-black border-b border-white/10 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setMostrarLanding(true)}
-                className="text-white hover:bg-white/10 hover:text-accent transition-colors"
+                className="text-white hover:bg-white/10"
               >
                 ← Voltar
               </Button>
-              <h1 className="text-2xl md:text-4xl font-bold text-white tracking-tight uppercase">
-                Catálogo <span className="text-accent">Kaowz</span>
-              </h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">CATÁLOGO DE LÂMINAS</h1>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
-              <div className="relative flex-1 md:w-96">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/40" />
+              <div className="relative flex-1 md:w-80">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
                 <Input
                   placeholder="Buscar lâminas..."
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  className="pl-12 bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-accent h-12 rounded-full"
+                  className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-accent"
                 />
               </div>
             </div>
@@ -265,19 +265,19 @@ export default function CatalogoPublico() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar - Categorias */}
-          <aside className="lg:w-72 shrink-0">
-            <div className="bg-zinc-900/50 backdrop-blur border border-white/10 rounded-2xl p-6 sticky top-28">
-              <h3 className="font-bold text-xl mb-6 text-white uppercase tracking-wide">Categorias</h3>
-              <div className="space-y-3">
+          <aside className="lg:w-64 shrink-0">
+            <div className="bg-white border border-zinc-200 rounded-lg p-4 sticky top-24 shadow-sm">
+              <h3 className="font-semibold text-lg mb-4 text-zinc-900">Categorias</h3>
+              <div className="space-y-2">
                 <Button
                   variant={!categoriaAtiva ? "default" : "ghost"}
-                  className={`w-full justify-start text-base font-medium rounded-xl transition-all ${
+                  className={`w-full justify-start ${
                     !categoriaAtiva 
-                      ? 'bg-accent text-black hover:bg-accent/90 shadow-[0_0_20px_rgba(253,181,40,0.3)]' 
-                      : 'text-white hover:bg-white/10 hover:text-accent'
+                      ? 'bg-accent text-white hover:bg-accent/90' 
+                      : 'text-zinc-700 hover:bg-zinc-100'
                   }`}
                   onClick={() => setCategoriaAtiva(null)}
                 >
@@ -287,10 +287,10 @@ export default function CatalogoPublico() {
                   <Button
                     key={cat}
                     variant={categoriaAtiva === cat ? "default" : "ghost"}
-                    className={`w-full justify-start text-base font-medium rounded-xl transition-all ${
+                    className={`w-full justify-start ${
                       categoriaAtiva === cat 
-                        ? 'bg-accent text-black hover:bg-accent/90 shadow-[0_0_20px_rgba(253,181,40,0.3)]' 
-                        : 'text-white hover:bg-white/10 hover:text-accent'
+                        ? 'bg-accent text-white hover:bg-accent/90' 
+                        : 'text-zinc-700 hover:bg-zinc-100'
                     }`}
                     onClick={() => setCategoriaAtiva(cat)}
                   >
@@ -300,9 +300,9 @@ export default function CatalogoPublico() {
               </div>
 
               {/* Filtros adicionais - placeholder para expansão futura */}
-              <div className="mt-8 pt-6 border-t border-white/10">
-                <h4 className="font-medium text-sm mb-3 text-white/50 uppercase tracking-wider">Filtros</h4>
-                <p className="text-xs text-white/30">Em breve mais opções</p>
+              <div className="mt-6 pt-6 border-t border-zinc-200">
+                <h4 className="font-medium text-sm mb-3 text-zinc-500">Filtros</h4>
+                <p className="text-xs text-zinc-400">Em breve mais opções</p>
               </div>
             </div>
           </aside>
@@ -310,56 +310,56 @@ export default function CatalogoPublico() {
           {/* Grid de Produtos */}
           <main className="flex-1">
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-zinc-900/50 border border-white/10 rounded-2xl p-4 animate-pulse">
-                    <div className="aspect-square bg-white/5 rounded-xl mb-3" />
-                    <div className="h-4 bg-white/5 rounded mb-2" />
-                    <div className="h-6 bg-white/5 rounded w-1/2" />
+                  <div key={i} className="bg-white border border-zinc-200 rounded-lg p-4 animate-pulse">
+                    <div className="aspect-square bg-zinc-100 rounded-lg mb-3" />
+                    <div className="h-4 bg-zinc-100 rounded mb-2" />
+                    <div className="h-6 bg-zinc-100 rounded w-1/2" />
                   </div>
                 ))}
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between mb-6">
-                  <p className="text-sm text-white/50 uppercase tracking-wider">
-                    {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'Produto' : 'Produtos'}
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-zinc-600">
+                    Mostrando {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'produto' : 'produtos'}
                   </p>
                   {modelosSelecionados.size > 0 && (
-                    <Badge className="bg-accent text-black font-bold px-4 py-1.5 text-sm rounded-full shadow-[0_0_20px_rgba(253,181,40,0.3)]">
-                      {modelosSelecionados.size} Selecionada{modelosSelecionados.size > 1 ? 's' : ''}
+                    <Badge className="bg-accent text-white">
+                      {modelosSelecionados.size} selecionada(s)
                     </Badge>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {modelosFiltrados.map((modelo) => {
                     const selecionado = modelosSelecionados.has(modelo.id);
                     return (
                       <div
                         key={modelo.id}
-                        className={`group relative overflow-hidden rounded-2xl transition-all hover:-translate-y-1 duration-300 ${
-                          selecionado ? 'ring-2 ring-accent shadow-[0_0_30px_rgba(253,181,40,0.3)]' : ''
+                        className={`group relative overflow-hidden rounded-lg transition-all ${
+                          selecionado ? 'ring-2 ring-accent' : ''
                         }`}
                       >
-                        <div className="bg-zinc-900/50 backdrop-blur border border-white/10 hover:border-accent/50 transition-all rounded-2xl overflow-hidden">
+                        {/* Diagonal accent strip */}
+                        <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/50 to-accent z-10"></div>
+                        
+                        <div className="bg-white border border-zinc-200 hover:border-accent hover:shadow-lg transition-all rounded-lg overflow-hidden">
                           <div className="relative">
-                            {/* Top accent line */}
-                            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10"></div>
-                            
                             {/* Imagem */}
                             <div
-                              className="aspect-square bg-black overflow-hidden cursor-pointer"
+                              className="aspect-square bg-zinc-100 overflow-hidden cursor-pointer"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               {modelo.imagem_modelo ? (
                                 <img
                                   src={modelo.imagem_modelo}
                                   alt={modelo.nome_modelo}
-                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-white/20">
+                                <div className="w-full h-full flex items-center justify-center text-zinc-400">
                                   Sem imagem
                                 </div>
                               )}
@@ -371,43 +371,44 @@ export default function CatalogoPublico() {
                                 e.stopPropagation();
                                 toggleSelecao(modelo.id);
                               }}
-                              className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all z-20 ${
+                              className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all z-20 ${
                                 selecionado
-                                  ? 'bg-accent text-black shadow-[0_0_30px_rgba(253,181,40,0.6)] scale-110'
-                                  : 'bg-black/70 hover:bg-black text-white border-2 border-white/30 hover:border-accent'
+                                  ? 'bg-accent text-white shadow-[0_0_20px_rgba(251,146,60,0.5)]'
+                                  : 'bg-black/60 hover:bg-black border border-white/20 text-white'
                               }`}
                             >
-                              {selecionado && <Check className="h-5 w-5 font-bold" />}
+                              {selecionado && <Check className="h-4 w-4" />}
                             </button>
 
                             {/* Badge de categoria */}
                             {modelo.categoria && (
-                              <Badge className="absolute bottom-4 left-4 bg-accent/90 text-black border-0 font-bold uppercase text-xs px-3 py-1 rounded-full">
+                              <Badge className="absolute bottom-3 left-3 bg-accent text-white border-0">
                                 {modelo.categoria}
                               </Badge>
                             )}
                           </div>
 
                           {/* Info do produto */}
-                          <div className="p-5">
+                          <div className="p-4">
                             <h3
-                              className="font-bold mb-3 line-clamp-2 text-white hover:text-accent transition-colors cursor-pointer text-lg leading-tight"
+                              className="font-semibold mb-2 line-clamp-2 text-zinc-900 hover:text-accent transition-colors cursor-pointer"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               {modelo.nome_modelo}
                             </h3>
-                            <p className="text-3xl font-black text-accent mb-1">
+                            <p className="text-2xl font-bold text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
                               R$ {modelo.preco_base.toFixed(2)}
                             </p>
-                            <div className="text-xs text-white/40 mb-4 uppercase tracking-wider">
-                              12x de R$ {(modelo.preco_base / 12).toFixed(2)}
+                            <div className="text-xs text-zinc-500 mt-1">
+                              em 12x de R$ {(modelo.preco_base / 12).toFixed(2)}
                             </div>
                             <Button
+                              variant="outline"
                               size="sm"
-                              className="w-full bg-transparent border-2 border-accent text-accent hover:bg-accent hover:text-black font-bold uppercase tracking-wide rounded-full transition-all hover:shadow-[0_0_20px_rgba(253,181,40,0.4)]"
+                              className="w-full mt-3 border-zinc-300 text-zinc-700 hover:bg-accent hover:text-white hover:border-accent"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
-                              Ver Detalhes
+                              Ver detalhes
                             </Button>
                           </div>
                         </div>
@@ -417,8 +418,8 @@ export default function CatalogoPublico() {
                 </div>
 
                 {modelosFiltrados.length === 0 && (
-                  <div className="text-center py-20">
-                    <p className="text-white/50 text-lg">Nenhuma lâmina encontrada</p>
+                  <div className="text-center py-12">
+                    <p className="text-zinc-600">Nenhuma lâmina encontrada</p>
                   </div>
                 )}
               </>
@@ -429,14 +430,14 @@ export default function CatalogoPublico() {
 
       {/* Botão WhatsApp Flutuante */}
       {modelosSelecionados.size > 0 && (
-        <div className="fixed bottom-8 right-8 z-50 animate-scale-in">
+        <div className="fixed bottom-6 right-6 z-50">
           <Button
             size="lg"
             onClick={enviarWhatsApp}
-            className="rounded-full bg-accent hover:bg-accent text-black font-black text-lg px-8 py-7 shadow-[0_0_50px_rgba(253,181,40,0.6)] hover:shadow-[0_0_70px_rgba(253,181,40,0.8)] hover:scale-110 transition-all uppercase tracking-wide"
+            className="rounded-full bg-accent hover:bg-accent/90 text-white font-semibold shadow-[0_0_40px_rgba(251,146,60,0.5)] hover:scale-105 transition-all"
           >
-            <MessageCircle className="h-6 w-6 mr-3" />
-            WhatsApp ({modelosSelecionados.size})
+            <MessageCircle className="h-5 w-5 mr-2" />
+            Consultar no WhatsApp ({modelosSelecionados.size})
           </Button>
         </div>
       )}
