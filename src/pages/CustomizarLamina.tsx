@@ -66,7 +66,7 @@ export default function CustomizarLamina() {
   const carregarDados = async () => {
     try {
       const [modelosRes, componentesRes] = await Promise.all([
-        supabase.from('modelos_base').select('*').order('nome_modelo'),
+        supabase.from('modelos').select('*').order('nome_modelo'),
         supabase.from('opcoes_componentes').select('*').order('tipo_opcao')
       ]);
 
