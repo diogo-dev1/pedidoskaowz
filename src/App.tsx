@@ -11,6 +11,7 @@ import Simulador from "./pages/Simulador";
 import AuxilioVendas from "./pages/AuxilioVendas";
 import CatalogoPublico from "./pages/CatalogoPublico";
 import CatalogoDetalhe from "./pages/CatalogoDetalhe";
+import CustomizarLamina from "./pages/CustomizarLamina";
 import GerenciarModelos from "./pages/admin/GerenciarModelos";
 import GerenciarComponentes from "./pages/admin/GerenciarComponentes";
 import MensagensPadrao from "./pages/MensagensPadrao";
@@ -68,6 +69,10 @@ const App = () => (
             <Route
               path="/catalogo/:id"
               element={<CatalogoDetalhe />}
+            />
+            <Route
+              path="/customizar-lamina"
+              element={<CustomizarLamina />}
             />
             <Route
               path="/auxilio-vendas"

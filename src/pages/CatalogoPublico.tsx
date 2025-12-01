@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import CustomizarLaminaModal from '@/components/CustomizarLaminaModal';
 
 interface Modelo {
   id: string;
@@ -27,7 +26,6 @@ export default function CatalogoPublico() {
   const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
-  const [modalCustomizarOpen, setModalCustomizarOpen] = useState(false);
 
   const categorias = ['EDC', 'Campo', 'Cozinha', 'KZR', 'Upsell'];
 
@@ -214,7 +212,7 @@ export default function CatalogoPublico() {
             
             <Button
               size="lg"
-              onClick={() => setModalCustomizarOpen(true)}
+              onClick={() => navigate('/customizar-lamina')}
               className="w-full sm:w-auto sm:min-w-[200px] bg-accent hover:bg-accent/90 text-white font-semibold text-sm md:text-base"
             >
               <Wrench className="h-4 w-4 md:h-5 md:w-5 mr-2" />
@@ -239,12 +237,6 @@ export default function CatalogoPublico() {
             </Button>
           </div>
         </div>
-
-        {/* Modal de Customização */}
-        <CustomizarLaminaModal 
-          open={modalCustomizarOpen} 
-          onOpenChange={setModalCustomizarOpen} 
-        />
       </div>
     );
   }
