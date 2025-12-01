@@ -8,7 +8,9 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
 import Auth from "./pages/Auth";
 import Simulador from "./pages/Simulador";
-import Catalogo from "./pages/Catalogo";
+import AuxilioVendas from "./pages/AuxilioVendas";
+import CatalogoPublico from "./pages/CatalogoPublico";
+import CatalogoDetalhe from "./pages/CatalogoDetalhe";
 import GerenciarModelos from "./pages/admin/GerenciarModelos";
 import GerenciarComponentes from "./pages/admin/GerenciarComponentes";
 import MensagensPadrao from "./pages/MensagensPadrao";
@@ -61,10 +63,18 @@ const App = () => (
             />
             <Route
               path="/catalogo"
+              element={<CatalogoPublico />}
+            />
+            <Route
+              path="/catalogo/:id"
+              element={<CatalogoDetalhe />}
+            />
+            <Route
+              path="/auxilio-vendas"
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <Catalogo />
+                    <AuxilioVendas />
                   </Layout>
                 </ProtectedRoute>
               }
