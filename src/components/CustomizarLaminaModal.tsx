@@ -58,6 +58,7 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
   const [laser, setLaser] = useState(false);
   const [textoLaser, setTextoLaser] = useState('');
   const [buscaModelo, setBuscaModelo] = useState('');
+  const [categoriaFiltro, setCategoriaFiltro] = useState<string>('');
   
   // Lista de lâminas customizadas
   const [laminasCustomizadas, setLaminasCustomizadas] = useState<LaminaCustomizada[]>([]);
@@ -90,9 +91,13 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
   const empunhaduras = componentes.filter(c => c.tipo_opcao === 'Empunhadura');
   const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
 
-  const modelosFiltrados = modelos.filter(m => 
-    m.nome_modelo.toLowerCase().includes(buscaModelo.toLowerCase())
-  );
+  const categorias = ['EDC', 'Campo', 'Cozinha', 'KZR', 'Upsell', 'Customização'];
+  
+  const modelosFiltrados = modelos.filter(m => {
+    const matchBusca = m.nome_modelo.toLowerCase().includes(buscaModelo.toLowerCase());
+    const matchCategoria = !categoriaFiltro || m.categoria === categoriaFiltro;
+    return matchBusca && matchCategoria;
+  });
 
   const calcularSubtotal = (): number => {
     const modelo = modelos.find(m => m.id === modeloSelecionado);
@@ -156,6 +161,7 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
     setLaser(false);
     setTextoLaser('');
     setBuscaModelo('');
+    setCategoriaFiltro('');
   };
 
   const enviarWhatsApp = () => {
@@ -211,6 +217,29 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
                 <h3 className="font-semibold text-base">1. Escolha o Modelo</h3>
                 <Badge variant="secondary" className="text-xs">Obrigatório</Badge>
               </div>
+
+              {/* Filtros de Categoria */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant={!categoriaFiltro ? "default" : "outline"}
+                  onClick={() => setCategoriaFiltro('')}
+                  className="h-8 text-xs"
+                >
+                  Todas
+                </Button>
+                {categorias.map(cat => (
+                  <Button
+                    key={cat}
+                    size="sm"
+                    variant={categoriaFiltro === cat ? "default" : "outline"}
+                    onClick={() => setCategoriaFiltro(cat)}
+                    className="h-8 text-xs"
+                  >
+                    {cat}
+                  </Button>
+                ))}
+              </div>
               
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -222,27 +251,40 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto border border-border rounded-lg p-2">
-                {modelosFiltrados.map(modelo => (
-                  <button
-                    key={modelo.id}
-                    onClick={() => setModeloSelecionado(modelo.id)}
-                    className={`p-3 rounded-lg text-left transition-all ${
-                      modeloSelecionado === modelo.id
-                        ? 'bg-accent text-accent-foreground shadow-md'
-                        : 'bg-muted hover:bg-muted/80'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">{modelo.nome_modelo}</div>
-                        <div className="text-xs text-muted-foreground">R$ {modelo.preco_base.toFixed(2)}</div>
+              {modelosFiltrados.length === 0 ? (
+                <div className="text-center py-8 text-sm text-muted-foreground border border-border rounded-lg">
+                  Nenhum modelo encontrado
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto border border-border rounded-lg p-2">
+                  {modelosFiltrados.map(modelo => (
+                    <button
+                      key={modelo.id}
+                      onClick={() => setModeloSelecionado(modelo.id)}
+                      className={`p-3 rounded-lg text-left transition-all ${
+                        modeloSelecionado === modelo.id
+                          ? 'bg-accent text-accent-foreground shadow-md'
+                          : 'bg-muted hover:bg-muted/80'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">{modelo.nome_modelo}</div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs font-semibold">R$ {modelo.preco_base.toFixed(2)}</span>
+                            {modelo.categoria && (
+                              <Badge variant="outline" className="text-xs px-1.5 py-0">
+                                {modelo.categoria}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        {modeloSelecionado === modelo.id && <Check className="h-4 w-4 flex-shrink-0" />}
                       </div>
-                      {modeloSelecionado === modelo.id && <Check className="h-4 w-4" />}
-                    </div>
-                  </button>
-                ))}
-              </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Opções de Customização - Accordion */}
