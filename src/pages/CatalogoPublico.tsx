@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees } from 'lucide-react';
+import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import CustomizarLaminaModal from '@/components/CustomizarLaminaModal';
 
 interface Modelo {
   id: string;
@@ -26,6 +27,7 @@ export default function CatalogoPublico() {
   const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
+  const [modalCustomizarOpen, setModalCustomizarOpen] = useState(false);
 
   const categorias = ['EDC', 'Campo', 'Cozinha', 'KZR', 'Upsell'];
 
@@ -199,8 +201,8 @@ export default function CatalogoPublico() {
             })}
           </div>
 
-          {/* Opção Ver Tudo */}
-          <div className="text-center">
+          {/* Opções de Ação */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button
               variant="outline"
               size="lg"
@@ -208,6 +210,15 @@ export default function CatalogoPublico() {
               className="min-w-[200px] border-accent text-accent hover:bg-accent hover:text-white font-semibold"
             >
               Ver todo o catálogo
+            </Button>
+            
+            <Button
+              size="lg"
+              onClick={() => setModalCustomizarOpen(true)}
+              className="min-w-[200px] bg-accent hover:bg-accent/90 text-white font-semibold"
+            >
+              <Wrench className="h-5 w-5 mr-2" />
+              Montar Minha Própria Lâmina
             </Button>
           </div>
 
@@ -441,6 +452,12 @@ export default function CatalogoPublico() {
           </Button>
         </div>
       )}
+
+      {/* Modal de Customização */}
+      <CustomizarLaminaModal 
+        open={modalCustomizarOpen} 
+        onOpenChange={setModalCustomizarOpen} 
+      />
     </div>
   );
 }
