@@ -31,32 +31,32 @@ export default function CatalogoPublico() {
 
   const categoriasVenda = [
     {
-      titulo: 'Facas Utilitárias (EDC)',
+      titulo: 'Facas Utilitárias',
+      subtitulo: "EDC's",
       descricao: 'Para portar no dia-a-dia',
       categoria: 'EDC',
       icon: Sword,
-      cor: 'from-orange-500 to-red-500'
     },
     {
-      titulo: 'Facas Táticas e Defesa',
+      titulo: 'Facas Táticas',
+      subtitulo: 'DEFESA',
       descricao: 'Resistência e performance',
       categoria: 'Campo',
       icon: Shield,
-      cor: 'from-slate-600 to-slate-800'
     },
     {
       titulo: 'Facas de Churrasco',
+      subtitulo: 'COZINHA',
       descricao: 'Precisão no corte',
       categoria: 'Cozinha',
       icon: ChefHat,
-      cor: 'from-amber-600 to-orange-700'
     },
     {
-      titulo: 'Facas de Campo/Caça',
+      titulo: 'Facas de Campo',
+      subtitulo: 'CAÇA',
       descricao: 'Durabilidade extrema',
       categoria: 'Campo',
       icon: Trees,
-      cor: 'from-green-700 to-emerald-900'
     }
   ];
 
@@ -139,74 +139,89 @@ export default function CatalogoPublico() {
   // Landing Page - Qualificação do Cliente
   if (mostrarLanding) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-black">
         {/* Header */}
-        <header className="bg-[#262626] text-white py-6">
+        <header className="bg-black border-b border-white/10 py-6">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">Catálogo de Lâminas</h1>
-            <p className="text-white/80">Encontre a faca perfeita para você</p>
+            <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 tracking-tight">
+              CATÁLOGO DE LÂMINAS
+            </h1>
+            <p className="text-white/60 text-sm md:text-base">Encontre a faca perfeita para você</p>
           </div>
         </header>
 
         <div className="container mx-auto px-4 py-12 md:py-20">
           {/* Pergunta Principal */}
           <div className="text-center mb-12 max-w-3xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
               Hoje nós produzimos facas específicas para algumas funções:
             </h2>
-            <p className="text-lg text-muted-foreground mb-8">
+            <p className="text-lg text-white/70 mb-8">
               Qual tem mais interesse em conhecer primeiro?
             </p>
           </div>
 
           {/* Grid de Categorias */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
             {categoriasVenda.map((cat, idx) => {
               const Icon = cat.icon;
               return (
-                <Card
+                <div
                   key={idx}
-                  className="group cursor-pointer transition-all hover:shadow-2xl hover:scale-105 overflow-hidden"
+                  className="group cursor-pointer transition-all hover:scale-105 relative overflow-hidden rounded-lg"
                   onClick={() => selecionarCategoria(cat.categoria)}
                 >
-                  <div className={`bg-gradient-to-br ${cat.cor} p-8 text-white`}>
-                    <Icon className="h-12 w-12 mb-4 mx-auto" />
+                  {/* Diagonal stripes background */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-transparent">
+                    <div className="absolute top-0 right-0 w-full h-2 bg-gradient-to-r from-transparent via-accent to-accent"></div>
+                    <div className="absolute top-0 right-0 w-2 h-full bg-gradient-to-b from-accent to-transparent"></div>
                   </div>
-                  <div className="p-6 text-center">
-                    <h3 className="font-bold text-lg mb-2">{cat.titulo}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">{cat.descricao}</p>
-                    <Button variant="ghost" size="sm" className="w-full">
-                      Ver modelos
-                    </Button>
+                  
+                  {/* Card content */}
+                  <div className="relative bg-gradient-to-br from-zinc-900 to-black border border-white/10 p-8 rounded-lg transition-all group-hover:border-accent/50">
+                    <div className="text-center">
+                      <Icon className="h-16 w-16 mx-auto mb-4 text-accent drop-shadow-[0_0_20px_rgba(251,146,60,0.5)]" />
+                      <div className="mb-4">
+                        <p className="text-white/60 text-sm mb-1 uppercase tracking-wider">LINHA</p>
+                        <h3 className="text-accent font-bold text-2xl mb-1 uppercase tracking-wide drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
+                          {cat.subtitulo}
+                        </h3>
+                        <p className="text-white text-sm">{cat.titulo}</p>
+                      </div>
+                      <p className="text-white/50 text-xs mb-4">{cat.descricao}</p>
+                      <div className="text-accent text-sm font-semibold group-hover:text-white transition-colors">
+                        Ver modelos →
+                      </div>
+                    </div>
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
 
           {/* Opção Ver Tudo */}
-          <div className="text-center">
+          <div className="text-center mb-12">
             <Button
               variant="outline"
               size="lg"
               onClick={verTudo}
-              className="min-w-[200px]"
+              className="min-w-[200px] border-accent text-accent hover:bg-accent hover:text-black font-semibold"
             >
               Ver todo o catálogo
             </Button>
           </div>
 
           {/* WhatsApp de Dúvidas */}
-          <div className="text-center mt-12 pt-12 border-t">
-            <p className="text-muted-foreground mb-4">
+          <div className="text-center pt-12 border-t border-white/10">
+            <p className="text-white/60 mb-4">
               Ficou com alguma dúvida? Fale conosco!
             </p>
             <Button
-              variant="outline"
               onClick={() => {
                 const url = `https://wa.me/5528999025695?text=${encodeURIComponent('Olá! Estou com dúvidas sobre qual categoria escolher.')}`;
                 window.open(url, '_blank');
               }}
+              className="bg-accent hover:bg-accent/90 text-black font-semibold"
             >
               <MessageCircle className="h-5 w-5 mr-2" />
               Falar no WhatsApp
@@ -219,9 +234,9 @@ export default function CatalogoPublico() {
 
   // Catálogo de Produtos
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="bg-[#262626] text-white sticky top-0 z-50 shadow-lg">
+      <header className="bg-black border-b border-white/10 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -233,16 +248,16 @@ export default function CatalogoPublico() {
               >
                 ← Voltar
               </Button>
-              <h1 className="text-2xl md:text-3xl font-bold">Catálogo de Lâminas</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">CATÁLOGO DE LÂMINAS</h1>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
               <div className="relative flex-1 md:w-80">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
                 <Input
                   placeholder="Buscar lâminas..."
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  className="pl-10 bg-background/10 border-white/20 text-white placeholder:text-white/60"
+                  className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-accent"
                 />
               </div>
             </div>
@@ -254,12 +269,16 @@ export default function CatalogoPublico() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar - Categorias */}
           <aside className="lg:w-64 shrink-0">
-            <Card className="p-4 sticky top-24">
-              <h3 className="font-semibold text-lg mb-4">Categorias</h3>
+            <div className="bg-zinc-900 border border-white/10 rounded-lg p-4 sticky top-24">
+              <h3 className="font-semibold text-lg mb-4 text-white">Categorias</h3>
               <div className="space-y-2">
                 <Button
                   variant={!categoriaAtiva ? "default" : "ghost"}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${
+                    !categoriaAtiva 
+                      ? 'bg-accent text-black hover:bg-accent/90' 
+                      : 'text-white hover:bg-white/10'
+                  }`}
                   onClick={() => setCategoriaAtiva(null)}
                 >
                   Todas
@@ -268,7 +287,11 @@ export default function CatalogoPublico() {
                   <Button
                     key={cat}
                     variant={categoriaAtiva === cat ? "default" : "ghost"}
-                    className="w-full justify-start"
+                    className={`w-full justify-start ${
+                      categoriaAtiva === cat 
+                        ? 'bg-accent text-black hover:bg-accent/90' 
+                        : 'text-white hover:bg-white/10'
+                    }`}
                     onClick={() => setCategoriaAtiva(cat)}
                   >
                     {cat}
@@ -277,11 +300,11 @@ export default function CatalogoPublico() {
               </div>
 
               {/* Filtros adicionais - placeholder para expansão futura */}
-              <div className="mt-6 pt-6 border-t">
-                <h4 className="font-medium text-sm mb-3 text-muted-foreground">Filtros</h4>
-                <p className="text-xs text-muted-foreground">Em breve mais opções</p>
+              <div className="mt-6 pt-6 border-t border-white/10">
+                <h4 className="font-medium text-sm mb-3 text-white/60">Filtros</h4>
+                <p className="text-xs text-white/40">Em breve mais opções</p>
               </div>
-            </Card>
+            </div>
           </aside>
 
           {/* Grid de Produtos */}
@@ -289,21 +312,21 @@ export default function CatalogoPublico() {
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="p-4 animate-pulse">
-                    <div className="aspect-square bg-muted rounded-lg mb-3" />
-                    <div className="h-4 bg-muted rounded mb-2" />
-                    <div className="h-6 bg-muted rounded w-1/2" />
-                  </Card>
+                  <div key={i} className="bg-zinc-900 border border-white/10 rounded-lg p-4 animate-pulse">
+                    <div className="aspect-square bg-white/5 rounded-lg mb-3" />
+                    <div className="h-4 bg-white/5 rounded mb-2" />
+                    <div className="h-6 bg-white/5 rounded w-1/2" />
+                  </div>
                 ))}
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-white/60">
                     Mostrando {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'produto' : 'produtos'}
                   </p>
                   {modelosSelecionados.size > 0 && (
-                    <Badge variant="secondary" className="text-sm">
+                    <Badge className="bg-accent text-black">
                       {modelosSelecionados.size} selecionada(s)
                     </Badge>
                   )}
@@ -313,85 +336,90 @@ export default function CatalogoPublico() {
                   {modelosFiltrados.map((modelo) => {
                     const selecionado = modelosSelecionados.has(modelo.id);
                     return (
-                      <Card
+                      <div
                         key={modelo.id}
-                        className={`group cursor-pointer transition-all hover:shadow-lg ${
+                        className={`group relative overflow-hidden rounded-lg transition-all ${
                           selecionado ? 'ring-2 ring-accent' : ''
                         }`}
                       >
-                        <div className="relative">
-                          {/* Imagem */}
-                          <div
-                            className="aspect-square bg-muted rounded-t-lg overflow-hidden"
-                            onClick={() => navigate(`/catalogo/${modelo.id}`)}
-                          >
-                            {modelo.imagem_modelo ? (
-                              <img
-                                src={modelo.imagem_modelo}
-                                alt={modelo.nome_modelo}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                                Sem imagem
-                              </div>
+                        {/* Diagonal accent strip */}
+                        <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/50 to-accent z-10"></div>
+                        
+                        <div className="bg-zinc-900 border border-white/10 hover:border-accent/50 transition-all rounded-lg overflow-hidden">
+                          <div className="relative">
+                            {/* Imagem */}
+                            <div
+                              className="aspect-square bg-black overflow-hidden cursor-pointer"
+                              onClick={() => navigate(`/catalogo/${modelo.id}`)}
+                            >
+                              {modelo.imagem_modelo ? (
+                                <img
+                                  src={modelo.imagem_modelo}
+                                  alt={modelo.nome_modelo}
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-white/30">
+                                  Sem imagem
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Checkbox de seleção */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSelecao(modelo.id);
+                              }}
+                              className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all z-20 ${
+                                selecionado
+                                  ? 'bg-accent text-black shadow-[0_0_20px_rgba(251,146,60,0.5)]'
+                                  : 'bg-black/60 hover:bg-black border border-white/20'
+                              }`}
+                            >
+                              {selecionado && <Check className="h-4 w-4" />}
+                            </button>
+
+                            {/* Badge de categoria */}
+                            {modelo.categoria && (
+                              <Badge className="absolute bottom-3 left-3 bg-accent text-black border-0">
+                                {modelo.categoria}
+                              </Badge>
                             )}
                           </div>
 
-                          {/* Checkbox de seleção */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleSelecao(modelo.id);
-                            }}
-                            className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                              selecionado
-                                ? 'bg-accent text-accent-foreground'
-                                : 'bg-background/80 hover:bg-background border border-border'
-                            }`}
-                          >
-                            {selecionado && <Check className="h-4 w-4" />}
-                          </button>
-
-                          {/* Badge de categoria */}
-                          {modelo.categoria && (
-                            <Badge className="absolute bottom-3 left-3">
-                              {modelo.categoria}
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Info do produto */}
-                        <div className="p-4">
-                          <h3
-                            className="font-semibold mb-2 line-clamp-2 hover:text-accent transition-colors"
-                            onClick={() => navigate(`/catalogo/${modelo.id}`)}
-                          >
-                            {modelo.nome_modelo}
-                          </h3>
-                          <p className="text-2xl font-bold text-accent">
-                            R$ {modelo.preco_base.toFixed(2)}
-                          </p>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            em 12x de R$ {(modelo.preco_base / 12).toFixed(2)}
+                          {/* Info do produto */}
+                          <div className="p-4">
+                            <h3
+                              className="font-semibold mb-2 line-clamp-2 text-white hover:text-accent transition-colors cursor-pointer"
+                              onClick={() => navigate(`/catalogo/${modelo.id}`)}
+                            >
+                              {modelo.nome_modelo}
+                            </h3>
+                            <p className="text-2xl font-bold text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
+                              R$ {modelo.preco_base.toFixed(2)}
+                            </p>
+                            <div className="text-xs text-white/40 mt-1">
+                              em 12x de R$ {(modelo.preco_base / 12).toFixed(2)}
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full mt-3 border-white/20 text-white hover:bg-accent hover:text-black hover:border-accent"
+                              onClick={() => navigate(`/catalogo/${modelo.id}`)}
+                            >
+                              Ver detalhes
+                            </Button>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full mt-3"
-                            onClick={() => navigate(`/catalogo/${modelo.id}`)}
-                          >
-                            Ver detalhes
-                          </Button>
                         </div>
-                      </Card>
+                      </div>
                     );
                   })}
                 </div>
 
                 {modelosFiltrados.length === 0 && (
                   <div className="text-center py-12">
-                    <p className="text-muted-foreground">Nenhuma lâmina encontrada</p>
+                    <p className="text-white/60">Nenhuma lâmina encontrada</p>
                   </div>
                 )}
               </>
@@ -406,7 +434,7 @@ export default function CatalogoPublico() {
           <Button
             size="lg"
             onClick={enviarWhatsApp}
-            className="rounded-full shadow-2xl hover:scale-105 transition-transform"
+            className="rounded-full bg-accent hover:bg-accent/90 text-black font-semibold shadow-[0_0_40px_rgba(251,146,60,0.5)] hover:scale-105 transition-all"
           >
             <MessageCircle className="h-5 w-5 mr-2" />
             Consultar no WhatsApp ({modelosSelecionados.size})
