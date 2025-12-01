@@ -43,7 +43,7 @@ export default function CatalogoDetalhe() {
         .from('catalogo_modelos')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setModelo(data);

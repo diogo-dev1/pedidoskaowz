@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface Modelo {
@@ -19,17 +19,69 @@ interface Modelo {
 
 export default function CatalogoPublico() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
   const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [mostrarLanding, setMostrarLanding] = useState(true);
 
   const categorias = ['EDC', 'Campo', 'Cozinha', 'KZR', 'Upsell'];
 
+  const categoriasVenda = [
+    {
+      titulo: 'Facas Utilitárias (EDC)',
+      descricao: 'Para portar no dia-a-dia',
+      categoria: 'EDC',
+      icon: Sword,
+      cor: 'from-orange-500 to-red-500'
+    },
+    {
+      titulo: 'Facas Táticas e Defesa',
+      descricao: 'Resistência e performance',
+      categoria: 'Campo',
+      icon: Shield,
+      cor: 'from-slate-600 to-slate-800'
+    },
+    {
+      titulo: 'Facas de Churrasco',
+      descricao: 'Precisão no corte',
+      categoria: 'Cozinha',
+      icon: ChefHat,
+      cor: 'from-amber-600 to-orange-700'
+    },
+    {
+      titulo: 'Facas de Campo/Caça',
+      descricao: 'Durabilidade extrema',
+      categoria: 'Campo',
+      icon: Trees,
+      cor: 'from-green-700 to-emerald-900'
+    }
+  ];
+
   useEffect(() => {
     carregarModelos();
+    
+    // Verifica se há categoria nos parâmetros da URL
+    const catParam = searchParams.get('categoria');
+    if (catParam) {
+      setCategoriaAtiva(catParam);
+      setMostrarLanding(false);
+    }
   }, []);
+
+  const selecionarCategoria = (categoria: string) => {
+    setCategoriaAtiva(categoria);
+    setMostrarLanding(false);
+    setSearchParams({ categoria });
+  };
+
+  const verTudo = () => {
+    setMostrarLanding(false);
+    setCategoriaAtiva(null);
+    setSearchParams({});
+  };
 
   const carregarModelos = async () => {
     try {
@@ -84,13 +136,105 @@ export default function CatalogoPublico() {
     window.open(url, '_blank');
   };
 
+  // Landing Page - Qualificação do Cliente
+  if (mostrarLanding) {
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="bg-[#262626] text-white py-6">
+          <div className="container mx-auto px-4 text-center">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">Catálogo de Lâminas</h1>
+            <p className="text-white/80">Encontre a faca perfeita para você</p>
+          </div>
+        </header>
+
+        <div className="container mx-auto px-4 py-12 md:py-20">
+          {/* Pergunta Principal */}
+          <div className="text-center mb-12 max-w-3xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">
+              Hoje nós produzimos facas específicas para algumas funções:
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8">
+              Qual tem mais interesse em conhecer primeiro?
+            </p>
+          </div>
+
+          {/* Grid de Categorias */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-8">
+            {categoriasVenda.map((cat, idx) => {
+              const Icon = cat.icon;
+              return (
+                <Card
+                  key={idx}
+                  className="group cursor-pointer transition-all hover:shadow-2xl hover:scale-105 overflow-hidden"
+                  onClick={() => selecionarCategoria(cat.categoria)}
+                >
+                  <div className={`bg-gradient-to-br ${cat.cor} p-8 text-white`}>
+                    <Icon className="h-12 w-12 mb-4 mx-auto" />
+                  </div>
+                  <div className="p-6 text-center">
+                    <h3 className="font-bold text-lg mb-2">{cat.titulo}</h3>
+                    <p className="text-sm text-muted-foreground mb-4">{cat.descricao}</p>
+                    <Button variant="ghost" size="sm" className="w-full">
+                      Ver modelos
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Opção Ver Tudo */}
+          <div className="text-center">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={verTudo}
+              className="min-w-[200px]"
+            >
+              Ver todo o catálogo
+            </Button>
+          </div>
+
+          {/* WhatsApp de Dúvidas */}
+          <div className="text-center mt-12 pt-12 border-t">
+            <p className="text-muted-foreground mb-4">
+              Ficou com alguma dúvida? Fale conosco!
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const url = `https://wa.me/5528999025695?text=${encodeURIComponent('Olá! Estou com dúvidas sobre qual categoria escolher.')}`;
+                window.open(url, '_blank');
+              }}
+            >
+              <MessageCircle className="h-5 w-5 mr-2" />
+              Falar no WhatsApp
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Catálogo de Produtos
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-[#262626] text-white sticky top-0 z-50 shadow-lg">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <h1 className="text-2xl md:text-3xl font-bold">Catálogo de Lâminas</h1>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMostrarLanding(true)}
+                className="text-white hover:bg-white/10"
+              >
+                ← Voltar
+              </Button>
+              <h1 className="text-2xl md:text-3xl font-bold">Catálogo de Lâminas</h1>
+            </div>
             <div className="flex gap-2 w-full md:w-auto">
               <div className="relative flex-1 md:w-80">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
