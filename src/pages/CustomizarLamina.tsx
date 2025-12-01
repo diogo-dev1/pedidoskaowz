@@ -215,8 +215,8 @@ export default function CustomizarLamina() {
       <div className="container mx-auto px-4 py-6">
         {/* Miniatura do modelo selecionado */}
         {!loading && modeloSelecionado && (
-          <div className="mb-6 flex justify-center animate-fade-in">
-            <div className="relative w-full max-w-[600px] h-40 md:h-48 rounded-lg overflow-hidden border-2 border-accent shadow-lg bg-white p-4">
+          <div className="mb-4 md:mb-6 flex justify-center animate-fade-in">
+            <div className="relative w-full max-w-[300px] md:max-w-[500px] h-32 md:h-40 rounded-lg overflow-hidden border border-accent shadow-lg bg-white p-2 md:p-4">
               <img 
                 src={modelos.find(m => m.id === modeloSelecionado)?.categoria === 'EDC' 
                   ? edcKnife 
@@ -233,24 +233,24 @@ export default function CustomizarLamina() {
         {loading ? (
           <div className="py-8 text-center text-muted-foreground">Carregando opções...</div>
         ) : (
-          <div className="max-w-4xl mx-auto">
-            <div className="grid lg:grid-cols-3 gap-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
               {/* Coluna Principal - Configuração */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-4 md:space-y-6">
                 {/* Seleção de Modelo */}
-                <div className="bg-white rounded-lg border border-zinc-200 p-4 md:p-6 space-y-4">
+                <div className="bg-white rounded-lg border border-zinc-200 p-3 md:p-6 space-y-3 md:space-y-4">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-lg">1. Escolha o Modelo</h3>
-                    <Badge variant="secondary">Obrigatório</Badge>
+                    <h3 className="font-semibold text-base md:text-lg">1. Escolha o Modelo</h3>
+                    <Badge variant="secondary" className="text-xs">Obrigatório</Badge>
                   </div>
 
                   {/* Filtros de Categoria */}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5 md:gap-2">
                     <Button
                       size="sm"
                       variant={!categoriaFiltro ? "default" : "outline"}
                       onClick={() => setCategoriaFiltro('')}
-                      className="h-8 text-xs"
+                      className="h-7 md:h-8 text-xs px-2 md:px-3"
                     >
                       Todas
                     </Button>
@@ -260,7 +260,7 @@ export default function CustomizarLamina() {
                         size="sm"
                         variant={categoriaFiltro === cat ? "default" : "outline"}
                         onClick={() => setCategoriaFiltro(cat)}
-                        className="h-8 text-xs"
+                        className="h-7 md:h-8 text-xs px-2 md:px-3"
                       >
                         {cat}
                       </Button>
@@ -278,16 +278,16 @@ export default function CustomizarLamina() {
                   </div>
 
                   {modelosFiltrados.length === 0 ? (
-                    <div className="text-center py-8 text-sm text-muted-foreground border border-border rounded-lg">
+                    <div className="text-center py-6 md:py-8 text-xs md:text-sm text-muted-foreground border border-border rounded-lg">
                       Nenhum modelo encontrado
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto border border-border rounded-lg p-2">
+                    <div className="grid grid-cols-1 gap-1.5 md:gap-2 max-h-48 md:max-h-60 overflow-y-auto border border-border rounded-lg p-1.5 md:p-2">
                       {modelosFiltrados.map(modelo => (
                         <button
                           key={modelo.id}
                           onClick={() => setModeloSelecionado(modelo.id)}
-                          className={`p-3 rounded-lg text-left transition-all ${
+                          className={`p-2 md:p-3 rounded-lg text-left transition-all ${
                             modeloSelecionado === modelo.id
                               ? 'bg-accent text-accent-foreground shadow-md'
                               : 'bg-muted hover:bg-muted/80'
@@ -295,17 +295,17 @@ export default function CustomizarLamina() {
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm truncate">{modelo.nome_modelo}</div>
-                              <div className="flex items-center gap-2 mt-0.5">
+                              <div className="font-medium text-xs md:text-sm truncate">{modelo.nome_modelo}</div>
+                              <div className="flex items-center gap-1.5 md:gap-2 mt-0.5">
                                 <span className="text-xs font-semibold">R$ {modelo.preco_base.toFixed(2)}</span>
                                 {modelo.categoria && (
-                                  <Badge variant="outline" className="text-xs px-1.5 py-0">
+                                  <Badge variant="outline" className="text-[10px] md:text-xs px-1 md:px-1.5 py-0">
                                     {modelo.categoria}
                                   </Badge>
                                 )}
                               </div>
                             </div>
-                            {modeloSelecionado === modelo.id && <Check className="h-4 w-4 flex-shrink-0" />}
+                            {modeloSelecionado === modelo.id && <Check className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />}
                           </div>
                         </button>
                       ))}
@@ -315,26 +315,26 @@ export default function CustomizarLamina() {
 
                 {/* Opções de Customização */}
                 {modeloSelecionado && (
-                  <div className="bg-white rounded-lg border border-zinc-200 p-4 md:p-6">
+                  <div className="bg-white rounded-lg border border-zinc-200 p-3 md:p-6">
                     <Accordion type="single" collapsible className="w-full">
                       <AccordionItem value="aco" className="border-border">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          2. Tipo de Aço {acoSelecionado && <Badge variant="outline" className="ml-2 text-xs">Selecionado</Badge>}
+                        <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
+                          2. Tipo de Aço {acoSelecionado && <Badge variant="outline" className="ml-2 text-[10px] md:text-xs">Selecionado</Badge>}
                         </AccordionTrigger>
-                        <AccordionContent className="space-y-2 pt-2">
+                        <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
                           {acos.map(aco => (
                             <button
                               key={aco.id}
                               onClick={() => setAcoSelecionado(aco.id)}
-                              className={`w-full p-2 rounded text-left text-sm transition-all ${
+                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
                                 acoSelecionado === aco.id
                                   ? 'bg-accent text-accent-foreground'
                                   : 'bg-muted hover:bg-muted/80'
                               }`}
                             >
-                              <div className="flex items-center justify-between">
-                                <span>{aco.nome_opcao}</span>
-                                <span className="text-xs">{aco.preco_adicional > 0 ? `+R$ ${aco.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="truncate">{aco.nome_opcao}</span>
+                                <span className="text-[10px] md:text-xs whitespace-nowrap">{aco.preco_adicional > 0 ? `+R$ ${aco.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
                               </div>
                             </button>
                           ))}
@@ -342,23 +342,23 @@ export default function CustomizarLamina() {
                       </AccordionItem>
 
                       <AccordionItem value="acabamento" className="border-border">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          3. Acabamento {acabamentoSelecionado && <Badge variant="outline" className="ml-2 text-xs">Selecionado</Badge>}
+                        <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
+                          3. Acabamento {acabamentoSelecionado && <Badge variant="outline" className="ml-2 text-[10px] md:text-xs">Selecionado</Badge>}
                         </AccordionTrigger>
-                        <AccordionContent className="space-y-2 pt-2">
+                        <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
                           {acabamentos.map(acabamento => (
                             <button
                               key={acabamento.id}
                               onClick={() => setAcabamentoSelecionado(acabamento.id)}
-                              className={`w-full p-2 rounded text-left text-sm transition-all ${
+                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
                                 acabamentoSelecionado === acabamento.id
                                   ? 'bg-accent text-accent-foreground'
                                   : 'bg-muted hover:bg-muted/80'
                               }`}
                             >
-                              <div className="flex items-center justify-between">
-                                <span>{acabamento.nome_opcao}</span>
-                                <span className="text-xs">{acabamento.preco_adicional > 0 ? `+R$ ${acabamento.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="truncate">{acabamento.nome_opcao}</span>
+                                <span className="text-[10px] md:text-xs whitespace-nowrap">{acabamento.preco_adicional > 0 ? `+R$ ${acabamento.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
                               </div>
                             </button>
                           ))}
@@ -366,23 +366,23 @@ export default function CustomizarLamina() {
                       </AccordionItem>
 
                       <AccordionItem value="empunhadura" className="border-border">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          4. Empunhadura {empunhaduraSelecionada && <Badge variant="outline" className="ml-2 text-xs">Selecionado</Badge>}
+                        <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
+                          4. Empunhadura {empunhaduraSelecionada && <Badge variant="outline" className="ml-2 text-[10px] md:text-xs">Selecionado</Badge>}
                         </AccordionTrigger>
-                        <AccordionContent className="space-y-2 pt-2">
+                        <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
                           {empunhaduras.map(empunhadura => (
                             <button
                               key={empunhadura.id}
                               onClick={() => setEmpunhaduraSelecionada(empunhadura.id)}
-                              className={`w-full p-2 rounded text-left text-sm transition-all ${
+                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
                                 empunhaduraSelecionada === empunhadura.id
                                   ? 'bg-accent text-accent-foreground'
                                   : 'bg-muted hover:bg-muted/80'
                               }`}
                             >
-                              <div className="flex items-center justify-between">
-                                <span>{empunhadura.nome_opcao}</span>
-                                <span className="text-xs">{empunhadura.preco_adicional > 0 ? `+R$ ${empunhadura.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="truncate">{empunhadura.nome_opcao}</span>
+                                <span className="text-[10px] md:text-xs whitespace-nowrap">{empunhadura.preco_adicional > 0 ? `+R$ ${empunhadura.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
                               </div>
                             </button>
                           ))}
@@ -390,37 +390,37 @@ export default function CustomizarLamina() {
                       </AccordionItem>
 
                       <AccordionItem value="bainha" className="border-border">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          5. Bainha {bainhaSelecionada && <Badge variant="outline" className="ml-2 text-xs">Selecionado</Badge>}
+                        <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
+                          5. Bainha {bainhaSelecionada && <Badge variant="outline" className="ml-2 text-[10px] md:text-xs">Selecionado</Badge>}
                         </AccordionTrigger>
                         <AccordionContent className="space-y-3 pt-2">
-                          <div className="space-y-2">
+                          <div className="space-y-1.5 md:space-y-2">
                             {bainhas.map(bainha => (
                               <button
                                 key={bainha.id}
                                 onClick={() => setBainhaSelecionada(bainha.id)}
-                                className={`w-full p-2 rounded text-left text-sm transition-all ${
+                                className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
                                   bainhaSelecionada === bainha.id
                                     ? 'bg-accent text-accent-foreground'
                                     : 'bg-muted hover:bg-muted/80'
                                 }`}
                               >
-                                <div className="flex items-center justify-between">
-                                  <span>{bainha.nome_opcao}</span>
-                                  <span className="text-xs">{bainha.preco_adicional > 0 ? `+R$ ${bainha.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="truncate">{bainha.nome_opcao}</span>
+                                  <span className="text-[10px] md:text-xs whitespace-nowrap">{bainha.preco_adicional > 0 ? `+R$ ${bainha.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
                                 </div>
                               </button>
                             ))}
                           </div>
                           {bainhaSelecionada && (
-                            <div className="space-y-2 pt-2 border-t border-border">
+                            <div className="space-y-1.5 md:space-y-2 pt-2 border-t border-border">
                               <Label htmlFor="corBainha" className="text-xs">Cor da Bainha (opcional)</Label>
                               <Input
                                 id="corBainha"
                                 placeholder="Ex: Preta, Marrom..."
                                 value={corBainha}
                                 onChange={(e) => setCorBainha(e.target.value)}
-                                className="text-sm"
+                                className="text-xs md:text-sm"
                               />
                             </div>
                           )}
@@ -428,8 +428,8 @@ export default function CustomizarLamina() {
                       </AccordionItem>
 
                       <AccordionItem value="laser" className="border-border">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          6. Personalização à Laser {laser && <Badge variant="outline" className="ml-2 text-xs">+R$ 30,00</Badge>}
+                        <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
+                          6. Personalização à Laser {laser && <Badge variant="outline" className="ml-2 text-[10px] md:text-xs">+R$ 30,00</Badge>}
                         </AccordionTrigger>
                         <AccordionContent className="space-y-3 pt-2">
                           <div className="flex items-center gap-2">
@@ -438,21 +438,21 @@ export default function CustomizarLamina() {
                               id="laser"
                               checked={laser}
                               onChange={(e) => setLaser(e.target.checked)}
-                              className="h-4 w-4"
+                              className="h-3.5 w-3.5 md:h-4 md:w-4"
                             />
-                            <Label htmlFor="laser" className="text-sm cursor-pointer">
+                            <Label htmlFor="laser" className="text-xs md:text-sm cursor-pointer">
                               Adicionar personalização à laser (+R$ 30,00)
                             </Label>
                           </div>
                           {laser && (
-                            <div className="space-y-2">
+                            <div className="space-y-1.5 md:space-y-2">
                               <Label htmlFor="textoLaser" className="text-xs">Texto para gravação</Label>
                               <Input
                                 id="textoLaser"
                                 placeholder="Digite o texto..."
                                 value={textoLaser}
                                 onChange={(e) => setTextoLaser(e.target.value)}
-                                className="text-sm"
+                                className="text-xs md:text-sm"
                               />
                             </div>
                           )}
@@ -464,17 +464,18 @@ export default function CustomizarLamina() {
 
                 {/* Botão Adicionar */}
                 {modeloSelecionado && (
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button
                       onClick={adicionarLamina}
-                      className="flex-1 bg-accent hover:bg-accent/90"
+                      className="flex-1 bg-accent hover:bg-accent/90 text-xs md:text-sm"
                     >
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 mr-2" />
                       Adicionar Lâmina (R$ {subtotalAtual.toFixed(2)})
                     </Button>
                     <Button
                       onClick={limparFormulario}
                       variant="outline"
+                      className="text-xs md:text-sm"
                     >
                       Limpar
                     </Button>
@@ -484,29 +485,29 @@ export default function CustomizarLamina() {
 
               {/* Coluna Lateral - Resumo */}
               <div className="lg:col-span-1">
-                <div className="bg-white rounded-lg border border-zinc-200 p-4 md:p-6 sticky top-24 space-y-4">
-                  <h3 className="font-semibold text-lg">Resumo do Pedido</h3>
+                <div className="bg-white rounded-lg border border-zinc-200 p-3 md:p-6 lg:sticky lg:top-24 space-y-3 md:space-y-4">
+                  <h3 className="font-semibold text-base md:text-lg">Resumo do Pedido</h3>
                   
                   {laminasCustomizadas.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">
+                    <p className="text-xs md:text-sm text-muted-foreground text-center py-6 md:py-8">
                       Nenhuma lâmina adicionada ainda
                     </p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2 md:space-y-3">
                       {laminasCustomizadas.map((lamina) => (
-                        <div key={lamina.id} className="p-3 bg-muted rounded-lg space-y-2">
+                        <div key={lamina.id} className="p-2 md:p-3 bg-muted rounded-lg">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{lamina.modelo?.nome_modelo}</p>
-                              <p className="text-xs text-muted-foreground">R$ {lamina.subtotal.toFixed(2)}</p>
+                              <p className="font-medium text-xs md:text-sm truncate">{lamina.modelo?.nome_modelo}</p>
+                              <p className="text-[10px] md:text-xs text-muted-foreground">R$ {lamina.subtotal.toFixed(2)}</p>
                             </div>
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => removerLamina(lamina.id)}
-                              className="h-8 w-8 p-0"
+                              className="h-7 w-7 md:h-8 md:w-8 p-0"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
                             </Button>
                           </div>
                         </div>
@@ -516,20 +517,19 @@ export default function CustomizarLamina() {
 
                   {laminasCustomizadas.length > 0 && (
                     <>
-                      <div className="pt-4 border-t border-border">
+                      <div className="pt-3 md:pt-4 border-t border-border">
                         <div className="flex justify-between items-center">
-                          <span className="font-semibold">Total:</span>
-                          <span className="text-xl font-bold text-accent">
+                          <span className="font-semibold text-sm md:text-base">Total:</span>
+                          <span className="text-lg md:text-xl font-bold text-accent">
                             R$ {laminasCustomizadas.reduce((sum, l) => sum + l.subtotal, 0).toFixed(2)}
                           </span>
                         </div>
                       </div>
                       <Button
                         onClick={enviarWhatsApp}
-                        className="w-full bg-accent hover:bg-accent/90"
-                        size="lg"
+                        className="w-full bg-accent hover:bg-accent/90 text-xs md:text-sm"
                       >
-                        <MessageCircle className="h-5 w-5 mr-2" />
+                        <MessageCircle className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                         Solicitar Orçamento
                       </Button>
                     </>
