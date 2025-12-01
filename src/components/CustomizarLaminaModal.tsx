@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Trash2, Plus, MessageCircle, Search, Check } from 'lucide-react';
+import { Trash2, Plus, MessageCircle, Search, Check, CheckCircle2, Circle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ModeloBase {
@@ -206,6 +206,46 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
         <DialogHeader>
           <DialogTitle className="text-xl md:text-2xl">Monte Sua Própria Lâmina</DialogTitle>
         </DialogHeader>
+
+        {/* Timeline de Progresso */}
+        {!loading && (
+          <div className="bg-muted/30 rounded-lg p-3 border border-border">
+            <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2">
+              {[
+                { label: 'Modelo', done: !!modeloSelecionado, value: modelos.find(m => m.id === modeloSelecionado)?.nome_modelo },
+                { label: 'Aço', done: !!acoSelecionado, value: componentes.find(c => c.id === acoSelecionado)?.nome_opcao },
+                { label: 'Acabamento', done: !!acabamentoSelecionado, value: componentes.find(c => c.id === acabamentoSelecionado)?.nome_opcao },
+                { label: 'Empunhadura', done: !!empunhaduraSelecionada, value: componentes.find(c => c.id === empunhaduraSelecionada)?.nome_opcao },
+                { label: 'Bainha', done: !!bainhaSelecionada, value: componentes.find(c => c.id === bainhaSelecionada)?.nome_opcao },
+                { label: 'Laser', done: laser, value: laser ? 'Sim' : null },
+              ].map((step, index) => (
+                <div key={index} className="flex flex-col items-center min-w-[70px] flex-1">
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full mb-1 transition-all ${
+                    step.done 
+                      ? 'bg-accent text-accent-foreground shadow-sm' 
+                      : 'bg-muted border-2 border-border'
+                  }`}>
+                    {step.done ? (
+                      <CheckCircle2 className="h-4 w-4" />
+                    ) : (
+                      <Circle className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <span className={`text-[10px] font-medium text-center mb-1 ${
+                    step.done ? 'text-foreground' : 'text-muted-foreground'
+                  }`}>
+                    {step.label}
+                  </span>
+                  {step.value && (
+                    <Badge variant="secondary" className="text-[9px] px-1 py-0 max-w-[70px] truncate">
+                      {step.value}
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="py-8 text-center text-muted-foreground">Carregando opções...</div>
