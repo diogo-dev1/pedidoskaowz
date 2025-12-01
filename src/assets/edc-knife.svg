@@ -8,8 +8,8 @@ viewBox="0 0 25000 10000"
  <defs>
   <style type="text/css">
    <![CDATA[
-    .str1 {stroke:#373435;stroke-width:7.62;stroke-miterlimit:22.9256}
-    .str0 {stroke:black;stroke-width:7.62;stroke-linejoin:bevel;stroke-miterlimit:22.9256}
+    .str1 {stroke:#373435;stroke-width:70.56;stroke-miterlimit:22.9256}
+    .str0 {stroke:black;stroke-width:70.56;stroke-linejoin:bevel;stroke-miterlimit:22.9256}
     .fil0 {fill:none}
    ]]>
   </style>

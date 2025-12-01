@@ -214,7 +214,7 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
           <div className="bg-muted/30 rounded-lg p-3 border border-border">
             {/* Miniatura do modelo selecionado */}
             {modeloSelecionado && (
-              <div className="mb-4 flex justify-center">
+              <div className="mb-4 flex justify-center animate-fade-in">
                 <div className="relative w-full max-w-md h-32 rounded-lg overflow-hidden border-2 border-accent shadow-lg bg-white p-4">
                   <img 
                     src={modelos.find(m => m.id === modeloSelecionado)?.categoria === 'EDC' 
