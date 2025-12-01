@@ -16,6 +16,7 @@ interface ModeloBase {
   nome_modelo: string;
   preco_base: number;
   categoria: string | null;
+  imagem_modelo: string | null;
 }
 
 interface OpcaoComponente {
@@ -210,6 +211,19 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
         {/* Timeline de Progresso */}
         {!loading && (
           <div className="bg-muted/30 rounded-lg p-3 border border-border">
+            {/* Miniatura do modelo selecionado */}
+            {modeloSelecionado && modelos.find(m => m.id === modeloSelecionado)?.imagem_modelo && (
+              <div className="mb-3 flex justify-center">
+                <div className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-accent shadow-md">
+                  <img 
+                    src={modelos.find(m => m.id === modeloSelecionado)?.imagem_modelo || ''} 
+                    alt="Modelo selecionado"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2">
               {[
                 { label: 'Modelo', done: !!modeloSelecionado, value: modelos.find(m => m.id === modeloSelecionado)?.nome_modelo },
