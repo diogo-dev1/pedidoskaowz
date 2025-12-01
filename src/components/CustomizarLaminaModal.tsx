@@ -214,15 +214,16 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
           <div className="bg-muted/30 rounded-lg p-3 border border-border">
             {/* Miniatura do modelo selecionado */}
             {modeloSelecionado && (
-              <div className="mb-3 flex justify-center">
-                <div className="relative w-32 h-24 rounded-lg overflow-hidden border-2 border-accent shadow-md bg-background p-2">
+              <div className="mb-4 flex justify-center">
+                <div className="relative w-full max-w-md h-32 rounded-lg overflow-hidden border-2 border-accent shadow-lg bg-white p-4">
                   <img 
                     src={modelos.find(m => m.id === modeloSelecionado)?.categoria === 'EDC' 
                       ? edcKnife 
                       : modelos.find(m => m.id === modeloSelecionado)?.imagem_modelo || edcKnife
                     } 
                     alt="Modelo selecionado"
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain filter drop-shadow-sm"
+                    style={{ filter: 'contrast(1.2) brightness(0.95)' }}
                   />
                 </div>
               </div>
