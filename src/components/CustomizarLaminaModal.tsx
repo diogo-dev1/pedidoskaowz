@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, MessageCircle } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Trash2, Plus, MessageCircle, Search, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ModeloBase {
@@ -56,6 +57,7 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
   const [corBainha, setCorBainha] = useState<string>('');
   const [laser, setLaser] = useState(false);
   const [textoLaser, setTextoLaser] = useState('');
+  const [buscaModelo, setBuscaModelo] = useState('');
   
   // Lista de lâminas customizadas
   const [laminasCustomizadas, setLaminasCustomizadas] = useState<LaminaCustomizada[]>([]);
@@ -87,6 +89,10 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
   const acabamentos = componentes.filter(c => c.tipo_opcao === 'Acabamento');
   const empunhaduras = componentes.filter(c => c.tipo_opcao === 'Empunhadura');
   const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
+
+  const modelosFiltrados = modelos.filter(m => 
+    m.nome_modelo.toLowerCase().includes(buscaModelo.toLowerCase())
+  );
 
   const calcularSubtotal = (): number => {
     const modelo = modelos.find(m => m.id === modeloSelecionado);
@@ -149,6 +155,7 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
     setCorBainha('');
     setLaser(false);
     setTextoLaser('');
+    setBuscaModelo('');
   };
 
   const enviarWhatsApp = () => {
@@ -189,157 +196,227 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Monte Sua Própria Lâmina</DialogTitle>
+          <DialogTitle className="text-xl md:text-2xl">Monte Sua Própria Lâmina</DialogTitle>
         </DialogHeader>
 
         {loading ? (
-          <div className="py-8 text-center text-zinc-500">Carregando opções...</div>
+          <div className="py-8 text-center text-muted-foreground">Carregando opções...</div>
         ) : (
-          <div className="space-y-6">
-            {/* Formulário de configuração */}
-            <div className="space-y-4 p-4 border border-zinc-200 rounded-lg bg-zinc-50">
-              <h3 className="font-semibold text-lg text-zinc-900">Configurar Lâmina</h3>
+          <div className="space-y-4">
+            {/* Seleção de Modelo - Prioridade */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-base">1. Escolha o Modelo</h3>
+                <Badge variant="secondary" className="text-xs">Obrigatório</Badge>
+              </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Modelo *</Label>
-                  <Select value={modeloSelecionado} onValueChange={setModeloSelecionado}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o modelo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {modelos.map(modelo => (
-                        <SelectItem key={modelo.id} value={modelo.id}>
-                          {modelo.nome_modelo} - R$ {modelo.preco_base.toFixed(2)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar modelo..."
+                  value={buscaModelo}
+                  onChange={(e) => setBuscaModelo(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label>Tipo de Aço</Label>
-                  <Select value={acoSelecionado} onValueChange={setAcoSelecionado}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o aço" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {acos.map(aco => (
-                        <SelectItem key={aco.id} value={aco.id}>
-                          {aco.nome_opcao} {aco.preco_adicional > 0 && `(+R$ ${aco.preco_adicional.toFixed(2)})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto border border-border rounded-lg p-2">
+                {modelosFiltrados.map(modelo => (
+                  <button
+                    key={modelo.id}
+                    onClick={() => setModeloSelecionado(modelo.id)}
+                    className={`p-3 rounded-lg text-left transition-all ${
+                      modeloSelecionado === modelo.id
+                        ? 'bg-accent text-accent-foreground shadow-md'
+                        : 'bg-muted hover:bg-muted/80'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{modelo.nome_modelo}</div>
+                        <div className="text-xs text-muted-foreground">R$ {modelo.preco_base.toFixed(2)}</div>
+                      </div>
+                      {modeloSelecionado === modelo.id && <Check className="h-4 w-4" />}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <Label>Acabamento</Label>
-                  <Select value={acabamentoSelecionado} onValueChange={setAcabamentoSelecionado}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o acabamento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {acabamentos.map(acabamento => (
-                        <SelectItem key={acabamento.id} value={acabamento.id}>
-                          {acabamento.nome_opcao} {acabamento.preco_adicional > 0 && `(+R$ ${acabamento.preco_adicional.toFixed(2)})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            {/* Opções de Customização - Accordion */}
+            {modeloSelecionado && (
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="aco" className="border-border">
+                  <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                    2. Tipo de Aço {acoSelecionado && <Badge variant="outline" className="ml-2 text-xs">Selecionado</Badge>}
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-2 pt-2">
+                    {acos.map(aco => (
+                      <button
+                        key={aco.id}
+                        onClick={() => setAcoSelecionado(aco.id)}
+                        className={`w-full p-2 rounded text-left text-sm transition-all ${
+                          acoSelecionado === aco.id
+                            ? 'bg-accent text-accent-foreground'
+                            : 'bg-muted hover:bg-muted/80'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span>{aco.nome_opcao}</span>
+                          <span className="text-xs">{aco.preco_adicional > 0 ? `+R$ ${aco.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </AccordionContent>
+                </AccordionItem>
 
-                <div className="space-y-2">
-                  <Label>Empunhadura</Label>
-                  <Select value={empunhaduraSelecionada} onValueChange={setEmpunhaduraSelecionada}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a empunhadura" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {empunhaduras.map(empunhadura => (
-                        <SelectItem key={empunhadura.id} value={empunhadura.id}>
-                          {empunhadura.nome_opcao} {empunhadura.preco_adicional > 0 && `(+R$ ${empunhadura.preco_adicional.toFixed(2)})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <AccordionItem value="acabamento" className="border-border">
+                  <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                    3. Acabamento {acabamentoSelecionado && <Badge variant="outline" className="ml-2 text-xs">Selecionado</Badge>}
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-2 pt-2">
+                    {acabamentos.map(acabamento => (
+                      <button
+                        key={acabamento.id}
+                        onClick={() => setAcabamentoSelecionado(acabamento.id)}
+                        className={`w-full p-2 rounded text-left text-sm transition-all ${
+                          acabamentoSelecionado === acabamento.id
+                            ? 'bg-accent text-accent-foreground'
+                            : 'bg-muted hover:bg-muted/80'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span>{acabamento.nome_opcao}</span>
+                          <span className="text-xs">{acabamento.preco_adicional > 0 ? `+R$ ${acabamento.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </AccordionContent>
+                </AccordionItem>
 
-                <div className="space-y-2">
-                  <Label>Tipo de Bainha</Label>
-                  <Select value={bainhaSelecionada} onValueChange={setBainhaSelecionada}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a bainha" />
-                    </SelectTrigger>
-                    <SelectContent>
+                <AccordionItem value="empunhadura" className="border-border">
+                  <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                    4. Empunhadura {empunhaduraSelecionada && <Badge variant="outline" className="ml-2 text-xs">Selecionado</Badge>}
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-2 pt-2">
+                    {empunhaduras.map(empunhadura => (
+                      <button
+                        key={empunhadura.id}
+                        onClick={() => setEmpunhaduraSelecionada(empunhadura.id)}
+                        className={`w-full p-2 rounded text-left text-sm transition-all ${
+                          empunhaduraSelecionada === empunhadura.id
+                            ? 'bg-accent text-accent-foreground'
+                            : 'bg-muted hover:bg-muted/80'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span>{empunhadura.nome_opcao}</span>
+                          <span className="text-xs">{empunhadura.preco_adicional > 0 ? `+R$ ${empunhadura.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="bainha" className="border-border">
+                  <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                    5. Bainha {bainhaSelecionada && <Badge variant="outline" className="ml-2 text-xs">Selecionado</Badge>}
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 pt-2">
+                    <div className="space-y-2">
                       {bainhas.map(bainha => (
-                        <SelectItem key={bainha.id} value={bainha.id}>
-                          {bainha.nome_opcao} {bainha.preco_adicional > 0 && `(+R$ ${bainha.preco_adicional.toFixed(2)})`}
-                        </SelectItem>
+                        <button
+                          key={bainha.id}
+                          onClick={() => setBainhaSelecionada(bainha.id)}
+                          className={`w-full p-2 rounded text-left text-sm transition-all ${
+                            bainhaSelecionada === bainha.id
+                              ? 'bg-accent text-accent-foreground'
+                              : 'bg-muted hover:bg-muted/80'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span>{bainha.nome_opcao}</span>
+                            <span className="text-xs">{bainha.preco_adicional > 0 ? `+R$ ${bainha.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
+                          </div>
+                        </button>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    </div>
+                    
+                    {bainhaSelecionada && (
+                      <div className="space-y-2">
+                        <Label className="text-xs">Cor da Bainha (opcional)</Label>
+                        <Input
+                          placeholder="Ex: Preta, Marrom..."
+                          value={corBainha}
+                          onChange={(e) => setCorBainha(e.target.value)}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
 
-                <div className="space-y-2">
-                  <Label>Cor da Bainha</Label>
-                  <Input
-                    placeholder="Ex: Preta, Marrom..."
-                    value={corBainha}
-                    onChange={(e) => setCorBainha(e.target.value)}
-                  />
-                </div>
-              </div>
+                <AccordionItem value="laser" className="border-border">
+                  <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                    6. Personalização {laser && <Badge variant="outline" className="ml-2 text-xs">+R$ 30,00</Badge>}
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 pt-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="laser"
+                        checked={laser}
+                        onCheckedChange={(checked) => setLaser(checked as boolean)}
+                      />
+                      <Label htmlFor="laser" className="text-sm cursor-pointer">
+                        Gravação à Laser (+R$ 30,00)
+                      </Label>
+                    </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="laser"
-                    checked={laser}
-                    onCheckedChange={(checked) => setLaser(checked as boolean)}
-                  />
-                  <Label htmlFor="laser" className="cursor-pointer">
-                    Personalização à Laser (+R$ 30,00)
-                  </Label>
-                </div>
+                    {laser && (
+                      <Input
+                        placeholder="Digite o texto para gravação"
+                        value={textoLaser}
+                        onChange={(e) => setTextoLaser(e.target.value)}
+                        className="h-9 text-sm"
+                      />
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
 
-                {laser && (
-                  <Input
-                    placeholder="Digite o texto para gravação"
-                    value={textoLaser}
-                    onChange={(e) => setTextoLaser(e.target.value)}
-                  />
-                )}
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-zinc-200">
-                <div className="text-lg font-semibold text-zinc-900">
-                  Subtotal: <span className="text-accent">R$ {subtotalAtual.toFixed(2)}</span>
+            {/* Subtotal e Adicionar */}
+            {modeloSelecionado && (
+              <div className="sticky bottom-0 bg-background pt-4 border-t border-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Subtotal:</span>
+                  <span className="text-lg font-bold text-accent">R$ {subtotalAtual.toFixed(2)}</span>
                 </div>
-                <Button onClick={adicionarLamina} className="bg-accent hover:bg-accent/90">
+                <Button onClick={adicionarLamina} className="w-full" size="lg">
                   <Plus className="h-4 w-4 mr-2" />
                   Adicionar Lâmina
                 </Button>
               </div>
-            </div>
+            )}
 
             {/* Lista de lâminas adicionadas */}
             {laminasCustomizadas.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-semibold text-lg text-zinc-900">
-                  Lâminas Adicionadas ({laminasCustomizadas.length})
+              <div className="space-y-3 pt-4 border-t border-border">
+                <h3 className="font-semibold text-base flex items-center justify-between">
+                  <span>Carrinho</span>
+                  <Badge variant="secondary">{laminasCustomizadas.length} {laminasCustomizadas.length === 1 ? 'lâmina' : 'lâminas'}</Badge>
                 </h3>
                 
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="space-y-2 max-h-48 overflow-y-auto">
                   {laminasCustomizadas.map((lamina, index) => (
-                    <div key={lamina.id} className="p-3 bg-white border border-zinc-200 rounded-lg flex items-start justify-between gap-3">
-                      <div className="flex-1 text-sm">
-                        <div className="font-semibold text-zinc-900 mb-1">
+                    <div key={lamina.id} className="p-3 bg-muted rounded-lg flex items-start justify-between gap-3">
+                      <div className="flex-1 text-xs">
+                        <div className="font-semibold mb-1 text-sm">
                           {index + 1}. {lamina.modelo?.nome_modelo}
                         </div>
-                        <div className="text-zinc-600 space-y-0.5">
+                        <div className="text-muted-foreground space-y-0.5">
                           {lamina.aco && <div>Aço: {lamina.aco.nome_opcao}</div>}
                           {lamina.acabamento && <div>Acabamento: {lamina.acabamento.nome_opcao}</div>}
                           {lamina.empunhadura && <div>Empunhadura: {lamina.empunhadura.nome_opcao}</div>}
@@ -347,7 +424,7 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
                           {lamina.corBainha && <div>Cor: {lamina.corBainha}</div>}
                           {lamina.laser && <div>Laser: {lamina.textoLaser || 'Sim'}</div>}
                         </div>
-                        <Badge className="mt-2 bg-accent text-white">
+                        <Badge className="mt-2 text-xs" variant="secondary">
                           R$ {lamina.subtotal.toFixed(2)}
                         </Badge>
                       </div>
@@ -355,9 +432,9 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
                         size="icon"
                         variant="ghost"
                         onClick={() => removerLamina(lamina.id)}
-                        className="text-destructive hover:bg-destructive/10"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
                   ))}
@@ -366,20 +443,23 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
             )}
 
             {/* Ações finais */}
-            <div className="flex flex-col gap-3 pt-4 border-t border-zinc-200">
-              <div className="text-xl font-bold text-zinc-900">
-                Total Geral: <span className="text-accent">R$ {laminasCustomizadas.reduce((sum, l) => sum + l.subtotal, 0).toFixed(2)}</span>
+            {laminasCustomizadas.length > 0 && (
+              <div className="sticky bottom-0 bg-background pt-4 border-t border-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Total Geral:</span>
+                  <span className="text-xl font-bold text-accent">R$ {laminasCustomizadas.reduce((sum, l) => sum + l.subtotal, 0).toFixed(2)}</span>
+                </div>
+                
+                <Button
+                  onClick={enviarWhatsApp}
+                  className="w-full"
+                  size="lg"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Enviar Orçamento via WhatsApp
+                </Button>
               </div>
-              
-              <Button
-                onClick={enviarWhatsApp}
-                disabled={laminasCustomizadas.length === 0}
-                className="w-full bg-accent hover:bg-accent/90 text-white font-semibold h-12"
-              >
-                <MessageCircle className="h-5 w-5 mr-2" />
-                Enviar Orçamento via WhatsApp
-              </Button>
-            </div>
+            )}
           </div>
         )}
       </DialogContent>
