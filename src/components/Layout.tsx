@@ -5,10 +5,10 @@ import { AppSidebar } from '@/components/AppSidebar';
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col w-full">
+        <div className="flex-1 flex flex-col w-full overflow-x-hidden">
           {/* Header escuro estilo Kaowz */}
           <header className="sticky top-0 z-40 bg-primary border-b border-border">
             <div className="px-4 py-3 flex items-center gap-3">
@@ -20,7 +20,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </header>
 
           {/* Conteúdo principal */}
-          <main className="flex-1 bg-secondary">
+          <main className="flex-1 bg-secondary overflow-x-hidden">
             {children}
           </main>
         </div>

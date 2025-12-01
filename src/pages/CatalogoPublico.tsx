@@ -141,30 +141,30 @@ export default function CatalogoPublico() {
   // Landing Page - Qualificação do Cliente
   if (mostrarLanding) {
     return (
-      <div className="min-h-screen bg-zinc-50">
+      <div className="min-h-screen bg-zinc-50 overflow-x-hidden">
         {/* Header */}
-        <header className="bg-black border-b border-white/10 py-6">
+        <header className="bg-black border-b border-white/10 py-4 md:py-6">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 tracking-tight">
+            <h1 className="text-2xl md:text-5xl font-bold text-white mb-1 md:mb-2 tracking-tight">
               CATÁLOGO DE LÂMINAS
             </h1>
-            <p className="text-white/60 text-sm md:text-base">Encontre a faca perfeita para você</p>
+            <p className="text-white/60 text-xs md:text-base">Encontre a faca perfeita para você</p>
           </div>
         </header>
 
-        <div className="container mx-auto px-4 py-12 md:py-20">
+        <div className="container mx-auto px-4 py-8 md:py-20">
           {/* Pergunta Principal */}
-          <div className="text-center mb-12 max-w-3xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 mb-4">
+          <div className="text-center mb-8 md:mb-12 max-w-3xl mx-auto">
+            <h2 className="text-xl md:text-3xl font-bold text-zinc-900 mb-3 md:mb-4">
               Hoje nós produzimos facas específicas para algumas funções:
             </h2>
-            <p className="text-lg text-zinc-600 mb-8">
+            <p className="text-base md:text-lg text-zinc-600 mb-6 md:mb-8">
               Qual tem mais interesse em conhecer primeiro?
             </p>
           </div>
 
           {/* Grid de Categorias */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-6xl mx-auto mb-6 md:mb-8">
             {categoriasVenda.map((cat, idx) => {
               const Icon = cat.icon;
               return (
@@ -180,18 +180,18 @@ export default function CatalogoPublico() {
                   </div>
                   
                   {/* Card content */}
-                  <div className="relative bg-white border border-zinc-200 hover:border-accent hover:shadow-xl p-8 rounded-lg transition-all">
+                  <div className="relative bg-white border border-zinc-200 hover:border-accent hover:shadow-xl p-4 md:p-8 rounded-lg transition-all">
                     <div className="text-center">
-                      <Icon className="h-16 w-16 mx-auto mb-4 text-accent drop-shadow-[0_0_20px_rgba(251,146,60,0.5)]" />
-                      <div className="mb-4">
-                        <p className="text-zinc-500 text-sm mb-1 uppercase tracking-wider">LINHA</p>
-                        <h3 className="text-accent font-bold text-2xl mb-1 uppercase tracking-wide drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
+                      <Icon className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-3 md:mb-4 text-accent drop-shadow-[0_0_20px_rgba(251,146,60,0.5)]" />
+                      <div className="mb-3 md:mb-4">
+                        <p className="text-zinc-500 text-xs mb-0.5 md:mb-1 uppercase tracking-wider">LINHA</p>
+                        <h3 className="text-accent font-bold text-xl md:text-2xl mb-0.5 md:mb-1 uppercase tracking-wide drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
                           {cat.subtitulo}
                         </h3>
-                        <p className="text-zinc-900 text-sm font-medium">{cat.titulo}</p>
+                        <p className="text-zinc-900 text-xs md:text-sm font-medium">{cat.titulo}</p>
                       </div>
-                      <p className="text-zinc-600 text-xs mb-4">{cat.descricao}</p>
-                      <div className="text-accent text-sm font-semibold group-hover:text-zinc-900 transition-colors">
+                      <p className="text-zinc-600 text-xs mb-3 md:mb-4">{cat.descricao}</p>
+                      <div className="text-accent text-xs md:text-sm font-semibold group-hover:text-zinc-900 transition-colors">
                         Ver modelos →
                       </div>
                     </div>
@@ -202,12 +202,12 @@ export default function CatalogoPublico() {
           </div>
 
           {/* Opções de Ação */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center">
             <Button
               variant="outline"
               size="lg"
               onClick={verTudo}
-              className="min-w-[200px] border-accent text-accent hover:bg-accent hover:text-white font-semibold"
+              className="w-full sm:w-auto sm:min-w-[200px] border-accent text-accent hover:bg-accent hover:text-white font-semibold text-sm md:text-base"
             >
               Ver todo o catálogo
             </Button>
@@ -215,16 +215,16 @@ export default function CatalogoPublico() {
             <Button
               size="lg"
               onClick={() => setModalCustomizarOpen(true)}
-              className="min-w-[200px] bg-accent hover:bg-accent/90 text-white font-semibold"
+              className="w-full sm:w-auto sm:min-w-[200px] bg-accent hover:bg-accent/90 text-white font-semibold text-sm md:text-base"
             >
-              <Wrench className="h-5 w-5 mr-2" />
+              <Wrench className="h-4 w-4 md:h-5 md:w-5 mr-2" />
               Montar Minha Própria Lâmina
             </Button>
           </div>
 
           {/* WhatsApp de Dúvidas */}
-          <div className="text-center mt-12 pt-12 border-t border-zinc-200">
-            <p className="text-zinc-600 mb-4">
+          <div className="text-center mt-8 md:mt-12 pt-8 md:pt-12 border-t border-zinc-200">
+            <p className="text-zinc-600 mb-3 md:mb-4 text-sm md:text-base">
               Ficou com alguma dúvida? Fale conosco!
             </p>
             <Button
@@ -232,9 +232,9 @@ export default function CatalogoPublico() {
                 const url = `https://wa.me/5528999025695?text=${encodeURIComponent('Olá! Estou com dúvidas sobre qual categoria escolher.')}`;
                 window.open(url, '_blank');
               }}
-              className="bg-accent hover:bg-accent/90 text-white font-semibold"
+              className="bg-accent hover:bg-accent/90 text-white font-semibold text-sm md:text-base w-full sm:w-auto"
             >
-              <MessageCircle className="h-5 w-5 mr-2" />
+              <MessageCircle className="h-4 w-4 md:h-5 md:w-5 mr-2" />
               Falar no WhatsApp
             </Button>
           </div>
@@ -245,30 +245,35 @@ export default function CatalogoPublico() {
 
   // Catálogo de Produtos
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-zinc-50 overflow-x-hidden">
       {/* Header */}
       <header className="bg-black border-b border-white/10 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 py-3 md:py-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setMostrarLanding(true)}
-                className="text-white hover:bg-white/10"
+                onClick={() => {
+                  setMostrarLanding(true);
+                  setCategoriaAtiva(null);
+                  setBusca('');
+                  setModelosSelecionados(new Set());
+                }}
+                className="text-white hover:bg-white/10 text-xs md:text-sm"
               >
                 ← Voltar
               </Button>
-              <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">CATÁLOGO DE LÂMINAS</h1>
+              <h1 className="text-lg md:text-3xl font-bold text-white tracking-tight">CATÁLOGO</h1>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
               <div className="relative flex-1 md:w-80">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 md:h-4 md:w-4 text-white/40" />
                 <Input
                   placeholder="Buscar lâminas..."
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-accent"
+                  className="pl-9 md:pl-10 text-sm md:text-base bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-accent h-9 md:h-10"
                 />
               </div>
             </div>
@@ -276,16 +281,17 @@ export default function CatalogoPublico() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
+      <div className="container mx-auto px-4 py-4 md:py-6">
+        <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
           {/* Sidebar - Categorias */}
           <aside className="lg:w-64 shrink-0">
-            <div className="bg-white border border-zinc-200 rounded-lg p-4 sticky top-24 shadow-sm">
-              <h3 className="font-semibold text-lg mb-4 text-zinc-900">Categorias</h3>
-              <div className="space-y-2">
+            <div className="bg-white border border-zinc-200 rounded-lg p-3 md:p-4 sticky top-24 shadow-sm">
+              <h3 className="font-semibold text-base md:text-lg mb-3 md:mb-4 text-zinc-900">Categorias</h3>
+              <div className="space-y-1.5 md:space-y-2">
                 <Button
                   variant={!categoriaAtiva ? "default" : "ghost"}
-                  className={`w-full justify-start ${
+                  size="sm"
+                  className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 ${
                     !categoriaAtiva 
                       ? 'bg-accent text-white hover:bg-accent/90' 
                       : 'text-zinc-700 hover:bg-zinc-100'
@@ -298,7 +304,8 @@ export default function CatalogoPublico() {
                   <Button
                     key={cat}
                     variant={categoriaAtiva === cat ? "default" : "ghost"}
-                    className={`w-full justify-start ${
+                    size="sm"
+                    className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 ${
                       categoriaAtiva === cat 
                         ? 'bg-accent text-white hover:bg-accent/90' 
                         : 'text-zinc-700 hover:bg-zinc-100'
@@ -311,8 +318,8 @@ export default function CatalogoPublico() {
               </div>
 
               {/* Filtros adicionais - placeholder para expansão futura */}
-              <div className="mt-6 pt-6 border-t border-zinc-200">
-                <h4 className="font-medium text-sm mb-3 text-zinc-500">Filtros</h4>
+              <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-zinc-200">
+                <h4 className="font-medium text-xs md:text-sm mb-2 md:mb-3 text-zinc-500">Filtros</h4>
                 <p className="text-xs text-zinc-400">Em breve mais opções</p>
               </div>
             </div>
@@ -343,7 +350,7 @@ export default function CatalogoPublico() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                   {modelosFiltrados.map((modelo) => {
                     const selecionado = modelosSelecionados.has(modelo.id);
                     return (
@@ -400,23 +407,23 @@ export default function CatalogoPublico() {
                           </div>
 
                           {/* Info do produto */}
-                          <div className="p-4">
+                          <div className="p-2 md:p-4">
                             <h3
-                              className="font-semibold mb-2 line-clamp-2 text-zinc-900 hover:text-accent transition-colors cursor-pointer"
+                              className="font-semibold mb-1 md:mb-2 line-clamp-2 text-xs md:text-base text-zinc-900 hover:text-accent transition-colors cursor-pointer"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               {modelo.nome_modelo}
                             </h3>
-                            <p className="text-2xl font-bold text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
+                            <p className="text-lg md:text-2xl font-bold text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
                               R$ {modelo.preco_base.toFixed(2)}
                             </p>
-                            <div className="text-xs text-zinc-500 mt-1">
+                            <div className="text-[10px] md:text-xs text-zinc-500 mt-0.5 md:mt-1">
                               em 12x de R$ {(modelo.preco_base / 12).toFixed(2)}
                             </div>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="w-full mt-3 border-zinc-300 text-zinc-700 hover:bg-accent hover:text-white hover:border-accent"
+                              className="w-full mt-2 md:mt-3 border-zinc-300 text-zinc-700 hover:bg-accent hover:text-white hover:border-accent text-[10px] md:text-sm h-7 md:h-9"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               Ver detalhes

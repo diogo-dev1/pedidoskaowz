@@ -204,15 +204,15 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-4 md:p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl md:text-2xl">Monte Sua Própria Lâmina</DialogTitle>
+          <DialogTitle className="text-lg md:text-2xl">Monte Sua Própria Lâmina</DialogTitle>
         </DialogHeader>
 
         {/* Miniatura do modelo selecionado */}
         {!loading && modeloSelecionado && (
-          <div className="mb-4 flex justify-center animate-fade-in">
-            <div className="relative w-full max-w-[600px] h-40 rounded-lg overflow-hidden border-2 border-accent shadow-lg bg-white p-4">
+          <div className="mb-3 md:mb-4 flex justify-center animate-fade-in">
+            <div className="relative w-full max-w-[600px] h-32 md:h-40 rounded-lg overflow-hidden border-2 border-accent shadow-lg bg-white p-2 md:p-4">
               <img 
                 src={modelos.find(m => m.id === modeloSelecionado)?.categoria === 'EDC' 
                   ? edcKnife 
