@@ -45,7 +45,7 @@ interface LaminaConfigurada {
   modelo: ModeloBase;
   aco: OpcaoComponente | null;
   empunhadura: OpcaoComponente | null;
-  acabamento: OpcaoComponente | null;
+  acabamento: OpcaoComponente[];
   variacoesAcabamento: OpcaoComponente[];
   bainha: OpcaoComponente | null;
   laser: boolean;
@@ -66,7 +66,7 @@ export default function Simulador() {
   const [selectedModel, setSelectedModel] = useState<ModeloBase | null>(null);
   const [selectedAco, setSelectedAco] = useState<OpcaoComponente | null>(null);
   const [selectedEmpunhadura, setSelectedEmpunhadura] = useState<OpcaoComponente | null>(null);
-  const [selectedAcabamento, setSelectedAcabamento] = useState<OpcaoComponente | null>(null);
+  const [selectedAcabamento, setSelectedAcabamento] = useState<OpcaoComponente[]>([]);
   const [selectedVariacoesAcabamento, setSelectedVariacoesAcabamento] = useState<OpcaoComponente[]>([]);
   const [selectedBainha, setSelectedBainha] = useState<OpcaoComponente | null>(null);
   const [selectedLaser, setSelectedLaser] = useState(false);
@@ -168,7 +168,7 @@ export default function Simulador() {
     const precoBase = selectedModel?.preco_base || 0;
     const precoAco = selectedAco?.preco_adicional || 0;
     const precoEmpunhadura = selectedEmpunhadura?.preco_adicional || 0;
-    const precoAcabamento = selectedAcabamento?.preco_adicional || 0;
+    const precoAcabamento = selectedAcabamento.reduce((total, acab) => total + acab.preco_adicional, 0);
     const precoVariacoes = selectedVariacoesAcabamento.reduce((total, variacao) => total + variacao.preco_adicional, 0);
     const precoBainha = selectedBainha?.preco_adicional || 0;
     const precoLaser = selectedLaser ? 30 : 0;
@@ -193,7 +193,7 @@ export default function Simulador() {
     setSelectedModel(null);
     setSelectedAco(null);
     setSelectedEmpunhadura(null);
-    setSelectedAcabamento(null);
+    setSelectedAcabamento([]);
     setSelectedVariacoesAcabamento([]);
     setSelectedBainha(null);
     setSelectedLaser(false);
@@ -347,9 +347,9 @@ export default function Simulador() {
               a.nome_opcao.toLowerCase().includes(laminaData.aco.toLowerCase())
             ) : null;
 
-            const acabamento = laminaData.acabamento ? acabamentosBase.find(a => 
+            const acabamento = laminaData.acabamento ? acabamentosBase.filter(a => 
               a.nome_opcao.toLowerCase().includes(laminaData.acabamento.toLowerCase())
-            ) : null;
+            ) : [];
 
             const empunhadura = laminaData.empunhadura ? empunhaduras.find(e => 
               e.nome_opcao.toLowerCase().includes(laminaData.empunhadura.toLowerCase())
@@ -362,10 +362,12 @@ export default function Simulador() {
             const temLaser = !!laminaData.textoLaser;
             const precoLaser = temLaser ? 30 : 0;
 
+            const precoAcabamento = acabamento.reduce((total, a) => total + a.preco_adicional, 0);
+            
             const subtotal = 
               modelo.preco_base + 
               (aco?.preco_adicional || 0) + 
-              (acabamento?.preco_adicional || 0) + 
+              precoAcabamento + 
               (empunhadura?.preco_adicional || 0) + 
               (bainha?.preco_adicional || 0) + 
               precoLaser;
@@ -374,7 +376,7 @@ export default function Simulador() {
               id: crypto.randomUUID(),
               modelo,
               aco: aco || null,
-              acabamento: acabamento || null,
+              acabamento: acabamento,
               variacoesAcabamento: [],
               empunhadura: empunhadura || null,
               bainha: bainha || null,
@@ -455,15 +457,17 @@ export default function Simulador() {
       }
 
       const descricoesPedidos = todasLaminas.map((lamina, index) => {
+        const acabamentosNomes = lamina.acabamento.map(a => a.nome_opcao).join(' + ');
         const variacoes = lamina.variacoesAcabamento.map(v => v.nome_opcao).join(' + ');
-        const acabamentoCompleto = lamina.acabamento?.nome_opcao + (variacoes ? ` + ${variacoes}` : '');
+        const acabamentoCompleto = [acabamentosNomes, variacoes].filter(Boolean).join(' + ');
         const desc = `${lamina.modelo.nome_modelo} ${lamina.aco?.nome_opcao || ''} ${acabamentoCompleto || ''} empunhadura em ${lamina.empunhadura?.nome_opcao || ''} ${lamina.bainha?.nome_opcao || ''}`;
         return `Lâmina ${index + 1}: ${desc}`;
       }).join('\n');
 
       const linhasFormatadas = todasLaminas.map((lamina) => {
+        const acabamentosNomes = lamina.acabamento.map(a => a.nome_opcao).join(' + ');
         const variacoes = lamina.variacoesAcabamento.map(v => v.nome_opcao).join(' + ');
-        const acabamentoCompleto = lamina.acabamento?.nome_opcao + (variacoes ? ` + ${variacoes}` : '');
+        const acabamentoCompleto = [acabamentosNomes, variacoes].filter(Boolean).join(' + ');
         return `${nomeCompleto}, ${lamina.modelo.nome_modelo}, ${lamina.aco?.nome_opcao || ''}, ${acabamentoCompleto || ''}, ${lamina.empunhadura?.nome_opcao || ''}, ${lamina.bainha?.nome_opcao || ''}`;
       }).join('\n');
 
@@ -533,8 +537,9 @@ ${linhasFormatadas}`;
       }
 
       const laminasFormatadas = todasLaminas.map(lamina => {
+        const acabamentosNomes = lamina.acabamento.map(a => a.nome_opcao).join(' + ');
         const variacoes = lamina.variacoesAcabamento.map(v => v.nome_opcao).join(' + ');
-        const acabamentoCompleto = lamina.acabamento?.nome_opcao + (variacoes ? ` + ${variacoes}` : '');
+        const acabamentoCompleto = [acabamentosNomes, variacoes].filter(Boolean).join(' + ');
         return {
           modelo: lamina.modelo.nome_modelo,
           aco: lamina.aco?.nome_opcao || '',
@@ -751,34 +756,53 @@ ${linhasFormatadas}`;
                 <AccordionItem value="acabamento" className="border border-border bg-card rounded-lg overflow-hidden">
                   <AccordionTrigger className="px-4 hover:no-underline">
                     <div className="flex items-center justify-between w-full pr-4">
-                      <span className="font-normal">Acabamento</span>
-                      {selectedAcabamento && (
+                      <span className="font-normal">Acabamento / Variações</span>
+                      {(selectedAcabamento.length > 0 || selectedVariacoesAcabamento.length > 0) && (
                         <span className="text-sm text-muted-foreground">
-                          {selectedAcabamento.nome_opcao}
+                          {selectedAcabamento.length + selectedVariacoesAcabamento.length} selecionado(s)
                         </span>
                       )}
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
                     <div className="space-y-4 pt-2">
-                      <div>
-                        <h3 className="text-sm font-medium mb-2">Acabamento Base</h3>
-                        <div className="grid gap-2 grid-cols-2">
-                          {acabamentosBase.map((acab) => (
-                            <ComponentCard
-                              key={acab.id}
-                              nome={acab.nome_opcao}
-                              preco={acab.preco_adicional}
-                              isSelected={selectedAcabamento?.id === acab.id}
-                              onClick={() => setSelectedAcabamento(acab)}
-                            />
-                          ))}
+                      {acabamentosBase.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-medium mb-2">Acabamento</h3>
+                          <div className="space-y-2">
+                            {acabamentosBase.map((acab) => {
+                              const isSelected = selectedAcabamento.some(a => a.id === acab.id);
+                              return (
+                                <div 
+                                  key={acab.id}
+                                  className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                                    isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                                  }`}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setSelectedAcabamento(prev => prev.filter(a => a.id !== acab.id));
+                                    } else {
+                                      setSelectedAcabamento(prev => [...prev, acab]);
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox checked={isSelected} />
+                                    <span className="text-sm">{acab.nome_opcao}</span>
+                                  </div>
+                                  <span className="text-sm font-medium">
+                                    +R$ {acab.preco_adicional.toFixed(2)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
+                      )}
                       
                       {variacoesAcabamento.length > 0 && (
                         <div>
-                          <h3 className="text-sm font-medium mb-2">Variações (opcional)</h3>
+                          <h3 className="text-sm font-medium mb-2">Variações</h3>
                           <div className="space-y-2">
                             {variacoesAcabamento.map((variacao) => {
                               const isSelected = selectedVariacoesAcabamento.some(v => v.id === variacao.id);
