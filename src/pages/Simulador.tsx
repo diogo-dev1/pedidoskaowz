@@ -160,7 +160,7 @@ export default function Simulador() {
     return filtrados;
   }, [modelos, categoriaAtiva, buscaModelo]);
 
-  const categorias = ['EDC', 'Campo', 'Cozinha', 'KZR', 'Upsell'];
+  const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
   const mostrarModelos = categoriaAtiva !== null || buscaModelo.trim() !== '';
 
   // Cálculo do subtotal da lâmina atual

@@ -27,7 +27,7 @@ export default function CatalogoPublico() {
   const [loading, setLoading] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
 
-  const categorias = ['EDC', 'Campo', 'Cozinha', 'KZR', 'Upsell'];
+  const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
 
   const categoriasVenda = [
     {

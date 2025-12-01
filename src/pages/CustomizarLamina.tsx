@@ -85,7 +85,7 @@ export default function CustomizarLamina() {
   const empunhaduras = componentes.filter(c => c.tipo_opcao === 'Empunhadura');
   const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
 
-  const categorias = ['EDC', 'Campo', 'Cozinha', 'KZR', 'Upsell', 'Customização'];
+  const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell', 'Customização'];
   
   const modelosFiltrados = modelos.filter(m => {
     const matchBusca = m.nome_modelo.toLowerCase().includes(buscaModelo.toLowerCase());

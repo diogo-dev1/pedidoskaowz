@@ -190,8 +190,10 @@ export default function GerenciarModelos() {
                   required
                 >
                   <option value="EDC">EDC</option>
+                  <option value="Adaga">Adaga</option>
                   <option value="Campo">Campo</option>
                   <option value="Cozinha">Cozinha</option>
+                  <option value="Defesa">Defesa</option>
                   <option value="KZR">KZR</option>
                   <option value="Upsell">Upsell</option>
                   <option value="Customização">Customização</option>

@@ -18,7 +18,7 @@ interface Modelo {
   categoria: string;
 }
 
-type Categoria = 'Todas' | 'EDC' | 'Campo' | 'Cozinha' | 'KZR';
+type Categoria = 'Todas' | 'EDC' | 'Adaga' | 'Campo' | 'Cozinha' | 'Defesa' | 'KZR' | 'Upsell';
 
 interface Midia {
   name: string;
@@ -208,7 +208,7 @@ export default function Catalogo() {
     carregarMidias(modeloSelecionado.id);
   };
 
-  const categorias: Categoria[] = ['Todas', 'EDC', 'Campo', 'Cozinha', 'KZR'];
+  const categorias: Categoria[] = ['Todas', 'EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
 
   const modelosFiltrados = modelos
     .filter(m => categoriaAtiva === 'Todas' || m.categoria === categoriaAtiva)
