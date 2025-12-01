@@ -215,7 +215,7 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
             {/* Miniatura do modelo selecionado */}
             {modeloSelecionado && (
               <div className="mb-4 flex justify-center animate-fade-in">
-                <div className="relative w-full max-w-md h-32 rounded-lg overflow-hidden border-2 border-accent shadow-lg bg-white p-4">
+                <div className="relative w-full max-w-[600px] h-40 rounded-lg overflow-hidden border-2 border-accent shadow-lg bg-white p-4">
                   <img 
                     src={modelos.find(m => m.id === modeloSelecionado)?.categoria === 'EDC' 
                       ? edcKnife 
