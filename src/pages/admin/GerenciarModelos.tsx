@@ -12,6 +12,7 @@ interface ModeloBase {
   id: string;
   nome_modelo: string;
   preco_base: number;
+  categoria: string | null;
   imagem_modelo: string | null;
 }
 
@@ -22,6 +23,7 @@ export default function GerenciarModelos() {
   const [editingModelo, setEditingModelo] = useState<ModeloBase | null>(null);
   const [nomeModelo, setNomeModelo] = useState('');
   const [precoBase, setPrecoBase] = useState('');
+  const [categoria, setCategoria] = useState<string>('EDC');
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -31,7 +33,7 @@ export default function GerenciarModelos() {
 
   const fetchModelos = async () => {
     const { data, error } = await supabase
-      .from('modelos_base')
+      .from('modelos')
       .select('*')
       .order('nome_modelo');
 
@@ -74,12 +76,13 @@ export default function GerenciarModelos() {
     const modeloData = {
       nome_modelo: nomeModelo,
       preco_base: parseFloat(precoBase),
+      categoria: categoria,
       imagem_modelo: imagemUrl,
     };
 
     if (editingModelo) {
       const { error } = await supabase
-        .from('modelos_base')
+        .from('modelos')
         .update(modeloData)
         .eq('id', editingModelo.id);
 
@@ -93,7 +96,7 @@ export default function GerenciarModelos() {
       }
     } else {
       const { error } = await supabase
-        .from('modelos_base')
+        .from('modelos')
         .insert([modeloData]);
 
       if (error) {
@@ -113,7 +116,7 @@ export default function GerenciarModelos() {
     if (!confirm('Tem certeza que deseja excluir este modelo?')) return;
 
     const { error } = await supabase
-      .from('modelos_base')
+      .from('modelos')
       .delete()
       .eq('id', id);
 
@@ -129,6 +132,7 @@ export default function GerenciarModelos() {
     setEditingModelo(modelo);
     setNomeModelo(modelo.nome_modelo);
     setPrecoBase(modelo.preco_base.toString());
+    setCategoria(modelo.categoria || 'EDC');
     setDialogOpen(true);
   };
 
@@ -136,6 +140,7 @@ export default function GerenciarModelos() {
     setEditingModelo(null);
     setNomeModelo('');
     setPrecoBase('');
+    setCategoria('EDC');
     setImagemFile(null);
   };
 
@@ -171,9 +176,26 @@ export default function GerenciarModelos() {
                   id="nome"
                   value={nomeModelo}
                   onChange={(e) => setNomeModelo(e.target.value)}
-                  placeholder="Ex: Modelo Tático X1"
+                  placeholder="Ex: Adaga EDC, Jagunço, KZR-NIMBUS"
                   required
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="categoria">Categoria</Label>
+                <select
+                  id="categoria"
+                  value={categoria}
+                  onChange={(e) => setCategoria(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  required
+                >
+                  <option value="EDC">EDC</option>
+                  <option value="Campo">Campo</option>
+                  <option value="Cozinha">Cozinha</option>
+                  <option value="KZR">KZR</option>
+                  <option value="Upsell">Upsell</option>
+                  <option value="Customização">Customização</option>
+                </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="preco">Preço Base (R$)</Label>
@@ -220,6 +242,7 @@ export default function GerenciarModelos() {
               )}
               <CardTitle>{modelo.nome_modelo}</CardTitle>
               <CardDescription>
+                {modelo.categoria && <span className="text-xs bg-accent/20 px-2 py-1 rounded mr-2">{modelo.categoria}</span>}
                 R$ {modelo.preco_base.toFixed(2)}
               </CardDescription>
             </CardHeader>
