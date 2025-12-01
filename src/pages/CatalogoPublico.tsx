@@ -239,6 +239,12 @@ export default function CatalogoPublico() {
             </Button>
           </div>
         </div>
+
+        {/* Modal de Customização */}
+        <CustomizarLaminaModal 
+          open={modalCustomizarOpen} 
+          onOpenChange={setModalCustomizarOpen} 
+        />
       </div>
     );
   }
@@ -460,11 +466,6 @@ export default function CatalogoPublico() {
         </div>
       )}
 
-      {/* Modal de Customização */}
-      <CustomizarLaminaModal 
-        open={modalCustomizarOpen} 
-        onOpenChange={setModalCustomizarOpen} 
-      />
     </div>
   );
 }
