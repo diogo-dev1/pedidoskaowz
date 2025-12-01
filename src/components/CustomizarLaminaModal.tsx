@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Trash2, Plus, MessageCircle, Search, Check, CheckCircle2, Circle } from 'lucide-react';
 import { toast } from 'sonner';
+import edcKnife from '@/assets/edc-knife.svg';
 
 interface ModeloBase {
   id: string;
@@ -212,13 +213,16 @@ export default function CustomizarLaminaModal({ open, onOpenChange }: Customizar
         {!loading && (
           <div className="bg-muted/30 rounded-lg p-3 border border-border">
             {/* Miniatura do modelo selecionado */}
-            {modeloSelecionado && modelos.find(m => m.id === modeloSelecionado)?.imagem_modelo && (
+            {modeloSelecionado && (
               <div className="mb-3 flex justify-center">
-                <div className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-accent shadow-md">
+                <div className="relative w-32 h-24 rounded-lg overflow-hidden border-2 border-accent shadow-md bg-background p-2">
                   <img 
-                    src={modelos.find(m => m.id === modeloSelecionado)?.imagem_modelo || ''} 
+                    src={modelos.find(m => m.id === modeloSelecionado)?.categoria === 'EDC' 
+                      ? edcKnife 
+                      : modelos.find(m => m.id === modeloSelecionado)?.imagem_modelo || edcKnife
+                    } 
                     alt="Modelo selecionado"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </div>
               </div>
