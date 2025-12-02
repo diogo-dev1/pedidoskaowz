@@ -140,60 +140,33 @@ export default function CatalogoPublico() {
   // Landing Page - Qualificação do Cliente
   if (mostrarLanding) {
     return (
-      <div className="min-h-screen bg-zinc-50 overflow-x-hidden">
+      <div className="min-h-screen bg-zinc-900 overflow-x-hidden">
         {/* Header */}
-        <header className="bg-black border-b border-white/10 py-4 md:py-6">
+        <header className="py-8 md:py-12">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-2xl md:text-5xl font-bold text-white mb-1 md:mb-2 tracking-tight">
+            <h1 className="text-2xl md:text-4xl font-bold text-white mb-2 tracking-tight">
               CATÁLOGO DE LÂMINAS
             </h1>
-            <p className="text-white/60 text-xs md:text-base">Encontre a faca perfeita para você</p>
+            <p className="text-zinc-400 text-sm md:text-base">Escolha uma categoria</p>
           </div>
         </header>
 
-        <div className="container mx-auto px-4 py-8 md:py-20">
-          {/* Pergunta Principal */}
-          <div className="text-center mb-8 md:mb-12 max-w-3xl mx-auto">
-            <h2 className="text-xl md:text-3xl font-bold text-zinc-900 mb-3 md:mb-4">
-              Hoje nós produzimos facas específicas para algumas funções:
-            </h2>
-            <p className="text-base md:text-lg text-zinc-600 mb-6 md:mb-8">
-              Qual tem mais interesse em conhecer primeiro?
-            </p>
-          </div>
-
+        <div className="container mx-auto px-4 pb-12">
           {/* Grid de Categorias */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-6xl mx-auto mb-6 md:mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 max-w-4xl mx-auto mb-8">
             {categoriasVenda.map((cat, idx) => {
               const Icon = cat.icon;
               return (
                 <div
                   key={idx}
-                  className="group cursor-pointer transition-all hover:scale-105 relative overflow-hidden rounded-lg"
+                  className="group cursor-pointer"
                   onClick={() => selecionarCategoria(cat.categoria)}
                 >
-                  {/* Diagonal stripes background */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-transparent">
-                    <div className="absolute top-0 right-0 w-full h-2 bg-gradient-to-r from-transparent via-accent to-accent"></div>
-                    <div className="absolute top-0 right-0 w-2 h-full bg-gradient-to-b from-accent to-transparent"></div>
-                  </div>
-                  
-                  {/* Card content */}
-                  <div className="relative bg-white border border-zinc-200 hover:border-accent hover:shadow-xl p-4 md:p-8 rounded-lg transition-all">
-                    <div className="text-center">
-                      <Icon className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-3 md:mb-4 text-accent drop-shadow-[0_0_20px_rgba(251,146,60,0.5)]" />
-                      <div className="mb-3 md:mb-4">
-                        <p className="text-zinc-500 text-xs mb-0.5 md:mb-1 uppercase tracking-wider">LINHA</p>
-                        <h3 className="text-accent font-bold text-xl md:text-2xl mb-0.5 md:mb-1 uppercase tracking-wide drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
-                          {cat.subtitulo}
-                        </h3>
-                        <p className="text-zinc-900 text-xs md:text-sm font-medium">{cat.titulo}</p>
-                      </div>
-                      <p className="text-zinc-600 text-xs mb-3 md:mb-4">{cat.descricao}</p>
-                      <div className="text-accent text-xs md:text-sm font-semibold group-hover:text-zinc-900 transition-colors">
-                        Ver modelos →
-                      </div>
-                    </div>
+                  <div className="bg-zinc-800 border border-zinc-700 hover:border-accent rounded-lg p-4 md:p-6 transition-all text-center">
+                    <Icon className="h-8 w-8 md:h-10 md:w-10 mx-auto mb-2 md:mb-3 text-accent" />
+                    <h3 className="text-white font-semibold text-sm md:text-base">
+                      {cat.subtitulo}
+                    </h3>
                   </div>
                 </div>
               );
@@ -201,40 +174,36 @@ export default function CatalogoPublico() {
           </div>
 
           {/* Opções de Ação */}
-          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
             <Button
               variant="outline"
-              size="lg"
               onClick={verTudo}
-              className="w-full sm:w-auto sm:min-w-[200px] border-accent text-accent hover:bg-accent hover:text-white font-semibold text-sm md:text-base"
+              className="w-full border-zinc-600 text-zinc-300 hover:bg-accent hover:text-white hover:border-accent"
             >
               Ver todo o catálogo
             </Button>
             
             <Button
-              size="lg"
               onClick={() => navigate('/customizar-lamina')}
-              className="w-full sm:w-auto sm:min-w-[200px] bg-accent hover:bg-accent/90 text-white font-semibold text-sm md:text-base"
+              className="w-full bg-accent hover:bg-accent/90 text-white"
             >
-              <Wrench className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-              Montar Minha Própria Lâmina
+              <Wrench className="h-4 w-4 mr-2" />
+              Montar Lâmina
             </Button>
           </div>
 
-          {/* WhatsApp de Dúvidas */}
-          <div className="text-center mt-8 md:mt-12 pt-8 md:pt-12 border-t border-zinc-200">
-            <p className="text-zinc-600 mb-3 md:mb-4 text-sm md:text-base">
-              Ficou com alguma dúvida? Fale conosco!
-            </p>
+          {/* WhatsApp */}
+          <div className="text-center mt-8 pt-8 border-t border-zinc-800">
             <Button
+              variant="ghost"
               onClick={() => {
-                const url = `https://wa.me/5528999025695?text=${encodeURIComponent('Olá! Estou com dúvidas sobre qual categoria escolher.')}`;
+                const url = `https://wa.me/5528999025695?text=${encodeURIComponent('Olá! Gostaria de saber mais sobre as lâminas.')}`;
                 window.open(url, '_blank');
               }}
-              className="bg-accent hover:bg-accent/90 text-white font-semibold text-sm md:text-base w-full sm:w-auto"
+              className="text-zinc-400 hover:text-accent"
             >
-              <MessageCircle className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-              Falar no WhatsApp
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Dúvidas? Fale conosco
             </Button>
           </div>
         </div>
