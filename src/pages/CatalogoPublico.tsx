@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench, Play } from 'lucide-react';
+import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -366,29 +366,18 @@ export default function CatalogoPublico() {
                           <div className="relative">
                             {/* Imagem ou Vídeo */}
                             <div
-                              className="aspect-square bg-zinc-100 overflow-hidden cursor-pointer"
+                              className={`${modelo.video_url ? 'aspect-[9/16]' : 'aspect-square'} bg-zinc-100 overflow-hidden cursor-pointer`}
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               {modelo.video_url ? (
-                                <div className="relative w-full h-full">
-                                  <video
-                                    src={modelo.video_url}
-                                    className="w-full h-full object-cover"
-                                    muted
-                                    loop
-                                    playsInline
-                                    onMouseEnter={(e) => e.currentTarget.play()}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.pause();
-                                      e.currentTarget.currentTime = 0;
-                                    }}
-                                  />
-                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center group-hover:opacity-0 transition-opacity">
-                                      <Play className="h-6 w-6 text-white ml-1" />
-                                    </div>
-                                  </div>
-                                </div>
+                                <video
+                                  src={modelo.video_url}
+                                  className="w-full h-full object-cover"
+                                  muted
+                                  loop
+                                  autoPlay
+                                  playsInline
+                                />
                               ) : modelo.imagem_modelo ? (
                                 <img
                                   src={modelo.imagem_modelo}
