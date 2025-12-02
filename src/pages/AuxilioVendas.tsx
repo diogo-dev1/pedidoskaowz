@@ -39,6 +39,7 @@ export default function Catalogo() {
   const [midias, setMidias] = useState<Midia[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [carregandoMidias, setCarregandoMidias] = useState(false);
+  const [uploadandoMidia, setUploadandoMidia] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -184,25 +185,40 @@ export default function Catalogo() {
     const file = e.target.files[0];
     const fileName = `${modeloSelecionado.id}/${Date.now()}-${file.name}`;
 
-    const { error } = await supabase.storage
-      .from('catalogo-midias')
-      .upload(fileName, file);
+    setUploadandoMidia(true);
+    
+    try {
+      const { error } = await supabase.storage
+        .from('catalogo-midias')
+        .upload(fileName, file);
 
-    if (error) {
+      if (error) {
+        toast({
+          title: 'Erro ao fazer upload',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Upload realizado!',
+        description: 'Mídia adicionada com sucesso.',
+      });
+
+      carregarMidias(modeloSelecionado.id);
+    } catch (err) {
+      console.error('Upload error:', err);
       toast({
         title: 'Erro ao fazer upload',
-        description: error.message,
+        description: 'Ocorreu um erro inesperado.',
         variant: 'destructive',
       });
-      return;
+    } finally {
+      setUploadandoMidia(false);
+      // Reset input
+      e.target.value = '';
     }
-
-    toast({
-      title: 'Upload realizado!',
-      description: 'Mídia adicionada com sucesso.',
-    });
-
-    carregarMidias(modeloSelecionado.id);
   };
 
   const downloadMidia = (url: string, nome: string) => {
@@ -404,15 +420,20 @@ export default function Catalogo() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <Label>Mídias</Label>
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" asChild disabled={uploadandoMidia}>
                   <label className="cursor-pointer">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Adicionar Mídia
+                    {uploadandoMidia ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4 mr-2" />
+                    )}
+                    {uploadandoMidia ? 'Enviando...' : 'Adicionar Mídia'}
                     <input
                       type="file"
                       className="hidden"
-                      accept="image/*,video/*"
+                      accept="image/*,video/*,.mov,.MOV,.mp4,.MP4"
                       onChange={handleUploadMidia}
+                      disabled={uploadandoMidia}
                     />
                   </label>
                 </Button>
