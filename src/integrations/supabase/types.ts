@@ -19,9 +19,11 @@ export type Database = {
           apresentacao_venda: string | null
           categoria: string | null
           created_at: string
+          garantia: string | null
           id: string
           imagem_modelo: string | null
           nome_modelo: string
+          prazo_entrega: string | null
           preco_base: number
           updated_at: string
           video_url: string | null
@@ -30,9 +32,11 @@ export type Database = {
           apresentacao_venda?: string | null
           categoria?: string | null
           created_at?: string
+          garantia?: string | null
           id?: string
           imagem_modelo?: string | null
           nome_modelo: string
+          prazo_entrega?: string | null
           preco_base: number
           updated_at?: string
           video_url?: string | null
@@ -41,9 +45,11 @@ export type Database = {
           apresentacao_venda?: string | null
           categoria?: string | null
           created_at?: string
+          garantia?: string | null
           id?: string
           imagem_modelo?: string | null
           nome_modelo?: string
+          prazo_entrega?: string | null
           preco_base?: number
           updated_at?: string
           video_url?: string | null
