@@ -116,7 +116,7 @@ export default function Simulador() {
 
   const fetchData = async () => {
     const [modelosRes, componentesRes, produtosRes] = await Promise.all([
-      supabase.from('modelos_base').select('*').order('nome_modelo'),
+      supabase.from('modelos').select('*').order('nome_modelo'),
       supabase.from('opcoes_componentes').select('*').order('tipo_opcao'),
       supabase.from('produtos_adicionais').select('*').order('nome_produto')
     ]);
