@@ -83,6 +83,44 @@ export type Database = {
         }
         Relationships: []
       }
+      midias_catalogo: {
+        Row: {
+          created_at: string
+          id: string
+          modelo_id: string
+          nome_arquivo: string
+          updated_at: string
+          url: string
+          visivel_catalogo: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          modelo_id: string
+          nome_arquivo: string
+          updated_at?: string
+          url: string
+          visivel_catalogo?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          modelo_id?: string
+          nome_arquivo?: string
+          updated_at?: string
+          url?: string
+          visivel_catalogo?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "midias_catalogo_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_modelos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modelos: {
         Row: {
           categoria: string | null

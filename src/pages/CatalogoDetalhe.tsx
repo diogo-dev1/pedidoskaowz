@@ -19,7 +19,8 @@ interface Modelo {
 }
 
 interface Midia {
-  name: string;
+  id: string;
+  nome_arquivo: string;
   url: string;
 }
 
@@ -59,27 +60,14 @@ export default function CatalogoDetalhe() {
   const carregarMidias = async () => {
     try {
       const { data, error } = await supabase
-        .storage
-        .from('catalogo-midias')
-        .list(id);
+        .from('midias_catalogo')
+        .select('id, nome_arquivo, url')
+        .eq('modelo_id', id)
+        .eq('visivel_catalogo', true);
 
       if (error) throw error;
 
-      const midiasComUrl = await Promise.all(
-        (data || []).map(async (arquivo) => {
-          const { data: urlData } = supabase
-            .storage
-            .from('catalogo-midias')
-            .getPublicUrl(`${id}/${arquivo.name}`);
-
-          return {
-            name: arquivo.name,
-            url: urlData.publicUrl,
-          };
-        })
-      );
-
-      setMidias(midiasComUrl);
+      setMidias(data || []);
     } catch (error) {
       console.error('Erro ao carregar mídias:', error);
     }
@@ -98,7 +86,7 @@ export default function CatalogoDetalhe() {
   
   const imagensDisponiveis = [
     ...(modelo?.imagem_modelo ? [modelo.imagem_modelo] : []),
-    ...midias.filter(m => !m.name.match(/\.(mp4|webm|mov|avi)$/i)).map(m => m.url)
+    ...midias.filter(m => !m.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i)).map(m => m.url)
   ];
 
   const proximaImagem = () => {

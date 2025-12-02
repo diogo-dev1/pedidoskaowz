@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, Download, Upload, X, Loader2, Search, Video } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Copy, Download, Upload, X, Loader2, Search, Video, Share2, Eye, EyeOff } from 'lucide-react';
 
 interface Modelo {
   id: string;
@@ -24,8 +25,10 @@ interface Modelo {
 type Categoria = 'Todas' | 'EDC' | 'Adaga' | 'Campo' | 'Cozinha' | 'Defesa' | 'KZR' | 'Upsell';
 
 interface Midia {
-  name: string;
+  id: string;
+  nome_arquivo: string;
   url: string;
+  visivel_catalogo: boolean;
 }
 
 export default function Catalogo() {
@@ -73,27 +76,20 @@ export default function Catalogo() {
 
   const carregarMidias = async (modeloId: string) => {
     setCarregandoMidias(true);
-    const { data, error } = await supabase.storage
-      .from('catalogo-midias')
-      .list(modeloId);
+    
+    const { data, error } = await supabase
+      .from('midias_catalogo')
+      .select('*')
+      .eq('modelo_id', modeloId)
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Erro ao carregar mídias:', error);
       setMidias([]);
     } else {
-      const midiasComUrl = await Promise.all(
-        (data || []).map(async (file) => {
-          const { data: urlData } = supabase.storage
-            .from('catalogo-midias')
-            .getPublicUrl(`${modeloId}/${file.name}`);
-          return {
-            name: file.name,
-            url: urlData.publicUrl,
-          };
-        })
-      );
-      setMidias(midiasComUrl);
+      setMidias(data || []);
     }
+    
     setCarregandoMidias(false);
   };
 
@@ -133,7 +129,6 @@ export default function Catalogo() {
     
     let finalVideoUrl = videoUrl || null;
     
-    // Upload video file if selected
     if (videoFile) {
       const fileExt = videoFile.name.split('.').pop();
       const fileName = `videos/${modeloSelecionado.id}-${Date.now()}.${fileExt}`;
@@ -210,17 +205,35 @@ export default function Catalogo() {
     setUploadandoMidia(true);
     
     try {
-      const { error } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('catalogo-midias')
         .upload(fileName, file);
 
-      if (error) {
+      if (uploadError) {
         toast({
           title: 'Erro ao fazer upload',
-          description: error.message,
+          description: uploadError.message,
           variant: 'destructive',
         });
         return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('catalogo-midias')
+        .getPublicUrl(fileName);
+
+      // Salvar na tabela de metadados
+      const { error: dbError } = await supabase
+        .from('midias_catalogo')
+        .insert({
+          modelo_id: modeloSelecionado.id,
+          nome_arquivo: fileName,
+          url: urlData.publicUrl,
+          visivel_catalogo: true
+        });
+
+      if (dbError) {
+        console.error('Erro ao salvar metadados:', dbError);
       }
 
       toast({
@@ -238,9 +251,35 @@ export default function Catalogo() {
       });
     } finally {
       setUploadandoMidia(false);
-      // Reset input
       e.target.value = '';
     }
+  };
+
+  const toggleVisibilidade = async (midia: Midia) => {
+    const { error } = await supabase
+      .from('midias_catalogo')
+      .update({ visivel_catalogo: !midia.visivel_catalogo })
+      .eq('id', midia.id);
+
+    if (error) {
+      toast({
+        title: 'Erro ao atualizar',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setMidias(prev => 
+      prev.map(m => m.id === midia.id ? { ...m, visivel_catalogo: !m.visivel_catalogo } : m)
+    );
+
+    toast({
+      title: midia.visivel_catalogo ? 'Mídia ocultada' : 'Mídia visível',
+      description: midia.visivel_catalogo 
+        ? 'Esta mídia não será exibida no catálogo público.'
+        : 'Esta mídia será exibida no catálogo público.',
+    });
   };
 
   const downloadMidia = (url: string, nome: string) => {
@@ -250,25 +289,50 @@ export default function Catalogo() {
     link.click();
   };
 
-  const copiarLinkMidia = (url: string) => {
-    navigator.clipboard.writeText(url);
+  const copiarLinkMidia = async (url: string) => {
+    await navigator.clipboard.writeText(url);
     toast({
       title: 'Link copiado!',
       description: 'Link da mídia copiado para a área de transferência.',
     });
   };
 
-  const deletarMidia = async (nome: string) => {
-    if (!modeloSelecionado) return;
+  const compartilharMidia = async (url: string, nome: string) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: nome,
+          url: url
+        });
+      } catch (err) {
+        // User cancelled or error
+        copiarLinkMidia(url);
+      }
+    } else {
+      copiarLinkMidia(url);
+    }
+  };
 
-    const { error } = await supabase.storage
+  const deletarMidia = async (midia: Midia) => {
+    // Deletar do storage
+    const { error: storageError } = await supabase.storage
       .from('catalogo-midias')
-      .remove([`${modeloSelecionado.id}/${nome}`]);
+      .remove([midia.nome_arquivo]);
 
-    if (error) {
+    if (storageError) {
+      console.error('Erro ao deletar do storage:', storageError);
+    }
+
+    // Deletar da tabela
+    const { error: dbError } = await supabase
+      .from('midias_catalogo')
+      .delete()
+      .eq('id', midia.id);
+
+    if (dbError) {
       toast({
         title: 'Erro ao deletar',
-        description: error.message,
+        description: dbError.message,
         variant: 'destructive',
       });
       return;
@@ -279,7 +343,7 @@ export default function Catalogo() {
       description: 'A mídia foi removida com sucesso.',
     });
 
-    carregarMidias(modeloSelecionado.id);
+    setMidias(prev => prev.filter(m => m.id !== midia.id));
   };
 
   const categorias: Categoria[] = ['Todas', 'EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
@@ -306,14 +370,14 @@ export default function Catalogo() {
 
       {/* Botões de Filtro */}
       <div className="flex flex-wrap gap-3 mb-6">
-        {categorias.map((categoria) => (
+        {categorias.map((cat) => (
           <Button
-            key={categoria}
-            variant={categoriaAtiva === categoria ? 'default' : 'outline'}
-            onClick={() => setCategoriaAtiva(categoria)}
+            key={cat}
+            variant={categoriaAtiva === cat ? 'default' : 'outline'}
+            onClick={() => setCategoriaAtiva(cat)}
             className="min-w-[100px]"
           >
-            {categoria}
+            {cat}
           </Button>
         ))}
       </div>
@@ -543,13 +607,32 @@ export default function Catalogo() {
                 </p>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
-              {midias.map((midia) => {
-                    const isVideo = midia.name.match(/\.(mp4|webm|mov|avi)$/i);
+                  {midias.map((midia) => {
+                    const isVideo = midia.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i);
                     return (
                       <div
-                        key={midia.name}
-                        className={`relative group border rounded-lg overflow-hidden bg-muted ${isVideo ? 'aspect-[9/16]' : ''}`}
+                        key={midia.id}
+                        className={`relative border rounded-lg overflow-hidden bg-muted ${isVideo ? 'aspect-[9/16]' : ''}`}
                       >
+                        {/* Indicador de visibilidade */}
+                        <div className={`absolute top-2 left-2 z-10 px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
+                          midia.visivel_catalogo 
+                            ? 'bg-green-500/80 text-white' 
+                            : 'bg-zinc-500/80 text-white'
+                        }`}>
+                          {midia.visivel_catalogo ? (
+                            <>
+                              <Eye className="h-3 w-3" />
+                              <span className="hidden sm:inline">Visível</span>
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff className="h-3 w-3" />
+                              <span className="hidden sm:inline">Oculta</span>
+                            </>
+                          )}
+                        </div>
+
                         {isVideo ? (
                           <video
                             src={midia.url}
@@ -562,32 +645,64 @@ export default function Catalogo() {
                         ) : (
                           <img
                             src={midia.url}
-                            alt={midia.name}
+                            alt={midia.nome_arquivo}
                             className="w-full h-32 object-cover"
                           />
                         )}
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => downloadMidia(midia.url, midia.name)}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => copiarLinkMidia(midia.url)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => deletarMidia(midia.name)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                        
+                        {/* Botões de ação sempre visíveis na parte inferior */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="h-8 w-8 p-0"
+                              onClick={() => toggleVisibilidade(midia)}
+                              title={midia.visivel_catalogo ? 'Ocultar do catálogo' : 'Mostrar no catálogo'}
+                            >
+                              {midia.visivel_catalogo ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="h-8 w-8 p-0"
+                              onClick={() => compartilharMidia(midia.url, midia.nome_arquivo)}
+                              title="Compartilhar"
+                            >
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="h-8 w-8 p-0"
+                              onClick={() => copiarLinkMidia(midia.url)}
+                              title="Copiar link"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="h-8 w-8 p-0"
+                              onClick={() => downloadMidia(midia.url, midia.nome_arquivo)}
+                              title="Baixar"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="h-8 w-8 p-0"
+                              onClick={() => deletarMidia(midia)}
+                              title="Deletar"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     );
