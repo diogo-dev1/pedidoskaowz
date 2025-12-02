@@ -677,7 +677,6 @@ ${linhasFormatadas}`;
                       key={modelo.id}
                       nome={modelo.nome_modelo}
                       preco={modelo.preco_base}
-                      imagem={modelo.imagem_modelo}
                       isSelected={selectedModel?.id === modelo.id}
                       onClick={() => setSelectedModel(modelo)}
                     />
