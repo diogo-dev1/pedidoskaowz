@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Upload, Video } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface ModeloBase {
@@ -14,7 +14,6 @@ interface ModeloBase {
   preco_base: number;
   categoria: string | null;
   imagem_modelo: string | null;
-  video_url: string | null;
 }
 
 export default function GerenciarModelos() {
@@ -25,8 +24,7 @@ export default function GerenciarModelos() {
   const [nomeModelo, setNomeModelo] = useState('');
   const [precoBase, setPrecoBase] = useState('');
   const [categoria, setCategoria] = useState<string>('EDC');
-  const [imagemFile, setImagemFile] = useState<File | null>(null);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [svgFile, setSvgFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -52,19 +50,19 @@ export default function GerenciarModelos() {
     e.preventDefault();
     setUploading(true);
 
-    let imagemUrl = editingModelo?.imagem_modelo || null;
-    let videoUrl = editingModelo?.video_url || null;
+    let svgUrl = editingModelo?.imagem_modelo || null;
 
-    // Upload da imagem se houver
-    if (imagemFile) {
-      const fileExt = imagemFile.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
+    // Upload do SVG se houver
+    if (svgFile) {
+      const fileName = `svg-${Math.random()}.svg`;
       const { error: uploadError } = await supabase.storage
         .from('modelo-imagens')
-        .upload(fileName, imagemFile);
+        .upload(fileName, svgFile, {
+          contentType: 'image/svg+xml'
+        });
 
       if (uploadError) {
-        toast.error('Erro ao fazer upload da imagem');
+        toast.error('Erro ao fazer upload do SVG');
         setUploading(false);
         return;
       }
@@ -73,36 +71,14 @@ export default function GerenciarModelos() {
         .from('modelo-imagens')
         .getPublicUrl(fileName);
 
-      imagemUrl = publicUrl;
-    }
-
-    // Upload do vídeo se houver
-    if (videoFile) {
-      const fileExt = videoFile.name.split('.').pop();
-      const fileName = `videos/${Math.random()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from('modelo-imagens')
-        .upload(fileName, videoFile);
-
-      if (uploadError) {
-        toast.error('Erro ao fazer upload do vídeo');
-        setUploading(false);
-        return;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('modelo-imagens')
-        .getPublicUrl(fileName);
-
-      videoUrl = publicUrl;
+      svgUrl = publicUrl;
     }
 
     const modeloData = {
       nome_modelo: nomeModelo,
       preco_base: parseFloat(precoBase),
       categoria: categoria,
-      imagem_modelo: imagemUrl,
-      video_url: videoUrl,
+      imagem_modelo: svgUrl,
     };
 
     if (editingModelo) {
@@ -166,8 +142,7 @@ export default function GerenciarModelos() {
     setNomeModelo('');
     setPrecoBase('');
     setCategoria('EDC');
-    setImagemFile(null);
-    setVideoFile(null);
+    setSvgFile(null);
   };
 
   if (loading) {
@@ -192,7 +167,7 @@ export default function GerenciarModelos() {
             <DialogHeader>
               <DialogTitle>{editingModelo ? 'Editar' : 'Novo'} Modelo</DialogTitle>
               <DialogDescription>
-                Preencha os dados do modelo de lâmina
+                Modelo base para customização de lâminas
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -202,7 +177,7 @@ export default function GerenciarModelos() {
                   id="nome"
                   value={nomeModelo}
                   onChange={(e) => setNomeModelo(e.target.value)}
-                  placeholder="Ex: Adaga EDC, Jagunço, KZR-NIMBUS"
+                  placeholder="Ex: EDC, Jagunço, KZR-NIMBUS"
                   required
                 />
               </div>
@@ -221,8 +196,6 @@ export default function GerenciarModelos() {
                   <option value="Cozinha">Cozinha</option>
                   <option value="Defesa">Defesa</option>
                   <option value="KZR">KZR</option>
-                  <option value="Upsell">Upsell</option>
-                  <option value="Customização">Customização</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -238,27 +211,18 @@ export default function GerenciarModelos() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="imagem">Imagem do Modelo</Label>
+                <Label htmlFor="svg">Arquivo SVG</Label>
                 <Input
-                  id="imagem"
+                  id="svg"
                   type="file"
-                  accept="image/*"
-                  onChange={(e) => setImagemFile(e.target.files?.[0] || null)}
+                  accept=".svg"
+                  onChange={(e) => setSvgFile(e.target.files?.[0] || null)}
                 />
-                {editingModelo?.imagem_modelo && !imagemFile && (
-                  <p className="text-xs text-muted-foreground">Já existe uma imagem. Selecione outra para substituir.</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="video">Vídeo do Modelo</Label>
-                <Input
-                  id="video"
-                  type="file"
-                  accept="video/*,.mov,.MOV,.mp4,.MP4"
-                  onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                />
-                {editingModelo?.video_url && !videoFile && (
-                  <p className="text-xs text-muted-foreground">Já existe um vídeo. Selecione outro para substituir.</p>
+                <p className="text-xs text-muted-foreground">
+                  Upload do desenho vetorial (SVG) do modelo
+                </p>
+                {editingModelo?.imagem_modelo && !svgFile && (
+                  <p className="text-xs text-accent">Já existe um SVG. Selecione outro para substituir.</p>
                 )}
               </div>
               <Button type="submit" disabled={uploading} className="w-full">
@@ -273,24 +237,21 @@ export default function GerenciarModelos() {
         {modelos.map((modelo) => (
           <Card key={modelo.id}>
             <CardHeader>
-              {modelo.video_url ? (
-                <video
-                  src={modelo.video_url}
-                  className="w-full h-48 object-cover rounded-md mb-4"
-                  controls
-                  muted
-                />
-              ) : modelo.imagem_modelo ? (
-                <img
-                  src={modelo.imagem_modelo}
-                  alt={modelo.nome_modelo}
-                  className="w-full h-48 object-cover rounded-md mb-4"
-                />
-              ) : null}
-              <CardTitle className="flex items-center gap-2">
-                {modelo.nome_modelo}
-                {modelo.video_url && <Video className="h-4 w-4 text-muted-foreground" />}
-              </CardTitle>
+              {modelo.imagem_modelo ? (
+                <div className="w-full h-48 bg-zinc-800 rounded-md mb-4 flex items-center justify-center p-4">
+                  <img
+                    src={modelo.imagem_modelo}
+                    alt={modelo.nome_modelo}
+                    className="max-w-full max-h-full object-contain"
+                    style={{ filter: 'invert(1)' }}
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-48 bg-muted rounded-md mb-4 flex items-center justify-center">
+                  <span className="text-muted-foreground text-sm">Sem SVG</span>
+                </div>
+              )}
+              <CardTitle>{modelo.nome_modelo}</CardTitle>
               <CardDescription>
                 {modelo.categoria && <span className="text-xs bg-accent/20 px-2 py-1 rounded mr-2">{modelo.categoria}</span>}
                 R$ {modelo.preco_base.toFixed(2)}
