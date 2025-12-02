@@ -37,6 +37,9 @@ export default function Catalogo() {
   const [videoUrl, setVideoUrl] = useState('');
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [midias, setMidias] = useState<Midia[]>([]);
+  const [nomeModelo, setNomeModelo] = useState('');
+  const [imagemModelo, setImagemModelo] = useState('');
+  const [categoria, setCategoria] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [carregandoMidias, setCarregandoMidias] = useState(false);
   const [uploadandoMidia, setUploadandoMidia] = useState(false);
@@ -95,6 +98,9 @@ export default function Catalogo() {
     setPreco(modelo.preco_base.toString());
     setApresentacao(modelo.apresentacao_venda || '');
     setVideoUrl(modelo.video_url || '');
+    setNomeModelo(modelo.nome_modelo);
+    setImagemModelo(modelo.imagem_modelo || '');
+    setCategoria(modelo.categoria);
     setModalOpen(true);
     carregarMidias(modelo.id);
   };
@@ -107,6 +113,9 @@ export default function Catalogo() {
     setVideoUrl('');
     setVideoFile(null);
     setMidias([]);
+    setNomeModelo('');
+    setImagemModelo('');
+    setCategoria('');
   };
 
   const salvarAlteracoes = async () => {
@@ -145,9 +154,12 @@ export default function Catalogo() {
     const { error } = await supabase
       .from('catalogo_modelos')
       .update({
+        nome_modelo: nomeModelo,
         preco_base: parseFloat(preco),
         apresentacao_venda: apresentacao,
         video_url: finalVideoUrl,
+        imagem_modelo: imagemModelo || null,
+        categoria: categoria,
       })
       .eq('id', modeloSelecionado.id);
 
@@ -341,6 +353,37 @@ export default function Catalogo() {
           </DialogHeader>
 
           <div className="space-y-6">
+            {/* Campo de Nome */}
+            <div>
+              <Label htmlFor="nome">Nome do Modelo</Label>
+              <Input
+                id="nome"
+                type="text"
+                value={nomeModelo}
+                onChange={(e) => setNomeModelo(e.target.value)}
+                placeholder="Nome do modelo"
+              />
+            </div>
+
+            {/* Campo de Categoria */}
+            <div>
+              <Label htmlFor="categoria">Categoria</Label>
+              <select
+                id="categoria"
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="EDC">EDC</option>
+                <option value="Adaga">Adaga</option>
+                <option value="Campo">Campo</option>
+                <option value="Cozinha">Cozinha</option>
+                <option value="Defesa">Defesa</option>
+                <option value="KZR">KZR</option>
+                <option value="Upsell">Upsell</option>
+              </select>
+            </div>
+
             {/* Campo de Preço */}
             <div>
               <Label htmlFor="preco">Valor (R$)</Label>
@@ -352,6 +395,23 @@ export default function Catalogo() {
                 onChange={(e) => setPreco(e.target.value)}
                 placeholder="0.00"
               />
+            </div>
+
+            {/* Campo de Imagem */}
+            <div>
+              <Label htmlFor="imagem">URL da Imagem Principal</Label>
+              <Input
+                id="imagem"
+                type="text"
+                value={imagemModelo}
+                onChange={(e) => setImagemModelo(e.target.value)}
+                placeholder="https://..."
+              />
+              {imagemModelo && (
+                <div className="mt-2 max-w-[150px]">
+                  <img src={imagemModelo} alt="Preview" className="rounded-lg w-full h-auto" />
+                </div>
+              )}
             </div>
 
             {/* Campo de Vídeo */}
