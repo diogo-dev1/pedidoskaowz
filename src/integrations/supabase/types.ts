@@ -86,6 +86,7 @@ export type Database = {
           nome_modelo: string
           preco_base: number
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           categoria?: string | null
@@ -95,6 +96,7 @@ export type Database = {
           nome_modelo: string
           preco_base: number
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           categoria?: string | null
@@ -104,6 +106,7 @@ export type Database = {
           nome_modelo?: string
           preco_base?: number
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }
