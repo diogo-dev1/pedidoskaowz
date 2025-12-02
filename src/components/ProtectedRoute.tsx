@@ -24,7 +24,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
     return <Navigate to="/auth" />;
   }
 
-  if (requireAdmin && profile?.cargo !== 'admin') {
+  if (requireAdmin && profile?.cargo !== 'admin' && profile?.cargo !== 'vendedor') {
     return <Navigate to="/" />;
   }
 

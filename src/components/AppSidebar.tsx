@@ -28,7 +28,7 @@ export function AppSidebar() {
     { title: 'Mensagens Padrão', url: '/mensagens', icon: MessageSquare },
   ];
 
-  const adminItems = profile?.cargo === 'admin' ? [
+  const adminItems = (profile?.cargo === 'admin' || profile?.cargo === 'vendedor') ? [
     { title: 'Modelos', url: '/admin/modelos', icon: Layers },
     { title: 'Configurações', url: '/admin/configuracoes', icon: Package },
     { title: 'Componentes', url: '/admin/componentes', icon: Settings },
