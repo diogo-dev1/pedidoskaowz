@@ -244,7 +244,7 @@ export default function CatalogoPublico() {
 
   // Catálogo de Produtos
   return (
-    <div className="min-h-screen bg-zinc-50 overflow-x-hidden">
+    <div className="min-h-screen bg-zinc-900 overflow-x-hidden">
       {/* Header */}
       <header className="bg-black border-b border-white/10 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 md:py-4">
@@ -284,8 +284,8 @@ export default function CatalogoPublico() {
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
           {/* Sidebar - Categorias */}
           <aside className="lg:w-64 shrink-0">
-            <div className="bg-white border border-zinc-200 rounded-lg p-3 md:p-4 sticky top-24 shadow-sm">
-              <h3 className="font-semibold text-base md:text-lg mb-3 md:mb-4 text-zinc-900">Categorias</h3>
+            <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 md:p-4 sticky top-24 shadow-sm">
+              <h3 className="font-semibold text-base md:text-lg mb-3 md:mb-4 text-white">Categorias</h3>
               <div className="space-y-1.5 md:space-y-2">
                 <Button
                   variant={!categoriaAtiva ? "default" : "ghost"}
@@ -293,7 +293,7 @@ export default function CatalogoPublico() {
                   className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 ${
                     !categoriaAtiva 
                       ? 'bg-accent text-white hover:bg-accent/90' 
-                      : 'text-zinc-700 hover:bg-zinc-100'
+                      : 'text-zinc-300 hover:bg-zinc-700'
                   }`}
                   onClick={() => setCategoriaAtiva(null)}
                 >
@@ -307,7 +307,7 @@ export default function CatalogoPublico() {
                     className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 ${
                       categoriaAtiva === cat 
                         ? 'bg-accent text-white hover:bg-accent/90' 
-                        : 'text-zinc-700 hover:bg-zinc-100'
+                        : 'text-zinc-300 hover:bg-zinc-700'
                     }`}
                     onClick={() => setCategoriaAtiva(cat)}
                   >
@@ -317,9 +317,9 @@ export default function CatalogoPublico() {
               </div>
 
               {/* Filtros adicionais - placeholder para expansão futura */}
-              <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-zinc-200">
-                <h4 className="font-medium text-xs md:text-sm mb-2 md:mb-3 text-zinc-500">Filtros</h4>
-                <p className="text-xs text-zinc-400">Em breve mais opções</p>
+              <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-zinc-700">
+                <h4 className="font-medium text-xs md:text-sm mb-2 md:mb-3 text-zinc-400">Filtros</h4>
+                <p className="text-xs text-zinc-500">Em breve mais opções</p>
               </div>
             </div>
           </aside>
@@ -329,17 +329,17 @@ export default function CatalogoPublico() {
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white border border-zinc-200 rounded-lg p-4 animate-pulse">
-                    <div className="aspect-square bg-zinc-100 rounded-lg mb-3" />
-                    <div className="h-4 bg-zinc-100 rounded mb-2" />
-                    <div className="h-6 bg-zinc-100 rounded w-1/2" />
+                  <div key={i} className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 animate-pulse">
+                    <div className="aspect-square bg-zinc-700 rounded-lg mb-3" />
+                    <div className="h-4 bg-zinc-700 rounded mb-2" />
+                    <div className="h-6 bg-zinc-700 rounded w-1/2" />
                   </div>
                 ))}
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm text-zinc-600">
+                  <p className="text-sm text-zinc-400">
                     Mostrando {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'produto' : 'produtos'}
                   </p>
                   {modelosSelecionados.size > 0 && (
@@ -362,11 +362,11 @@ export default function CatalogoPublico() {
                         {/* Diagonal accent strip */}
                         <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/50 to-accent z-10"></div>
                         
-                        <div className="bg-white border border-zinc-200 hover:border-accent hover:shadow-lg transition-all rounded-lg overflow-hidden">
+                        <div className="bg-zinc-800 border border-zinc-700 hover:border-accent hover:shadow-lg transition-all rounded-lg overflow-hidden">
                           <div className="relative">
                             {/* Imagem ou Vídeo */}
                             <div
-                              className={`${modelo.video_url ? 'aspect-[9/16]' : 'aspect-square'} bg-zinc-100 overflow-hidden cursor-pointer`}
+                              className={`${modelo.video_url ? 'aspect-[9/16]' : 'aspect-square'} bg-zinc-700 overflow-hidden cursor-pointer`}
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               {modelo.video_url ? (
@@ -385,7 +385,7 @@ export default function CatalogoPublico() {
                                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-zinc-400">
+                                <div className="w-full h-full flex items-center justify-center text-zinc-500">
                                   Sem imagem
                                 </div>
                               )}
@@ -417,7 +417,7 @@ export default function CatalogoPublico() {
                           {/* Info do produto */}
                           <div className="p-2 md:p-4">
                             <h3
-                              className="font-semibold mb-1 md:mb-2 line-clamp-2 text-xs md:text-base text-zinc-900 hover:text-accent transition-colors cursor-pointer"
+                              className="font-semibold mb-1 md:mb-2 line-clamp-2 text-xs md:text-base text-white hover:text-accent transition-colors cursor-pointer"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               {modelo.nome_modelo}
@@ -425,13 +425,13 @@ export default function CatalogoPublico() {
                             <p className="text-lg md:text-2xl font-bold text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
                               R$ {modelo.preco_base.toFixed(2)}
                             </p>
-                            <div className="text-[10px] md:text-xs text-zinc-500 mt-0.5 md:mt-1">
+                            <div className="text-[10px] md:text-xs text-zinc-400 mt-0.5 md:mt-1">
                               em 12x de R$ {(modelo.preco_base / 12).toFixed(2)}
                             </div>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="w-full mt-2 md:mt-3 border-zinc-300 text-zinc-700 hover:bg-accent hover:text-white hover:border-accent text-[10px] md:text-sm h-7 md:h-9"
+                              className="w-full mt-2 md:mt-3 border-zinc-600 text-zinc-300 hover:bg-accent hover:text-white hover:border-accent text-[10px] md:text-sm h-7 md:h-9"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               Ver detalhes
@@ -445,7 +445,7 @@ export default function CatalogoPublico() {
 
                 {modelosFiltrados.length === 0 && (
                   <div className="text-center py-12">
-                    <p className="text-zinc-600">Nenhuma lâmina encontrada</p>
+                    <p className="text-zinc-400">Nenhuma lâmina encontrada</p>
                   </div>
                 )}
               </>
