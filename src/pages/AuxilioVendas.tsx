@@ -461,6 +461,9 @@ export default function Catalogo() {
                             src={midia.url}
                             className="w-full h-full object-cover"
                             muted
+                            autoPlay
+                            loop
+                            playsInline
                           />
                         ) : (
                           <img
