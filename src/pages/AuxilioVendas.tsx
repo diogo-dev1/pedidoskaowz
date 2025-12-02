@@ -454,12 +454,12 @@ export default function Catalogo() {
                     return (
                       <div
                         key={midia.name}
-                        className="relative group border rounded-lg overflow-hidden bg-muted"
+                        className={`relative group border rounded-lg overflow-hidden bg-muted ${isVideo ? 'aspect-[9/16]' : ''}`}
                       >
                         {isVideo ? (
                           <video
                             src={midia.url}
-                            className="w-full h-32 object-cover"
+                            className="w-full h-full object-cover"
                             muted
                           />
                         ) : (
