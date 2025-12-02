@@ -16,6 +16,7 @@ interface Modelo {
   imagem_modelo: string | null;
   apresentacao_venda: string | null;
   categoria: string;
+  video_url: string | null;
 }
 
 type Categoria = 'Todas' | 'EDC' | 'Adaga' | 'Campo' | 'Cozinha' | 'Defesa' | 'KZR' | 'Upsell';
@@ -33,6 +34,7 @@ export default function Catalogo() {
   const [modalOpen, setModalOpen] = useState(false);
   const [preco, setPreco] = useState('');
   const [apresentacao, setApresentacao] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
   const [midias, setMidias] = useState<Midia[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [carregandoMidias, setCarregandoMidias] = useState(false);
@@ -90,6 +92,7 @@ export default function Catalogo() {
     setModeloSelecionado(modelo);
     setPreco(modelo.preco_base.toString());
     setApresentacao(modelo.apresentacao_venda || '');
+    setVideoUrl(modelo.video_url || '');
     setModalOpen(true);
     carregarMidias(modelo.id);
   };
@@ -99,6 +102,7 @@ export default function Catalogo() {
     setModeloSelecionado(null);
     setPreco('');
     setApresentacao('');
+    setVideoUrl('');
     setMidias([]);
   };
 
@@ -111,6 +115,7 @@ export default function Catalogo() {
       .update({
         preco_base: parseFloat(preco),
         apresentacao_venda: apresentacao,
+        video_url: videoUrl || null,
       })
       .eq('id', modeloSelecionado.id);
 
@@ -295,6 +300,30 @@ export default function Catalogo() {
                 onChange={(e) => setPreco(e.target.value)}
                 placeholder="0.00"
               />
+            </div>
+
+            {/* Campo de Vídeo */}
+            <div>
+              <Label htmlFor="videoUrl">URL do Vídeo de Apresentação</Label>
+              <Input
+                id="videoUrl"
+                type="url"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                placeholder="https://exemplo.com/video.mp4"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Cole a URL de um vídeo MP4, WebM ou link do YouTube
+              </p>
+              {videoUrl && (
+                <div className="mt-2 rounded-lg overflow-hidden border">
+                  <video
+                    src={videoUrl}
+                    controls
+                    className="w-full max-h-48 object-contain bg-muted"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Campo de Apresentação */}

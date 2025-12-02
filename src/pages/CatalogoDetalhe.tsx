@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, MessageCircle, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Modelo {
@@ -15,6 +15,7 @@ interface Modelo {
   imagem_modelo: string | null;
   categoria: string | null;
   apresentacao_venda: string | null;
+  video_url: string | null;
 }
 
 interface Midia {
@@ -92,9 +93,12 @@ export default function CatalogoDetalhe() {
     window.open(url, '_blank');
   };
 
+  // Separar vídeo principal das imagens
+  const videoUrl = modelo?.video_url;
+  
   const imagensDisponiveis = [
     ...(modelo?.imagem_modelo ? [modelo.imagem_modelo] : []),
-    ...midias.map(m => m.url)
+    ...midias.filter(m => !m.name.match(/\.(mp4|webm|mov|avi)$/i)).map(m => m.url)
   ];
 
   const proximaImagem = () => {
@@ -144,8 +148,24 @@ export default function CatalogoDetalhe() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Galeria de Imagens */}
+          {/* Galeria de Imagens e Vídeo */}
           <div>
+            {/* Vídeo de apresentação */}
+            {videoUrl && (
+              <Card className="overflow-hidden mb-4">
+                <div className="relative aspect-video bg-muted">
+                  <video
+                    src={videoUrl}
+                    controls
+                    className="w-full h-full object-cover"
+                    poster={modelo.imagem_modelo || undefined}
+                  >
+                    Seu navegador não suporta vídeo.
+                  </video>
+                </div>
+              </Card>
+            )}
+
             <Card className="overflow-hidden">
               {imagensDisponiveis.length > 0 ? (
                 <div className="relative aspect-square bg-muted">
@@ -189,11 +209,11 @@ export default function CatalogoDetalhe() {
                     </div>
                   )}
                 </div>
-              ) : (
+              ) : !videoUrl ? (
                 <div className="aspect-square bg-muted flex items-center justify-center">
                   <p className="text-muted-foreground">Sem imagens disponíveis</p>
                 </div>
-              )}
+              ) : null}
             </Card>
 
             {/* Miniaturas */}
