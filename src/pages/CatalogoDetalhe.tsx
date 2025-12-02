@@ -14,6 +14,8 @@ interface Modelo {
   categoria: string | null;
   apresentacao_venda: string | null;
   video_url: string | null;
+  garantia: string | null;
+  prazo_entrega: string | null;
 }
 
 interface Midia {
@@ -270,21 +272,27 @@ export default function CatalogoDetalhe() {
             )}
 
             {/* Dados técnicos */}
-            <div className="space-y-2">
-              <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">
-                Informações
-              </h2>
-              <div className="bg-zinc-800/50 rounded-lg divide-y divide-zinc-700/50">
-                <div className="flex justify-between p-3 text-sm">
-                  <span className="text-zinc-400">Prazo de entrega</span>
-                  <span className="text-white">Até 45 dias úteis</span>
-                </div>
-                <div className="flex justify-between p-3 text-sm">
-                  <span className="text-zinc-400">Garantia</span>
-                  <span className="text-white">90 dias</span>
+            {(modelo.prazo_entrega || modelo.garantia) && (
+              <div className="space-y-2">
+                <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">
+                  Informações
+                </h2>
+                <div className="bg-zinc-800/50 rounded-lg divide-y divide-zinc-700/50">
+                  {modelo.prazo_entrega && (
+                    <div className="flex justify-between p-3 text-sm">
+                      <span className="text-zinc-400">Prazo de entrega</span>
+                      <span className="text-white">{modelo.prazo_entrega}</span>
+                    </div>
+                  )}
+                  {modelo.garantia && (
+                    <div className="flex justify-between p-3 text-sm">
+                      <span className="text-zinc-400">Garantia</span>
+                      <span className="text-white">{modelo.garantia}</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Benefícios */}
             <div className="flex flex-wrap gap-2 text-xs">

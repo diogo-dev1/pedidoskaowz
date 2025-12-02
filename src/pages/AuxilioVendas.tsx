@@ -17,6 +17,8 @@ interface Modelo {
   apresentacao_venda: string | null;
   categoria: string;
   video_url: string | null;
+  garantia: string | null;
+  prazo_entrega: string | null;
 }
 
 type Categoria = 'Todas' | 'EDC' | 'Adaga' | 'Campo' | 'Cozinha' | 'Defesa' | 'KZR' | 'Upsell';
@@ -40,6 +42,8 @@ export default function Catalogo() {
   const [nomeModelo, setNomeModelo] = useState('');
   const [imagemModelo, setImagemModelo] = useState('');
   const [categoria, setCategoria] = useState('');
+  const [garantia, setGarantia] = useState('');
+  const [prazoEntrega, setPrazoEntrega] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [carregandoMidias, setCarregandoMidias] = useState(false);
   const [uploadandoMidia, setUploadandoMidia] = useState(false);
@@ -101,6 +105,8 @@ export default function Catalogo() {
     setNomeModelo(modelo.nome_modelo);
     setImagemModelo(modelo.imagem_modelo || '');
     setCategoria(modelo.categoria);
+    setGarantia(modelo.garantia || '');
+    setPrazoEntrega(modelo.prazo_entrega || '');
     setModalOpen(true);
     carregarMidias(modelo.id);
   };
@@ -116,6 +122,8 @@ export default function Catalogo() {
     setNomeModelo('');
     setImagemModelo('');
     setCategoria('');
+    setGarantia('');
+    setPrazoEntrega('');
   };
 
   const salvarAlteracoes = async () => {
@@ -160,6 +168,8 @@ export default function Catalogo() {
         video_url: finalVideoUrl,
         imagem_modelo: imagemModelo || null,
         categoria: categoria,
+        garantia: garantia || null,
+        prazo_entrega: prazoEntrega || null,
       })
       .eq('id', modeloSelecionado.id);
 
@@ -474,6 +484,30 @@ export default function Catalogo() {
                 placeholder="Escreva aqui a apresentação de venda..."
                 rows={6}
               />
+            </div>
+
+            {/* Garantia e Prazo de Entrega */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="garantia">Garantia</Label>
+                <Input
+                  id="garantia"
+                  type="text"
+                  value={garantia}
+                  onChange={(e) => setGarantia(e.target.value)}
+                  placeholder="Ex: Vitalícia"
+                />
+              </div>
+              <div>
+                <Label htmlFor="prazoEntrega">Prazo de Entrega</Label>
+                <Input
+                  id="prazoEntrega"
+                  type="text"
+                  value={prazoEntrega}
+                  onChange={(e) => setPrazoEntrega(e.target.value)}
+                  placeholder="Ex: 45 dias úteis"
+                />
+              </div>
             </div>
 
             {/* Mídias */}
