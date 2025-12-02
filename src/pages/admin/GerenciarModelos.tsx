@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Upload } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Video } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface ModeloBase {
@@ -14,6 +14,7 @@ interface ModeloBase {
   preco_base: number;
   categoria: string | null;
   imagem_modelo: string | null;
+  video_url: string | null;
 }
 
 export default function GerenciarModelos() {
@@ -25,6 +26,7 @@ export default function GerenciarModelos() {
   const [precoBase, setPrecoBase] = useState('');
   const [categoria, setCategoria] = useState<string>('EDC');
   const [imagemFile, setImagemFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -51,6 +53,7 @@ export default function GerenciarModelos() {
     setUploading(true);
 
     let imagemUrl = editingModelo?.imagem_modelo || null;
+    let videoUrl = editingModelo?.video_url || null;
 
     // Upload da imagem se houver
     if (imagemFile) {
@@ -73,11 +76,33 @@ export default function GerenciarModelos() {
       imagemUrl = publicUrl;
     }
 
+    // Upload do vídeo se houver
+    if (videoFile) {
+      const fileExt = videoFile.name.split('.').pop();
+      const fileName = `videos/${Math.random()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('modelo-imagens')
+        .upload(fileName, videoFile);
+
+      if (uploadError) {
+        toast.error('Erro ao fazer upload do vídeo');
+        setUploading(false);
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('modelo-imagens')
+        .getPublicUrl(fileName);
+
+      videoUrl = publicUrl;
+    }
+
     const modeloData = {
       nome_modelo: nomeModelo,
       preco_base: parseFloat(precoBase),
       categoria: categoria,
       imagem_modelo: imagemUrl,
+      video_url: videoUrl,
     };
 
     if (editingModelo) {
@@ -142,6 +167,7 @@ export default function GerenciarModelos() {
     setPrecoBase('');
     setCategoria('EDC');
     setImagemFile(null);
+    setVideoFile(null);
   };
 
   if (loading) {
@@ -223,6 +249,18 @@ export default function GerenciarModelos() {
                   <p className="text-xs text-muted-foreground">Já existe uma imagem. Selecione outra para substituir.</p>
                 )}
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="video">Vídeo do Modelo</Label>
+                <Input
+                  id="video"
+                  type="file"
+                  accept="video/*,.mov,.MOV,.mp4,.MP4"
+                  onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                />
+                {editingModelo?.video_url && !videoFile && (
+                  <p className="text-xs text-muted-foreground">Já existe um vídeo. Selecione outro para substituir.</p>
+                )}
+              </div>
               <Button type="submit" disabled={uploading} className="w-full">
                 {uploading ? 'Salvando...' : 'Salvar'}
               </Button>
@@ -235,14 +273,24 @@ export default function GerenciarModelos() {
         {modelos.map((modelo) => (
           <Card key={modelo.id}>
             <CardHeader>
-              {modelo.imagem_modelo && (
+              {modelo.video_url ? (
+                <video
+                  src={modelo.video_url}
+                  className="w-full h-48 object-cover rounded-md mb-4"
+                  controls
+                  muted
+                />
+              ) : modelo.imagem_modelo ? (
                 <img
                   src={modelo.imagem_modelo}
                   alt={modelo.nome_modelo}
                   className="w-full h-48 object-cover rounded-md mb-4"
                 />
-              )}
-              <CardTitle>{modelo.nome_modelo}</CardTitle>
+              ) : null}
+              <CardTitle className="flex items-center gap-2">
+                {modelo.nome_modelo}
+                {modelo.video_url && <Video className="h-4 w-4 text-muted-foreground" />}
+              </CardTitle>
               <CardDescription>
                 {modelo.categoria && <span className="text-xs bg-accent/20 px-2 py-1 rounded mr-2">{modelo.categoria}</span>}
                 R$ {modelo.preco_base.toFixed(2)}
