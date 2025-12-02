@@ -612,7 +612,7 @@ export default function Catalogo() {
                     return (
                       <div
                         key={midia.id}
-                        className={`relative border rounded-lg overflow-hidden bg-muted ${isVideo ? 'aspect-[9/16]' : ''}`}
+                        className="relative border rounded-lg overflow-hidden bg-muted aspect-[9/16]"
                       >
                         {/* Indicador de visibilidade */}
                         <div className={`absolute top-2 left-2 z-10 px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
@@ -646,7 +646,7 @@ export default function Catalogo() {
                           <img
                             src={midia.url}
                             alt={midia.nome_arquivo}
-                            className="w-full h-32 object-cover"
+                            className="w-full h-full object-cover"
                           />
                         )}
                         
