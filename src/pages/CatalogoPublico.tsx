@@ -366,7 +366,7 @@ export default function CatalogoPublico() {
                           <div className="relative">
                             {/* Imagem ou Vídeo */}
                             <div
-                              className={`${modelo.video_url ? 'aspect-[9/16]' : 'aspect-square'} bg-zinc-700 overflow-hidden cursor-pointer`}
+                              className="aspect-[9/16] bg-zinc-700 overflow-hidden cursor-pointer"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               {modelo.video_url ? (
