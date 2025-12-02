@@ -415,9 +415,9 @@ export default function CatalogoPublico() {
                           </div>
 
                           {/* Info do produto */}
-                          <div className="p-2 md:p-4">
+                          <div className="p-2 md:p-4 h-[120px] md:h-[140px] flex flex-col">
                             <h3
-                              className="font-semibold mb-1 md:mb-2 line-clamp-2 text-xs md:text-base text-white hover:text-accent transition-colors cursor-pointer"
+                              className="font-semibold mb-1 md:mb-2 line-clamp-1 text-xs md:text-base text-white hover:text-accent transition-colors cursor-pointer"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               {modelo.nome_modelo}
@@ -431,7 +431,7 @@ export default function CatalogoPublico() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="w-full mt-2 md:mt-3 border-zinc-600 text-zinc-300 hover:bg-accent hover:text-white hover:border-accent text-[10px] md:text-sm h-7 md:h-9"
+                              className="w-full mt-auto border-zinc-600 text-zinc-300 hover:bg-accent hover:text-white hover:border-accent text-[10px] md:text-sm h-7 md:h-9"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               Ver detalhes
