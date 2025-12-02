@@ -178,8 +178,8 @@ export default function GerenciarModelos() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Gerenciar Modelos</h1>
-          <p className="text-muted-foreground">Gerencie os modelos base de lâminas</p>
+          <h1 className="text-3xl font-bold">Modelos Base</h1>
+          <p className="text-muted-foreground">Modelos usados na customização de lâminas (ex: EDC, Jagunço, Adaga)</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
