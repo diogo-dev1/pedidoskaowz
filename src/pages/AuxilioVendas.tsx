@@ -449,41 +449,52 @@ export default function Catalogo() {
                 </p>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
-                  {midias.map((midia) => (
-                    <div
-                      key={midia.name}
-                      className="relative group border rounded-lg overflow-hidden bg-muted"
-                    >
-                      <img
-                        src={midia.url}
-                        alt={midia.name}
-                        className="w-full h-32 object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => downloadMidia(midia.url, midia.name)}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => copiarLinkMidia(midia.url)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => deletarMidia(midia.name)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+              {midias.map((midia) => {
+                    const isVideo = midia.name.match(/\.(mp4|webm|mov|avi)$/i);
+                    return (
+                      <div
+                        key={midia.name}
+                        className="relative group border rounded-lg overflow-hidden bg-muted"
+                      >
+                        {isVideo ? (
+                          <video
+                            src={midia.url}
+                            className="w-full h-32 object-cover"
+                            muted
+                          />
+                        ) : (
+                          <img
+                            src={midia.url}
+                            alt={midia.name}
+                            className="w-full h-32 object-cover"
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => downloadMidia(midia.url, midia.name)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => copiarLinkMidia(midia.url)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => deletarMidia(midia.name)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
