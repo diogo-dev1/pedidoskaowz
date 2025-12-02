@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, Download, Upload, X, Loader2, Search } from 'lucide-react';
+import { Copy, Download, Upload, X, Loader2, Search, Video } from 'lucide-react';
 
 interface Modelo {
   id: string;
@@ -35,6 +35,7 @@ export default function Catalogo() {
   const [preco, setPreco] = useState('');
   const [apresentacao, setApresentacao] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [midias, setMidias] = useState<Midia[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [carregandoMidias, setCarregandoMidias] = useState(false);
@@ -103,6 +104,7 @@ export default function Catalogo() {
     setPreco('');
     setApresentacao('');
     setVideoUrl('');
+    setVideoFile(null);
     setMidias([]);
   };
 
@@ -110,12 +112,41 @@ export default function Catalogo() {
     if (!modeloSelecionado) return;
 
     setSalvando(true);
+    
+    let finalVideoUrl = videoUrl || null;
+    
+    // Upload video file if selected
+    if (videoFile) {
+      const fileExt = videoFile.name.split('.').pop();
+      const fileName = `videos/${modeloSelecionado.id}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('catalogo-midias')
+        .upload(fileName, videoFile);
+      
+      if (uploadError) {
+        toast({
+          title: 'Erro ao fazer upload do vídeo',
+          description: uploadError.message,
+          variant: 'destructive',
+        });
+        setSalvando(false);
+        return;
+      }
+      
+      const { data: urlData } = supabase.storage
+        .from('catalogo-midias')
+        .getPublicUrl(fileName);
+      
+      finalVideoUrl = urlData.publicUrl;
+    }
+    
     const { error } = await supabase
       .from('catalogo_modelos')
       .update({
         preco_base: parseFloat(preco),
         apresentacao_venda: apresentacao,
-        video_url: videoUrl || null,
+        video_url: finalVideoUrl,
       })
       .eq('id', modeloSelecionado.id);
 
@@ -266,9 +297,14 @@ export default function Catalogo() {
               </div>
             )}
             <CardContent className="p-2 sm:p-4">
-              <h3 className="font-semibold text-xs sm:text-lg text-card-foreground truncate">
-                {modelo.nome_modelo}
-              </h3>
+              <div className="flex items-center gap-1">
+                <h3 className="font-semibold text-xs sm:text-lg text-card-foreground truncate flex-1">
+                  {modelo.nome_modelo}
+                </h3>
+                {modelo.video_url && (
+                  <Video className="h-3 w-3 sm:h-4 sm:w-4 text-accent flex-shrink-0" />
+                )}
+              </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-1 mt-1 sm:mt-2">
                 <p className="text-accent font-bold text-sm sm:text-base">
                   R$ {modelo.preco_base.toFixed(2)}
@@ -304,21 +340,34 @@ export default function Catalogo() {
 
             {/* Campo de Vídeo */}
             <div>
-              <Label htmlFor="videoUrl">URL do Vídeo de Apresentação</Label>
-              <Input
-                id="videoUrl"
-                type="url"
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder="https://exemplo.com/video.mp4"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Cole a URL de um vídeo MP4, WebM ou link do YouTube
-              </p>
-              {videoUrl && (
+              <Label>Vídeo de Apresentação</Label>
+              <div className="mt-2">
+                <Button variant="outline" size="sm" asChild>
+                  <label className="cursor-pointer">
+                    <Video className="h-4 w-4 mr-2" />
+                    {videoFile ? 'Trocar Vídeo' : videoUrl ? 'Substituir Vídeo' : 'Upload de Vídeo'}
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="video/*,.mov,.MOV,.mp4,.MP4,.webm,.WEBM"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          setVideoFile(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </label>
+                </Button>
+                {videoFile && (
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    {videoFile.name}
+                  </span>
+                )}
+              </div>
+              {(videoUrl || videoFile) && (
                 <div className="mt-2 rounded-lg overflow-hidden border">
                   <video
-                    src={videoUrl}
+                    src={videoFile ? URL.createObjectURL(videoFile) : videoUrl}
                     controls
                     className="w-full max-h-48 object-contain bg-muted"
                   />
