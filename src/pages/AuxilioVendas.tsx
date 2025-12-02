@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Copy, Download, Upload, X, Loader2, Search, Video, Share2, Eye, EyeOff } from 'lucide-react';
+import { Copy, Download, Upload, X, Loader2, Search, Video, Share2, Eye, EyeOff, ImageIcon, Star } from 'lucide-react';
 
 interface Modelo {
   id: string;
@@ -280,6 +280,49 @@ export default function Catalogo() {
         ? 'Esta mídia não será exibida no catálogo público.'
         : 'Esta mídia será exibida no catálogo público.',
     });
+  };
+
+  const definirComoCapa = async (midia: Midia) => {
+    if (!modeloSelecionado) return;
+
+    const isVideo = midia.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i);
+    
+    const updateData: Record<string, string | null> = {};
+    
+    if (isVideo) {
+      updateData.video_url = midia.url;
+      updateData.imagem_modelo = null;
+      setVideoUrl(midia.url);
+      setImagemModelo('');
+    } else {
+      updateData.imagem_modelo = midia.url;
+      updateData.video_url = null;
+      setImagemModelo(midia.url);
+      setVideoUrl('');
+    }
+
+    const { error } = await supabase
+      .from('catalogo_modelos')
+      .update(updateData)
+      .eq('id', modeloSelecionado.id);
+
+    if (error) {
+      toast({
+        title: 'Erro ao definir capa',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Capa definida!',
+      description: isVideo 
+        ? 'Este vídeo será exibido no card de apresentação.'
+        : 'Esta imagem será exibida no card de apresentação.',
+    });
+
+    carregarModelos();
   };
 
   const downloadMidia = (url: string, nome: string) => {
@@ -609,10 +652,15 @@ export default function Catalogo() {
                 <div className="grid grid-cols-2 gap-4">
                   {midias.map((midia) => {
                     const isVideo = midia.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i);
+                    const isCapa = isVideo 
+                      ? videoUrl === midia.url 
+                      : imagemModelo === midia.url;
                     return (
                       <div
                         key={midia.id}
-                        className="relative border rounded-lg overflow-hidden bg-muted aspect-[9/16]"
+                        className={`relative border rounded-lg overflow-hidden bg-muted aspect-[9/16] ${
+                          isCapa ? 'ring-2 ring-accent' : ''
+                        }`}
                       >
                         {/* Indicador de visibilidade */}
                         <div className={`absolute top-2 left-2 z-10 px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
@@ -632,6 +680,14 @@ export default function Catalogo() {
                             </>
                           )}
                         </div>
+
+                        {/* Indicador de capa */}
+                        {isCapa && (
+                          <div className="absolute top-2 right-2 z-10 px-2 py-1 rounded-full text-xs flex items-center gap-1 bg-accent text-accent-foreground">
+                            <Star className="h-3 w-3 fill-current" />
+                            <span className="hidden sm:inline">Capa</span>
+                          </div>
+                        )}
 
                         {isVideo ? (
                           <video
@@ -653,6 +709,16 @@ export default function Catalogo() {
                         {/* Botões de ação sempre visíveis na parte inferior */}
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
                           <div className="flex items-center justify-center gap-1">
+                            <Button
+                              size="sm"
+                              variant={isCapa ? 'default' : 'secondary'}
+                              className="h-8 w-8 p-0"
+                              onClick={() => definirComoCapa(midia)}
+                              title="Definir como capa"
+                              disabled={isCapa}
+                            >
+                              <Star className={`h-4 w-4 ${isCapa ? 'fill-current' : ''}`} />
+                            </Button>
                             <Button
                               size="sm"
                               variant="secondary"
