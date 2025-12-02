@@ -365,12 +365,14 @@ export default function Catalogo() {
                 )}
               </div>
               {(videoUrl || videoFile) && (
-                <div className="mt-2 rounded-lg overflow-hidden border">
-                  <video
-                    src={videoFile ? URL.createObjectURL(videoFile) : videoUrl}
-                    controls
-                    className="w-full max-h-48 object-contain bg-muted"
-                  />
+                <div className="mt-2 rounded-lg overflow-hidden border max-w-[200px] mx-auto">
+                  <div className="aspect-[9/16]">
+                    <video
+                      src={videoFile ? URL.createObjectURL(videoFile) : videoUrl}
+                      controls
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 </div>
               )}
             </div>
