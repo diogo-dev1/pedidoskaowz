@@ -13,6 +13,7 @@ import CatalogoPublico from "./pages/CatalogoPublico";
 import CatalogoDetalhe from "./pages/CatalogoDetalhe";
 import CustomizarLamina from "./pages/CustomizarLamina";
 import GerenciarModelos from "./pages/admin/GerenciarModelos";
+import GerenciarConfiguracoes from "./pages/admin/GerenciarConfiguracoes";
 import GerenciarComponentes from "./pages/admin/GerenciarComponentes";
 import MensagensPadrao from "./pages/MensagensPadrao";
 import Install from "./pages/Install";
@@ -48,6 +49,16 @@ const App = () => (
                 <ProtectedRoute requireAdmin>
                   <Layout>
                     <GerenciarModelos />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/configuracoes"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <GerenciarConfiguracoes />
                   </Layout>
                 </ProtectedRoute>
               }
