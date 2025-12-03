@@ -4,8 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench } from 'lucide-react';
+import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench, ChevronDown } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 
 interface Modelo {
@@ -253,44 +254,48 @@ export default function CatalogoPublico() {
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
           {/* Sidebar - Categorias */}
           <aside className="lg:w-64 shrink-0">
-            <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 md:p-4 sticky top-24 shadow-sm">
-              <h3 className="font-semibold text-base md:text-lg mb-3 md:mb-4 text-white">Categorias</h3>
-              <div className="space-y-1.5 md:space-y-2">
-                <Button
-                  variant={!categoriaAtiva ? "default" : "ghost"}
-                  size="sm"
-                  className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 ${
-                    !categoriaAtiva 
-                      ? 'bg-accent text-white hover:bg-accent/90' 
-                      : 'text-zinc-300 hover:bg-zinc-700'
-                  }`}
-                  onClick={() => setCategoriaAtiva(null)}
-                >
-                  Todas
-                </Button>
-                {categorias.map((cat) => (
+            <Collapsible defaultOpen={false} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-24 shadow-sm">
+              <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-base md:text-lg">Categorias</span>
+                  {categoriaAtiva && (
+                    <Badge className="bg-accent text-white text-xs">{categoriaAtiva}</Badge>
+                  )}
+                </div>
+                <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="px-3 md:px-4 pb-3 md:pb-4">
+                <div className="space-y-1.5 md:space-y-2">
                   <Button
-                    key={cat}
-                    variant={categoriaAtiva === cat ? "default" : "ghost"}
+                    variant={!categoriaAtiva ? "default" : "ghost"}
                     size="sm"
                     className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 ${
-                      categoriaAtiva === cat 
+                      !categoriaAtiva 
                         ? 'bg-accent text-white hover:bg-accent/90' 
                         : 'text-zinc-300 hover:bg-zinc-700'
                     }`}
-                    onClick={() => setCategoriaAtiva(cat)}
+                    onClick={() => setCategoriaAtiva(null)}
                   >
-                    {cat}
+                    Todas
                   </Button>
-                ))}
-              </div>
-
-              {/* Filtros adicionais - placeholder para expansão futura */}
-              <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-zinc-700">
-                <h4 className="font-medium text-xs md:text-sm mb-2 md:mb-3 text-zinc-400">Filtros</h4>
-                <p className="text-xs text-zinc-500">Em breve mais opções</p>
-              </div>
-            </div>
+                  {categorias.map((cat) => (
+                    <Button
+                      key={cat}
+                      variant={categoriaAtiva === cat ? "default" : "ghost"}
+                      size="sm"
+                      className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 ${
+                        categoriaAtiva === cat 
+                          ? 'bg-accent text-white hover:bg-accent/90' 
+                          : 'text-zinc-300 hover:bg-zinc-700'
+                      }`}
+                      onClick={() => setCategoriaAtiva(cat)}
+                    >
+                      {cat}
+                    </Button>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </aside>
 
           {/* Grid de Produtos */}
