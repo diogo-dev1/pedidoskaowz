@@ -65,10 +65,14 @@ export default function CatalogoPublico() {
   useEffect(() => {
     carregarModelos();
     
-    // Verifica se há categoria nos parâmetros da URL
+    // Verifica se há categoria ou parâmetro para mostrar tudo
     const catParam = searchParams.get('categoria');
+    const verTudoParam = searchParams.get('ver');
+    
     if (catParam) {
       setCategoriaAtiva(catParam);
+      setMostrarLanding(false);
+    } else if (verTudoParam === 'tudo') {
       setMostrarLanding(false);
     }
   }, []);
