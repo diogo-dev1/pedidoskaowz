@@ -23,6 +23,7 @@ interface InfoEtapa {
   titulo: string;
   conteudo: string | null;
   imagem_url: string | null;
+  label_botao: string | null;
 }
 
 interface MidiaEtapa {
@@ -84,16 +85,13 @@ export default function GerenciarInformativos() {
 
   const deleteMidiaMutation = useMutation({
     mutationFn: async ({ id, url }: { id: string; url: string }) => {
-      // Extract filename from URL
       const urlParts = url.split('/');
       const fileName = urlParts[urlParts.length - 1];
       
-      // Delete from storage
       await supabase.storage
         .from('info-etapas-midias')
         .remove([fileName]);
       
-      // Delete from database
       const { error } = await supabase
         .from('midias_info_etapas')
         .delete()
@@ -254,6 +252,20 @@ export default function GerenciarInformativos() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">
+                    Texto do Botão
+                  </label>
+                  <Input
+                    value={getEditingValue(etapa.key, 'label_botao') as string}
+                    onChange={(e) => handleChange(etapa.key, 'label_botao', e.target.value)}
+                    placeholder="Saiba mais"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Ex: "Saiba mais", "Conhecer mais", "Ver detalhes"
+                  </p>
+                </div>
+
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">
                     Título
