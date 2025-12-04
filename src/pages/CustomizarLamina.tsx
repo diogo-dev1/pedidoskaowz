@@ -466,7 +466,7 @@ export default function CustomizarLamina() {
                               className="h-3.5 w-3.5 md:h-4 md:w-4"
                             />
                             <Label htmlFor="laser" className="text-xs md:text-sm cursor-pointer">
-                              Adicionar personalização à laser (+R$ 30,00)
+                              Adicionar personalização à laser
                             </Label>
                           </div>
                           {laser && (
