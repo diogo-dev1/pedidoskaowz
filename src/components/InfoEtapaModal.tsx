@@ -225,12 +225,7 @@ export function InfoEtapaModal({
                   Conhecer o Catálogo
                 </a>}
 
-              {user && (
-                <Button onClick={() => setEditing(true)} variant="ghost" size="sm" className="w-full text-xs">
-                  <Pencil className="h-3 w-3 mr-1.5" />
-                  Editar
-                </Button>
-              )}
+              {user}
             </div>}
         </DialogContent>
       </Dialog>
