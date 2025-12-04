@@ -9,6 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Trash2, Plus, MessageCircle, Search, Check, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import edcKnife from '@/assets/edc-knife.svg';
+import { InfoEtapaModal } from '@/components/InfoEtapaModal';
 
 interface ModeloBase {
   id: string;
@@ -242,6 +243,7 @@ export default function CustomizarLamina() {
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-base md:text-lg">1. Escolha o Modelo</h3>
                     <Badge variant="secondary" className="text-xs">Obrigatório</Badge>
+                    <InfoEtapaModal etapaKey="modelo" />
                   </div>
 
                   {/* Filtros de Categoria */}
@@ -319,7 +321,10 @@ export default function CustomizarLamina() {
                     <Accordion type="single" collapsible className="w-full">
                       <AccordionItem value="aco" className="border-border">
                         <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                          2. Tipo de Aço {acoSelecionado && <Badge variant="outline" className="ml-2 text-[10px] md:text-xs">Selecionado</Badge>}
+                          <span className="flex items-center gap-2">
+                            2. Tipo de Aço {acoSelecionado && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
+                            <InfoEtapaModal etapaKey="aco" />
+                          </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
                           {acos.map(aco => (
@@ -343,7 +348,10 @@ export default function CustomizarLamina() {
 
                       <AccordionItem value="acabamento" className="border-border">
                         <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                          3. Acabamento {acabamentoSelecionado && <Badge variant="outline" className="ml-2 text-[10px] md:text-xs">Selecionado</Badge>}
+                          <span className="flex items-center gap-2">
+                            3. Acabamento {acabamentoSelecionado && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
+                            <InfoEtapaModal etapaKey="acabamento" />
+                          </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
                           {acabamentos.map(acabamento => (
@@ -367,7 +375,10 @@ export default function CustomizarLamina() {
 
                       <AccordionItem value="empunhadura" className="border-border">
                         <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                          4. Empunhadura {empunhaduraSelecionada && <Badge variant="outline" className="ml-2 text-[10px] md:text-xs">Selecionado</Badge>}
+                          <span className="flex items-center gap-2">
+                            4. Empunhadura {empunhaduraSelecionada && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
+                            <InfoEtapaModal etapaKey="empunhadura" />
+                          </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
                           {empunhaduras.map(empunhadura => (
@@ -391,7 +402,10 @@ export default function CustomizarLamina() {
 
                       <AccordionItem value="bainha" className="border-border">
                         <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                          5. Bainha {bainhaSelecionada && <Badge variant="outline" className="ml-2 text-[10px] md:text-xs">Selecionado</Badge>}
+                          <span className="flex items-center gap-2">
+                            5. Bainha {bainhaSelecionada && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
+                            <InfoEtapaModal etapaKey="bainha" />
+                          </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-3 pt-2">
                           <div className="space-y-1.5 md:space-y-2">
@@ -429,7 +443,10 @@ export default function CustomizarLamina() {
 
                       <AccordionItem value="laser" className="border-border">
                         <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                          6. Personalização à Laser {laser && <Badge variant="outline" className="ml-2 text-[10px] md:text-xs">+R$ 30,00</Badge>}
+                          <span className="flex items-center gap-2">
+                            6. Personalização à Laser {laser && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">+R$ 30,00</Badge>}
+                            <InfoEtapaModal etapaKey="laser" />
+                          </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-3 pt-2">
                           <div className="flex items-center gap-2">

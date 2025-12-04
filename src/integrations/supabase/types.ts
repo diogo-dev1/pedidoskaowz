@@ -56,6 +56,36 @@ export type Database = {
         }
         Relationships: []
       }
+      info_etapas_customizacao: {
+        Row: {
+          conteudo: string | null
+          created_at: string
+          etapa_key: string
+          id: string
+          imagem_url: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          conteudo?: string | null
+          created_at?: string
+          etapa_key: string
+          id?: string
+          imagem_url?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          conteudo?: string | null
+          created_at?: string
+          etapa_key?: string
+          id?: string
+          imagem_url?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mensagens_padrao: {
         Row: {
           conteudo: string
