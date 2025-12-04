@@ -221,7 +221,7 @@ export function InfoEtapaModal({
                 {info?.conteudo || 'Nenhuma informação disponível ainda.'}
               </div>
 
-              {etapaKey === 'modelo' && <a href="/catalogo" className="block w-full text-center py-3 px-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
+              {etapaKey === 'modelo' && <a href="/catalogo?ver=tudo" className="block w-full text-center py-3 px-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
                   Conhecer o Catálogo
                 </a>}
             </div>}
