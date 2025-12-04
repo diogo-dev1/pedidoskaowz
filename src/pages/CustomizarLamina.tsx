@@ -341,10 +341,9 @@ export default function CustomizarLamina() {
                                   : 'bg-muted hover:bg-muted/80'
                               }`}
                             >
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="truncate">{aco.nome_opcao}</span>
-                                <span className="text-[10px] md:text-xs whitespace-nowrap">{aco.preco_adicional > 0 ? `+R$ ${aco.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
-                              </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate">{aco.nome_opcao}</span>
+                            </div>
                             </button>
                           ))}
                         </AccordionContent>
@@ -370,10 +369,9 @@ export default function CustomizarLamina() {
                                   : 'bg-muted hover:bg-muted/80'
                               }`}
                             >
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="truncate">{acabamento.nome_opcao}</span>
-                                <span className="text-[10px] md:text-xs whitespace-nowrap">{acabamento.preco_adicional > 0 ? `+R$ ${acabamento.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
-                              </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate">{acabamento.nome_opcao}</span>
+                            </div>
                             </button>
                           ))}
                         </AccordionContent>
@@ -399,10 +397,9 @@ export default function CustomizarLamina() {
                                   : 'bg-muted hover:bg-muted/80'
                               }`}
                             >
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="truncate">{empunhadura.nome_opcao}</span>
-                                <span className="text-[10px] md:text-xs whitespace-nowrap">{empunhadura.preco_adicional > 0 ? `+R$ ${empunhadura.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
-                              </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate">{empunhadura.nome_opcao}</span>
+                            </div>
                             </button>
                           ))}
                         </AccordionContent>
@@ -429,10 +426,9 @@ export default function CustomizarLamina() {
                                     : 'bg-muted hover:bg-muted/80'
                                 }`}
                               >
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="truncate">{bainha.nome_opcao}</span>
-                                  <span className="text-[10px] md:text-xs whitespace-nowrap">{bainha.preco_adicional > 0 ? `+R$ ${bainha.preco_adicional.toFixed(2)}` : 'Incluído'}</span>
-                                </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate">{bainha.nome_opcao}</span>
+                            </div>
                               </button>
                             ))}
                           </div>
