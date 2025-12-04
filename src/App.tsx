@@ -15,6 +15,7 @@ import CustomizarLamina from "./pages/CustomizarLamina";
 import GerenciarModelos from "./pages/admin/GerenciarModelos";
 import GerenciarConfiguracoes from "./pages/admin/GerenciarConfiguracoes";
 import GerenciarComponentes from "./pages/admin/GerenciarComponentes";
+import GerenciarInformativos from "./pages/admin/GerenciarInformativos";
 import MensagensPadrao from "./pages/MensagensPadrao";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
@@ -69,6 +70,16 @@ const App = () => (
                 <ProtectedRoute requireAdmin>
                   <Layout>
                     <GerenciarComponentes />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/informativos"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <GerenciarInformativos />
                   </Layout>
                 </ProtectedRoute>
               }
