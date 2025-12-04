@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Trash2, Plus, MessageCircle, Search, Check, ArrowLeft } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Trash2, Plus, MessageCircle, Search, Check, ArrowLeft, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import edcKnife from '@/assets/edc-knife.svg';
 import { InfoEtapaModal } from '@/components/InfoEtapaModal';
@@ -59,6 +60,9 @@ export default function CustomizarLamina() {
   
   // Lista de lâminas customizadas
   const [laminasCustomizadas, setLaminasCustomizadas] = useState<LaminaCustomizada[]>([]);
+  
+  // Modal para visualizar lâmina
+  const [laminaModalAberta, setLaminaModalAberta] = useState<LaminaCustomizada | null>(null);
 
   useEffect(() => {
     carregarDados();
@@ -111,25 +115,26 @@ export default function CustomizarLamina() {
     return precoBase + precoAco + precoAcabamento + precoEmpunhadura + precoBainha + precoLaser;
   };
 
+  // Objetos selecionados para exibição no resumo em tempo real
+  const modeloAtual = modelos.find(m => m.id === modeloSelecionado);
+  const acoAtual = componentes.find(c => c.id === acoSelecionado);
+  const acabamentoAtual = componentes.find(c => c.id === acabamentoSelecionado);
+  const empunhaduraAtual = componentes.find(c => c.id === empunhaduraSelecionada);
+  const bainhaAtual = componentes.find(c => c.id === bainhaSelecionada);
+
   const adicionarLamina = () => {
     if (!modeloSelecionado) {
       toast.error('Selecione um modelo');
       return;
     }
 
-    const modelo = modelos.find(m => m.id === modeloSelecionado);
-    const aco = componentes.find(c => c.id === acoSelecionado);
-    const acabamento = componentes.find(c => c.id === acabamentoSelecionado);
-    const empunhadura = componentes.find(c => c.id === empunhaduraSelecionada);
-    const bainha = componentes.find(c => c.id === bainhaSelecionada);
-
     const novaLamina: LaminaCustomizada = {
       id: `${Date.now()}-${Math.random()}`,
-      modelo: modelo || null,
-      aco: aco || null,
-      acabamento: acabamento || null,
-      empunhadura: empunhadura || null,
-      bainha: bainha || null,
+      modelo: modeloAtual || null,
+      aco: acoAtual || null,
+      acabamento: acabamentoAtual || null,
+      empunhadura: empunhaduraAtual || null,
+      bainha: bainhaAtual || null,
       corBainha,
       laser,
       textoLaser,
@@ -189,7 +194,6 @@ export default function CustomizarLamina() {
   };
 
   const subtotalAtual = calcularSubtotal();
-  const totalGeral = laminasCustomizadas.reduce((sum, l) => sum + l.subtotal, 0) + subtotalAtual;
 
   return (
     <div className="min-h-screen bg-zinc-50 overflow-x-hidden">
@@ -450,7 +454,7 @@ export default function CustomizarLamina() {
                       <AccordionItem value="laser" className="border-border">
                         <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
                           <span className="flex items-center gap-2">
-                            6. Personalização à Laser {laser && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">+R$ 30,00</Badge>}
+                            6. Personalização à Laser {laser && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Ativo</Badge>}
                           </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-3 pt-2">
@@ -509,9 +513,60 @@ export default function CustomizarLamina() {
               </div>
 
               {/* Coluna Lateral - Resumo */}
-              <div className="lg:col-span-1">
-                <div className="bg-white rounded-lg border border-zinc-200 p-3 md:p-6 lg:sticky lg:top-24 space-y-3 md:space-y-4">
-                  <h3 className="font-semibold text-base md:text-lg">Resumo do Pedido</h3>
+              <div className="lg:col-span-1 space-y-4">
+                {/* Resumo em Tempo Real */}
+                {modeloSelecionado && (
+                  <div className="bg-white rounded-lg border border-zinc-200 p-3 md:p-6 lg:sticky lg:top-24 space-y-3 md:space-y-4">
+                    <h3 className="font-semibold text-base md:text-lg flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-accent" />
+                      Configuração Atual
+                    </h3>
+                    
+                    <div className="space-y-2 text-xs md:text-sm">
+                      <div className="flex justify-between py-1.5 border-b border-border">
+                        <span className="text-muted-foreground">Modelo:</span>
+                        <span className="font-medium text-right max-w-[60%] truncate">{modeloAtual?.nome_modelo || '-'}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 border-b border-border">
+                        <span className="text-muted-foreground">Aço:</span>
+                        <span className="font-medium text-right max-w-[60%] truncate">{acoAtual?.nome_opcao || '-'}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 border-b border-border">
+                        <span className="text-muted-foreground">Acabamento:</span>
+                        <span className="font-medium text-right max-w-[60%] truncate">{acabamentoAtual?.nome_opcao || '-'}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 border-b border-border">
+                        <span className="text-muted-foreground">Empunhadura:</span>
+                        <span className="font-medium text-right max-w-[60%] truncate">{empunhaduraAtual?.nome_opcao || '-'}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 border-b border-border">
+                        <span className="text-muted-foreground">Bainha:</span>
+                        <span className="font-medium text-right max-w-[60%] truncate">{bainhaAtual?.nome_opcao || '-'}</span>
+                      </div>
+                      {corBainha && (
+                        <div className="flex justify-between py-1.5 border-b border-border">
+                          <span className="text-muted-foreground">Cor da Bainha:</span>
+                          <span className="font-medium text-right max-w-[60%] truncate">{corBainha}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between py-1.5 border-b border-border">
+                        <span className="text-muted-foreground">Laser:</span>
+                        <span className="font-medium">{laser ? (textoLaser || 'Sim') : 'Não'}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-border">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold">Subtotal:</span>
+                        <span className="text-lg font-bold text-accent">R$ {subtotalAtual.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Lâminas Adicionadas */}
+                <div className="bg-white rounded-lg border border-zinc-200 p-3 md:p-6 lg:sticky lg:top-24 space-y-3 md:space-y-4" style={{ top: modeloSelecionado ? 'calc(24rem + 6rem)' : '6rem' }}>
+                  <h3 className="font-semibold text-base md:text-lg">Lâminas Adicionadas ({laminasCustomizadas.length})</h3>
                   
                   {laminasCustomizadas.length === 0 ? (
                     <p className="text-xs md:text-sm text-muted-foreground text-center py-6 md:py-8">
@@ -520,16 +575,30 @@ export default function CustomizarLamina() {
                   ) : (
                     <div className="space-y-2 md:space-y-3">
                       {laminasCustomizadas.map((lamina) => (
-                        <div key={lamina.id} className="p-2 md:p-3 bg-muted rounded-lg">
+                        <div 
+                          key={lamina.id} 
+                          className="p-2 md:p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
+                          onClick={() => setLaminaModalAberta(lamina)}
+                        >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-xs md:text-sm truncate">{lamina.modelo?.nome_modelo}</p>
-                              <p className="text-[10px] md:text-xs text-muted-foreground">R$ {lamina.subtotal.toFixed(2)}</p>
+                              <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
+                                {[
+                                  lamina.aco?.nome_opcao,
+                                  lamina.acabamento?.nome_opcao,
+                                  lamina.empunhadura?.nome_opcao
+                                ].filter(Boolean).join(' • ') || 'Clique para ver detalhes'}
+                              </p>
+                              <p className="text-xs font-semibold text-accent mt-1">R$ {lamina.subtotal.toFixed(2)}</p>
                             </div>
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => removerLamina(lamina.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removerLamina(lamina.id);
+                              }}
                               className="h-7 w-7 md:h-8 md:w-8 p-0"
                             >
                               <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
@@ -565,6 +634,74 @@ export default function CustomizarLamina() {
           </div>
         )}
       </div>
+
+      {/* Modal de Detalhes da Lâmina */}
+      <Dialog open={!!laminaModalAberta} onOpenChange={() => setLaminaModalAberta(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">
+              {laminaModalAberta?.modelo?.nome_modelo || 'Detalhes da Lâmina'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {laminaModalAberta && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-muted p-2.5 rounded-lg">
+                  <p className="text-muted-foreground text-xs">Modelo</p>
+                  <p className="font-medium">{laminaModalAberta.modelo?.nome_modelo || '-'}</p>
+                </div>
+                <div className="bg-muted p-2.5 rounded-lg">
+                  <p className="text-muted-foreground text-xs">Aço</p>
+                  <p className="font-medium">{laminaModalAberta.aco?.nome_opcao || '-'}</p>
+                </div>
+                <div className="bg-muted p-2.5 rounded-lg">
+                  <p className="text-muted-foreground text-xs">Acabamento</p>
+                  <p className="font-medium">{laminaModalAberta.acabamento?.nome_opcao || '-'}</p>
+                </div>
+                <div className="bg-muted p-2.5 rounded-lg">
+                  <p className="text-muted-foreground text-xs">Empunhadura</p>
+                  <p className="font-medium">{laminaModalAberta.empunhadura?.nome_opcao || '-'}</p>
+                </div>
+                <div className="bg-muted p-2.5 rounded-lg">
+                  <p className="text-muted-foreground text-xs">Bainha</p>
+                  <p className="font-medium">{laminaModalAberta.bainha?.nome_opcao || '-'}</p>
+                </div>
+                {laminaModalAberta.corBainha && (
+                  <div className="bg-muted p-2.5 rounded-lg">
+                    <p className="text-muted-foreground text-xs">Cor da Bainha</p>
+                    <p className="font-medium">{laminaModalAberta.corBainha}</p>
+                  </div>
+                )}
+              </div>
+              
+              {laminaModalAberta.laser && (
+                <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+                  <p className="text-muted-foreground text-xs">Personalização à Laser</p>
+                  <p className="font-medium">{laminaModalAberta.textoLaser || 'Sim'}</p>
+                </div>
+              )}
+
+              <div className="pt-3 border-t border-border flex justify-between items-center">
+                <span className="font-semibold">Subtotal:</span>
+                <span className="text-xl font-bold text-accent">R$ {laminaModalAberta.subtotal.toFixed(2)}</span>
+              </div>
+
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={() => {
+                  removerLamina(laminaModalAberta.id);
+                  setLaminaModalAberta(null);
+                }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Remover Lâmina
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
