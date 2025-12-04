@@ -328,7 +328,7 @@ export default function CustomizarLamina() {
                           </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
-                          <div className="mb-2">
+                          <div className="mb-2 flex justify-end">
                             <InfoEtapaModal etapaKey="aco" showLabel />
                           </div>
                           {acos.map(aco => (
@@ -357,7 +357,7 @@ export default function CustomizarLamina() {
                           </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
-                          <div className="mb-2">
+                          <div className="mb-2 flex justify-end">
                             <InfoEtapaModal etapaKey="acabamento" showLabel />
                           </div>
                           {acabamentos.map(acabamento => (
@@ -386,7 +386,7 @@ export default function CustomizarLamina() {
                           </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
-                          <div className="mb-2">
+                          <div className="mb-2 flex justify-end">
                             <InfoEtapaModal etapaKey="empunhadura" showLabel />
                           </div>
                           {empunhaduras.map(empunhadura => (
@@ -415,7 +415,7 @@ export default function CustomizarLamina() {
                           </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-3 pt-2">
-                          <div className="mb-2">
+                          <div className="mb-2 flex justify-end">
                             <InfoEtapaModal etapaKey="bainha" showLabel />
                           </div>
                           <div className="space-y-1.5 md:space-y-2">
@@ -458,7 +458,7 @@ export default function CustomizarLamina() {
                           </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-3 pt-2">
-                          <div className="mb-2">
+                          <div className="mb-2 flex justify-end">
                             <InfoEtapaModal etapaKey="laser" showLabel />
                           </div>
                           <div className="flex items-center gap-2">
