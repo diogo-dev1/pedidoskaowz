@@ -16,6 +16,7 @@ interface InfoEtapa {
   conteudo: string | null;
   imagem_url: string | null;
   label_botao: string | null;
+  cor_botao: string | null;
 }
 
 interface MidiaEtapa {
@@ -63,12 +64,12 @@ export function InfoEtapaModal({ etapaKey, trigger, showLabel = false }: InfoEta
     try {
       const { data } = await supabase
         .from('info_etapas_customizacao')
-        .select('label_botao')
+        .select('label_botao, cor_botao')
         .eq('etapa_key', etapaKey)
         .single();
       if (data) {
-        setInfo(prev => prev ? { ...prev, label_botao: data.label_botao } : { 
-          id: '', etapa_key: etapaKey, titulo: '', conteudo: null, imagem_url: null, label_botao: data.label_botao 
+        setInfo(prev => prev ? { ...prev, label_botao: data.label_botao, cor_botao: data.cor_botao } : { 
+          id: '', etapa_key: etapaKey, titulo: '', conteudo: null, imagem_url: null, label_botao: data.label_botao, cor_botao: data.cor_botao 
         });
       }
     } catch (error) {
@@ -146,6 +147,7 @@ export function InfoEtapaModal({ etapaKey, trigger, showLabel = false }: InfoEta
   const videos = midias.filter(m => m.tipo === 'video');
 
   const labelText = info?.label_botao || 'Saiba mais';
+  const buttonColor = info?.cor_botao || '#3b82f6';
 
   return (
     <>
@@ -158,7 +160,8 @@ export function InfoEtapaModal({ etapaKey, trigger, showLabel = false }: InfoEta
             e.stopPropagation();
             setOpen(true);
           }}
-          className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
+          className="text-xs underline underline-offset-2 transition-opacity hover:opacity-80"
+          style={{ color: buttonColor }}
         >
           {labelText}
         </button>
@@ -169,7 +172,8 @@ export function InfoEtapaModal({ etapaKey, trigger, showLabel = false }: InfoEta
             e.stopPropagation();
             setOpen(true);
           }}
-          className="p-1 rounded-full hover:bg-muted/80 transition-colors text-muted-foreground hover:text-foreground"
+          className="p-1 rounded-full hover:bg-muted/80 transition-colors"
+          style={{ color: buttonColor }}
           aria-label="Saiba mais"
         >
           <Info className="h-3.5 w-3.5 md:h-4 md:w-4" />
@@ -297,6 +301,15 @@ export function InfoEtapaModal({ etapaKey, trigger, showLabel = false }: InfoEta
               <div className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
                 {info?.conteudo || 'Nenhuma informação disponível ainda.'}
               </div>
+
+              {etapaKey === 'modelo' && (
+                <a
+                  href="/catalogo"
+                  className="block w-full text-center py-3 px-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Conhecer o Catálogo
+                </a>
+              )}
 
               {user && (
                 <Button

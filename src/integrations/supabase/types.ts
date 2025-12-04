@@ -59,6 +59,7 @@ export type Database = {
       info_etapas_customizacao: {
         Row: {
           conteudo: string | null
+          cor_botao: string | null
           created_at: string
           etapa_key: string
           id: string
@@ -69,6 +70,7 @@ export type Database = {
         }
         Insert: {
           conteudo?: string | null
+          cor_botao?: string | null
           created_at?: string
           etapa_key: string
           id?: string
@@ -79,6 +81,7 @@ export type Database = {
         }
         Update: {
           conteudo?: string | null
+          cor_botao?: string | null
           created_at?: string
           etapa_key?: string
           id?: string

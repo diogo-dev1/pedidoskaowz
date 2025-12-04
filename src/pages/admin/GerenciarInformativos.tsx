@@ -24,6 +24,7 @@ interface InfoEtapa {
   conteudo: string | null;
   imagem_url: string | null;
   label_botao: string | null;
+  cor_botao: string | null;
 }
 
 interface MidiaEtapa {
@@ -252,18 +253,39 @@ export default function GerenciarInformativos() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">
-                    Texto do Botão
-                  </label>
-                  <Input
-                    value={getEditingValue(etapa.key, 'label_botao') as string}
-                    onChange={(e) => handleChange(etapa.key, 'label_botao', e.target.value)}
-                    placeholder="Saiba mais"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Ex: "Saiba mais", "Conhecer mais", "Ver detalhes"
-                  </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">
+                      Texto do Botão
+                    </label>
+                    <Input
+                      value={getEditingValue(etapa.key, 'label_botao') as string}
+                      onChange={(e) => handleChange(etapa.key, 'label_botao', e.target.value)}
+                      placeholder="Saiba mais"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Ex: "Saiba mais", "Conhecer mais"
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">
+                      Cor do Botão
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="color"
+                        value={(getEditingValue(etapa.key, 'cor_botao') as string) || '#3b82f6'}
+                        onChange={(e) => handleChange(etapa.key, 'cor_botao', e.target.value)}
+                        className="w-12 h-9 p-1 cursor-pointer"
+                      />
+                      <Input
+                        value={(getEditingValue(etapa.key, 'cor_botao') as string) || '#3b82f6'}
+                        onChange={(e) => handleChange(etapa.key, 'cor_botao', e.target.value)}
+                        placeholder="#3b82f6"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div>
