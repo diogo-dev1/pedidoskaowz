@@ -63,6 +63,7 @@ export type Database = {
           etapa_key: string
           id: string
           imagem_url: string | null
+          label_botao: string | null
           titulo: string
           updated_at: string
         }
@@ -72,6 +73,7 @@ export type Database = {
           etapa_key: string
           id?: string
           imagem_url?: string | null
+          label_botao?: string | null
           titulo: string
           updated_at?: string
         }
@@ -81,6 +83,7 @@ export type Database = {
           etapa_key?: string
           id?: string
           imagem_url?: string | null
+          label_botao?: string | null
           titulo?: string
           updated_at?: string
         }

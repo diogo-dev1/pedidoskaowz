@@ -15,6 +15,7 @@ interface InfoEtapa {
   titulo: string;
   conteudo: string | null;
   imagem_url: string | null;
+  label_botao: string | null;
 }
 
 interface MidiaEtapa {
@@ -29,9 +30,10 @@ interface MidiaEtapa {
 interface InfoEtapaModalProps {
   etapaKey: string;
   trigger?: React.ReactNode;
+  showLabel?: boolean;
 }
 
-export function InfoEtapaModal({ etapaKey, trigger }: InfoEtapaModalProps) {
+export function InfoEtapaModal({ etapaKey, trigger, showLabel = false }: InfoEtapaModalProps) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [info, setInfo] = useState<InfoEtapa | null>(null);
@@ -50,10 +52,33 @@ export function InfoEtapaModal({ etapaKey, trigger }: InfoEtapaModalProps) {
     }
   }, [open, etapaKey]);
 
+  // Pre-fetch label for display
+  useEffect(() => {
+    if (showLabel && !info) {
+      fetchLabel();
+    }
+  }, [showLabel, etapaKey]);
+
+  const fetchLabel = async () => {
+    try {
+      const { data } = await supabase
+        .from('info_etapas_customizacao')
+        .select('label_botao')
+        .eq('etapa_key', etapaKey)
+        .single();
+      if (data) {
+        setInfo(prev => prev ? { ...prev, label_botao: data.label_botao } : { 
+          id: '', etapa_key: etapaKey, titulo: '', conteudo: null, imagem_url: null, label_botao: data.label_botao 
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar label:', error);
+    }
+  };
+
   const carregarInfo = async () => {
     setLoading(true);
     try {
-      // Fetch info and midias in parallel
       const [infoResult, midiasResult] = await Promise.all([
         supabase
           .from('info_etapas_customizacao')
@@ -120,10 +145,23 @@ export function InfoEtapaModal({ etapaKey, trigger }: InfoEtapaModalProps) {
   const imagens = midias.filter(m => m.tipo === 'imagem');
   const videos = midias.filter(m => m.tipo === 'video');
 
+  const labelText = info?.label_botao || 'Saiba mais';
+
   return (
     <>
       {trigger ? (
         <div onClick={() => setOpen(true)}>{trigger}</div>
+      ) : showLabel ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(true);
+          }}
+          className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
+        >
+          {labelText}
+        </button>
       ) : (
         <button
           type="button"
@@ -145,7 +183,6 @@ export function InfoEtapaModal({ etapaKey, trigger }: InfoEtapaModalProps) {
               Carregando...
             </div>
           ) : editing ? (
-            // Modo edição
             <div className="space-y-4">
               <DialogHeader>
                 <DialogTitle className="text-base sm:text-lg">Editar Informações</DialogTitle>
@@ -211,7 +248,6 @@ export function InfoEtapaModal({ etapaKey, trigger }: InfoEtapaModalProps) {
               </div>
             </div>
           ) : (
-            // Modo visualização
             <div className="space-y-4">
               <DialogHeader>
                 <DialogTitle className="text-base sm:text-lg pr-8">
@@ -219,7 +255,6 @@ export function InfoEtapaModal({ etapaKey, trigger }: InfoEtapaModalProps) {
                 </DialogTitle>
               </DialogHeader>
 
-              {/* Imagens da tabela midias_info_etapas */}
               {imagens.length > 0 && (
                 <div className="grid grid-cols-2 gap-2">
                   {imagens.map((midia) => (
@@ -234,7 +269,6 @@ export function InfoEtapaModal({ etapaKey, trigger }: InfoEtapaModalProps) {
                 </div>
               )}
 
-              {/* Fallback para imagem_url antiga */}
               {imagens.length === 0 && info?.imagem_url && (
                 <div className="w-full rounded-lg overflow-hidden border border-border">
                   <img
@@ -245,7 +279,6 @@ export function InfoEtapaModal({ etapaKey, trigger }: InfoEtapaModalProps) {
                 </div>
               )}
 
-              {/* Vídeos */}
               {videos.length > 0 && (
                 <div className="space-y-2">
                   {videos.map((midia) => (
