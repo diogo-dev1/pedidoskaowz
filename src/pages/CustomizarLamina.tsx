@@ -304,14 +304,11 @@ export default function CustomizarLamina() {
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-xs md:text-sm truncate">{modelo.nome_modelo}</div>
-                              <div className="flex items-center gap-1.5 md:gap-2 mt-0.5">
-                                <span className="text-xs font-semibold">R$ {modelo.preco_base.toFixed(2)}</span>
-                                {modelo.categoria && (
-                                  <Badge variant="outline" className="text-[10px] md:text-xs px-1 md:px-1.5 py-0">
-                                    {modelo.categoria}
-                                  </Badge>
-                                )}
-                              </div>
+                              {modelo.categoria && (
+                                <Badge variant="outline" className="text-[10px] md:text-xs px-1 md:px-1.5 py-0 mt-0.5">
+                                  {modelo.categoria}
+                                </Badge>
+                              )}
                             </div>
                             {modeloSelecionado === modelo.id && <Check className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />}
                           </div>
@@ -499,7 +496,7 @@ export default function CustomizarLamina() {
                       className="flex-1 bg-accent hover:bg-accent/90 text-xs md:text-sm"
                     >
                       <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 mr-2" />
-                      Adicionar Lâmina (R$ {subtotalAtual.toFixed(2)})
+                      Adicionar Lâmina
                     </Button>
                     <Button
                       onClick={limparFormulario}
@@ -554,13 +551,6 @@ export default function CustomizarLamina() {
                         <span className="font-medium">{laser ? (textoLaser || 'Sim') : 'Não'}</span>
                       </div>
                     </div>
-
-                    <div className="pt-2 border-t border-border">
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold">Subtotal:</span>
-                        <span className="text-lg font-bold text-accent">R$ {subtotalAtual.toFixed(2)}</span>
-                      </div>
-                    </div>
                   </div>
                 )}
 
@@ -590,7 +580,6 @@ export default function CustomizarLamina() {
                                   lamina.empunhadura?.nome_opcao
                                 ].filter(Boolean).join(' • ') || 'Clique para ver detalhes'}
                               </p>
-                              <p className="text-xs font-semibold text-accent mt-1">R$ {lamina.subtotal.toFixed(2)}</p>
                             </div>
                             <Button
                               size="sm"
@@ -611,14 +600,6 @@ export default function CustomizarLamina() {
 
                   {laminasCustomizadas.length > 0 && (
                     <>
-                      <div className="pt-3 md:pt-4 border-t border-border">
-                        <div className="flex justify-between items-center">
-                          <span className="font-semibold text-sm md:text-base">Total:</span>
-                          <span className="text-lg md:text-xl font-bold text-accent">
-                            R$ {laminasCustomizadas.reduce((sum, l) => sum + l.subtotal, 0).toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
                       <Button
                         onClick={enviarWhatsApp}
                         className="w-full bg-accent hover:bg-accent/90 text-xs md:text-sm"
@@ -681,11 +662,6 @@ export default function CustomizarLamina() {
                   <p className="font-medium">{laminaModalAberta.textoLaser || 'Sim'}</p>
                 </div>
               )}
-
-              <div className="pt-3 border-t border-border flex justify-between items-center">
-                <span className="font-semibold">Subtotal:</span>
-                <span className="text-xl font-bold text-accent">R$ {laminaModalAberta.subtotal.toFixed(2)}</span>
-              </div>
 
               <Button
                 variant="destructive"
