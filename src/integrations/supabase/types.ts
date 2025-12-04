@@ -151,6 +151,36 @@ export type Database = {
           },
         ]
       }
+      midias_info_etapas: {
+        Row: {
+          created_at: string
+          etapa_key: string
+          id: string
+          nome_arquivo: string
+          ordem: number
+          tipo: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          etapa_key: string
+          id?: string
+          nome_arquivo: string
+          ordem?: number
+          tipo: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          etapa_key?: string
+          id?: string
+          nome_arquivo?: string
+          ordem?: number
+          tipo?: string
+          url?: string
+        }
+        Relationships: []
+      }
       modelos: {
         Row: {
           categoria: string | null

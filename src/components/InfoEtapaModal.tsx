@@ -17,6 +17,15 @@ interface InfoEtapa {
   imagem_url: string | null;
 }
 
+interface MidiaEtapa {
+  id: string;
+  etapa_key: string;
+  tipo: 'imagem' | 'video';
+  url: string;
+  nome_arquivo: string;
+  ordem: number;
+}
+
 interface InfoEtapaModalProps {
   etapaKey: string;
   trigger?: React.ReactNode;
@@ -26,6 +35,7 @@ export function InfoEtapaModal({ etapaKey, trigger }: InfoEtapaModalProps) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [info, setInfo] = useState<InfoEtapa | null>(null);
+  const [midias, setMidias] = useState<MidiaEtapa[]>([]);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   
@@ -43,18 +53,30 @@ export function InfoEtapaModal({ etapaKey, trigger }: InfoEtapaModalProps) {
   const carregarInfo = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('info_etapas_customizacao')
-        .select('*')
-        .eq('etapa_key', etapaKey)
-        .single();
+      // Fetch info and midias in parallel
+      const [infoResult, midiasResult] = await Promise.all([
+        supabase
+          .from('info_etapas_customizacao')
+          .select('*')
+          .eq('etapa_key', etapaKey)
+          .single(),
+        supabase
+          .from('midias_info_etapas')
+          .select('*')
+          .eq('etapa_key', etapaKey)
+          .order('ordem')
+      ]);
 
-      if (error) throw error;
+      if (infoResult.error) throw infoResult.error;
       
-      setInfo(data);
-      setTitulo(data.titulo || '');
-      setConteudo(data.conteudo || '');
-      setImagemUrl(data.imagem_url || '');
+      setInfo(infoResult.data);
+      setTitulo(infoResult.data.titulo || '');
+      setConteudo(infoResult.data.conteudo || '');
+      setImagemUrl(infoResult.data.imagem_url || '');
+      
+      if (midiasResult.data) {
+        setMidias(midiasResult.data as MidiaEtapa[]);
+      }
     } catch (error) {
       console.error('Erro ao carregar info:', error);
     } finally {
@@ -94,6 +116,9 @@ export function InfoEtapaModal({ etapaKey, trigger }: InfoEtapaModalProps) {
     }
     setEditing(false);
   };
+
+  const imagens = midias.filter(m => m.tipo === 'imagem');
+  const videos = midias.filter(m => m.tipo === 'video');
 
   return (
     <>
@@ -194,13 +219,45 @@ export function InfoEtapaModal({ etapaKey, trigger }: InfoEtapaModalProps) {
                 </DialogTitle>
               </DialogHeader>
 
-              {info?.imagem_url && (
+              {/* Imagens da tabela midias_info_etapas */}
+              {imagens.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {imagens.map((midia) => (
+                    <div key={midia.id} className="rounded-lg overflow-hidden border border-border">
+                      <img
+                        src={midia.url}
+                        alt={midia.nome_arquivo}
+                        className="w-full h-32 object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Fallback para imagem_url antiga */}
+              {imagens.length === 0 && info?.imagem_url && (
                 <div className="w-full rounded-lg overflow-hidden border border-border">
                   <img
                     src={info.imagem_url}
                     alt={info.titulo}
                     className="w-full h-auto max-h-48 object-contain bg-muted"
                   />
+                </div>
+              )}
+
+              {/* Vídeos */}
+              {videos.length > 0 && (
+                <div className="space-y-2">
+                  {videos.map((midia) => (
+                    <div key={midia.id} className="rounded-lg overflow-hidden border border-border">
+                      <video
+                        src={midia.url}
+                        className="w-full aspect-video object-cover"
+                        controls
+                        playsInline
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
 
