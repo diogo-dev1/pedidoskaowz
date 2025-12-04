@@ -1,5 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Calculator, Settings, LogOut, User, MessageSquare, BookOpen, ShoppingBag, Layers, Package } from 'lucide-react';
+import { Calculator, Settings, LogOut, User, MessageSquare, BookOpen, ShoppingBag, Layers, Package, Info } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
   Sidebar,
@@ -32,6 +32,7 @@ export function AppSidebar() {
     { title: 'Modelos', url: '/admin/modelos', icon: Layers },
     { title: 'Configurações', url: '/admin/configuracoes', icon: Package },
     { title: 'Componentes', url: '/admin/componentes', icon: Settings },
+    { title: 'Informativos', url: '/admin/informativos', icon: Info },
   ] : [];
 
   return (
