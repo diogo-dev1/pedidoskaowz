@@ -142,7 +142,7 @@ export function InfoEtapaModal({
       {trigger ? <div onClick={() => setOpen(true)}>{trigger}</div> : showLabel ? <button type="button" onClick={e => {
       e.stopPropagation();
       setOpen(true);
-    }} className="text-xs underline underline-offset-2 transition-opacity hover:opacity-80" style={{
+    }} className="text-xs transition-opacity hover:opacity-80 ml-auto" style={{
       color: buttonColor
     }}>
           {labelText}
