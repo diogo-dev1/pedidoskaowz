@@ -224,13 +224,6 @@ export function InfoEtapaModal({
               {etapaKey === 'modelo' && <a href="/catalogo" className="block w-full text-center py-3 px-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
                   Conhecer o Catálogo
                 </a>}
-
-              {user && (
-                <Button onClick={() => setEditing(true)} variant="outline" size="sm" className="w-full text-xs sm:text-sm">
-                  <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                  Editar
-                </Button>
-              )}
             </div>}
         </DialogContent>
       </Dialog>
