@@ -26,7 +26,7 @@ interface ModeloBase {
 interface OpcaoComponente {
   id: string;
   nome_opcao: string;
-  tipo_opcao: 'Aço' | 'Empunhadura' | 'Acabamento' | 'Bainha';
+  tipo_opcao: 'Aço' | 'Empunhadura' | 'Acabamento' | 'Bainha' | 'Cor de Bainha' | 'Embalagem';
   preco_adicional: number;
 }
 
@@ -53,7 +53,6 @@ interface LaminaCustomizada {
   subtotal: number;
 }
 
-const CORES_BAINHA = ['Preto', 'Coyote', 'Orange', 'Verde'];
 const LOCAIS_GRAVACAO = ['Dorso Superior', 'Dorso Inferior', 'Lâmina'];
 
 export default function Simulador() {
@@ -146,6 +145,8 @@ export default function Simulador() {
   const acabamentos = componentes.filter(c => c.tipo_opcao === 'Acabamento');
   const empunhaduras = componentes.filter(c => c.tipo_opcao === 'Empunhadura');
   const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
+  const coresBainha = componentes.filter(c => c.tipo_opcao === 'Cor de Bainha');
+  const embalagens = componentes.filter(c => c.tipo_opcao === 'Embalagem');
 
   const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
 
@@ -718,8 +719,8 @@ ${linhasFormatadas}`;
                                 <SelectValue placeholder="Selecione a cor" />
                               </SelectTrigger>
                               <SelectContent>
-                                {CORES_BAINHA.map(cor => (
-                                  <SelectItem key={cor} value={cor}>{cor}</SelectItem>
+                                {coresBainha.map(cor => (
+                                  <SelectItem key={cor.id} value={cor.nome_opcao}>{cor.nome_opcao}</SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
@@ -798,19 +799,22 @@ ${linhasFormatadas}`;
                       </AccordionTrigger>
                       <AccordionContent className="space-y-3 pt-2">
                         <div className="space-y-1.5 md:space-y-2">
-                          <button
-                            onClick={() => setEmbalagem(embalagem === 'Case Tática Personalizada' ? '' : 'Case Tática Personalizada')}
-                            className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                              embalagem === 'Case Tática Personalizada' ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <span>Case Tática Personalizada</span>
-                              {embalagem === 'Case Tática Personalizada' && <Check className="h-4 w-4" />}
-                            </div>
-                          </button>
+                          {embalagens.map(emb => (
+                            <button
+                              key={emb.id}
+                              onClick={() => setEmbalagem(embalagem === emb.nome_opcao ? '' : emb.nome_opcao)}
+                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
+                                embalagem === emb.nome_opcao ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span>{emb.nome_opcao}</span>
+                                {embalagem === emb.nome_opcao && <Check className="h-4 w-4" />}
+                              </div>
+                            </button>
+                          ))}
                         </div>
-                        {embalagem === 'Case Tática Personalizada' && (
+                        {embalagem && (
                           <div className="space-y-3 pt-2 border-t border-border">
                             <div className="flex items-center gap-2">
                               <Checkbox
