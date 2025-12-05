@@ -177,22 +177,29 @@ export default function CustomizarLamina() {
 
     laminasCustomizadas.forEach((lamina, index) => {
       mensagem += `*Lâmina ${index + 1}:*\n`;
-      mensagem += `- Modelo: ${lamina.modelo?.nome_modelo || 'Não selecionado'}\n`;
-      if (lamina.aco) mensagem += `- Aço: ${lamina.aco.nome_opcao}\n`;
-      if (lamina.acabamento) mensagem += `- Acabamento: ${lamina.acabamento.nome_opcao}\n`;
-      if (lamina.empunhadura) mensagem += `- Empunhadura: ${lamina.empunhadura.nome_opcao}\n`;
-      if (lamina.bainha) mensagem += `- Bainha: ${lamina.bainha.nome_opcao}\n`;
-      if (lamina.corBainha) mensagem += `- Cor da Bainha: ${lamina.corBainha}\n`;
+      mensagem += `Modelo: ${lamina.modelo?.nome_modelo || 'Não selecionado'}\n`;
+      mensagem += `Aço: ${lamina.aco?.nome_opcao || '-'}\n`;
+      mensagem += `Acabamento: ${lamina.acabamento?.nome_opcao || '-'}\n`;
+      mensagem += `Empunhadura: ${lamina.empunhadura?.nome_opcao || '-'}\n`;
+      mensagem += `Bainha: ${lamina.bainha?.nome_opcao || '-'}${lamina.corBainha ? ` (${lamina.corBainha})` : ''}\n`;
+      
+      let laserInfo = '-';
       if (lamina.laser) {
-        mensagem += `- Personalização à Laser: ${lamina.textoLaser || 'Sim'}\n`;
-        if (lamina.localGravacao.length > 0) mensagem += `- Local da Gravação: ${lamina.localGravacao.join(', ')}\n`;
-      }
-      if (lamina.embalagem) {
-        mensagem += `- Embalagem: ${lamina.embalagem}\n`;
-        if (lamina.embalagemGravacao && lamina.embalagemTextoGravacao) {
-          mensagem += `- Gravação Embalagem: ${lamina.embalagemTextoGravacao}\n`;
+        laserInfo = lamina.textoLaser || 'Sim';
+        if (lamina.localGravacao.length > 0) {
+          laserInfo += ` - Local: ${lamina.localGravacao.join(', ')}`;
         }
       }
+      mensagem += `Laser: ${laserInfo}\n`;
+      
+      let embalagemInfo = '-';
+      if (lamina.embalagem) {
+        embalagemInfo = lamina.embalagem;
+        if (lamina.embalagemGravacao && lamina.embalagemTextoGravacao) {
+          embalagemInfo += ` - Gravação: ${lamina.embalagemTextoGravacao}`;
+        }
+      }
+      mensagem += `Embalagem: ${embalagemInfo}\n`;
       mensagem += '\n';
     });
 
