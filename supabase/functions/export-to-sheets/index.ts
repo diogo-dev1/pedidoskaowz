@@ -124,8 +124,9 @@ serve(async (req) => {
       let personalizacao = '';
       if (lamina.laser && lamina.textoLaser) {
         personalizacao = lamina.textoLaser;
-        if (lamina.localGravacao && lamina.localGravacao.length > 0) {
-          personalizacao += ` (${lamina.localGravacao.join(', ')})`;
+        const locais = Array.isArray(lamina.localGravacao) ? lamina.localGravacao : [];
+        if (locais.length > 0) {
+          personalizacao += ` (${locais.join(', ')})`;
         }
       }
       if (lamina.embalagemGravacao && lamina.embalagemTextoGravacao) {
