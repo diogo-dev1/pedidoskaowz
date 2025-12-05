@@ -3,28 +3,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Calculator, Copy, X, ChevronDown } from 'lucide-react';
+import { Trash2, Plus, Search, Check, Eye, Copy, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import ModelCard from '@/components/ModelCard';
-import ComponentCard from '@/components/ComponentCard';
 import ProdutoAdicionalCard from '@/components/ProdutoAdicionalCard';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { InfoEtapaModal } from '@/components/InfoEtapaModal';
+import edcKnife from '@/assets/edc-knife.svg';
 
 interface ModeloBase {
   id: string;
   nome_modelo: string;
   preco_base: number;
-  imagem_modelo: string | null;
   categoria: string | null;
+  imagem_modelo: string | null;
 }
 
 interface OpcaoComponente {
@@ -40,18 +36,25 @@ interface ProdutoAdicional {
   preco_unitario: number;
 }
 
-interface LaminaConfigurada {
+interface LaminaCustomizada {
   id: string;
-  modelo: ModeloBase;
+  modelo: ModeloBase | null;
   aco: OpcaoComponente | null;
+  acabamento: OpcaoComponente | null;
   empunhadura: OpcaoComponente | null;
-  acabamento: OpcaoComponente[];
-  variacoesAcabamento: OpcaoComponente[];
   bainha: OpcaoComponente | null;
+  corBainha: string;
   laser: boolean;
   textoLaser: string;
+  localGravacao: string[];
+  embalagem: string;
+  embalagemGravacao: boolean;
+  embalagemTextoGravacao: string;
   subtotal: number;
 }
+
+const CORES_BAINHA = ['Preto', 'Coyote', 'Orange', 'Verde'];
+const LOCAIS_GRAVACAO = ['Dorso Superior', 'Dorso Inferior', 'Lâmina'];
 
 export default function Simulador() {
   const { profile } = useAuth();
@@ -59,27 +62,36 @@ export default function Simulador() {
   const [componentes, setComponentes] = useState<OpcaoComponente[]>([]);
   const [produtosAdicionais, setProdutosAdicionais] = useState<ProdutoAdicional[]>([]);
   const [loading, setLoading] = useState(true);
-  const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
-  const [buscaModelo, setBuscaModelo] = useState('');
 
-  // Estados de seleção para a lâmina atual
-  const [selectedModel, setSelectedModel] = useState<ModeloBase | null>(null);
-  const [selectedAco, setSelectedAco] = useState<OpcaoComponente | null>(null);
-  const [selectedEmpunhadura, setSelectedEmpunhadura] = useState<OpcaoComponente | null>(null);
-  const [selectedAcabamento, setSelectedAcabamento] = useState<OpcaoComponente[]>([]);
-  const [selectedVariacoesAcabamento, setSelectedVariacoesAcabamento] = useState<OpcaoComponente[]>([]);
-  const [selectedBainha, setSelectedBainha] = useState<OpcaoComponente | null>(null);
-  const [selectedLaser, setSelectedLaser] = useState(false);
-  const [textLaser, setTextLaser] = useState('');
+  // Estado da lâmina atual sendo configurada
+  const [modeloSelecionado, setModeloSelecionado] = useState<string>('');
+  const [acoSelecionado, setAcoSelecionado] = useState<string>('');
+  const [acabamentoSelecionado, setAcabamentoSelecionado] = useState<string>('');
+  const [empunhaduraSelecionada, setEmpunhaduraSelecionada] = useState<string>('');
+  const [bainhaSelecionada, setBainhaSelecionada] = useState<string>('');
+  const [corBainha, setCorBainha] = useState<string>('');
+  const [laser, setLaser] = useState(false);
+  const [textoLaser, setTextoLaser] = useState('');
+  const [localGravacao, setLocalGravacao] = useState<string[]>([]);
+  const [embalagem, setEmbalagem] = useState('');
+  const [embalagemGravacao, setEmbalagemGravacao] = useState(false);
+  const [embalagemTextoGravacao, setEmbalagemTextoGravacao] = useState('');
+  const [buscaModelo, setBuscaModelo] = useState('');
+  const [categoriaFiltro, setCategoriaFiltro] = useState<string>('');
+
+  // Lista de lâminas customizadas
+  const [laminasCustomizadas, setLaminasCustomizadas] = useState<LaminaCustomizada[]>([]);
   const [quantidadesProdutos, setQuantidadesProdutos] = useState<Record<string, number>>({});
-  
-  // Lista de lâminas configuradas
-  const [laminasConfiguradas, setLaminasConfiguradas] = useState<LaminaConfigurada[]>([]);
-  const [editandoLaminaId, setEditandoLaminaId] = useState<string | null>(null);
+
+  // Modal para visualizar lâmina
+  const [laminaModalAberta, setLaminaModalAberta] = useState<LaminaCustomizada | null>(null);
 
   // Modal de finalização
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [pedidoFinalizado, setPedidoFinalizado] = useState(false);
+  const [textoFormatado, setTextoFormatado] = useState('');
+  const [exportandoSheets, setExportandoSheets] = useState(false);
 
   // Dados do cliente
   const [nomeCompleto, setNomeCompleto] = useState('');
@@ -101,164 +113,130 @@ export default function Simulador() {
   const [origemCliente, setOrigemCliente] = useState('');
   const [observacao, setObservacao] = useState('');
   const [cupom, setCupom] = useState('');
-  const [corBainha, setCorBainha] = useState('');
-  const [observacaoLamina, setObservacaoLamina] = useState('');
-  const [pedidoFinalizado, setPedidoFinalizado] = useState(false);
-  const [textoFormatado, setTextoFormatado] = useState('');
-  const [exportandoSheets, setExportandoSheets] = useState(false);
+
+  // Modal IA
   const [modalIAOpen, setModalIAOpen] = useState(false);
   const [textoIA, setTextoIA] = useState('');
   const [processandoIA, setProcessandoIA] = useState(false);
 
   useEffect(() => {
-    fetchData();
+    carregarDados();
   }, []);
 
-  const fetchData = async () => {
-    const [modelosRes, componentesRes, produtosRes] = await Promise.all([
-      supabase.from('modelos').select('*').order('nome_modelo'),
-      supabase.from('opcoes_componentes').select('*').order('tipo_opcao'),
-      supabase.from('produtos_adicionais').select('*').order('nome_produto')
-    ]);
+  const carregarDados = async () => {
+    try {
+      const [modelosRes, componentesRes, produtosRes] = await Promise.all([
+        supabase.from('modelos').select('*').order('nome_modelo'),
+        supabase.from('opcoes_componentes').select('*').order('tipo_opcao'),
+        supabase.from('produtos_adicionais').select('*').order('nome_produto')
+      ]);
 
-    if (modelosRes.data) setModelos(modelosRes.data);
-    if (componentesRes.data) setComponentes(componentesRes.data as OpcaoComponente[]);
-    if (produtosRes.data) setProdutosAdicionais(produtosRes.data as ProdutoAdicional[]);
-    setLoading(false);
+      if (modelosRes.data) setModelos(modelosRes.data);
+      if (componentesRes.data) setComponentes(componentesRes.data as OpcaoComponente[]);
+      if (produtosRes.data) setProdutosAdicionais(produtosRes.data as ProdutoAdicional[]);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar opções');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Filtrar componentes por tipo
-  const acos = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Aço'), [componentes]);
-  const empunhaduras = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Empunhadura'), [componentes]);
-  const acabamentosBase = useMemo(() => 
-    componentes.filter(c => c.tipo_opcao === 'Acabamento' && (c.nome_opcao === 'Acetinado' || c.nome_opcao === 'Tactical')), 
-    [componentes]
-  );
-  const variacoesAcabamento = useMemo(() => 
-    componentes.filter(c => c.tipo_opcao === 'Acabamento' && c.nome_opcao !== 'Acetinado' && c.nome_opcao !== 'Tactical'), 
-    [componentes]
-  );
-  const bainhas = useMemo(() => componentes.filter(c => c.tipo_opcao === 'Bainha'), [componentes]);
-
-  // Filtrar modelos por categoria e busca
-  const modelosFiltrados = useMemo(() => {
-    let filtrados = modelos;
-
-    // Filtro por categoria
-    if (categoriaAtiva) {
-      filtrados = filtrados.filter(m => m.categoria === categoriaAtiva);
-    }
-
-    // Filtro por busca
-    if (buscaModelo.trim()) {
-      const busca = buscaModelo.toLowerCase();
-      filtrados = filtrados.filter(m => 
-        m.nome_modelo.toLowerCase().includes(busca)
-      );
-    }
-
-    return filtrados;
-  }, [modelos, categoriaAtiva, buscaModelo]);
+  const acos = componentes.filter(c => c.tipo_opcao === 'Aço');
+  const acabamentos = componentes.filter(c => c.tipo_opcao === 'Acabamento');
+  const empunhaduras = componentes.filter(c => c.tipo_opcao === 'Empunhadura');
+  const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
 
   const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
-  const mostrarModelos = categoriaAtiva !== null || buscaModelo.trim() !== '';
 
-  // Cálculo do subtotal da lâmina atual
-  const subtotalLaminaAtual = useMemo(() => {
-    const precoBase = selectedModel?.preco_base || 0;
-    const precoAco = selectedAco?.preco_adicional || 0;
-    const precoEmpunhadura = selectedEmpunhadura?.preco_adicional || 0;
-    const precoAcabamento = selectedAcabamento.reduce((total, acab) => total + acab.preco_adicional, 0);
-    const precoVariacoes = selectedVariacoesAcabamento.reduce((total, variacao) => total + variacao.preco_adicional, 0);
-    const precoBainha = selectedBainha?.preco_adicional || 0;
-    const precoLaser = selectedLaser ? 30 : 0;
+  const modelosFiltrados = modelos.filter(m => {
+    const matchBusca = m.nome_modelo.toLowerCase().includes(buscaModelo.toLowerCase());
+    const matchCategoria = !categoriaFiltro || m.categoria === categoriaFiltro;
+    return matchBusca && matchCategoria;
+  });
 
-    return precoBase + precoAco + precoEmpunhadura + precoAcabamento + precoVariacoes + precoBainha + precoLaser;
-  }, [selectedModel, selectedAco, selectedEmpunhadura, selectedAcabamento, selectedVariacoesAcabamento, selectedBainha, selectedLaser]);
+  const mostrarModelos = categoriaFiltro !== '' || buscaModelo.trim() !== '';
 
-  // Cálculo do total geral
+  // Objetos selecionados para exibição no resumo em tempo real
+  const modeloAtual = modelos.find(m => m.id === modeloSelecionado);
+  const acoAtual = componentes.find(c => c.id === acoSelecionado);
+  const acabamentoAtual = componentes.find(c => c.id === acabamentoSelecionado);
+  const empunhaduraAtual = componentes.find(c => c.id === empunhaduraSelecionada);
+  const bainhaAtual = componentes.find(c => c.id === bainhaSelecionada);
+
+  const calcularSubtotal = (): number => {
+    const precoBase = modeloAtual?.preco_base || 0;
+    const precoAco = acoAtual?.preco_adicional || 0;
+    const precoAcabamento = acabamentoAtual?.preco_adicional || 0;
+    const precoEmpunhadura = empunhaduraAtual?.preco_adicional || 0;
+    const precoBainha = bainhaAtual?.preco_adicional || 0;
+    const precoLaser = laser ? 30 : 0;
+    return precoBase + precoAco + precoAcabamento + precoEmpunhadura + precoBainha + precoLaser;
+  };
+
   const valorTotalCalculado = useMemo(() => {
-    const totalLaminas = laminasConfiguradas.reduce((total, lamina) => total + lamina.subtotal, 0);
-    const totalLaminaAtual = subtotalLaminaAtual;
-    
+    const totalLaminas = laminasCustomizadas.reduce((sum, l) => sum + l.subtotal, 0);
+    const subtotalAtual = modeloSelecionado ? calcularSubtotal() : 0;
     const precoProdutosAdicionais = produtosAdicionais.reduce((total, produto) => {
       const quantidade = quantidadesProdutos[produto.id] || 0;
       return total + (produto.preco_unitario * quantidade);
     }, 0);
-
-    return totalLaminas + totalLaminaAtual + precoProdutosAdicionais;
-  }, [laminasConfiguradas, subtotalLaminaAtual, produtosAdicionais, quantidadesProdutos]);
-
-  const limparLaminaAtual = () => {
-    setSelectedModel(null);
-    setSelectedAco(null);
-    setSelectedEmpunhadura(null);
-    setSelectedAcabamento([]);
-    setSelectedVariacoesAcabamento([]);
-    setSelectedBainha(null);
-    setSelectedLaser(false);
-    setTextLaser('');
-    setCorBainha('');
-    setObservacaoLamina('');
-    setEditandoLaminaId(null);
-  };
+    return totalLaminas + subtotalAtual + precoProdutosAdicionais;
+  }, [laminasCustomizadas, modeloSelecionado, calcularSubtotal, produtosAdicionais, quantidadesProdutos]);
 
   const adicionarLamina = () => {
-    if (!selectedModel) {
-      toast.error('Selecione um modelo para adicionar a lâmina');
+    if (!modeloSelecionado) {
+      toast.error('Selecione um modelo');
       return;
     }
 
-    const novaLamina: LaminaConfigurada = {
-      id: editandoLaminaId || crypto.randomUUID(),
-      modelo: selectedModel,
-      aco: selectedAco,
-      empunhadura: selectedEmpunhadura,
-      acabamento: selectedAcabamento,
-      variacoesAcabamento: selectedVariacoesAcabamento,
-      bainha: selectedBainha,
-      laser: selectedLaser,
-      textoLaser: textLaser,
-      subtotal: subtotalLaminaAtual,
+    const novaLamina: LaminaCustomizada = {
+      id: `${Date.now()}-${Math.random()}`,
+      modelo: modeloAtual || null,
+      aco: acoAtual || null,
+      acabamento: acabamentoAtual || null,
+      empunhadura: empunhaduraAtual || null,
+      bainha: bainhaAtual || null,
+      corBainha,
+      laser,
+      textoLaser,
+      localGravacao,
+      embalagem,
+      embalagemGravacao,
+      embalagemTextoGravacao,
+      subtotal: calcularSubtotal(),
     };
 
-    if (editandoLaminaId) {
-      setLaminasConfiguradas(prev => 
-        prev.map(l => l.id === editandoLaminaId ? novaLamina : l)
-      );
-      toast.success('Lâmina atualizada com sucesso!');
-    } else {
-      setLaminasConfiguradas(prev => [...prev, novaLamina]);
-      toast.success('Lâmina adicionada ao orçamento!');
-    }
-
-    limparLaminaAtual();
-  };
-
-  const editarLamina = (lamina: LaminaConfigurada) => {
-    setSelectedModel(lamina.modelo);
-    setSelectedAco(lamina.aco);
-    setSelectedEmpunhadura(lamina.empunhadura);
-    setSelectedAcabamento(lamina.acabamento);
-    setSelectedVariacoesAcabamento(lamina.variacoesAcabamento);
-    setSelectedBainha(lamina.bainha);
-    setSelectedLaser(lamina.laser);
-    setTextLaser(lamina.textoLaser);
-    setEditandoLaminaId(lamina.id);
-    toast.info('Editando lâmina - faça as alterações e clique em "Atualizar Lâmina"');
+    setLaminasCustomizadas([...laminasCustomizadas, novaLamina]);
+    limparFormulario();
+    toast.success('Lâmina adicionada!');
   };
 
   const removerLamina = (id: string) => {
-    setLaminasConfiguradas(prev => prev.filter(l => l.id !== id));
-    if (editandoLaminaId === id) {
-      limparLaminaAtual();
-    }
-    toast.success('Lâmina removida do orçamento');
+    setLaminasCustomizadas(laminasCustomizadas.filter(l => l.id !== id));
+    toast.success('Lâmina removida');
+  };
+
+  const limparFormulario = () => {
+    setModeloSelecionado('');
+    setAcoSelecionado('');
+    setAcabamentoSelecionado('');
+    setEmpunhaduraSelecionada('');
+    setBainhaSelecionada('');
+    setCorBainha('');
+    setLaser(false);
+    setTextoLaser('');
+    setLocalGravacao([]);
+    setEmbalagem('');
+    setEmbalagemGravacao(false);
+    setEmbalagemTextoGravacao('');
+    setBuscaModelo('');
+    setCategoriaFiltro('');
   };
 
   const resetSimulacao = () => {
-    limparLaminaAtual();
-    setLaminasConfiguradas([]);
+    limparFormulario();
+    setLaminasCustomizadas([]);
     setQuantidadesProdutos({});
     setNomeCompleto('');
     setCpf('');
@@ -332,91 +310,9 @@ export default function Simulador() {
         if (extractedData.pedido.formaPagamento) setFormaPagamento(extractedData.pedido.formaPagamento);
       }
 
-      // Processar lâminas
-      if (extractedData.laminas && extractedData.laminas.length > 0) {
-        const laminasProcessadas: LaminaConfigurada[] = [];
-
-        for (const laminaData of extractedData.laminas) {
-          // Encontrar modelo correspondente
-          const modelo = modelos.find(m => 
-            m.nome_modelo.toLowerCase().includes(laminaData.modelo?.toLowerCase() || '')
-          );
-
-          if (modelo) {
-            const aco = laminaData.aco ? acos.find(a => 
-              a.nome_opcao.toLowerCase().includes(laminaData.aco.toLowerCase())
-            ) : null;
-
-            const acabamento = laminaData.acabamento ? acabamentosBase.filter(a => 
-              a.nome_opcao.toLowerCase().includes(laminaData.acabamento.toLowerCase())
-            ) : [];
-
-            const empunhadura = laminaData.empunhadura ? empunhaduras.find(e => 
-              e.nome_opcao.toLowerCase().includes(laminaData.empunhadura.toLowerCase())
-            ) : null;
-
-            const bainha = laminaData.bainha ? bainhas.find(b => 
-              b.nome_opcao.toLowerCase().includes(laminaData.bainha.toLowerCase())
-            ) : null;
-
-            const temLaser = !!laminaData.textoLaser;
-            const precoLaser = temLaser ? 30 : 0;
-
-            const precoAcabamento = acabamento.reduce((total, a) => total + a.preco_adicional, 0);
-            
-            const subtotal = 
-              modelo.preco_base + 
-              (aco?.preco_adicional || 0) + 
-              precoAcabamento + 
-              (empunhadura?.preco_adicional || 0) + 
-              (bainha?.preco_adicional || 0) + 
-              precoLaser;
-
-            laminasProcessadas.push({
-              id: crypto.randomUUID(),
-              modelo,
-              aco: aco || null,
-              acabamento: acabamento,
-              variacoesAcabamento: [],
-              empunhadura: empunhadura || null,
-              bainha: bainha || null,
-              laser: temLaser,
-              textoLaser: laminaData.textoLaser || '',
-              subtotal
-            });
-
-            // Preencher cor da bainha e observação da primeira lâmina
-            if (laminasProcessadas.length === 1) {
-              if (laminaData.corBainha) setCorBainha(laminaData.corBainha);
-              if (laminaData.observacao) setObservacaoLamina(laminaData.observacao);
-            }
-          }
-        }
-
-        setLaminasConfiguradas(laminasProcessadas);
-      }
-
-      // Processar produtos adicionais
-      if (extractedData.produtosAdicionais && extractedData.produtosAdicionais.length > 0) {
-        const novasQuantidades: Record<string, number> = {};
-        
-        for (const produtoData of extractedData.produtosAdicionais) {
-          const produto = produtosAdicionais.find(p => 
-            p.nome_produto.toLowerCase().includes(produtoData.nome?.toLowerCase() || '')
-          );
-          
-          if (produto) {
-            novasQuantidades[produto.id] = produtoData.quantidade || 1;
-          }
-        }
-
-        setQuantidadesProdutos(novasQuantidades);
-      }
-
       toast.success('Dados preenchidos com sucesso!');
       setModalIAOpen(false);
       setTextoIA('');
-
     } catch (error) {
       console.error('Erro ao processar com IA:', error);
       toast.error('Erro ao processar dados com IA');
@@ -431,7 +327,7 @@ export default function Simulador() {
       return;
     }
 
-    if (laminasConfiguradas.length === 0 && !selectedModel) {
+    if (laminasCustomizadas.length === 0 && !modeloSelecionado) {
       toast.error('Adicione pelo menos uma lâmina ao orçamento');
       return;
     }
@@ -439,44 +335,40 @@ export default function Simulador() {
     setSubmitting(true);
 
     try {
-      // Montar descrições de todas as lâminas
-      const todasLaminas = [...laminasConfiguradas];
-      if (selectedModel) {
+      const todasLaminas = [...laminasCustomizadas];
+      if (modeloSelecionado && modeloAtual) {
         todasLaminas.push({
           id: crypto.randomUUID(),
-          modelo: selectedModel,
-          aco: selectedAco,
-          empunhadura: selectedEmpunhadura,
-          acabamento: selectedAcabamento,
-          variacoesAcabamento: selectedVariacoesAcabamento,
-          bainha: selectedBainha,
-          laser: selectedLaser,
-          textoLaser: textLaser,
-          subtotal: subtotalLaminaAtual,
+          modelo: modeloAtual,
+          aco: acoAtual || null,
+          acabamento: acabamentoAtual || null,
+          empunhadura: empunhaduraAtual || null,
+          bainha: bainhaAtual || null,
+          corBainha,
+          laser,
+          textoLaser,
+          localGravacao,
+          embalagem,
+          embalagemGravacao,
+          embalagemTextoGravacao,
+          subtotal: calcularSubtotal(),
         });
       }
 
       const descricoesPedidos = todasLaminas.map((lamina, index) => {
-        const acabamentosNomes = lamina.acabamento.map(a => a.nome_opcao).join(' + ');
-        const variacoes = lamina.variacoesAcabamento.map(v => v.nome_opcao).join(' + ');
-        const acabamentoCompleto = [acabamentosNomes, variacoes].filter(Boolean).join(' + ');
-        const desc = `${lamina.modelo.nome_modelo} ${lamina.aco?.nome_opcao || ''} ${acabamentoCompleto || ''} empunhadura em ${lamina.empunhadura?.nome_opcao || ''} ${lamina.bainha?.nome_opcao || ''}`;
+        const desc = `${lamina.modelo?.nome_modelo || ''} ${lamina.aco?.nome_opcao || ''} ${lamina.acabamento?.nome_opcao || ''} empunhadura em ${lamina.empunhadura?.nome_opcao || ''} ${lamina.bainha?.nome_opcao || ''}`;
         return `Lâmina ${index + 1}: ${desc}`;
       }).join('\n');
 
       const linhasFormatadas = todasLaminas.map((lamina) => {
-        const acabamentosNomes = lamina.acabamento.map(a => a.nome_opcao).join(' + ');
-        const variacoes = lamina.variacoesAcabamento.map(v => v.nome_opcao).join(' + ');
-        const acabamentoCompleto = [acabamentosNomes, variacoes].filter(Boolean).join(' + ');
-        return `${nomeCompleto}, ${lamina.modelo.nome_modelo}, ${lamina.aco?.nome_opcao || ''}, ${acabamentoCompleto || ''}, ${lamina.empunhadura?.nome_opcao || ''}, ${lamina.bainha?.nome_opcao || ''}`;
+        return `${nomeCompleto}, ${lamina.modelo?.nome_modelo || ''}, ${lamina.aco?.nome_opcao || ''}, ${lamina.acabamento?.nome_opcao || ''}, ${lamina.empunhadura?.nome_opcao || ''}, ${lamina.bainha?.nome_opcao || ''}, ${lamina.corBainha || ''}`;
       }).join('\n');
 
       const personalizacoesLaser = todasLaminas
         .filter(l => l.laser && l.textoLaser)
-        .map((l, index) => `Lâmina ${index + 1}: ${l.textoLaser}`)
+        .map((l, index) => `Lâmina ${index + 1}: ${l.textoLaser} (${l.localGravacao.join(', ') || 'Não especificado'})`)
         .join('\n');
 
-      // Montar texto formatado
       const texto = `1. NOME: ${nomeCompleto}
 2. CPF: ${cpf}
 3. CEP: ${cep}
@@ -519,40 +411,41 @@ ${linhasFormatadas}`;
     setExportandoSheets(true);
 
     try {
-      // Montar dados para exportação
-      const todasLaminas = [...laminasConfiguradas];
-      if (selectedModel) {
+      const todasLaminas = [...laminasCustomizadas];
+      if (modeloSelecionado && modeloAtual) {
         todasLaminas.push({
           id: crypto.randomUUID(),
-          modelo: selectedModel,
-          aco: selectedAco,
-          empunhadura: selectedEmpunhadura,
-          acabamento: selectedAcabamento,
-          variacoesAcabamento: selectedVariacoesAcabamento,
-          bainha: selectedBainha,
-          laser: selectedLaser,
-          textoLaser: textLaser,
-          subtotal: subtotalLaminaAtual,
+          modelo: modeloAtual,
+          aco: acoAtual || null,
+          acabamento: acabamentoAtual || null,
+          empunhadura: empunhaduraAtual || null,
+          bainha: bainhaAtual || null,
+          corBainha,
+          laser,
+          textoLaser,
+          localGravacao,
+          embalagem,
+          embalagemGravacao,
+          embalagemTextoGravacao,
+          subtotal: calcularSubtotal(),
         });
       }
 
-      const laminasFormatadas = todasLaminas.map(lamina => {
-        const acabamentosNomes = lamina.acabamento.map(a => a.nome_opcao).join(' + ');
-        const variacoes = lamina.variacoesAcabamento.map(v => v.nome_opcao).join(' + ');
-        const acabamentoCompleto = [acabamentosNomes, variacoes].filter(Boolean).join(' + ');
-        return {
-          modelo: lamina.modelo.nome_modelo,
-          aco: lamina.aco?.nome_opcao || '',
-          empunhadura: lamina.empunhadura?.nome_opcao || '',
-          acabamento: acabamentoCompleto || '',
-          bainha: lamina.bainha?.nome_opcao || '',
-          corBainha: corBainha,
-          laser: lamina.laser,
-          textoLaser: lamina.textoLaser,
-          observacaoLamina: observacaoLamina,
-          subtotal: lamina.subtotal,
-        };
-      });
+      const laminasFormatadas = todasLaminas.map(lamina => ({
+        modelo: lamina.modelo?.nome_modelo || '',
+        aco: lamina.aco?.nome_opcao || '',
+        empunhadura: lamina.empunhadura?.nome_opcao || '',
+        acabamento: lamina.acabamento?.nome_opcao || '',
+        bainha: lamina.bainha?.nome_opcao || '',
+        corBainha: lamina.corBainha,
+        laser: lamina.laser,
+        textoLaser: lamina.textoLaser,
+        localGravacao: lamina.localGravacao.join(', '),
+        embalagem: lamina.embalagem,
+        embalagemGravacao: lamina.embalagemGravacao,
+        embalagemTextoGravacao: lamina.embalagemTextoGravacao,
+        subtotal: lamina.subtotal,
+      }));
 
       const produtosFormatados = produtosAdicionais
         .filter(produto => (quantidadesProdutos[produto.id] || 0) > 0)
@@ -609,400 +502,602 @@ ${linhasFormatadas}`;
     resetSimulacao();
   };
 
+  const getModeloImagem = (modelo: ModeloBase | null | undefined) => {
+    if (!modelo) return edcKnife;
+    return modelo.imagem_modelo || edcKnife;
+  };
+
   if (loading) {
-    return <div className="text-center py-8">Carregando...</div>;
+    return <div className="py-8 text-center text-muted-foreground">Carregando opções...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Container principal mobile-first */}
-      <div className="pb-24">
-        <div className="px-4 py-6 space-y-8">
-          {/* Botão de Preencher com IA */}
-          <div className="flex justify-end">
-            <Button
-              onClick={() => setModalIAOpen(true)}
-              variant="outline"
-              className="gap-2"
-            >
-              ✨ Preencher com IA
-            </Button>
-          </div>
+    <div className="min-h-screen bg-background pb-32">
+      <div className="container mx-auto px-4 py-6">
+        {/* Botão de Preencher com IA */}
+        <div className="flex justify-end mb-4">
+          <Button onClick={() => setModalIAOpen(true)} variant="outline" className="gap-2">
+            ✨ Preencher com IA
+          </Button>
+        </div>
 
-          {/* Seção 1: Escolha o Modelo */}
-          <section>
-            <h2 className="text-lg font-semibold text-accent mb-4">Escolha o Modelo</h2>
-            
-            {/* Campo de Busca */}
-            <div className="mb-4">
-              <Input
-                type="text"
-                placeholder="Buscar modelo..."
-                value={buscaModelo}
-                onChange={(e) => setBuscaModelo(e.target.value)}
-                className="w-full"
+        {/* Miniatura do modelo selecionado */}
+        {modeloSelecionado && (
+          <div className="mb-4 md:mb-6 flex justify-center animate-fade-in">
+            <div className="relative w-full max-w-[300px] md:max-w-[500px] h-32 md:h-40 rounded-lg overflow-hidden border border-accent shadow-lg bg-white p-2 md:p-4">
+              <img
+                src={getModeloImagem(modeloAtual)}
+                alt="Modelo selecionado"
+                className="w-full h-full object-contain filter drop-shadow-sm"
+                style={{ filter: 'contrast(1.2) brightness(0.95)' }}
               />
             </div>
+          </div>
+        )}
 
-            {/* Botões de Categoria */}
-            <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-              {categorias.map((cat) => (
-                <Button
-                  key={cat}
-                  variant={categoriaAtiva === cat ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCategoriaAtiva(cat)}
-                  className="whitespace-nowrap"
-                >
-                  {cat}
-                </Button>
-              ))}
-              {categoriaAtiva && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCategoriaAtiva(null)}
-                  className="whitespace-nowrap"
-                >
-                  Limpar
-                </Button>
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            {/* Coluna Principal - Configuração */}
+            <div className="lg:col-span-2 space-y-4 md:space-y-6">
+              {/* Seleção de Modelo */}
+              <div className="bg-card rounded-lg border border-border p-3 md:p-6 space-y-3 md:space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-base md:text-lg">1. Escolha o Modelo</h3>
+                    <Badge variant="secondary" className="text-xs">Obrigatório</Badge>
+                  </div>
+                  <InfoEtapaModal etapaKey="modelo" showLabel />
+                </div>
+
+                {/* Filtros de Categoria */}
+                <div className="flex flex-wrap gap-1.5 md:gap-2">
+                  {categorias.map(cat => (
+                    <Button
+                      key={cat}
+                      size="sm"
+                      variant={categoriaFiltro === cat ? "default" : "outline"}
+                      onClick={() => setCategoriaFiltro(cat === categoriaFiltro ? '' : cat)}
+                      className="h-7 md:h-8 text-xs px-2 md:px-3"
+                    >
+                      {cat}
+                    </Button>
+                  ))}
+                </div>
+
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar modelo..."
+                    value={buscaModelo}
+                    onChange={(e) => setBuscaModelo(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {!mostrarModelos ? (
+                  <div className="text-center py-6 md:py-8 text-xs md:text-sm text-muted-foreground border border-border rounded-lg">
+                    Use a busca ou selecione uma categoria para ver os modelos
+                  </div>
+                ) : modelosFiltrados.length === 0 ? (
+                  <div className="text-center py-6 md:py-8 text-xs md:text-sm text-muted-foreground border border-border rounded-lg">
+                    Nenhum modelo encontrado
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-1.5 md:gap-2 max-h-48 md:max-h-60 overflow-y-auto border border-border rounded-lg p-1.5 md:p-2">
+                    {modelosFiltrados.map(modelo => (
+                      <button
+                        key={modelo.id}
+                        onClick={() => setModeloSelecionado(modelo.id)}
+                        className={`p-2 md:p-3 rounded-lg text-left transition-all ${
+                          modeloSelecionado === modelo.id
+                            ? 'bg-accent text-accent-foreground shadow-md'
+                            : 'bg-muted hover:bg-muted/80'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-xs md:text-sm truncate">{modelo.nome_modelo}</div>
+                            {modelo.categoria && (
+                              <Badge variant="outline" className="text-[10px] md:text-xs px-1 md:px-1.5 py-0 mt-0.5">
+                                {modelo.categoria}
+                              </Badge>
+                            )}
+                          </div>
+                          {modeloSelecionado === modelo.id && <Check className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Opções de Customização */}
+              {modeloSelecionado && (
+                <div className="bg-card rounded-lg border border-border p-3 md:p-6">
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="aco" className="border-border">
+                      <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
+                        <span className="flex items-center gap-2">
+                          2. Tipo de Aço {acoSelecionado && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
+                        <div className="mb-2 flex justify-end">
+                          <InfoEtapaModal etapaKey="aco" showLabel />
+                        </div>
+                        {acos.map(aco => (
+                          <button
+                            key={aco.id}
+                            onClick={() => setAcoSelecionado(aco.id)}
+                            className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
+                              acoSelecionado === aco.id ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
+                            }`}
+                          >
+                            <span className="truncate">{aco.nome_opcao}</span>
+                          </button>
+                        ))}
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="acabamento" className="border-border">
+                      <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
+                        <span className="flex items-center gap-2">
+                          3. Acabamento {acabamentoSelecionado && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
+                        <div className="mb-2 flex justify-end">
+                          <InfoEtapaModal etapaKey="acabamento" showLabel />
+                        </div>
+                        {acabamentos.map(acabamento => (
+                          <button
+                            key={acabamento.id}
+                            onClick={() => setAcabamentoSelecionado(acabamento.id)}
+                            className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
+                              acabamentoSelecionado === acabamento.id ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
+                            }`}
+                          >
+                            <span className="truncate">{acabamento.nome_opcao}</span>
+                          </button>
+                        ))}
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="empunhadura" className="border-border">
+                      <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
+                        <span className="flex items-center gap-2">
+                          4. Empunhadura {empunhaduraSelecionada && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
+                        <div className="mb-2 flex justify-end">
+                          <InfoEtapaModal etapaKey="empunhadura" showLabel />
+                        </div>
+                        {empunhaduras.map(empunhadura => (
+                          <button
+                            key={empunhadura.id}
+                            onClick={() => setEmpunhaduraSelecionada(empunhadura.id)}
+                            className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
+                              empunhaduraSelecionada === empunhadura.id ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
+                            }`}
+                          >
+                            <span className="truncate">{empunhadura.nome_opcao}</span>
+                          </button>
+                        ))}
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="bainha" className="border-border">
+                      <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
+                        <span className="flex items-center gap-2">
+                          5. Bainha {bainhaSelecionada && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-3 pt-2">
+                        <div className="mb-2 flex justify-end">
+                          <InfoEtapaModal etapaKey="bainha" showLabel />
+                        </div>
+                        <div className="space-y-1.5 md:space-y-2">
+                          {bainhas.map(bainha => (
+                            <button
+                              key={bainha.id}
+                              onClick={() => setBainhaSelecionada(bainha.id)}
+                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
+                                bainhaSelecionada === bainha.id ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
+                              }`}
+                            >
+                              <span className="truncate">{bainha.nome_opcao}</span>
+                            </button>
+                          ))}
+                        </div>
+                        {bainhaSelecionada && (
+                          <div className="space-y-1.5 md:space-y-2 pt-2 border-t border-border">
+                            <Label htmlFor="corBainha" className="text-xs">Cor da Bainha</Label>
+                            <Select value={corBainha} onValueChange={setCorBainha}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecione a cor" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {CORES_BAINHA.map(cor => (
+                                  <SelectItem key={cor} value={cor}>{cor}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="laser" className="border-border">
+                      <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
+                        <span className="flex items-center gap-2">
+                          6. Personalização à Laser {laser && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Ativo</Badge>}
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-3 pt-2">
+                        <div className="mb-2 flex justify-end">
+                          <InfoEtapaModal etapaKey="laser" showLabel />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="laser"
+                            checked={laser}
+                            onCheckedChange={(checked) => setLaser(checked as boolean)}
+                          />
+                          <Label htmlFor="laser" className="text-xs md:text-sm cursor-pointer">
+                            Adicionar personalização à laser
+                          </Label>
+                        </div>
+                        {laser && (
+                          <div className="space-y-3">
+                            <div className="space-y-1.5 md:space-y-2">
+                              <Label htmlFor="textoLaser" className="text-xs">Texto para gravação</Label>
+                              <Input
+                                id="textoLaser"
+                                placeholder="Digite o texto..."
+                                value={textoLaser}
+                                onChange={(e) => setTextoLaser(e.target.value)}
+                                className="text-xs md:text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Local da gravação</Label>
+                              <div className="flex flex-wrap gap-2">
+                                {LOCAIS_GRAVACAO.map(local => (
+                                  <div
+                                    key={local}
+                                    className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
+                                      localGravacao.includes(local)
+                                        ? 'border-accent bg-accent/10'
+                                        : 'border-border hover:border-accent/50'
+                                    }`}
+                                    onClick={() => {
+                                      if (localGravacao.includes(local)) {
+                                        setLocalGravacao(localGravacao.filter(l => l !== local));
+                                      } else {
+                                        setLocalGravacao([...localGravacao, local]);
+                                      }
+                                    }}
+                                  >
+                                    <Checkbox checked={localGravacao.includes(local)} />
+                                    <span className="text-xs">{local}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="embalagem" className="border-border">
+                      <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
+                        <span className="flex items-center gap-2">
+                          7. Embalagem {embalagem && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-3 pt-2">
+                        <div className="space-y-1.5 md:space-y-2">
+                          <button
+                            onClick={() => setEmbalagem(embalagem === 'Case Tática Personalizada' ? '' : 'Case Tática Personalizada')}
+                            className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
+                              embalagem === 'Case Tática Personalizada' ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span>Case Tática Personalizada</span>
+                              {embalagem === 'Case Tática Personalizada' && <Check className="h-4 w-4" />}
+                            </div>
+                          </button>
+                        </div>
+                        {embalagem === 'Case Tática Personalizada' && (
+                          <div className="space-y-3 pt-2 border-t border-border">
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id="embalagemGravacao"
+                                checked={embalagemGravacao}
+                                onCheckedChange={(checked) => setEmbalagemGravacao(checked as boolean)}
+                              />
+                              <Label htmlFor="embalagemGravacao" className="text-xs md:text-sm cursor-pointer">
+                                Adicionar gravação na embalagem
+                              </Label>
+                            </div>
+                            {embalagemGravacao && (
+                              <div className="space-y-1.5 md:space-y-2">
+                                <Label htmlFor="embalagemTextoGravacao" className="text-xs">Texto para gravação na embalagem</Label>
+                                <Input
+                                  id="embalagemTextoGravacao"
+                                  placeholder="Digite o texto..."
+                                  value={embalagemTextoGravacao}
+                                  onChange={(e) => setEmbalagemTextoGravacao(e.target.value)}
+                                  className="text-xs md:text-sm"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
+              )}
+
+              {/* Produtos Adicionais */}
+              {produtosAdicionais.length > 0 && (
+                <div className="bg-card rounded-lg border border-border p-3 md:p-6 space-y-3 md:space-y-4">
+                  <h3 className="font-semibold text-base md:text-lg">Produtos Adicionais</h3>
+                  <div className="grid gap-3 grid-cols-2">
+                    {produtosAdicionais.map((produto) => (
+                      <ProdutoAdicionalCard
+                        key={produto.id}
+                        nome={produto.nome_produto}
+                        precoUnitario={produto.preco_unitario}
+                        quantidade={quantidadesProdutos[produto.id] || 0}
+                        onAdd={() => setQuantidadesProdutos(prev => ({
+                          ...prev,
+                          [produto.id]: (prev[produto.id] || 0) + 1
+                        }))}
+                        onRemove={() => setQuantidadesProdutos(prev => ({
+                          ...prev,
+                          [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1)
+                        }))}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Botão Adicionar */}
+              {modeloSelecionado && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button onClick={adicionarLamina} className="flex-1 bg-accent hover:bg-accent/90 text-xs md:text-sm">
+                    <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 mr-2" />
+                    Adicionar Lâmina
+                  </Button>
+                  <Button onClick={limparFormulario} variant="outline" className="text-xs md:text-sm">
+                    Limpar
+                  </Button>
+                </div>
               )}
             </div>
 
-            {mostrarModelos ? (
-              <>
-                <div className="grid gap-3 grid-cols-2">
-                  {modelosFiltrados.map((modelo) => (
-                    <ModelCard
-                      key={modelo.id}
-                      nome={modelo.nome_modelo}
-                      preco={modelo.preco_base}
-                      isSelected={selectedModel?.id === modelo.id}
-                      onClick={() => setSelectedModel(modelo)}
-                    />
-                  ))}
+            {/* Coluna Lateral - Resumo */}
+            <div className="lg:col-span-1 space-y-4">
+              {/* Resumo em Tempo Real */}
+              {modeloSelecionado && (
+                <div className="bg-card rounded-lg border border-border p-3 md:p-6 lg:sticky lg:top-24 space-y-3 md:space-y-4">
+                  <h3 className="font-semibold text-base md:text-lg flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-accent" />
+                    Configuração Atual
+                  </h3>
+
+                  <div className="space-y-2 text-xs md:text-sm">
+                    <div className="flex justify-between py-1.5 border-b border-border">
+                      <span className="text-muted-foreground">Modelo:</span>
+                      <span className="font-medium text-right max-w-[60%] truncate">{modeloAtual?.nome_modelo || '-'}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5 border-b border-border">
+                      <span className="text-muted-foreground">Aço:</span>
+                      <span className="font-medium text-right max-w-[60%] truncate">{acoAtual?.nome_opcao || '-'}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5 border-b border-border">
+                      <span className="text-muted-foreground">Acabamento:</span>
+                      <span className="font-medium text-right max-w-[60%] truncate">{acabamentoAtual?.nome_opcao || '-'}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5 border-b border-border">
+                      <span className="text-muted-foreground">Empunhadura:</span>
+                      <span className="font-medium text-right max-w-[60%] truncate">{empunhaduraAtual?.nome_opcao || '-'}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5 border-b border-border">
+                      <span className="text-muted-foreground">Bainha:</span>
+                      <span className="font-medium text-right max-w-[60%] truncate">{bainhaAtual?.nome_opcao || '-'}</span>
+                    </div>
+                    {corBainha && (
+                      <div className="flex justify-between py-1.5 border-b border-border">
+                        <span className="text-muted-foreground">Cor da Bainha:</span>
+                        <span className="font-medium text-right max-w-[60%] truncate">{corBainha}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between py-1.5 border-b border-border">
+                      <span className="text-muted-foreground">Laser:</span>
+                      <span className="font-medium">{laser ? (textoLaser || 'Sim') : 'Não'}</span>
+                    </div>
+                    {laser && localGravacao.length > 0 && (
+                      <div className="flex justify-between py-1.5 border-b border-border">
+                        <span className="text-muted-foreground">Local:</span>
+                        <span className="font-medium text-right max-w-[60%] truncate">{localGravacao.join(', ')}</span>
+                      </div>
+                    )}
+                    {embalagem && (
+                      <div className="flex justify-between py-1.5 border-b border-border">
+                        <span className="text-muted-foreground">Embalagem:</span>
+                        <span className="font-medium text-right max-w-[60%] truncate">{embalagem}</span>
+                      </div>
+                    )}
+                    {embalagemGravacao && embalagemTextoGravacao && (
+                      <div className="flex justify-between py-1.5 border-b border-border">
+                        <span className="text-muted-foreground">Gravação Emb.:</span>
+                        <span className="font-medium text-right max-w-[60%] truncate">{embalagemTextoGravacao}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {modelosFiltrados.length === 0 && (
-                  <p className="text-center py-12 text-muted-foreground text-sm">
-                    Nenhum modelo encontrado
+              )}
+
+              {/* Lâminas Adicionadas */}
+              <div className="bg-card rounded-lg border border-border p-3 md:p-6 lg:sticky lg:top-24 space-y-3 md:space-y-4" style={{ top: modeloSelecionado ? 'calc(24rem + 6rem)' : '6rem' }}>
+                <h3 className="font-semibold text-base md:text-lg">Lâminas Adicionadas ({laminasCustomizadas.length})</h3>
+
+                {laminasCustomizadas.length === 0 ? (
+                  <p className="text-xs md:text-sm text-muted-foreground text-center py-6 md:py-8">
+                    Nenhuma lâmina adicionada ainda
                   </p>
-                )}
-              </>
-            ) : (
-              <p className="text-center py-12 text-muted-foreground text-sm">
-                Use a busca ou selecione uma categoria para ver os modelos
-              </p>
-            )}
-          </section>
-
-          {/* Seção 2: Configure os Componentes */}
-          {selectedModel && (
-            <section>
-              <h2 className="text-lg font-semibold text-accent mb-4">Configure os Componentes</h2>
-              <Accordion type="single" collapsible className="w-full space-y-2">
-                <AccordionItem value="aco" className="border border-border bg-card rounded-lg overflow-hidden">
-                  <AccordionTrigger className="px-4 hover:no-underline">
-                    <div className="flex items-center justify-between w-full pr-4">
-                      <span className="font-normal">Aço</span>
-                      {selectedAco && (
-                        <span className="text-sm text-muted-foreground">
-                          {selectedAco.nome_opcao}
-                        </span>
-                      )}
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="grid gap-2 grid-cols-2 pt-2">
-                      {acos.map((aco) => (
-                        <ComponentCard
-                          key={aco.id}
-                          nome={aco.nome_opcao}
-                          preco={aco.preco_adicional}
-                          isSelected={selectedAco?.id === aco.id}
-                          onClick={() => setSelectedAco(aco)}
-                        />
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="empunhadura" className="border border-border bg-card rounded-lg overflow-hidden">
-                  <AccordionTrigger className="px-4 hover:no-underline">
-                    <div className="flex items-center justify-between w-full pr-4">
-                      <span className="font-normal">Empunhadura</span>
-                      {selectedEmpunhadura && (
-                        <span className="text-sm text-muted-foreground">
-                          {selectedEmpunhadura.nome_opcao}
-                        </span>
-                      )}
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="grid gap-2 grid-cols-2 pt-2">
-                      {empunhaduras.map((emp) => (
-                        <ComponentCard
-                          key={emp.id}
-                          nome={emp.nome_opcao}
-                          preco={emp.preco_adicional}
-                          isSelected={selectedEmpunhadura?.id === emp.id}
-                          onClick={() => setSelectedEmpunhadura(emp)}
-                        />
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="acabamento" className="border border-border bg-card rounded-lg overflow-hidden">
-                  <AccordionTrigger className="px-4 hover:no-underline">
-                    <div className="flex items-center justify-between w-full pr-4">
-                      <span className="font-normal">Acabamento / Variações</span>
-                      {(selectedAcabamento.length > 0 || selectedVariacoesAcabamento.length > 0) && (
-                        <span className="text-sm text-muted-foreground">
-                          {selectedAcabamento.length + selectedVariacoesAcabamento.length} selecionado(s)
-                        </span>
-                      )}
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="space-y-4 pt-2">
-                      {acabamentosBase.length > 0 && (
-                        <div>
-                          <h3 className="text-sm font-medium mb-2">Acabamento</h3>
-                          <div className="space-y-2">
-                            {acabamentosBase.map((acab) => {
-                              const isSelected = selectedAcabamento.some(a => a.id === acab.id);
-                              return (
-                                <div 
-                                  key={acab.id}
-                                  className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
-                                    isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-                                  }`}
-                                  onClick={() => {
-                                    if (isSelected) {
-                                      setSelectedAcabamento(prev => prev.filter(a => a.id !== acab.id));
-                                    } else {
-                                      setSelectedAcabamento(prev => [...prev, acab]);
-                                    }
-                                  }}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <Checkbox checked={isSelected} />
-                                    <span className="text-sm">{acab.nome_opcao}</span>
-                                  </div>
-                                  <span className="text-sm font-medium">
-                                    +R$ {acab.preco_adicional.toFixed(2)}
-                                  </span>
-                                </div>
-                              );
-                            })}
+                ) : (
+                  <div className="space-y-2 md:space-y-3">
+                    {laminasCustomizadas.map((lamina) => (
+                      <div
+                        key={lamina.id}
+                        className="p-2 md:p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => setLaminaModalAberta(lamina)}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-xs md:text-sm truncate">{lamina.modelo?.nome_modelo}</p>
+                            <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
+                              {[lamina.aco?.nome_opcao, lamina.acabamento?.nome_opcao, lamina.empunhadura?.nome_opcao].filter(Boolean).join(' • ') || 'Clique para ver detalhes'}
+                            </p>
                           </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removerLamina(lamina.id);
+                            }}
+                            className="h-7 w-7 md:h-8 md:w-8 p-0"
+                          >
+                            <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                          </Button>
                         </div>
-                      )}
-                      
-                      {variacoesAcabamento.length > 0 && (
-                        <div>
-                          <h3 className="text-sm font-medium mb-2">Variações</h3>
-                          <div className="space-y-2">
-                            {variacoesAcabamento.map((variacao) => {
-                              const isSelected = selectedVariacoesAcabamento.some(v => v.id === variacao.id);
-                              return (
-                                <div 
-                                  key={variacao.id}
-                                  className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
-                                    isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-                                  }`}
-                                  onClick={() => {
-                                    if (isSelected) {
-                                      setSelectedVariacoesAcabamento(prev => prev.filter(v => v.id !== variacao.id));
-                                    } else {
-                                      setSelectedVariacoesAcabamento(prev => [...prev, variacao]);
-                                    }
-                                  }}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <Checkbox checked={isSelected} />
-                                    <span className="text-sm">{variacao.nome_opcao}</span>
-                                  </div>
-                                  <span className="text-sm font-medium">
-                                    +R$ {variacao.preco_adicional.toFixed(2)}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="bainha" className="border border-border bg-card rounded-lg overflow-hidden">
-                  <AccordionTrigger className="px-4 hover:no-underline">
-                    <div className="flex items-center justify-between w-full pr-4">
-                      <span className="font-normal">Bainha</span>
-                      {selectedBainha && (
-                        <span className="text-sm text-muted-foreground">
-                          {selectedBainha.nome_opcao}
-                        </span>
-                      )}
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="grid gap-2 grid-cols-2 pt-2">
-                      {bainhas.map((bainha) => (
-                        <ComponentCard
-                          key={bainha.id}
-                          nome={bainha.nome_opcao}
-                          preco={bainha.preco_adicional}
-                          isSelected={selectedBainha?.id === bainha.id}
-                          onClick={() => setSelectedBainha(bainha)}
-                        />
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </section>
-          )}
-
-          {/* Seção 3: Extras */}
-          {selectedModel && (
-            <section>
-              <h2 className="text-lg font-semibold text-accent mb-4">Extras</h2>
-              <div className="border border-border rounded-lg bg-card p-4 space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    id="laser"
-                    checked={selectedLaser}
-                    onCheckedChange={(checked) => setSelectedLaser(checked as boolean)}
-                  />
-                  <Label htmlFor="laser" className="cursor-pointer text-sm font-normal">
-                    Personalização a Laser (+R$ 30)
-                  </Label>
-                </div>
-
-                {selectedLaser && (
-                  <div className="space-y-2 pl-7">
-                    <Input
-                      id="texto-laser"
-                      value={textLaser}
-                      onChange={(e) => setTextLaser(e.target.value)}
-                      placeholder="Texto para gravação"
-                      className="border-border"
-                    />
+                      </div>
+                    ))}
                   </div>
                 )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="cor-bainha" className="text-sm">Cor da Bainha</Label>
-                  <Input
-                    id="cor-bainha"
-                    value={corBainha}
-                    onChange={(e) => setCorBainha(e.target.value)}
-                    placeholder="Ex: Preto, Marrom, etc."
-                    className="border-border"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="obs-lamina" className="text-sm">Observação da Lâmina</Label>
-                  <Input
-                    id="obs-lamina"
-                    value={observacaoLamina}
-                    onChange={(e) => setObservacaoLamina(e.target.value)}
-                    placeholder="Observações sobre esta lâmina"
-                    className="border-border"
-                  />
-                </div>
               </div>
-            </section>
-          )}
-
-          {/* Seção 4: Produtos Adicionais */}
-          {selectedModel && produtosAdicionais.length > 0 && (
-            <section>
-              <h2 className="text-lg font-semibold text-accent mb-4">Produtos Adicionais</h2>
-              <div className="grid gap-3 grid-cols-2">
-                {produtosAdicionais.map((produto) => (
-                  <ProdutoAdicionalCard
-                    key={produto.id}
-                    nome={produto.nome_produto}
-                    precoUnitario={produto.preco_unitario}
-                    quantidade={quantidadesProdutos[produto.id] || 0}
-                    onAdd={() => setQuantidadesProdutos(prev => ({
-                      ...prev,
-                      [produto.id]: (prev[produto.id] || 0) + 1
-                    }))}
-                    onRemove={() => setQuantidadesProdutos(prev => ({
-                      ...prev,
-                      [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1)
-                    }))}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Bottom bar fixo com resumo */}
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50">
         <div className="px-4 py-4 space-y-3">
-          {/* Lâminas adicionadas - scroll horizontal */}
-          {laminasConfiguradas.length > 0 && (
-            <div className="overflow-x-auto pb-2">
-              <div className="flex gap-2 min-w-max">
-                {laminasConfiguradas.map((lamina, index) => (
-                  <div key={lamina.id} className="flex-shrink-0 w-40 p-2 border border-border rounded bg-background">
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="text-xs font-medium">Lâmina {index + 1}</p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removerLamina(lamina.id)}
-                        className="h-5 w-5 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate">{lamina.modelo.nome_modelo}</p>
-                    <p className="text-sm font-bold text-accent mt-1">R$ {lamina.subtotal.toFixed(2)}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Ações principais */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1">
               <p className="text-xs text-muted-foreground">Total do Pedido</p>
               <p className="text-2xl font-bold text-accent">R$ {valorTotalCalculado.toFixed(2)}</p>
             </div>
-            
-            {selectedModel && (
-              <Button
-                onClick={adicionarLamina}
-                variant="outline"
-                size="sm"
-                className="flex-shrink-0 border-accent text-accent hover:bg-accent hover:text-accent-foreground"
-              >
-                {editandoLaminaId ? 'Atualizar' : 'Adicionar'}
+
+            {modeloSelecionado && (
+              <Button onClick={adicionarLamina} variant="outline" size="sm" className="flex-shrink-0 border-accent text-accent hover:bg-accent hover:text-accent-foreground">
+                Adicionar
               </Button>
             )}
-            
-            {(laminasConfiguradas.length > 0 || selectedModel) && (
-              <Button
-                onClick={() => setModalOpen(true)}
-                size="sm"
-                className="flex-shrink-0 bg-accent hover:bg-accent/90"
-              >
+
+            {(laminasCustomizadas.length > 0 || modeloSelecionado) && (
+              <Button onClick={() => setModalOpen(true)} size="sm" className="flex-shrink-0 bg-accent hover:bg-accent/90">
                 Fechar Pedido
               </Button>
             )}
           </div>
         </div>
       </div>
+
+      {/* Modal de Detalhes da Lâmina */}
+      <Dialog open={!!laminaModalAberta} onOpenChange={() => setLaminaModalAberta(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">
+              {laminaModalAberta?.modelo?.nome_modelo || 'Detalhes da Lâmina'}
+            </DialogTitle>
+          </DialogHeader>
+
+          {laminaModalAberta && (
+            <div className="space-y-3 text-sm">
+              {/* SVG do modelo */}
+              <div className="flex justify-center mb-4">
+                <div className="w-full max-w-[200px] h-24 rounded-lg overflow-hidden border border-border bg-white p-2">
+                  <img
+                    src={getModeloImagem(laminaModalAberta.modelo)}
+                    alt="Modelo"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-muted p-2.5 rounded-lg">
+                  <p className="text-muted-foreground text-xs">Modelo</p>
+                  <p className="font-medium">{laminaModalAberta.modelo?.nome_modelo || '-'}</p>
+                </div>
+                <div className="bg-muted p-2.5 rounded-lg">
+                  <p className="text-muted-foreground text-xs">Aço</p>
+                  <p className="font-medium">{laminaModalAberta.aco?.nome_opcao || '-'}</p>
+                </div>
+                <div className="bg-muted p-2.5 rounded-lg">
+                  <p className="text-muted-foreground text-xs">Acabamento</p>
+                  <p className="font-medium">{laminaModalAberta.acabamento?.nome_opcao || '-'}</p>
+                </div>
+                <div className="bg-muted p-2.5 rounded-lg">
+                  <p className="text-muted-foreground text-xs">Empunhadura</p>
+                  <p className="font-medium">{laminaModalAberta.empunhadura?.nome_opcao || '-'}</p>
+                </div>
+                <div className="bg-muted p-2.5 rounded-lg">
+                  <p className="text-muted-foreground text-xs">Bainha</p>
+                  <p className="font-medium">{laminaModalAberta.bainha?.nome_opcao || '-'}</p>
+                </div>
+                {laminaModalAberta.corBainha && (
+                  <div className="bg-muted p-2.5 rounded-lg">
+                    <p className="text-muted-foreground text-xs">Cor da Bainha</p>
+                    <p className="font-medium">{laminaModalAberta.corBainha}</p>
+                  </div>
+                )}
+                {laminaModalAberta.embalagem && (
+                  <div className="bg-muted p-2.5 rounded-lg col-span-2">
+                    <p className="text-muted-foreground text-xs">Embalagem</p>
+                    <p className="font-medium">{laminaModalAberta.embalagem}</p>
+                    {laminaModalAberta.embalagemGravacao && laminaModalAberta.embalagemTextoGravacao && (
+                      <p className="text-xs text-muted-foreground mt-1">Gravação: {laminaModalAberta.embalagemTextoGravacao}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {laminaModalAberta.laser && (
+                <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+                  <p className="text-muted-foreground text-xs">Personalização à Laser</p>
+                  <p className="font-medium">{laminaModalAberta.textoLaser || 'Sim'}</p>
+                  {laminaModalAberta.localGravacao.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">Local: {laminaModalAberta.localGravacao.join(', ')}</p>
+                  )}
+                </div>
+              )}
+
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={() => {
+                  removerLamina(laminaModalAberta.id);
+                  setLaminaModalAberta(null);
+                }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Remover Lâmina
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de Finalização */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
@@ -1013,200 +1108,109 @@ ${linhasFormatadas}`;
               {pedidoFinalizado ? 'Copie as informações abaixo' : 'Preencha os dados do cliente para enviar o pedido para produção'}
             </DialogDescription>
           </DialogHeader>
-          
+
           {!pedidoFinalizado ? (
             <div className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="nome">Nome Completo *</Label>
-                  <Input
-                    id="nome"
-                    value={nomeCompleto}
-                    onChange={(e) => setNomeCompleto(e.target.value)}
-                    required
-                  />
+                  <Input id="nome" value={nomeCompleto} onChange={(e) => setNomeCompleto(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cpf">CPF</Label>
-                  <Input
-                    id="cpf"
-                    value={cpf}
-                    onChange={(e) => setCpf(e.target.value)}
-                  />
+                  <Input id="cpf" value={cpf} onChange={(e) => setCpf(e.target.value)} />
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="celular">Celular</Label>
-                  <Input
-                    id="celular"
-                    value={celular}
-                    onChange={(e) => setCelular(e.target.value)}
-                  />
+                  <Input id="celular" value={celular} onChange={(e) => setCelular(e.target.value)} />
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="dataNascimento">Data de Nascimento</Label>
-                  <Input
-                    id="dataNascimento"
-                    value={dataNascimento}
-                    onChange={(e) => setDataNascimento(e.target.value)}
-                    placeholder="DD/MM/AAAA"
-                  />
+                  <Input id="dataNascimento" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} placeholder="DD/MM/AAAA" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cep">CEP</Label>
-                  <Input
-                    id="cep"
-                    value={cep}
-                    onChange={(e) => setCep(e.target.value)}
-                  />
+                  <Input id="cep" value={cep} onChange={(e) => setCep(e.target.value)} />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="endereco">Endereço</Label>
-                <Input
-                  id="endereco"
-                  value={endereco}
-                  onChange={(e) => setEndereco(e.target.value)}
-                />
+                <Input id="endereco" value={endereco} onChange={(e) => setEndereco(e.target.value)} />
               </div>
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="numero">Número</Label>
-                  <Input
-                    id="numero"
-                    value={numero}
-                    onChange={(e) => setNumero(e.target.value)}
-                  />
+                  <Input id="numero" value={numero} onChange={(e) => setNumero(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="bairro">Bairro</Label>
-                  <Input
-                    id="bairro"
-                    value={bairro}
-                    onChange={(e) => setBairro(e.target.value)}
-                  />
+                  <Input id="bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cidade">Cidade</Label>
-                  <Input
-                    id="cidade"
-                    value={cidade}
-                    onChange={(e) => setCidade(e.target.value)}
-                  />
+                  <Input id="cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} />
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="estado">Estado</Label>
-                  <Input
-                    id="estado"
-                    value={estado}
-                    onChange={(e) => setEstado(e.target.value)}
-                  />
+                  <Input id="estado" value={estado} onChange={(e) => setEstado(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="complemento">Complemento</Label>
-                  <Input
-                    id="complemento"
-                    value={complemento}
-                    onChange={(e) => setComplemento(e.target.value)}
-                  />
+                  <Input id="complemento" value={complemento} onChange={(e) => setComplemento(e.target.value)} />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="certificado">Nome para Certificado</Label>
-                <Input
-                  id="certificado"
-                  value={nomeCertificado}
-                  onChange={(e) => setNomeCertificado(e.target.value)}
-                />
+                <Input id="certificado" value={nomeCertificado} onChange={(e) => setNomeCertificado(e.target.value)} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="pagamento">Forma de Pagamento *</Label>
-                <Input
-                  id="pagamento"
-                  value={formaPagamento}
-                  onChange={(e) => setFormaPagamento(e.target.value)}
-                  placeholder="Ex: PIX, Cartão de Crédito, etc."
-                  required
-                />
+                <Input id="pagamento" value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value)} placeholder="Ex: PIX, Cartão de Crédito, etc." required />
               </div>
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="canal">Canal</Label>
-                  <Input
-                    id="canal"
-                    value={canal}
-                    onChange={(e) => setCanal(e.target.value)}
-                    placeholder="Ex: WhatsApp, Instagram"
-                  />
+                  <Input id="canal" value={canal} onChange={(e) => setCanal(e.target.value)} placeholder="Ex: WhatsApp, Instagram" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Input
-                    id="status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    placeholder="Ex: Pendente, Pago"
-                  />
+                  <Input id="status" value={status} onChange={(e) => setStatus(e.target.value)} placeholder="Ex: Pendente, Pago" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="origem">Origem Cliente</Label>
-                  <Input
-                    id="origem"
-                    value={origemCliente}
-                    onChange={(e) => setOrigemCliente(e.target.value)}
-                    placeholder="Ex: Indicação, Redes Sociais"
-                  />
+                  <Input id="origem" value={origemCliente} onChange={(e) => setOrigemCliente(e.target.value)} placeholder="Ex: Indicação, Redes Sociais" />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="observacao">Observação</Label>
-                <Input
-                  id="observacao"
-                  value={observacao}
-                  onChange={(e) => setObservacao(e.target.value)}
-                  placeholder="Observações gerais do pedido"
-                />
+                <Input id="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} placeholder="Observações gerais do pedido" />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="cupom">Cupom</Label>
-                <Input
-                  id="cupom"
-                  value={cupom}
-                  onChange={(e) => setCupom(e.target.value)}
-                  placeholder="Código de cupom (se houver)"
-                />
+                <Input id="cupom" value={cupom} onChange={(e) => setCupom(e.target.value)} placeholder="Código de cupom (se houver)" />
               </div>
 
-              <Button
-                onClick={handleFinalizarPedido}
-                disabled={submitting}
-                className="w-full"
-                size="lg"
-              >
+              <Button onClick={handleFinalizarPedido} disabled={submitting} className="w-full" size="lg">
                 {submitting ? 'Finalizando...' : 'Finalizar Pedido'}
               </Button>
             </div>
@@ -1218,14 +1222,10 @@ ${linhasFormatadas}`;
               <div className="flex flex-col gap-2">
                 <div className="flex gap-2">
                   <Button onClick={copiarTexto} className="flex-1">
+                    <Copy className="h-4 w-4 mr-2" />
                     Copiar Texto
                   </Button>
-                  <Button 
-                    onClick={exportarParaSheets} 
-                    disabled={exportandoSheets}
-                    variant="secondary" 
-                    className="flex-1"
-                  >
+                  <Button onClick={exportarParaSheets} disabled={exportandoSheets} variant="secondary" className="flex-1">
                     {exportandoSheets ? 'Exportando...' : 'Exportar para Sheets'}
                   </Button>
                 </div>
@@ -1247,7 +1247,7 @@ ${linhasFormatadas}`;
               Cole os dados do pedido e a IA reconhecerá e preencherá automaticamente os campos do formulário.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="textoIA">Cole os dados do pedido aqui</Label>
@@ -1255,17 +1255,13 @@ ${linhasFormatadas}`;
                 id="textoIA"
                 value={textoIA}
                 onChange={(e) => setTextoIA(e.target.value)}
-                placeholder="Cole aqui as informações do pedido, como:&#10;&#10;Cliente: João Silva&#10;CPF: 123.456.789-00&#10;Email: joao@email.com&#10;Telefone: (11) 98765-4321&#10;&#10;Pedido:&#10;- 1 Faca Bowie em aço 1095&#10;- Acabamento fosco&#10;- Empunhadura em madeira&#10;- Bainha em couro preta&#10;- Personalização: 'João Silva'&#10;&#10;Forma de pagamento: PIX&#10;Canal: WhatsApp"
+                placeholder="Cole aqui as informações do pedido..."
                 className="w-full min-h-[300px] p-3 border border-border rounded-lg bg-background resize-none font-mono text-sm"
               />
             </div>
 
             <div className="flex gap-2">
-              <Button
-                onClick={processarTextoComIA}
-                disabled={processandoIA || !textoIA.trim()}
-                className="flex-1"
-              >
+              <Button onClick={processarTextoComIA} disabled={processandoIA || !textoIA.trim()} className="flex-1">
                 {processandoIA ? 'Processando...' : '✨ Processar com IA'}
               </Button>
               <Button
@@ -1277,17 +1273,6 @@ ${linhasFormatadas}`;
               >
                 Cancelar
               </Button>
-            </div>
-
-            <div className="text-sm text-muted-foreground">
-              <p className="font-medium mb-2">Dicas:</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>Cole qualquer texto com informações do pedido</li>
-                <li>A IA extrairá automaticamente nomes, CPF, endereço, telefone, etc.</li>
-                <li>Informações sobre lâminas (modelo, aço, acabamento, etc.) serão reconhecidas</li>
-                <li>Produtos adicionais também podem ser detectados</li>
-                <li>Dados parciais também funcionam - a IA preenche o que conseguir identificar</li>
-              </ul>
             </div>
           </div>
         </DialogContent>
