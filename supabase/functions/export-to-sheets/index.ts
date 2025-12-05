@@ -76,46 +76,26 @@ async function getAccessToken(serviceAccountKey: string): Promise<string> {
   return tokenData.access_token;
 }
 
+interface LaminaData {
+  modelo: string;
+  aco: string;
+  acabamento: string;
+  empunhadura: string;
+  bainha: string;
+  corBainha: string;
+  laser: boolean;
+  textoLaser: string;
+  localGravacao: string[];
+  embalagem: string;
+  embalagemGravacao: boolean;
+  embalagemTextoGravacao: string;
+}
+
 interface ExportData {
-  nomeCompleto: string;
-  cpf: string;
-  email: string;
-  celular: string;
-  cep: string;
-  endereco: string;
-  numero: string;
-  bairro: string;
-  cidade: string;
-  estado: string;
-  complemento: string;
-  dataNascimento: string;
-  nomeCertificado: string;
-  formaPagamento: string;
-  canal: string;
-  status: string;
-  origemCliente: string;
-  observacao: string;
-  cupom: string;
-  laminas: Array<{
-    modelo: string;
-    aco: string;
-    empunhadura: string;
-    acabamento: string;
-    bainha: string;
-    corBainha: string;
-    laser: boolean;
-    textoLaser: string;
-    observacaoLamina: string;
-    subtotal: number;
-  }>;
-  produtosAdicionais: Array<{
-    nome: string;
-    quantidade: number;
-    precoUnitario: number;
-    total: number;
-  }>;
-  valorTotal: number;
-  vendedor: string;
+  nomeCliente: string;
+  prazo?: string;
+  observacoes?: string;
+  laminas: LaminaData[];
 }
 
 serve(async (req) => {
@@ -132,76 +112,45 @@ serve(async (req) => {
     }
 
     const data: ExportData = await req.json();
-    console.log('Exporting data to Google Sheets:', { nomeCompleto: data.nomeCompleto, spreadsheetId });
+    console.log('Exporting data to Google Sheets:', { nomeCliente: data.nomeCliente, laminas: data.laminas.length });
 
     // Get access token
     const accessToken = await getAccessToken(serviceAccountKey);
 
-    // Prepare timestamp
-    const timestamp = new Date().toLocaleString('pt-BR');
-    
-    // Prepare item description for sales report
-    const itemDescricao = data.laminas.length > 0
-      ? `${data.laminas.length} Lâmina(s) Kaowz`
-      : 'Produtos diversos';
-
-    // ROW 1: Sales Report (Relatório de Vendas)
-    // Data | Nome | Canal | Vendedor | Valor (R$) | Forma de Pag. | Status | Origem Cliente | Item | OBS | Cupom
-    const salesRowData = [
-      timestamp,
-      data.nomeCompleto,
-      data.canal || '',
-      data.vendedor,
-      data.valorTotal.toFixed(2),
-      data.formaPagamento,
-      data.status || 'Pendente',
-      data.origemCliente || '',
-      itemDescricao,
-      data.observacao || '',
-      data.cupom || '',
-    ];
-
-    // Append to Vendas sheet
-    const salesResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Vendas!A:A:append?valueInputOption=RAW`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          values: [salesRowData],
-        }),
+    // Prepare rows for each blade
+    // Columns: Nome | Item | Aço | Acabamento | Empunhadura | Bainha | Cor bainha | Prazo | Observações | Personalização
+    const rows = data.laminas.map((lamina) => {
+      // Build personalization text
+      let personalizacao = '';
+      if (lamina.laser && lamina.textoLaser) {
+        personalizacao = lamina.textoLaser;
+        if (lamina.localGravacao && lamina.localGravacao.length > 0) {
+          personalizacao += ` (${lamina.localGravacao.join(', ')})`;
+        }
       }
-    );
+      if (lamina.embalagemGravacao && lamina.embalagemTextoGravacao) {
+        if (personalizacao) personalizacao += ' | ';
+        personalizacao += `Embalagem: ${lamina.embalagemTextoGravacao}`;
+      }
 
-    if (!salesResponse.ok) {
-      const errorText = await salesResponse.text();
-      console.error('Google Sheets API error (Vendas):', errorText);
-      throw new Error(`Failed to append to Vendas sheet: ${errorText}`);
-    }
+      return [
+        data.nomeCliente || '',
+        lamina.modelo || '',
+        lamina.aco || '',
+        lamina.acabamento || '',
+        lamina.empunhadura || '',
+        lamina.bainha || '',
+        lamina.corBainha || '',
+        data.prazo || '',
+        data.observacoes || '',
+        personalizacao || '',
+      ];
+    });
 
-    // ROWS 2+: Blade Details (One row per blade)
-    // Modelo | Aço | Acabamento | Empunhadura | Bainha | Cor da Bainha | Observação | Personalização
-    const bladeRows = data.laminas.map((lamina) => [
-      timestamp,
-      data.nomeCompleto,
-      data.vendedor,
-      lamina.modelo,
-      lamina.aco,
-      lamina.acabamento,
-      lamina.empunhadura,
-      lamina.bainha,
-      lamina.corBainha || '',
-      lamina.observacaoLamina || '',
-      lamina.laser ? lamina.textoLaser : 'Não',
-      lamina.subtotal.toFixed(2),
-    ]);
-
-    if (bladeRows.length > 0) {
-      const bladesResponse = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Lâminas!A:A:append?valueInputOption=RAW`,
+    if (rows.length > 0) {
+      // Append to first sheet (default)
+      const response = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:J:append?valueInputOption=RAW`,
         {
           method: 'POST',
           headers: {
@@ -209,19 +158,19 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            values: bladeRows,
+            values: rows,
           }),
         }
       );
 
-      if (!bladesResponse.ok) {
-        const errorText = await bladesResponse.text();
-        console.error('Google Sheets API error (Lâminas):', errorText);
-        throw new Error(`Failed to append to Lâminas sheet: ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Google Sheets API error:', errorText);
+        throw new Error(`Failed to append to sheet: ${errorText}`);
       }
     }
 
-    console.log('Successfully exported to Google Sheets: 1 sales row + ' + bladeRows.length + ' blade rows');
+    console.log('Successfully exported to Google Sheets: ' + rows.length + ' rows');
 
     return new Response(
       JSON.stringify({ success: true, message: 'Dados exportados com sucesso!' }),
