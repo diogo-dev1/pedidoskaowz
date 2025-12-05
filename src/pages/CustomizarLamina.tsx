@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash2, Plus, MessageCircle, Search, Check, ArrowLeft, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import edcKnife from '@/assets/edc-knife.svg';
@@ -37,8 +39,14 @@ interface LaminaCustomizada {
   corBainha: string;
   laser: boolean;
   textoLaser: string;
-  subtotal: number;
+  localGravacao: string[];
+  embalagem: string;
+  embalagemGravacao: boolean;
+  embalagemTextoGravacao: string;
 }
+
+const CORES_BAINHA = ['Preto', 'Coyote', 'Orange', 'Verde'];
+const LOCAIS_GRAVACAO = ['Dorso Superior', 'Dorso Inferior', 'Lâmina'];
 
 export default function CustomizarLamina() {
   const navigate = useNavigate();
@@ -55,6 +63,10 @@ export default function CustomizarLamina() {
   const [corBainha, setCorBainha] = useState<string>('');
   const [laser, setLaser] = useState(false);
   const [textoLaser, setTextoLaser] = useState('');
+  const [localGravacao, setLocalGravacao] = useState<string[]>([]);
+  const [embalagem, setEmbalagem] = useState('');
+  const [embalagemGravacao, setEmbalagemGravacao] = useState(false);
+  const [embalagemTextoGravacao, setEmbalagemTextoGravacao] = useState('');
   const [buscaModelo, setBuscaModelo] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('');
   
@@ -98,23 +110,6 @@ export default function CustomizarLamina() {
     return matchBusca && matchCategoria;
   });
 
-  const calcularSubtotal = (): number => {
-    const modelo = modelos.find(m => m.id === modeloSelecionado);
-    const aco = componentes.find(c => c.id === acoSelecionado);
-    const acabamento = componentes.find(c => c.id === acabamentoSelecionado);
-    const empunhadura = componentes.find(c => c.id === empunhaduraSelecionada);
-    const bainha = componentes.find(c => c.id === bainhaSelecionada);
-
-    const precoBase = modelo?.preco_base || 0;
-    const precoAco = aco?.preco_adicional || 0;
-    const precoAcabamento = acabamento?.preco_adicional || 0;
-    const precoEmpunhadura = empunhadura?.preco_adicional || 0;
-    const precoBainha = bainha?.preco_adicional || 0;
-    const precoLaser = laser ? 30 : 0;
-
-    return precoBase + precoAco + precoAcabamento + precoEmpunhadura + precoBainha + precoLaser;
-  };
-
   // Objetos selecionados para exibição no resumo em tempo real
   const modeloAtual = modelos.find(m => m.id === modeloSelecionado);
   const acoAtual = componentes.find(c => c.id === acoSelecionado);
@@ -138,7 +133,10 @@ export default function CustomizarLamina() {
       corBainha,
       laser,
       textoLaser,
-      subtotal: calcularSubtotal(),
+      localGravacao,
+      embalagem,
+      embalagemGravacao,
+      embalagemTextoGravacao,
     };
 
     setLaminasCustomizadas([...laminasCustomizadas, novaLamina]);
@@ -160,6 +158,10 @@ export default function CustomizarLamina() {
     setCorBainha('');
     setLaser(false);
     setTextoLaser('');
+    setLocalGravacao([]);
+    setEmbalagem('');
+    setEmbalagemGravacao(false);
+    setEmbalagemTextoGravacao('');
     setBuscaModelo('');
     setCategoriaFiltro('');
   };
@@ -180,12 +182,18 @@ export default function CustomizarLamina() {
       if (lamina.empunhadura) mensagem += `- Empunhadura: ${lamina.empunhadura.nome_opcao}\n`;
       if (lamina.bainha) mensagem += `- Bainha: ${lamina.bainha.nome_opcao}\n`;
       if (lamina.corBainha) mensagem += `- Cor da Bainha: ${lamina.corBainha}\n`;
-      if (lamina.laser) mensagem += `- Personalização à Laser: ${lamina.textoLaser || 'Sim'}\n`;
-      mensagem += `- Subtotal: R$ ${lamina.subtotal.toFixed(2)}\n\n`;
+      if (lamina.laser) {
+        mensagem += `- Personalização à Laser: ${lamina.textoLaser || 'Sim'}\n`;
+        if (lamina.localGravacao.length > 0) mensagem += `- Local da Gravação: ${lamina.localGravacao.join(', ')}\n`;
+      }
+      if (lamina.embalagem) {
+        mensagem += `- Embalagem: ${lamina.embalagem}\n`;
+        if (lamina.embalagemGravacao && lamina.embalagemTextoGravacao) {
+          mensagem += `- Gravação Embalagem: ${lamina.embalagemTextoGravacao}\n`;
+        }
+      }
+      mensagem += '\n';
     });
-
-    const total = laminasCustomizadas.reduce((sum, l) => sum + l.subtotal, 0);
-    mensagem += `*Total: R$ ${total.toFixed(2)}*`;
 
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
@@ -193,7 +201,10 @@ export default function CustomizarLamina() {
     toast.success('Redirecionando para WhatsApp...');
   };
 
-  const subtotalAtual = calcularSubtotal();
+  const getModeloImagem = (modelo: ModeloBase | null | undefined) => {
+    if (!modelo) return edcKnife;
+    return modelo.imagem_modelo || edcKnife;
+  };
 
   return (
     <div className="min-h-screen bg-zinc-50 overflow-x-hidden">
@@ -223,10 +234,7 @@ export default function CustomizarLamina() {
           <div className="mb-4 md:mb-6 flex justify-center animate-fade-in">
             <div className="relative w-full max-w-[300px] md:max-w-[500px] h-32 md:h-40 rounded-lg overflow-hidden border border-accent shadow-lg bg-white p-2 md:p-4">
               <img 
-                src={modelos.find(m => m.id === modeloSelecionado)?.categoria === 'EDC' 
-                  ? edcKnife 
-                  : modelos.find(m => m.id === modeloSelecionado)?.imagem_modelo || edcKnife
-                } 
+                src={getModeloImagem(modeloAtual)} 
                 alt="Modelo selecionado"
                 className="w-full h-full object-contain filter drop-shadow-sm"
                 style={{ filter: 'contrast(1.2) brightness(0.95)' }}
@@ -342,9 +350,7 @@ export default function CustomizarLamina() {
                                   : 'bg-muted hover:bg-muted/80'
                               }`}
                             >
-                            <div className="flex items-center justify-between gap-2">
                               <span className="truncate">{aco.nome_opcao}</span>
-                            </div>
                             </button>
                           ))}
                         </AccordionContent>
@@ -370,9 +376,7 @@ export default function CustomizarLamina() {
                                   : 'bg-muted hover:bg-muted/80'
                               }`}
                             >
-                            <div className="flex items-center justify-between gap-2">
                               <span className="truncate">{acabamento.nome_opcao}</span>
-                            </div>
                             </button>
                           ))}
                         </AccordionContent>
@@ -398,9 +402,7 @@ export default function CustomizarLamina() {
                                   : 'bg-muted hover:bg-muted/80'
                               }`}
                             >
-                            <div className="flex items-center justify-between gap-2">
                               <span className="truncate">{empunhadura.nome_opcao}</span>
-                            </div>
                             </button>
                           ))}
                         </AccordionContent>
@@ -427,22 +429,23 @@ export default function CustomizarLamina() {
                                     : 'bg-muted hover:bg-muted/80'
                                 }`}
                               >
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="truncate">{bainha.nome_opcao}</span>
-                            </div>
+                                <span className="truncate">{bainha.nome_opcao}</span>
                               </button>
                             ))}
                           </div>
                           {bainhaSelecionada && (
                             <div className="space-y-1.5 md:space-y-2 pt-2 border-t border-border">
-                              <Label htmlFor="corBainha" className="text-xs">Cor da Bainha (opcional)</Label>
-                              <Input
-                                id="corBainha"
-                                placeholder="Ex: Preta, Marrom..."
-                                value={corBainha}
-                                onChange={(e) => setCorBainha(e.target.value)}
-                                className="text-xs md:text-sm"
-                              />
+                              <Label htmlFor="corBainha" className="text-xs">Cor da Bainha</Label>
+                              <Select value={corBainha} onValueChange={setCorBainha}>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Selecione a cor" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {CORES_BAINHA.map(cor => (
+                                    <SelectItem key={cor} value={cor}>{cor}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                           )}
                         </AccordionContent>
@@ -459,27 +462,101 @@ export default function CustomizarLamina() {
                             <InfoEtapaModal etapaKey="laser" showLabel />
                           </div>
                           <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               id="laser"
                               checked={laser}
-                              onChange={(e) => setLaser(e.target.checked)}
-                              className="h-3.5 w-3.5 md:h-4 md:w-4"
+                              onCheckedChange={(checked) => setLaser(checked as boolean)}
                             />
                             <Label htmlFor="laser" className="text-xs md:text-sm cursor-pointer">
                               Adicionar personalização à laser
                             </Label>
                           </div>
                           {laser && (
-                            <div className="space-y-1.5 md:space-y-2">
-                              <Label htmlFor="textoLaser" className="text-xs">Texto para gravação</Label>
-                              <Input
-                                id="textoLaser"
-                                placeholder="Digite o texto..."
-                                value={textoLaser}
-                                onChange={(e) => setTextoLaser(e.target.value)}
-                                className="text-xs md:text-sm"
-                              />
+                            <div className="space-y-3">
+                              <div className="space-y-1.5 md:space-y-2">
+                                <Label htmlFor="textoLaser" className="text-xs">Texto para gravação</Label>
+                                <Input
+                                  id="textoLaser"
+                                  placeholder="Digite o texto..."
+                                  value={textoLaser}
+                                  onChange={(e) => setTextoLaser(e.target.value)}
+                                  className="text-xs md:text-sm"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-xs">Local da gravação</Label>
+                                <div className="flex flex-wrap gap-2">
+                                  {LOCAIS_GRAVACAO.map(local => (
+                                    <div
+                                      key={local}
+                                      className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
+                                        localGravacao.includes(local)
+                                          ? 'border-accent bg-accent/10'
+                                          : 'border-border hover:border-accent/50'
+                                      }`}
+                                      onClick={() => {
+                                        if (localGravacao.includes(local)) {
+                                          setLocalGravacao(localGravacao.filter(l => l !== local));
+                                        } else {
+                                          setLocalGravacao([...localGravacao, local]);
+                                        }
+                                      }}
+                                    >
+                                      <Checkbox checked={localGravacao.includes(local)} />
+                                      <span className="text-xs">{local}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="embalagem" className="border-border">
+                        <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
+                          <span className="flex items-center gap-2">
+                            7. Embalagem {embalagem && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-3 pt-2">
+                          <div className="space-y-1.5 md:space-y-2">
+                            <button
+                              onClick={() => setEmbalagem(embalagem === 'Case Tática Personalizada' ? '' : 'Case Tática Personalizada')}
+                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
+                                embalagem === 'Case Tática Personalizada' ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span>Case Tática Personalizada</span>
+                                {embalagem === 'Case Tática Personalizada' && <Check className="h-4 w-4" />}
+                              </div>
+                            </button>
+                          </div>
+                          {embalagem === 'Case Tática Personalizada' && (
+                            <div className="space-y-3 pt-2 border-t border-border">
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id="embalagemGravacao"
+                                  checked={embalagemGravacao}
+                                  onCheckedChange={(checked) => setEmbalagemGravacao(checked as boolean)}
+                                />
+                                <Label htmlFor="embalagemGravacao" className="text-xs md:text-sm cursor-pointer">
+                                  Adicionar gravação na embalagem
+                                </Label>
+                              </div>
+                              {embalagemGravacao && (
+                                <div className="space-y-1.5 md:space-y-2">
+                                  <Label htmlFor="embalagemTextoGravacao" className="text-xs">Texto para gravação na embalagem</Label>
+                                  <Input
+                                    id="embalagemTextoGravacao"
+                                    placeholder="Digite o texto..."
+                                    value={embalagemTextoGravacao}
+                                    onChange={(e) => setEmbalagemTextoGravacao(e.target.value)}
+                                    className="text-xs md:text-sm"
+                                  />
+                                </div>
+                              )}
                             </div>
                           )}
                         </AccordionContent>
@@ -550,6 +627,24 @@ export default function CustomizarLamina() {
                         <span className="text-muted-foreground">Laser:</span>
                         <span className="font-medium">{laser ? (textoLaser || 'Sim') : 'Não'}</span>
                       </div>
+                      {laser && localGravacao.length > 0 && (
+                        <div className="flex justify-between py-1.5 border-b border-border">
+                          <span className="text-muted-foreground">Local:</span>
+                          <span className="font-medium text-right max-w-[60%] truncate">{localGravacao.join(', ')}</span>
+                        </div>
+                      )}
+                      {embalagem && (
+                        <div className="flex justify-between py-1.5 border-b border-border">
+                          <span className="text-muted-foreground">Embalagem:</span>
+                          <span className="font-medium text-right max-w-[60%] truncate">{embalagem}</span>
+                        </div>
+                      )}
+                      {embalagemGravacao && embalagemTextoGravacao && (
+                        <div className="flex justify-between py-1.5 border-b border-border">
+                          <span className="text-muted-foreground">Gravação Emb.:</span>
+                          <span className="font-medium text-right max-w-[60%] truncate">{embalagemTextoGravacao}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -627,6 +722,17 @@ export default function CustomizarLamina() {
           
           {laminaModalAberta && (
             <div className="space-y-3 text-sm">
+              {/* SVG do modelo */}
+              <div className="flex justify-center mb-4">
+                <div className="w-full max-w-[200px] h-24 rounded-lg overflow-hidden border border-border bg-white p-2">
+                  <img
+                    src={getModeloImagem(laminaModalAberta.modelo)}
+                    alt="Modelo"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-muted p-2.5 rounded-lg">
                   <p className="text-muted-foreground text-xs">Modelo</p>
@@ -654,12 +760,24 @@ export default function CustomizarLamina() {
                     <p className="font-medium">{laminaModalAberta.corBainha}</p>
                   </div>
                 )}
+                {laminaModalAberta.embalagem && (
+                  <div className="bg-muted p-2.5 rounded-lg col-span-2">
+                    <p className="text-muted-foreground text-xs">Embalagem</p>
+                    <p className="font-medium">{laminaModalAberta.embalagem}</p>
+                    {laminaModalAberta.embalagemGravacao && laminaModalAberta.embalagemTextoGravacao && (
+                      <p className="text-xs text-muted-foreground mt-1">Gravação: {laminaModalAberta.embalagemTextoGravacao}</p>
+                    )}
+                  </div>
+                )}
               </div>
               
               {laminaModalAberta.laser && (
                 <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
                   <p className="text-muted-foreground text-xs">Personalização à Laser</p>
                   <p className="font-medium">{laminaModalAberta.textoLaser || 'Sim'}</p>
+                  {laminaModalAberta.localGravacao.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">Local: {laminaModalAberta.localGravacao.join(', ')}</p>
+                  )}
                 </div>
               )}
 
