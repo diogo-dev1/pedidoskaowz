@@ -176,27 +176,31 @@ export default function CustomizarLamina() {
     let mensagem = 'Olá! Gostaria de fazer um orçamento com as seguintes lâminas personalizadas:\n\n';
 
     laminasCustomizadas.forEach((lamina, index) => {
-      const partes = [];
+      mensagem += `*Lâmina ${index + 1}:*\n`;
+      mensagem += `- Modelo: ${lamina.modelo?.nome_modelo || '-'}\n`;
+      mensagem += `- Aço: ${lamina.aco?.nome_opcao || '-'}\n`;
+      mensagem += `- Acabamento: ${lamina.acabamento?.nome_opcao || '-'}\n`;
+      mensagem += `- Empunhadura: ${lamina.empunhadura?.nome_opcao || '-'}\n`;
+      mensagem += `- Bainha: ${lamina.bainha?.nome_opcao || '-'}${lamina.corBainha ? ` (${lamina.corBainha})` : ''}\n`;
       
-      partes.push(lamina.modelo?.nome_modelo || 'Modelo não selecionado');
-      if (lamina.aco) partes.push(lamina.aco.nome_opcao);
-      if (lamina.acabamento) partes.push(lamina.acabamento.nome_opcao);
-      if (lamina.empunhadura) partes.push(`empunhadura em ${lamina.empunhadura.nome_opcao}`);
-      if (lamina.bainha) partes.push(`bainha ${lamina.bainha.nome_opcao}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`);
-      if (lamina.laser && lamina.textoLaser) {
-        let laserText = `laser "${lamina.textoLaser}"`;
-        if (lamina.localGravacao.length > 0) laserText += ` (${lamina.localGravacao.join(', ')})`;
-        partes.push(laserText);
-      }
-      if (lamina.embalagem) {
-        let embalagemText = lamina.embalagem;
-        if (lamina.embalagemGravacao && lamina.embalagemTextoGravacao) {
-          embalagemText += ` com gravação "${lamina.embalagemTextoGravacao}"`;
+      let laserInfo = '-';
+      if (lamina.laser) {
+        laserInfo = lamina.textoLaser || 'Sim';
+        if (lamina.localGravacao.length > 0) {
+          laserInfo += ` (${lamina.localGravacao.join(', ')})`;
         }
-        partes.push(embalagemText);
       }
+      mensagem += `- Laser: ${laserInfo}\n`;
       
-      mensagem += `*Lâmina ${index + 1}:* ${partes.join(', ')}\n\n`;
+      let embalagemInfo = '-';
+      if (lamina.embalagem) {
+        embalagemInfo = lamina.embalagem;
+        if (lamina.embalagemGravacao && lamina.embalagemTextoGravacao) {
+          embalagemInfo += ` - Gravação: "${lamina.embalagemTextoGravacao}"`;
+        }
+      }
+      mensagem += `- Embalagem: ${embalagemInfo}\n`;
+      mensagem += '\n';
     });
 
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
