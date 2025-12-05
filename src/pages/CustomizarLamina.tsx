@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, MessageCircle, Search, Check, ArrowLeft, Eye } from 'lucide-react';
+import { Trash2, Plus, MessageCircle, Search, Check, ArrowLeft, Eye, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import edcKnife from '@/assets/edc-knife.svg';
 import { InfoEtapaModal } from '@/components/InfoEtapaModal';
@@ -74,6 +74,8 @@ export default function CustomizarLamina() {
   
   // Modal para visualizar lâmina
   const [laminaModalAberta, setLaminaModalAberta] = useState<LaminaCustomizada | null>(null);
+  const [exportando, setExportando] = useState(false);
+  const [nomeCliente, setNomeCliente] = useState('');
 
   useEffect(() => {
     carregarDados();
@@ -207,6 +209,57 @@ export default function CustomizarLamina() {
     window.open(url, '_blank');
     
     toast.success('Redirecionando para WhatsApp...');
+  };
+
+  const exportarParaSheets = async () => {
+    if (laminasCustomizadas.length === 0) {
+      toast.error('Adicione pelo menos uma lâmina');
+      return;
+    }
+
+    if (!nomeCliente.trim()) {
+      toast.error('Preencha o nome do cliente');
+      return;
+    }
+
+    setExportando(true);
+    try {
+      const payload = {
+        nomeCliente: nomeCliente.trim(),
+        prazo: '',
+        observacoes: '',
+        laminas: laminasCustomizadas.map(lamina => ({
+          modelo: lamina.modelo?.nome_modelo || '',
+          aco: lamina.aco?.nome_opcao || '',
+          acabamento: lamina.acabamento?.nome_opcao || '',
+          empunhadura: lamina.empunhadura?.nome_opcao || '',
+          bainha: lamina.bainha?.nome_opcao || '',
+          corBainha: lamina.corBainha || '',
+          laser: lamina.laser,
+          textoLaser: lamina.textoLaser || '',
+          localGravacao: lamina.localGravacao || [],
+          embalagem: lamina.embalagem || '',
+          embalagemGravacao: lamina.embalagemGravacao,
+          embalagemTextoGravacao: lamina.embalagemTextoGravacao || '',
+        })),
+      };
+
+      const { data, error } = await supabase.functions.invoke('export-to-sheets', {
+        body: payload,
+      });
+
+      if (error) throw error;
+
+      toast.success('Exportado para planilha com sucesso!');
+      setLaminasCustomizadas([]);
+      setNomeCliente('');
+      limparFormulario();
+    } catch (error) {
+      console.error('Erro ao exportar:', error);
+      toast.error('Erro ao exportar para planilha');
+    } finally {
+      setExportando(false);
+    }
   };
 
   const getModeloImagem = (modelo: ModeloBase | null | undefined) => {
@@ -706,13 +759,38 @@ export default function CustomizarLamina() {
 
                   {laminasCustomizadas.length > 0 && (
                     <>
-                      <Button
-                        onClick={enviarWhatsApp}
-                        className="w-full bg-accent hover:bg-accent/90 text-xs md:text-sm"
-                      >
-                        <MessageCircle className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                        Solicitar Orçamento
-                      </Button>
+                      <div className="space-y-2">
+                        <Label htmlFor="nomeCliente" className="text-xs">Nome do Cliente</Label>
+                        <Input
+                          id="nomeCliente"
+                          value={nomeCliente}
+                          onChange={(e) => setNomeCliente(e.target.value)}
+                          placeholder="Nome completo do cliente"
+                          className="text-sm"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={enviarWhatsApp}
+                          className="flex-1 bg-accent hover:bg-accent/90 text-xs md:text-sm"
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" />
+                          WhatsApp
+                        </Button>
+                        <Button
+                          onClick={exportarParaSheets}
+                          disabled={exportando || !nomeCliente.trim()}
+                          variant="outline"
+                          className="flex-1 text-xs md:text-sm"
+                        >
+                          {exportando ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <FileSpreadsheet className="h-4 w-4 mr-1" />
+                          )}
+                          Planilha
+                        </Button>
+                      </div>
                     </>
                   )}
                 </div>
