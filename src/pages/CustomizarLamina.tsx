@@ -10,8 +10,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash2, Plus, MessageCircle, Search, Check, ArrowLeft, Eye, FileSpreadsheet, Loader2, FileImage, FileText } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 import edcKnife from '@/assets/edc-knife.svg';
 import { InfoEtapaModal } from '@/components/InfoEtapaModal';
@@ -88,6 +86,7 @@ export default function CustomizarLamina() {
     
     try {
       toast.loading('Gerando imagem...');
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(exportCardRef.current, {
         backgroundColor: '#ffffff',
         scale: 2,
@@ -112,6 +111,9 @@ export default function CustomizarLamina() {
     
     try {
       toast.loading('Gerando PDF...');
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      
       const canvas = await html2canvas(exportCardRef.current, {
         backgroundColor: '#ffffff',
         scale: 2,
