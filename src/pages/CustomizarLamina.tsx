@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, MessageCircle, Search, Check, ArrowLeft, Eye, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { Trash2, Plus, MessageCircle, Search, Check, ArrowLeft, Eye, FileSpreadsheet, Loader2, FileImage, FileText } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 import edcKnife from '@/assets/edc-knife.svg';
 import { InfoEtapaModal } from '@/components/InfoEtapaModal';
@@ -76,6 +78,71 @@ export default function CustomizarLamina() {
   const [laminaModalAberta, setLaminaModalAberta] = useState<LaminaCustomizada | null>(null);
   const [exportando, setExportando] = useState(false);
   const [nomeCliente, setNomeCliente] = useState('');
+  
+  // Ref para exportação
+  const exportCardRef = useRef<HTMLDivElement>(null);
+
+  // Funções de exportação
+  const exportarComoImagem = async () => {
+    if (!exportCardRef.current || !laminaModalAberta) return;
+    
+    try {
+      toast.loading('Gerando imagem...');
+      const canvas = await html2canvas(exportCardRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+      
+      const link = document.createElement('a');
+      link.download = `lamina-${laminaModalAberta.modelo?.nome_modelo || 'customizada'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast.dismiss();
+      toast.success('Imagem salva!');
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Erro ao gerar imagem');
+      console.error(error);
+    }
+  };
+
+  const exportarComoPDF = async () => {
+    if (!exportCardRef.current || !laminaModalAberta) return;
+    
+    try {
+      toast.loading('Gerando PDF...');
+      const canvas = await html2canvas(exportCardRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a5',
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min((pdfWidth - 20) / imgWidth, (pdfHeight - 20) / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 10;
+      
+      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.save(`lamina-${laminaModalAberta.modelo?.nome_modelo || 'customizada'}.pdf`);
+      toast.dismiss();
+      toast.success('PDF salvo!');
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Erro ao gerar PDF');
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
     carregarDados();
@@ -802,7 +869,7 @@ export default function CustomizarLamina() {
 
       {/* Modal de Detalhes da Lâmina */}
       <Dialog open={!!laminaModalAberta} onOpenChange={() => setLaminaModalAberta(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold">
               {laminaModalAberta?.modelo?.nome_modelo || 'Detalhes da Lâmina'}
@@ -810,65 +877,102 @@ export default function CustomizarLamina() {
           </DialogHeader>
           
           {laminaModalAberta && (
-            <div className="space-y-3 text-sm">
-              {/* SVG do modelo */}
-              <div className="flex justify-center mb-4">
-                <div className="w-full max-w-[200px] h-24 rounded-lg overflow-hidden border border-border bg-white p-2">
-                  <img
-                    src={getModeloImagem(laminaModalAberta.modelo)}
-                    alt="Modelo"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </div>
+            <div className="space-y-4 text-sm">
+              {/* Card para exportação */}
+              <div 
+                ref={exportCardRef}
+                className="bg-white p-5 rounded-xl border border-zinc-200"
+                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+              >
+                {/* Título */}
+                <h2 className="text-lg font-bold text-zinc-900 mb-3 text-center">
+                  {laminaModalAberta.modelo?.nome_modelo || 'Lâmina Customizada'}
+                </h2>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-muted p-2.5 rounded-lg">
-                  <p className="text-muted-foreground text-xs">Modelo</p>
-                  <p className="font-medium">{laminaModalAberta.modelo?.nome_modelo || '-'}</p>
+                {/* Imagem do modelo */}
+                <div className="flex justify-center mb-4">
+                  <div className="w-full max-w-[180px] h-20 rounded-lg overflow-hidden border border-zinc-200 bg-zinc-50 p-2">
+                    <img
+                      src={getModeloImagem(laminaModalAberta.modelo)}
+                      alt="Modelo"
+                      className="w-full h-full object-contain"
+                      crossOrigin="anonymous"
+                    />
+                  </div>
                 </div>
-                <div className="bg-muted p-2.5 rounded-lg">
-                  <p className="text-muted-foreground text-xs">Aço</p>
-                  <p className="font-medium">{laminaModalAberta.aco?.nome_opcao || '-'}</p>
+
+                {/* Grid de especificações */}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
+                    <p className="text-zinc-500 text-[10px] mb-0.5">Modelo</p>
+                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.modelo?.nome_modelo || '-'}</p>
+                  </div>
+                  <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
+                    <p className="text-zinc-500 text-[10px] mb-0.5">Aço</p>
+                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.aco?.nome_opcao || '-'}</p>
+                  </div>
+                  <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
+                    <p className="text-zinc-500 text-[10px] mb-0.5">Acabamento</p>
+                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.acabamento?.nome_opcao || '-'}</p>
+                  </div>
+                  <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
+                    <p className="text-zinc-500 text-[10px] mb-0.5">Empunhadura</p>
+                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.empunhadura?.nome_opcao || '-'}</p>
+                  </div>
+                  <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
+                    <p className="text-zinc-500 text-[10px] mb-0.5">Bainha</p>
+                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.bainha?.nome_opcao || '-'}</p>
+                  </div>
+                  {laminaModalAberta.corBainha && (
+                    <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
+                      <p className="text-zinc-500 text-[10px] mb-0.5">Cor da Bainha</p>
+                      <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.corBainha}</p>
+                    </div>
+                  )}
                 </div>
-                <div className="bg-muted p-2.5 rounded-lg">
-                  <p className="text-muted-foreground text-xs">Acabamento</p>
-                  <p className="font-medium">{laminaModalAberta.acabamento?.nome_opcao || '-'}</p>
-                </div>
-                <div className="bg-muted p-2.5 rounded-lg">
-                  <p className="text-muted-foreground text-xs">Empunhadura</p>
-                  <p className="font-medium">{laminaModalAberta.empunhadura?.nome_opcao || '-'}</p>
-                </div>
-                <div className="bg-muted p-2.5 rounded-lg">
-                  <p className="text-muted-foreground text-xs">Bainha</p>
-                  <p className="font-medium">{laminaModalAberta.bainha?.nome_opcao || '-'}</p>
-                </div>
-                {laminaModalAberta.corBainha && (
-                  <div className="bg-muted p-2.5 rounded-lg">
-                    <p className="text-muted-foreground text-xs">Cor da Bainha</p>
-                    <p className="font-medium">{laminaModalAberta.corBainha}</p>
+
+                {/* Embalagem */}
+                {laminaModalAberta.embalagem && (
+                  <div className="mt-2 bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
+                    <p className="text-zinc-500 text-[10px] mb-0.5">Embalagem</p>
+                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.embalagem}</p>
+                    {laminaModalAberta.embalagemGravacao && laminaModalAberta.embalagemTextoGravacao && (
+                      <p className="text-[10px] text-zinc-500 mt-0.5">Gravação: {laminaModalAberta.embalagemTextoGravacao}</p>
+                    )}
                   </div>
                 )}
-                {laminaModalAberta.embalagem && (
-                  <div className="bg-muted p-2.5 rounded-lg col-span-2">
-                    <p className="text-muted-foreground text-xs">Embalagem</p>
-                    <p className="font-medium">{laminaModalAberta.embalagem}</p>
-                    {laminaModalAberta.embalagemGravacao && laminaModalAberta.embalagemTextoGravacao && (
-                      <p className="text-xs text-muted-foreground mt-1">Gravação: {laminaModalAberta.embalagemTextoGravacao}</p>
+
+                {/* Personalização à Laser */}
+                {laminaModalAberta.laser && (
+                  <div className="mt-2 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                    <p className="text-amber-700 text-[10px] mb-0.5">Personalização à Laser</p>
+                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.textoLaser || 'Sim'}</p>
+                    {Array.isArray(laminaModalAberta.localGravacao) && laminaModalAberta.localGravacao.length > 0 && (
+                      <p className="text-[10px] text-amber-700 mt-0.5">Local: {laminaModalAberta.localGravacao.join(', ')}</p>
                     )}
                   </div>
                 )}
               </div>
-              
-              {laminaModalAberta.laser && (
-                <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
-                  <p className="text-muted-foreground text-xs">Personalização à Laser</p>
-                  <p className="font-medium">{laminaModalAberta.textoLaser || 'Sim'}</p>
-                  {laminaModalAberta.localGravacao.length > 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">Local: {laminaModalAberta.localGravacao.join(', ')}</p>
-                  )}
-                </div>
-              )}
+
+              {/* Botões de exportação */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={exportarComoImagem}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <FileImage className="h-4 w-4 mr-2" />
+                  Salvar Imagem
+                </Button>
+                <Button
+                  onClick={exportarComoPDF}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Salvar PDF
+                </Button>
+              </div>
 
               <Button
                 variant="destructive"
