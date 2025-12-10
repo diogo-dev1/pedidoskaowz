@@ -331,6 +331,138 @@ export default function CustomizarLamina() {
     }
   };
 
+  const exportarPedidoPDF = async () => {
+    if (laminasCustomizadas.length === 0) {
+      toast.error('Adicione pelo menos uma lâmina');
+      return;
+    }
+
+    try {
+      setExportando(true);
+      toast.loading('Gerando PDF do pedido...');
+      
+      const { jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
+      
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 15;
+      let yPos = 20;
+      
+      // Header
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('KAOWZ - Pedido de Lâminas', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 10;
+      
+      // Data do pedido
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 15;
+      
+      // Dados do cliente
+      if (nomeCliente.trim()) {
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Cliente:', margin, yPos);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(nomeCliente.trim(), margin + 20, yPos);
+        yPos += 10;
+      }
+      
+      // Linha separadora
+      pdf.setDrawColor(200);
+      pdf.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 10;
+      
+      // Lâminas
+      for (let i = 0; i < laminasCustomizadas.length; i++) {
+        const lamina = laminasCustomizadas[i];
+        
+        // Verificar se precisa de nova página
+        if (yPos > 250) {
+          pdf.addPage();
+          yPos = 20;
+        }
+        
+        // Título da lâmina
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(`Lâmina ${i + 1}: ${lamina.modelo?.nome_modelo || 'Customizada'}`, margin, yPos);
+        yPos += 8;
+        
+        // Especificações
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        
+        const specs = [
+          { label: 'Aço', value: lamina.aco?.nome_opcao || '-' },
+          { label: 'Acabamento', value: lamina.acabamento?.nome_opcao || '-' },
+          { label: 'Empunhadura', value: lamina.empunhadura?.nome_opcao || '-' },
+          { label: 'Bainha', value: lamina.bainha?.nome_opcao || '-' },
+          { label: 'Cor da Bainha', value: lamina.corBainha || '-' },
+        ];
+        
+        if (lamina.embalagem) {
+          specs.push({ label: 'Embalagem', value: lamina.embalagem });
+          if (lamina.embalagemGravacao && lamina.embalagemTextoGravacao) {
+            specs.push({ label: 'Gravação Embalagem', value: lamina.embalagemTextoGravacao });
+          }
+        }
+        
+        if (lamina.laser && lamina.textoLaser) {
+          specs.push({ label: 'Personalização à Laser', value: lamina.textoLaser });
+          if (lamina.localGravacao && lamina.localGravacao.length > 0) {
+            specs.push({ label: 'Local da Gravação', value: lamina.localGravacao.join(', ') });
+          }
+        }
+        
+        specs.forEach(spec => {
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`${spec.label}:`, margin + 5, yPos);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(spec.value, margin + 45, yPos);
+          yPos += 6;
+        });
+        
+        yPos += 8;
+        
+        // Linha separadora entre lâminas
+        if (i < laminasCustomizadas.length - 1) {
+          pdf.setDrawColor(220);
+          pdf.line(margin, yPos - 4, pageWidth - margin, yPos - 4);
+        }
+      }
+      
+      // Rodapé
+      const totalPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(150);
+        pdf.text(`Página ${i} de ${totalPages}`, pageWidth / 2, 290, { align: 'center' });
+        pdf.text('KAOWZ - Cutelaria Artesanal', pageWidth / 2, 285, { align: 'center' });
+      }
+      
+      pdf.save(`pedido-kaowz-${nomeCliente.trim() || 'cliente'}-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.dismiss();
+      toast.success('PDF do pedido gerado!');
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Erro ao gerar PDF');
+      console.error(error);
+    } finally {
+      setExportando(false);
+    }
+  };
+
   const getModeloImagem = (modelo: ModeloBase | null | undefined) => {
     if (!modelo) return edcKnife;
     return modelo.imagem_modelo || edcKnife;
@@ -838,10 +970,10 @@ export default function CustomizarLamina() {
                           className="text-sm"
                         />
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           onClick={enviarWhatsApp}
-                          className="flex-1 bg-accent hover:bg-accent/90 text-xs md:text-sm"
+                          className="flex-1 min-w-[80px] bg-accent hover:bg-accent/90 text-xs md:text-sm"
                         >
                           <MessageCircle className="h-4 w-4 mr-1" />
                           WhatsApp
@@ -850,7 +982,7 @@ export default function CustomizarLamina() {
                           onClick={exportarParaSheets}
                           disabled={exportando || !nomeCliente.trim()}
                           variant="outline"
-                          className="flex-1 text-xs md:text-sm"
+                          className="flex-1 min-w-[80px] text-xs md:text-sm"
                         >
                           {exportando ? (
                             <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -858,6 +990,19 @@ export default function CustomizarLamina() {
                             <FileSpreadsheet className="h-4 w-4 mr-1" />
                           )}
                           Planilha
+                        </Button>
+                        <Button
+                          onClick={exportarPedidoPDF}
+                          disabled={exportando}
+                          variant="outline"
+                          className="flex-1 min-w-[80px] text-xs md:text-sm"
+                        >
+                          {exportando ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <FileText className="h-4 w-4 mr-1" />
+                          )}
+                          PDF
                         </Button>
                       </div>
                     </>
