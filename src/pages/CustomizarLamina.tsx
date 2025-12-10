@@ -1102,22 +1102,39 @@ export default function CustomizarLamina() {
               </div>
 
               {/* Botões de exportação */}
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Button
+                    onClick={exportarComoImagem}
+                    variant="outline"
+                    className="flex-1"
+                    size="sm"
+                  >
+                    <FileImage className="h-4 w-4 mr-2" />
+                    Imagem
+                  </Button>
+                  <Button
+                    onClick={exportarComoPDF}
+                    variant="outline"
+                    className="flex-1"
+                    size="sm"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    PDF
+                  </Button>
+                </div>
                 <Button
-                  onClick={exportarComoImagem}
-                  variant="outline"
-                  className="flex-1"
+                  onClick={exportarPedidoPDF}
+                  disabled={exportando}
+                  variant="default"
+                  className="w-full bg-accent hover:bg-accent/90"
                 >
-                  <FileImage className="h-4 w-4 mr-2" />
-                  Salvar Imagem
-                </Button>
-                <Button
-                  onClick={exportarComoPDF}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Salvar PDF
+                  {exportando ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileText className="h-4 w-4 mr-2" />
+                  )}
+                  Gerar PDF do Pedido Completo
                 </Button>
               </div>
 
