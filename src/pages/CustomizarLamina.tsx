@@ -146,6 +146,78 @@ export default function CustomizarLamina() {
     }
   };
 
+  // Funções de exportação do resumo completo
+  const exportarResumoComoImagem = async () => {
+    if (!exportCardRef.current || laminasCustomizadas.length === 0) return;
+    
+    try {
+      setExportando(true);
+      toast.loading('Gerando imagem do resumo...');
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(exportCardRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+      
+      const link = document.createElement('a');
+      link.download = `pedido-kaowz-${nomeCliente.trim() || 'cliente'}-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast.dismiss();
+      toast.success('Imagem do resumo salva!');
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Erro ao gerar imagem');
+      console.error(error);
+    } finally {
+      setExportando(false);
+    }
+  };
+
+  const exportarResumoComoPDF = async () => {
+    if (!exportCardRef.current || laminasCustomizadas.length === 0) return;
+    
+    try {
+      setExportando(true);
+      toast.loading('Gerando PDF do resumo...');
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      
+      const canvas = await html2canvas(exportCardRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min((pdfWidth - 20) / imgWidth, (pdfHeight - 20) / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 10;
+      
+      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.save(`pedido-kaowz-${nomeCliente.trim() || 'cliente'}-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.dismiss();
+      toast.success('PDF do resumo salvo!');
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Erro ao gerar PDF');
+      console.error(error);
+    } finally {
+      setExportando(false);
+    }
+  };
+
   useEffect(() => {
     carregarDados();
   }, []);
@@ -915,7 +987,11 @@ export default function CustomizarLamina() {
                 )}
 
                 {/* Lâminas Adicionadas */}
-                <div className="bg-white rounded-lg border border-zinc-200 p-3 md:p-6 lg:sticky lg:top-24 space-y-3 md:space-y-4" style={{ top: modeloSelecionado ? 'calc(24rem + 6rem)' : '6rem' }}>
+                <div 
+                  ref={exportCardRef}
+                  className="bg-white rounded-lg border border-zinc-200 p-3 md:p-6 lg:sticky lg:top-24 space-y-3 md:space-y-4" 
+                  style={{ top: modeloSelecionado ? 'calc(24rem + 6rem)' : '6rem' }}
+                >
                   <h3 className="font-semibold text-base md:text-lg">Lâminas Adicionadas ({laminasCustomizadas.length})</h3>
                   
                   {laminasCustomizadas.length === 0 ? (
@@ -924,23 +1000,14 @@ export default function CustomizarLamina() {
                     </p>
                   ) : (
                     <div className="space-y-2 md:space-y-3">
-                      {laminasCustomizadas.map((lamina) => (
+                      {laminasCustomizadas.map((lamina, index) => (
                         <div 
                           key={lamina.id} 
                           className="p-2 md:p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
                           onClick={() => setLaminaModalAberta(lamina)}
                         >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-xs md:text-sm truncate">{lamina.modelo?.nome_modelo}</p>
-                              <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
-                                {[
-                                  lamina.aco?.nome_opcao,
-                                  lamina.acabamento?.nome_opcao,
-                                  lamina.empunhadura?.nome_opcao
-                                ].filter(Boolean).join(' • ') || 'Clique para ver detalhes'}
-                              </p>
-                            </div>
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <p className="font-semibold text-xs md:text-sm">Lâmina {index + 1}: {lamina.modelo?.nome_modelo}</p>
                             <Button
                               size="sm"
                               variant="ghost"
@@ -948,10 +1015,22 @@ export default function CustomizarLamina() {
                                 e.stopPropagation();
                                 removerLamina(lamina.id);
                               }}
-                              className="h-7 w-7 md:h-8 md:w-8 p-0"
+                              className="h-6 w-6 p-0 flex-shrink-0"
                             >
-                              <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
+                          </div>
+                          <div className="text-[10px] md:text-xs text-muted-foreground space-y-0.5">
+                            <p>- Aço: {lamina.aco?.nome_opcao || '-'}</p>
+                            <p>- Acabamento: {lamina.acabamento?.nome_opcao || '-'}</p>
+                            <p>- Empunhadura: {lamina.empunhadura?.nome_opcao || '-'}</p>
+                            <p>- Bainha: {lamina.bainha?.nome_opcao || '-'}{lamina.corBainha ? ` (${lamina.corBainha})` : ''}</p>
+                            {lamina.laser && (
+                              <p>- Laser: {lamina.textoLaser || 'Sim'}{lamina.localGravacao.length > 0 ? ` (${lamina.localGravacao.join(', ')})` : ''}</p>
+                            )}
+                            {lamina.embalagem && (
+                              <p>- Embalagem: {lamina.embalagem}{lamina.embalagemGravacao && lamina.embalagemTextoGravacao ? ` - "${lamina.embalagemTextoGravacao}"` : ''}</p>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -991,8 +1070,23 @@ export default function CustomizarLamina() {
                           )}
                           Planilha
                         </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
                         <Button
-                          onClick={exportarPedidoPDF}
+                          onClick={exportarResumoComoImagem}
+                          disabled={exportando}
+                          variant="outline"
+                          className="flex-1 min-w-[80px] text-xs md:text-sm"
+                        >
+                          {exportando ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <FileImage className="h-4 w-4 mr-1" />
+                          )}
+                          Imagem
+                        </Button>
+                        <Button
+                          onClick={exportarResumoComoPDF}
                           disabled={exportando}
                           variant="outline"
                           className="flex-1 min-w-[80px] text-xs md:text-sm"
