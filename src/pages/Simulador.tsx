@@ -122,6 +122,7 @@ export default function Simulador() {
     carregarDados();
   }, []);
 
+
   const carregarDados = async () => {
     try {
       const [modelosRes, componentesRes, produtosRes] = await Promise.all([
@@ -147,6 +148,105 @@ export default function Simulador() {
   const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
   const coresBainha = componentes.filter(c => c.tipo_opcao === 'Cor de Bainha');
   const embalagens = componentes.filter(c => c.tipo_opcao === 'Embalagem');
+
+  // Handler para colar dados da planilha (Ctrl+V)
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const clipboardData = e.clipboardData?.getData('text');
+      if (!clipboardData) return;
+
+      // Verificar se são dados tabulares (com tabs ou múltiplas linhas)
+      const lines = clipboardData.trim().split('\n');
+      if (lines.length === 0) return;
+
+      // Ignorar se for apenas texto simples sem tabs
+      const hasTabData = lines.some(line => line.includes('\t'));
+      if (!hasTabData && lines.length === 1) return;
+
+      e.preventDefault();
+
+      const novasLaminas: LaminaCustomizada[] = [];
+      let nomeClienteDefinido = false;
+
+      lines.forEach((line, index) => {
+        const cols = line.split('\t');
+        if (cols.length < 2) return; // Precisa ter pelo menos nome e item
+
+        // Colunas: Nome, Item, Aço, Acabamento, Empunhadura, Bainha, Cor bainha, Prazo, Observações, Personalização
+        const [nome, item, acoCol, acabamentoCol, empunhaduraCol, bainhaCol, corBainhaVal, prazo, observacoes, personalizacao] = cols;
+
+        // Definir nome do cliente apenas uma vez
+        if (nome && nome.trim() && !nomeClienteDefinido) {
+          setNomeCompleto(nome.trim());
+          nomeClienteDefinido = true;
+        }
+
+        // Buscar modelo pelo nome
+        const modeloEncontrado = modelos.find(m => 
+          m.nome_modelo.toLowerCase().includes((item || '').toLowerCase().trim()) ||
+          (item || '').toLowerCase().trim().includes(m.nome_modelo.toLowerCase())
+        );
+
+        // Buscar componentes pelos nomes
+        const acoEncontrado = acos.find(a => 
+          a.nome_opcao.toLowerCase().includes((acoCol || '').toLowerCase().trim()) ||
+          (acoCol || '').toLowerCase().trim().includes(a.nome_opcao.toLowerCase())
+        );
+        
+        const acabamentoEncontrado = acabamentos.find(a => 
+          a.nome_opcao.toLowerCase().includes((acabamentoCol || '').toLowerCase().trim()) ||
+          (acabamentoCol || '').toLowerCase().trim().includes(a.nome_opcao.toLowerCase())
+        );
+        
+        const empunhaduraEncontrada = empunhaduras.find(e => 
+          e.nome_opcao.toLowerCase().includes((empunhaduraCol || '').toLowerCase().trim()) ||
+          (empunhaduraCol || '').toLowerCase().trim().includes(e.nome_opcao.toLowerCase())
+        );
+        
+        const bainhaEncontrada = bainhas.find(b => 
+          b.nome_opcao.toLowerCase().includes((bainhaCol || '').toLowerCase().trim()) ||
+          (bainhaCol || '').toLowerCase().trim().includes(b.nome_opcao.toLowerCase())
+        );
+
+        // Criar lâmina se encontrou pelo menos o modelo
+        if (modeloEncontrado || (item && item.trim())) {
+          const novaLamina: LaminaCustomizada = {
+            id: `${Date.now()}-${Math.random()}-${index}`,
+            modelo: modeloEncontrado || { 
+              id: '', 
+              nome_modelo: item?.trim() || '', 
+              preco_base: 0, 
+              categoria: null, 
+              imagem_modelo: null 
+            },
+            aco: acoEncontrado || (acoCol?.trim() ? { id: '', nome_opcao: acoCol.trim(), tipo_opcao: 'Aço', preco_adicional: 0 } : null),
+            acabamento: acabamentoEncontrado || (acabamentoCol?.trim() ? { id: '', nome_opcao: acabamentoCol.trim(), tipo_opcao: 'Acabamento', preco_adicional: 0 } : null),
+            empunhadura: empunhaduraEncontrada || (empunhaduraCol?.trim() ? { id: '', nome_opcao: empunhaduraCol.trim(), tipo_opcao: 'Empunhadura', preco_adicional: 0 } : null),
+            bainha: bainhaEncontrada || (bainhaCol?.trim() ? { id: '', nome_opcao: bainhaCol.trim(), tipo_opcao: 'Bainha', preco_adicional: 0 } : null),
+            corBainha: corBainhaVal?.trim() || '',
+            laser: !!(personalizacao && personalizacao.trim()),
+            textoLaser: personalizacao?.trim() || '',
+            localGravacao: [],
+            embalagem: '',
+            embalagemGravacao: false,
+            embalagemTextoGravacao: '',
+            subtotal: modeloEncontrado?.preco_base || 0,
+          };
+          novasLaminas.push(novaLamina);
+        }
+      });
+
+      if (novasLaminas.length > 0) {
+        setLaminasCustomizadas(prev => [...prev, ...novasLaminas]);
+        toast.success(`${novasLaminas.length} lâmina(s) adicionada(s) da planilha!`);
+      } else {
+        toast.error('Nenhum dado válido encontrado na planilha');
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [modelos, acos, acabamentos, empunhaduras, bainhas]);
 
   const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
 
