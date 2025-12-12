@@ -35,6 +35,7 @@ interface LaminaCustomizada {
   aco: OpcaoComponente | null;
   acabamento: OpcaoComponente | null;
   empunhadura: OpcaoComponente | null;
+  dragonScale: boolean;
   bainha: OpcaoComponente | null;
   corBainha: string;
   laser: boolean;
@@ -58,6 +59,7 @@ export default function CustomizarLamina() {
   const [acoSelecionado, setAcoSelecionado] = useState<string>('');
   const [acabamentoSelecionado, setAcabamentoSelecionado] = useState<string>('');
   const [empunhaduraSelecionada, setEmpunhaduraSelecionada] = useState<string>('');
+  const [dragonScale, setDragonScale] = useState(false);
   const [bainhaSelecionada, setBainhaSelecionada] = useState<string>('');
   const [corBainha, setCorBainha] = useState<string>('');
   const [laser, setLaser] = useState(false);
@@ -273,6 +275,7 @@ export default function CustomizarLamina() {
       aco: acoAtual || null,
       acabamento: acabamentoAtual || null,
       empunhadura: empunhaduraAtual || null,
+      dragonScale,
       bainha: bainhaAtual || null,
       corBainha,
       laser,
@@ -298,6 +301,7 @@ export default function CustomizarLamina() {
     setAcoSelecionado('');
     setAcabamentoSelecionado('');
     setEmpunhaduraSelecionada('');
+    setDragonScale(false);
     setBainhaSelecionada('');
     setCorBainha('');
     setLaser(false);
@@ -323,7 +327,9 @@ export default function CustomizarLamina() {
       mensagem += `- Modelo: ${lamina.modelo?.nome_modelo || '-'}\n`;
       mensagem += `- Aço: ${lamina.aco?.nome_opcao || '-'}\n`;
       mensagem += `- Acabamento: ${lamina.acabamento?.nome_opcao || '-'}\n`;
-      mensagem += `- Empunhadura: ${lamina.empunhadura?.nome_opcao || '-'}\n`;
+      let empunhaduraInfo = lamina.empunhadura?.nome_opcao || '-';
+      if (lamina.dragonScale) empunhaduraInfo += ' + Dragon Scale';
+      mensagem += `- Empunhadura: ${empunhaduraInfo}\n`;
       mensagem += `- Bainha: ${lamina.bainha?.nome_opcao || '-'}${lamina.corBainha ? ` (${lamina.corBainha})` : ''}\n`;
       
       let laserInfo = '-';
@@ -373,7 +379,7 @@ export default function CustomizarLamina() {
           modelo: lamina.modelo?.nome_modelo || '',
           aco: lamina.aco?.nome_opcao || '',
           acabamento: lamina.acabamento?.nome_opcao || '',
-          empunhadura: lamina.empunhadura?.nome_opcao || '',
+          empunhadura: (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : ''),
           bainha: lamina.bainha?.nome_opcao || '',
           corBainha: lamina.corBainha || '',
           laser: lamina.laser,
@@ -477,7 +483,7 @@ export default function CustomizarLamina() {
         const specs = [
           { label: 'Aço', value: lamina.aco?.nome_opcao || '-' },
           { label: 'Acabamento', value: lamina.acabamento?.nome_opcao || '-' },
-          { label: 'Empunhadura', value: lamina.empunhadura?.nome_opcao || '-' },
+          { label: 'Empunhadura', value: (lamina.empunhadura?.nome_opcao || '-') + (lamina.dragonScale ? ' + Dragon Scale' : '') },
           { label: 'Bainha', value: lamina.bainha?.nome_opcao || '-' },
           { label: 'Cor da Bainha', value: lamina.corBainha || '-' },
         ];
@@ -722,23 +728,39 @@ export default function CustomizarLamina() {
                             4. Empunhadura {empunhaduraSelecionada && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
                           </span>
                         </AccordionTrigger>
-                        <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
+                        <AccordionContent className="space-y-3 pt-2">
                           <div className="mb-2 flex justify-end">
                             <InfoEtapaModal etapaKey="empunhadura" showLabel />
                           </div>
-                          {empunhaduras.map(empunhadura => (
-                            <button
-                              key={empunhadura.id}
-                              onClick={() => setEmpunhaduraSelecionada(empunhadura.id)}
-                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                                empunhaduraSelecionada === empunhadura.id
-                                  ? 'bg-accent text-accent-foreground'
-                                  : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              <span className="truncate">{empunhadura.nome_opcao}</span>
-                            </button>
-                          ))}
+                          <div className="space-y-1.5 md:space-y-2">
+                            {empunhaduras.map(empunhadura => (
+                              <button
+                                key={empunhadura.id}
+                                onClick={() => setEmpunhaduraSelecionada(empunhadura.id)}
+                                className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
+                                  empunhaduraSelecionada === empunhadura.id
+                                    ? 'bg-accent text-accent-foreground'
+                                    : 'bg-muted hover:bg-muted/80'
+                                }`}
+                              >
+                                <span className="truncate">{empunhadura.nome_opcao}</span>
+                              </button>
+                            ))}
+                          </div>
+                          {empunhaduraSelecionada && (
+                            <div className="pt-2 border-t border-border">
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id="dragonScale"
+                                  checked={dragonScale}
+                                  onCheckedChange={(checked) => setDragonScale(checked === true)}
+                                />
+                                <Label htmlFor="dragonScale" className="text-xs md:text-sm cursor-pointer">
+                                  Dragon Scale (opcional)
+                                </Label>
+                              </div>
+                            </div>
+                          )}
                         </AccordionContent>
                       </AccordionItem>
 
@@ -948,7 +970,9 @@ export default function CustomizarLamina() {
                       </div>
                       <div className="flex justify-between py-1.5 border-b border-border">
                         <span className="text-muted-foreground">Empunhadura:</span>
-                        <span className="font-medium text-right max-w-[60%] truncate">{empunhaduraAtual?.nome_opcao || '-'}</span>
+                        <span className="font-medium text-right max-w-[60%] truncate">
+                          {empunhaduraAtual?.nome_opcao || '-'}{dragonScale ? ' + Dragon Scale' : ''}
+                        </span>
                       </div>
                       <div className="flex justify-between py-1.5 border-b border-border">
                         <span className="text-muted-foreground">Bainha:</span>
@@ -1023,7 +1047,7 @@ export default function CustomizarLamina() {
                           <div className="text-[10px] md:text-xs text-muted-foreground space-y-0.5">
                             <p>- Aço: {lamina.aco?.nome_opcao || '-'}</p>
                             <p>- Acabamento: {lamina.acabamento?.nome_opcao || '-'}</p>
-                            <p>- Empunhadura: {lamina.empunhadura?.nome_opcao || '-'}</p>
+                            <p>- Empunhadura: {lamina.empunhadura?.nome_opcao || '-'}{lamina.dragonScale ? ' + Dragon Scale' : ''}</p>
                             <p>- Bainha: {lamina.bainha?.nome_opcao || '-'}{lamina.corBainha ? ` (${lamina.corBainha})` : ''}</p>
                             {lamina.laser && (
                               <p>- Laser: {lamina.textoLaser || 'Sim'}{lamina.localGravacao.length > 0 ? ` (${lamina.localGravacao.join(', ')})` : ''}</p>
@@ -1158,7 +1182,9 @@ export default function CustomizarLamina() {
                   </div>
                   <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
                     <p className="text-zinc-500 text-[10px] mb-0.5">Empunhadura</p>
-                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.empunhadura?.nome_opcao || '-'}</p>
+                    <p className="font-semibold text-zinc-900 text-xs">
+                      {laminaModalAberta.empunhadura?.nome_opcao || '-'}{laminaModalAberta.dragonScale ? ' + Dragon Scale' : ''}
+                    </p>
                   </div>
                   <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
                     <p className="text-zinc-500 text-[10px] mb-0.5">Bainha</p>
