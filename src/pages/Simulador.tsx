@@ -42,6 +42,7 @@ interface LaminaCustomizada {
   aco: OpcaoComponente | null;
   acabamento: OpcaoComponente | null;
   empunhadura: OpcaoComponente | null;
+  dragonScale: boolean;
   bainha: OpcaoComponente | null;
   corBainha: string;
   laser: boolean;
@@ -67,6 +68,7 @@ export default function Simulador() {
   const [acoSelecionado, setAcoSelecionado] = useState<string>('');
   const [acabamentoSelecionado, setAcabamentoSelecionado] = useState<string>('');
   const [empunhaduraSelecionada, setEmpunhaduraSelecionada] = useState<string>('');
+  const [dragonScale, setDragonScale] = useState(false);
   const [bainhaSelecionada, setBainhaSelecionada] = useState<string>('');
   const [corBainha, setCorBainha] = useState<string>('');
   const [laser, setLaser] = useState(false);
@@ -197,6 +199,7 @@ export default function Simulador() {
       aco: acoAtual || null,
       acabamento: acabamentoAtual || null,
       empunhadura: empunhaduraAtual || null,
+      dragonScale,
       bainha: bainhaAtual || null,
       corBainha,
       laser,
@@ -223,6 +226,7 @@ export default function Simulador() {
     setAcoSelecionado('');
     setAcabamentoSelecionado('');
     setEmpunhaduraSelecionada('');
+    setDragonScale(false);
     setBainhaSelecionada('');
     setCorBainha('');
     setLaser(false);
@@ -344,6 +348,7 @@ export default function Simulador() {
           aco: acoAtual || null,
           acabamento: acabamentoAtual || null,
           empunhadura: empunhaduraAtual || null,
+          dragonScale,
           bainha: bainhaAtual || null,
           corBainha,
           laser,
@@ -357,12 +362,14 @@ export default function Simulador() {
       }
 
       const descricoesPedidos = todasLaminas.map((lamina, index) => {
-        const desc = `${lamina.modelo?.nome_modelo || ''} ${lamina.aco?.nome_opcao || ''} ${lamina.acabamento?.nome_opcao || ''} empunhadura em ${lamina.empunhadura?.nome_opcao || ''} ${lamina.bainha?.nome_opcao || ''}`;
+        const empunhaduraInfo = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
+        const desc = `${lamina.modelo?.nome_modelo || ''} ${lamina.aco?.nome_opcao || ''} ${lamina.acabamento?.nome_opcao || ''} empunhadura em ${empunhaduraInfo} ${lamina.bainha?.nome_opcao || ''}`;
         return `Lâmina ${index + 1}: ${desc}`;
       }).join('\n');
 
       const linhasFormatadas = todasLaminas.map((lamina) => {
-        return `${nomeCompleto}, ${lamina.modelo?.nome_modelo || ''}, ${lamina.aco?.nome_opcao || ''}, ${lamina.acabamento?.nome_opcao || ''}, ${lamina.empunhadura?.nome_opcao || ''}, ${lamina.bainha?.nome_opcao || ''}, ${lamina.corBainha || ''}`;
+        const empunhaduraInfo = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
+        return `${nomeCompleto}, ${lamina.modelo?.nome_modelo || ''}, ${lamina.aco?.nome_opcao || ''}, ${lamina.acabamento?.nome_opcao || ''}, ${empunhaduraInfo}, ${lamina.bainha?.nome_opcao || ''}, ${lamina.corBainha || ''}`;
       }).join('\n');
 
       const personalizacoesLaser = todasLaminas
@@ -420,6 +427,7 @@ ${linhasFormatadas}`;
           aco: acoAtual || null,
           acabamento: acabamentoAtual || null,
           empunhadura: empunhaduraAtual || null,
+          dragonScale,
           bainha: bainhaAtual || null,
           corBainha,
           laser,
@@ -435,7 +443,7 @@ ${linhasFormatadas}`;
       const laminasFormatadas = todasLaminas.map(lamina => ({
         modelo: lamina.modelo?.nome_modelo || '',
         aco: lamina.aco?.nome_opcao || '',
-        empunhadura: lamina.empunhadura?.nome_opcao || '',
+        empunhadura: (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : ''),
         acabamento: lamina.acabamento?.nome_opcao || '',
         bainha: lamina.bainha?.nome_opcao || '',
         corBainha: lamina.corBainha,
@@ -670,21 +678,37 @@ ${linhasFormatadas}`;
                           4. Empunhadura {empunhaduraSelecionada && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
                         </span>
                       </AccordionTrigger>
-                      <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
+                      <AccordionContent className="space-y-3 pt-2">
                         <div className="mb-2 flex justify-end">
                           <InfoEtapaModal etapaKey="empunhadura" showLabel />
                         </div>
-                        {empunhaduras.map(empunhadura => (
-                          <button
-                            key={empunhadura.id}
-                            onClick={() => setEmpunhaduraSelecionada(empunhadura.id)}
-                            className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                              empunhaduraSelecionada === empunhadura.id ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
-                            }`}
-                          >
-                            <span className="truncate">{empunhadura.nome_opcao}</span>
-                          </button>
-                        ))}
+                        <div className="space-y-1.5 md:space-y-2">
+                          {empunhaduras.map(empunhadura => (
+                            <button
+                              key={empunhadura.id}
+                              onClick={() => setEmpunhaduraSelecionada(empunhadura.id)}
+                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
+                                empunhaduraSelecionada === empunhadura.id ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
+                              }`}
+                            >
+                              <span className="truncate">{empunhadura.nome_opcao}</span>
+                            </button>
+                          ))}
+                        </div>
+                        {empunhaduraSelecionada && (
+                          <div className="pt-2 border-t border-border">
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id="dragonScaleSim"
+                                checked={dragonScale}
+                                onCheckedChange={(checked) => setDragonScale(checked === true)}
+                              />
+                              <Label htmlFor="dragonScaleSim" className="text-xs md:text-sm cursor-pointer">
+                                Dragon Scale (opcional)
+                              </Label>
+                            </div>
+                          </div>
+                        )}
                       </AccordionContent>
                     </AccordionItem>
 
@@ -910,7 +934,9 @@ ${linhasFormatadas}`;
                     </div>
                     <div className="flex justify-between py-1.5 border-b border-border">
                       <span className="text-muted-foreground">Empunhadura:</span>
-                      <span className="font-medium text-right max-w-[60%] truncate">{empunhaduraAtual?.nome_opcao || '-'}</span>
+                      <span className="font-medium text-right max-w-[60%] truncate">
+                        {empunhaduraAtual?.nome_opcao || '-'}{dragonScale ? ' + Dragon Scale' : ''}
+                      </span>
                     </div>
                     <div className="flex justify-between py-1.5 border-b border-border">
                       <span className="text-muted-foreground">Bainha:</span>
@@ -968,7 +994,7 @@ ${linhasFormatadas}`;
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-xs md:text-sm truncate">{lamina.modelo?.nome_modelo}</p>
                             <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
-                              {[lamina.aco?.nome_opcao, lamina.acabamento?.nome_opcao, lamina.empunhadura?.nome_opcao].filter(Boolean).join(' • ') || 'Clique para ver detalhes'}
+                              {[lamina.aco?.nome_opcao, lamina.acabamento?.nome_opcao, (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '')].filter(Boolean).join(' • ') || 'Clique para ver detalhes'}
                             </p>
                           </div>
                           <Button
