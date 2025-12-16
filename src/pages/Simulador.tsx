@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,11 +9,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Trash2, Plus, Search, Check, Eye, Copy, X } from 'lucide-react';
+import { Trash2, Plus, Search, Check, Eye, Copy, X, Image, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProdutoAdicionalCard from '@/components/ProdutoAdicionalCard';
 import { InfoEtapaModal } from '@/components/InfoEtapaModal';
 import edcKnife from '@/assets/edc-knife.svg';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface ModeloBase {
   id: string;
@@ -86,8 +88,7 @@ export default function Simulador() {
 
   // Modal para visualizar lâmina
   const [laminaModalAberta, setLaminaModalAberta] = useState<LaminaCustomizada | null>(null);
-
-  // Modal de finalização
+  const laminaModalRef = useRef<HTMLDivElement>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pedidoFinalizado, setPedidoFinalizado] = useState(false);
@@ -264,6 +265,56 @@ export default function Simulador() {
     setCupom('');
     setPedidoFinalizado(false);
     setTextoFormatado('');
+  };
+
+  const exportarLaminaComoImagem = async () => {
+    if (!laminaModalRef.current) return;
+    
+    try {
+      const canvas = await html2canvas(laminaModalRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+      
+      const link = document.createElement('a');
+      link.download = `lamina-${laminaModalAberta?.modelo?.nome_modelo || 'detalhes'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast.success('Imagem exportada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar imagem:', error);
+      toast.error('Erro ao exportar imagem');
+    }
+  };
+
+  const exportarLaminaComoPDF = async () => {
+    if (!laminaModalRef.current) return;
+    
+    try {
+      const canvas = await html2canvas(laminaModalRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a5',
+      });
+      
+      const imgWidth = 148;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`lamina-${laminaModalAberta?.modelo?.nome_modelo || 'detalhes'}.pdf`);
+      toast.success('PDF exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao exportar PDF');
+    }
   };
 
   const processarTextoComIA = async () => {
@@ -1054,64 +1105,95 @@ ${linhasFormatadas}`;
 
           {laminaModalAberta && (
             <div className="space-y-3 text-sm">
-              {/* SVG do modelo */}
-              <div className="flex justify-center mb-4">
-                <div className="w-full max-w-[200px] h-24 rounded-lg overflow-hidden border border-border bg-white p-2">
-                  <img
-                    src={getModeloImagem(laminaModalAberta.modelo)}
-                    alt="Modelo"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-muted p-2.5 rounded-lg">
-                  <p className="text-muted-foreground text-xs">Modelo</p>
-                  <p className="font-medium">{laminaModalAberta.modelo?.nome_modelo || '-'}</p>
-                </div>
-                <div className="bg-muted p-2.5 rounded-lg">
-                  <p className="text-muted-foreground text-xs">Aço</p>
-                  <p className="font-medium">{laminaModalAberta.aco?.nome_opcao || '-'}</p>
-                </div>
-                <div className="bg-muted p-2.5 rounded-lg">
-                  <p className="text-muted-foreground text-xs">Acabamento</p>
-                  <p className="font-medium">{laminaModalAberta.acabamento?.nome_opcao || '-'}</p>
-                </div>
-                <div className="bg-muted p-2.5 rounded-lg">
-                  <p className="text-muted-foreground text-xs">Empunhadura</p>
-                  <p className="font-medium">{laminaModalAberta.empunhadura?.nome_opcao || '-'}</p>
-                </div>
-                <div className="bg-muted p-2.5 rounded-lg">
-                  <p className="text-muted-foreground text-xs">Bainha</p>
-                  <p className="font-medium">{laminaModalAberta.bainha?.nome_opcao || '-'}</p>
-                </div>
-                {laminaModalAberta.corBainha && (
-                  <div className="bg-muted p-2.5 rounded-lg">
-                    <p className="text-muted-foreground text-xs">Cor da Bainha</p>
-                    <p className="font-medium">{laminaModalAberta.corBainha}</p>
+              {/* Conteúdo exportável */}
+              <div ref={laminaModalRef} className="space-y-3 bg-background p-4 rounded-lg">
+                {/* Título para export */}
+                <h3 className="text-center font-bold text-lg">{laminaModalAberta.modelo?.nome_modelo || 'Lâmina'}</h3>
+                
+                {/* SVG do modelo */}
+                <div className="flex justify-center mb-4">
+                  <div className="w-full max-w-[200px] h-24 rounded-lg overflow-hidden border border-border bg-white p-2">
+                    <img
+                      src={getModeloImagem(laminaModalAberta.modelo)}
+                      alt="Modelo"
+                      className="w-full h-full object-contain"
+                    />
                   </div>
-                )}
-                {laminaModalAberta.embalagem && (
-                  <div className="bg-muted p-2.5 rounded-lg col-span-2">
-                    <p className="text-muted-foreground text-xs">Embalagem</p>
-                    <p className="font-medium">{laminaModalAberta.embalagem}</p>
-                    {laminaModalAberta.embalagemGravacao && laminaModalAberta.embalagemTextoGravacao && (
-                      <p className="text-xs text-muted-foreground mt-1">Gravação: {laminaModalAberta.embalagemTextoGravacao}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-muted p-2.5 rounded-lg">
+                    <p className="text-muted-foreground text-xs">Modelo</p>
+                    <p className="font-medium">{laminaModalAberta.modelo?.nome_modelo || '-'}</p>
+                  </div>
+                  <div className="bg-muted p-2.5 rounded-lg">
+                    <p className="text-muted-foreground text-xs">Aço</p>
+                    <p className="font-medium">{laminaModalAberta.aco?.nome_opcao || '-'}</p>
+                  </div>
+                  <div className="bg-muted p-2.5 rounded-lg">
+                    <p className="text-muted-foreground text-xs">Acabamento</p>
+                    <p className="font-medium">{laminaModalAberta.acabamento?.nome_opcao || '-'}</p>
+                  </div>
+                  <div className="bg-muted p-2.5 rounded-lg">
+                    <p className="text-muted-foreground text-xs">Empunhadura</p>
+                    <p className="font-medium">
+                      {laminaModalAberta.empunhadura?.nome_opcao || '-'}
+                      {laminaModalAberta.dragonScale && ' + Dragon Scale'}
+                    </p>
+                  </div>
+                  <div className="bg-muted p-2.5 rounded-lg">
+                    <p className="text-muted-foreground text-xs">Bainha</p>
+                    <p className="font-medium">{laminaModalAberta.bainha?.nome_opcao || '-'}</p>
+                  </div>
+                  {laminaModalAberta.corBainha && (
+                    <div className="bg-muted p-2.5 rounded-lg">
+                      <p className="text-muted-foreground text-xs">Cor da Bainha</p>
+                      <p className="font-medium">{laminaModalAberta.corBainha}</p>
+                    </div>
+                  )}
+                  {laminaModalAberta.embalagem && (
+                    <div className="bg-muted p-2.5 rounded-lg col-span-2">
+                      <p className="text-muted-foreground text-xs">Embalagem</p>
+                      <p className="font-medium">{laminaModalAberta.embalagem}</p>
+                      {laminaModalAberta.embalagemGravacao && laminaModalAberta.embalagemTextoGravacao && (
+                        <p className="text-xs text-muted-foreground mt-1">Gravação: {laminaModalAberta.embalagemTextoGravacao}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {laminaModalAberta.laser && (
+                  <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+                    <p className="text-muted-foreground text-xs">Personalização à Laser</p>
+                    <p className="font-medium">{laminaModalAberta.textoLaser || 'Sim'}</p>
+                    {laminaModalAberta.localGravacao.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">Local: {laminaModalAberta.localGravacao.join(', ')}</p>
                     )}
                   </div>
                 )}
               </div>
 
-              {laminaModalAberta.laser && (
-                <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
-                  <p className="text-muted-foreground text-xs">Personalização à Laser</p>
-                  <p className="font-medium">{laminaModalAberta.textoLaser || 'Sim'}</p>
-                  {laminaModalAberta.localGravacao.length > 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">Local: {laminaModalAberta.localGravacao.join(', ')}</p>
-                  )}
-                </div>
-              )}
+              {/* Botões de exportação */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={exportarLaminaComoImagem}
+                >
+                  <Image className="h-4 w-4 mr-2" />
+                  Imagem
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={exportarLaminaComoPDF}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  PDF
+                </Button>
+              </div>
 
               <Button
                 variant="destructive"
