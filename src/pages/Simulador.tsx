@@ -89,6 +89,7 @@ export default function Simulador() {
   // Modal para visualizar lâmina
   const [laminaModalAberta, setLaminaModalAberta] = useState<LaminaCustomizada | null>(null);
   const laminaModalRef = useRef<HTMLDivElement>(null);
+  const pedidoExportRef = useRef<HTMLDivElement>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pedidoFinalizado, setPedidoFinalizado] = useState(false);
@@ -315,6 +316,60 @@ export default function Simulador() {
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       pdf.save(`lamina-${laminaModalAberta?.modelo?.nome_modelo || 'detalhes'}.pdf`);
       toast.success('PDF exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao exportar PDF');
+    }
+  };
+
+  const exportarPedidoComoImagem = async () => {
+    if (!pedidoExportRef.current) return;
+    
+    try {
+      const canvas = await html2canvas(pedidoExportRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 4,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+      });
+      
+      const link = document.createElement('a');
+      link.download = `pedido-${nomeCompleto || 'cliente'}-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+      toast.success('Imagem do pedido exportada!');
+    } catch (error) {
+      console.error('Erro ao exportar imagem:', error);
+      toast.error('Erro ao exportar imagem');
+    }
+  };
+
+  const exportarPedidoComoPDF = async () => {
+    if (!pedidoExportRef.current) return;
+    
+    try {
+      const canvas = await html2canvas(pedidoExportRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 4,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+      });
+      
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, Math.min(imgHeight, 297));
+      pdf.save(`pedido-${nomeCompleto || 'cliente'}-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+      toast.success('PDF do pedido exportado!');
     } catch (error) {
       console.error('Erro ao exportar PDF:', error);
       toast.error('Erro ao exportar PDF');
@@ -1332,9 +1387,112 @@ ${linhasFormatadas}`;
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg">
-                <pre className="text-sm whitespace-pre-wrap font-mono">{textoFormatado}</pre>
+              {/* Card Visual Exportável */}
+              <div ref={pedidoExportRef} className="bg-white text-black p-6 rounded-lg space-y-4">
+                {/* Header */}
+                <div className="text-center border-b border-gray-200 pb-4">
+                  <h2 className="text-xl font-bold">Confirmação de Pedido</h2>
+                  <p className="text-sm text-gray-500">{new Date().toLocaleDateString('pt-BR')}</p>
+                </div>
+
+                {/* Dados do Cliente */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-base border-b border-gray-100 pb-1">Dados do Cliente</h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-gray-500">Nome:</span> <span className="font-medium">{nomeCompleto}</span></div>
+                    {cpf && <div><span className="text-gray-500">CPF:</span> <span className="font-medium">{cpf}</span></div>}
+                    {email && <div><span className="text-gray-500">Email:</span> <span className="font-medium">{email}</span></div>}
+                    {celular && <div><span className="text-gray-500">Celular:</span> <span className="font-medium">{celular}</span></div>}
+                    {dataNascimento && <div><span className="text-gray-500">Nascimento:</span> <span className="font-medium">{dataNascimento}</span></div>}
+                  </div>
+                  {(endereco || cidade || estado) && (
+                    <div className="text-sm">
+                      <span className="text-gray-500">Endereço:</span>{' '}
+                      <span className="font-medium">
+                        {[endereco, numero, bairro, cidade, estado, cep].filter(Boolean).join(', ')}
+                        {complemento && ` (${complemento})`}
+                      </span>
+                    </div>
+                  )}
+                  {nomeCertificado && (
+                    <div className="text-sm"><span className="text-gray-500">Nome p/ Certificado:</span> <span className="font-medium">{nomeCertificado}</span></div>
+                  )}
+                  {formaPagamento && (
+                    <div className="text-sm"><span className="text-gray-500">Pagamento:</span> <span className="font-medium">{formaPagamento}</span></div>
+                  )}
+                </div>
+
+                {/* Lâminas do Pedido */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-base border-b border-gray-100 pb-1">Lâminas ({laminasCustomizadas.length})</h3>
+                  {laminasCustomizadas.map((lamina, index) => (
+                    <div key={lamina.id} className="bg-gray-50 p-3 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        {/* SVG do modelo */}
+                        <div className="w-16 h-12 bg-white rounded border border-gray-200 p-1 flex-shrink-0">
+                          <img
+                            src={lamina.modelo?.imagem_modelo || edcKnife}
+                            alt={lamina.modelo?.nome_modelo || 'Modelo'}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <div className="flex-1 text-sm space-y-1">
+                          <p className="font-semibold">{index + 1}. {lamina.modelo?.nome_modelo || 'Lâmina'}</p>
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
+                            {lamina.aco && <p><span className="text-gray-500">Aço:</span> {lamina.aco.nome_opcao}</p>}
+                            {lamina.acabamento && <p><span className="text-gray-500">Acabamento:</span> {lamina.acabamento.nome_opcao}</p>}
+                            {lamina.empunhadura && (
+                              <p><span className="text-gray-500">Empunhadura:</span> {lamina.empunhadura.nome_opcao}{lamina.dragonScale && ' + Dragon Scale'}</p>
+                            )}
+                            {lamina.bainha && (
+                              <p><span className="text-gray-500">Bainha:</span> {lamina.bainha.nome_opcao}{lamina.corBainha && ` (${lamina.corBainha})`}</p>
+                            )}
+                            {lamina.embalagem && <p><span className="text-gray-500">Embalagem:</span> {lamina.embalagem}</p>}
+                          </div>
+                          {lamina.laser && lamina.textoLaser && (
+                            <p className="text-xs"><span className="text-gray-500">Laser:</span> {lamina.textoLaser} {lamina.localGravacao.length > 0 && `(${lamina.localGravacao.join(', ')})`}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Observações */}
+                {observacao && (
+                  <div className="text-sm">
+                    <span className="text-gray-500">Observações:</span> <span className="font-medium">{observacao}</span>
+                  </div>
+                )}
+
+                {/* Vendedor */}
+                {profile?.nome_vendedor && (
+                  <div className="text-sm text-right text-gray-500 pt-2 border-t border-gray-100">
+                    Vendedor: {profile.nome_vendedor}
+                  </div>
+                )}
               </div>
+
+              {/* Botões de Exportação Visual */}
+              <div className="flex gap-2">
+                <Button onClick={exportarPedidoComoImagem} variant="outline" className="flex-1">
+                  <Image className="h-4 w-4 mr-2" />
+                  Imagem
+                </Button>
+                <Button onClick={exportarPedidoComoPDF} variant="outline" className="flex-1">
+                  <FileText className="h-4 w-4 mr-2" />
+                  PDF
+                </Button>
+              </div>
+
+              {/* Texto Formatado (colapsável) */}
+              <details className="bg-muted rounded-lg">
+                <summary className="p-3 cursor-pointer text-sm font-medium">Ver texto formatado</summary>
+                <div className="p-4 pt-0">
+                  <pre className="text-sm whitespace-pre-wrap font-mono">{textoFormatado}</pre>
+                </div>
+              </details>
+
               <div className="flex flex-col gap-2">
                 <div className="flex gap-2">
                   <Button onClick={copiarTexto} className="flex-1">
@@ -1342,7 +1500,7 @@ ${linhasFormatadas}`;
                     Copiar Texto
                   </Button>
                   <Button onClick={exportarParaSheets} disabled={exportandoSheets} variant="secondary" className="flex-1">
-                    {exportandoSheets ? 'Exportando...' : 'Exportar para Sheets'}
+                    {exportandoSheets ? 'Exportando...' : 'Planilha'}
                   </Button>
                 </div>
                 <Button onClick={fecharModal} variant="outline" className="w-full">
