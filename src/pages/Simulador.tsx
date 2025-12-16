@@ -273,13 +273,15 @@ export default function Simulador() {
     try {
       const canvas = await html2canvas(laminaModalRef.current, {
         backgroundColor: '#ffffff',
-        scale: 2,
+        scale: 4,
         useCORS: true,
+        allowTaint: true,
+        logging: false,
       });
       
       const link = document.createElement('a');
       link.download = `lamina-${laminaModalAberta?.modelo?.nome_modelo || 'detalhes'}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
       toast.success('Imagem exportada com sucesso!');
     } catch (error) {
@@ -294,11 +296,13 @@ export default function Simulador() {
     try {
       const canvas = await html2canvas(laminaModalRef.current, {
         backgroundColor: '#ffffff',
-        scale: 2,
+        scale: 4,
         useCORS: true,
+        allowTaint: true,
+        logging: false,
       });
       
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
