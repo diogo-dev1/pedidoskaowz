@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
 import Auth from "./pages/Auth";
 import Simulador from "./pages/Simulador";
+import Lote from "./pages/Lote";
 import AuxilioVendas from "./pages/AuxilioVendas";
 import CatalogoPublico from "./pages/CatalogoPublico";
 import CatalogoDetalhe from "./pages/CatalogoDetalhe";
@@ -40,6 +41,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Simulador />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lote"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Lote />
                   </Layout>
                 </ProtectedRoute>
               }
