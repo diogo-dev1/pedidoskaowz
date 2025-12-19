@@ -6,10 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
-import { Trash2, Plus, Search, Check, Eye, Copy, X, Image, FileText } from 'lucide-react';
+import { Trash2, Plus, Search, Check, Eye, Copy, X, Image, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProdutoAdicionalCard from '@/components/ProdutoAdicionalCard';
 import { InfoEtapaModal } from '@/components/InfoEtapaModal';
@@ -121,6 +121,10 @@ export default function Simulador() {
   const [modalIAOpen, setModalIAOpen] = useState(false);
   const [textoIA, setTextoIA] = useState('');
   const [processandoIA, setProcessandoIA] = useState(false);
+
+  // Collapsibles
+  const [showExtras, setShowExtras] = useState(false);
+  const [showProdutos, setShowProdutos] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -626,529 +630,396 @@ ${linhasFormatadas}`;
     return modelo.imagem_modelo || edcKnife;
   };
 
+  // Componente de seleção inline compacto
+  const SelectionChips = ({ 
+    options, 
+    selected, 
+    onSelect, 
+    label,
+    etapaKey 
+  }: { 
+    options: OpcaoComponente[], 
+    selected: string, 
+    onSelect: (id: string) => void, 
+    label: string,
+    etapaKey?: string 
+  }) => (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+        {etapaKey && <InfoEtapaModal etapaKey={etapaKey} />}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map(opt => (
+          <button
+            key={opt.id}
+            onClick={() => onSelect(opt.id)}
+            className={`px-2.5 py-1.5 rounded-md text-xs transition-all ${
+              selected === opt.id
+                ? 'bg-accent text-accent-foreground font-medium'
+                : 'bg-muted hover:bg-muted/80 text-foreground'
+            }`}
+          >
+            {opt.nome_opcao}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   if (loading) {
     return <div className="py-8 text-center text-muted-foreground">Carregando opções...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      <div className="container mx-auto px-4 py-6">
-        {/* Botão de Preencher com IA */}
-        <div className="flex justify-end mb-4">
-          <Button onClick={() => setModalIAOpen(true)} variant="outline" className="gap-2">
-            ✨ Preencher com IA
+    <div className="min-h-screen bg-background pb-28">
+      <div className="container mx-auto px-3 py-4 max-w-5xl">
+        {/* Header com IA */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            {laminasCustomizadas.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {laminasCustomizadas.length} lâmina{laminasCustomizadas.length > 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
+          <Button onClick={() => setModalIAOpen(true)} variant="outline" size="sm" className="gap-1.5 text-xs">
+            ✨ IA
           </Button>
         </div>
 
-        {/* Miniatura do modelo selecionado */}
-        {modeloSelecionado && (
-          <div className="mb-4 md:mb-6 flex justify-center animate-fade-in">
-            <div className="relative w-full max-w-[300px] md:max-w-[500px] h-32 md:h-40 rounded-lg overflow-hidden border border-accent shadow-lg bg-white p-2 md:p-4">
-              <img
-                src={getModeloImagem(modeloAtual)}
-                alt="Modelo selecionado"
-                className="w-full h-full object-contain filter drop-shadow-sm"
-                style={{ filter: 'contrast(1.2) brightness(0.95)' }}
-              />
-            </div>
+        {/* Seleção de Modelo - Compacta */}
+        <div className="bg-card rounded-lg border border-border p-3 mb-3">
+          <div className="flex items-center gap-2 mb-3">
+            <h3 className="font-semibold text-sm">Modelo</h3>
+            <InfoEtapaModal etapaKey="modelo" />
           </div>
-        )}
 
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-            {/* Coluna Principal - Configuração */}
-            <div className="lg:col-span-2 space-y-4 md:space-y-6">
-              {/* Seleção de Modelo */}
-              <div className="bg-card rounded-lg border border-border p-3 md:p-6 space-y-3 md:space-y-4">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-base md:text-lg">1. Escolha o Modelo</h3>
-                    <Badge variant="secondary" className="text-xs">Obrigatório</Badge>
-                  </div>
-                  <InfoEtapaModal etapaKey="modelo" showLabel />
-                </div>
+          {/* Filtros inline */}
+          <div className="flex flex-wrap gap-1 mb-2">
+            {categorias.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setCategoriaFiltro(cat === categoriaFiltro ? '' : cat)}
+                className={`px-2 py-1 rounded text-xs transition-all ${
+                  categoriaFiltro === cat 
+                    ? 'bg-accent text-accent-foreground' 
+                    : 'bg-muted hover:bg-muted/80'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
 
-                {/* Filtros de Categoria */}
-                <div className="flex flex-wrap gap-1.5 md:gap-2">
-                  {categorias.map(cat => (
-                    <Button
-                      key={cat}
-                      size="sm"
-                      variant={categoriaFiltro === cat ? "default" : "outline"}
-                      onClick={() => setCategoriaFiltro(cat === categoriaFiltro ? '' : cat)}
-                      className="h-7 md:h-8 text-xs px-2 md:px-3"
-                    >
-                      {cat}
-                    </Button>
-                  ))}
-                </div>
+          <div className="relative mb-2">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar..."
+              value={buscaModelo}
+              onChange={(e) => setBuscaModelo(e.target.value)}
+              className="pl-8 h-8 text-xs"
+            />
+          </div>
 
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar modelo..."
-                    value={buscaModelo}
-                    onChange={(e) => setBuscaModelo(e.target.value)}
-                    className="pl-10"
+          {mostrarModelos && modelosFiltrados.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-32 overflow-y-auto">
+              {modelosFiltrados.map(modelo => (
+                <button
+                  key={modelo.id}
+                  onClick={() => setModeloSelecionado(modelo.id)}
+                  className={`p-2 rounded text-left text-xs transition-all flex items-center justify-between ${
+                    modeloSelecionado === modelo.id
+                      ? 'bg-accent text-accent-foreground'
+                      : 'bg-muted hover:bg-muted/80'
+                  }`}
+                >
+                  <span className="truncate">{modelo.nome_modelo}</span>
+                  {modeloSelecionado === modelo.id && <Check className="h-3 w-3 flex-shrink-0" />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {modeloSelecionado && modeloAtual && (
+            <div className="mt-2 p-2 bg-muted rounded-lg flex items-center gap-3">
+              <div className="w-16 h-10 bg-white rounded overflow-hidden flex-shrink-0">
+                <img
+                  src={getModeloImagem(modeloAtual)}
+                  alt={modeloAtual.nome_modelo}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{modeloAtual.nome_modelo}</p>
+                <p className="text-xs text-muted-foreground">R$ {modeloAtual.preco_base.toFixed(2)}</p>
+              </div>
+              <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0">
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Customização - Grid de chips */}
+        {modeloSelecionado && (
+          <div className="bg-card rounded-lg border border-border p-3 mb-3 space-y-4">
+            <SelectionChips 
+              options={acos} 
+              selected={acoSelecionado} 
+              onSelect={setAcoSelecionado} 
+              label="Aço"
+              etapaKey="aco"
+            />
+
+            <SelectionChips 
+              options={acabamentos} 
+              selected={acabamentoSelecionado} 
+              onSelect={setAcabamentoSelecionado} 
+              label="Acabamento"
+              etapaKey="acabamento"
+            />
+
+            <div className="space-y-2">
+              <SelectionChips 
+                options={empunhaduras} 
+                selected={empunhaduraSelecionada} 
+                onSelect={setEmpunhaduraSelecionada} 
+                label="Empunhadura"
+                etapaKey="empunhadura"
+              />
+              {empunhaduraSelecionada && (
+                <div className="flex items-center gap-2 pl-1">
+                  <Checkbox
+                    id="dragonScale"
+                    checked={dragonScale}
+                    onCheckedChange={(checked) => setDragonScale(checked === true)}
+                    className="h-3.5 w-3.5"
                   />
+                  <Label htmlFor="dragonScale" className="text-xs cursor-pointer">Dragon Scale</Label>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <SelectionChips 
+                options={bainhas} 
+                selected={bainhaSelecionada} 
+                onSelect={setBainhaSelecionada} 
+                label="Bainha"
+                etapaKey="bainha"
+              />
+              {bainhaSelecionada && (
+                <Select value={corBainha} onValueChange={setCorBainha}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Cor da bainha" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {coresBainha.map(cor => (
+                      <SelectItem key={cor.id} value={cor.nome_opcao} className="text-xs">
+                        {cor.nome_opcao}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {/* Extras colapsável */}
+            <Collapsible open={showExtras} onOpenChange={setShowExtras}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center justify-between w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <span className="flex items-center gap-1.5">
+                    Laser & Embalagem
+                    {(laser || embalagem) && <Badge variant="outline" className="text-[10px] px-1 py-0">Ativo</Badge>}
+                  </span>
+                  {showExtras ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-2">
+                {/* Laser */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="laser"
+                      checked={laser}
+                      onCheckedChange={(checked) => setLaser(checked as boolean)}
+                      className="h-3.5 w-3.5"
+                    />
+                    <Label htmlFor="laser" className="text-xs cursor-pointer">Personalização à Laser (+R$30)</Label>
+                    <InfoEtapaModal etapaKey="laser" />
+                  </div>
+                  {laser && (
+                    <div className="space-y-2 pl-5">
+                      <Input
+                        placeholder="Texto para gravação..."
+                        value={textoLaser}
+                        onChange={(e) => setTextoLaser(e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                      <div className="flex flex-wrap gap-1.5">
+                        {LOCAIS_GRAVACAO.map(local => (
+                          <button
+                            key={local}
+                            onClick={() => {
+                              if (localGravacao.includes(local)) {
+                                setLocalGravacao(localGravacao.filter(l => l !== local));
+                              } else {
+                                setLocalGravacao([...localGravacao, local]);
+                              }
+                            }}
+                            className={`px-2 py-1 rounded text-xs transition-all ${
+                              localGravacao.includes(local)
+                                ? 'bg-accent text-accent-foreground'
+                                : 'bg-muted hover:bg-muted/80'
+                            }`}
+                          >
+                            {local}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {!mostrarModelos ? (
-                  <div className="text-center py-6 md:py-8 text-xs md:text-sm text-muted-foreground border border-border rounded-lg">
-                    Use a busca ou selecione uma categoria para ver os modelos
-                  </div>
-                ) : modelosFiltrados.length === 0 ? (
-                  <div className="text-center py-6 md:py-8 text-xs md:text-sm text-muted-foreground border border-border rounded-lg">
-                    Nenhum modelo encontrado
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-1.5 md:gap-2 max-h-48 md:max-h-60 overflow-y-auto border border-border rounded-lg p-1.5 md:p-2">
-                    {modelosFiltrados.map(modelo => (
+                {/* Embalagem */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Embalagem</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {embalagens.map(emb => (
                       <button
-                        key={modelo.id}
-                        onClick={() => setModeloSelecionado(modelo.id)}
-                        className={`p-2 md:p-3 rounded-lg text-left transition-all ${
-                          modeloSelecionado === modelo.id
-                            ? 'bg-accent text-accent-foreground shadow-md'
+                        key={emb.id}
+                        onClick={() => setEmbalagem(embalagem === emb.nome_opcao ? '' : emb.nome_opcao)}
+                        className={`px-2.5 py-1.5 rounded-md text-xs transition-all ${
+                          embalagem === emb.nome_opcao
+                            ? 'bg-accent text-accent-foreground'
                             : 'bg-muted hover:bg-muted/80'
                         }`}
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-xs md:text-sm truncate">{modelo.nome_modelo}</div>
-                            {modelo.categoria && (
-                              <Badge variant="outline" className="text-[10px] md:text-xs px-1 md:px-1.5 py-0 mt-0.5">
-                                {modelo.categoria}
-                              </Badge>
-                            )}
-                          </div>
-                          {modeloSelecionado === modelo.id && <Check className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />}
-                        </div>
+                        {emb.nome_opcao}
                       </button>
                     ))}
                   </div>
-                )}
-              </div>
-
-              {/* Opções de Customização */}
-              {modeloSelecionado && (
-                <div className="bg-card rounded-lg border border-border p-3 md:p-6">
-                  <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="aco" className="border-border">
-                      <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                        <span className="flex items-center gap-2">
-                          2. Tipo de Aço {acoSelecionado && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
-                        </span>
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
-                        <div className="mb-2 flex justify-end">
-                          <InfoEtapaModal etapaKey="aco" showLabel />
-                        </div>
-                        {acos.map(aco => (
-                          <button
-                            key={aco.id}
-                            onClick={() => setAcoSelecionado(aco.id)}
-                            className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                              acoSelecionado === aco.id ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
-                            }`}
-                          >
-                            <span className="truncate">{aco.nome_opcao}</span>
-                          </button>
-                        ))}
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="acabamento" className="border-border">
-                      <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                        <span className="flex items-center gap-2">
-                          3. Acabamento {acabamentoSelecionado && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
-                        </span>
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
-                        <div className="mb-2 flex justify-end">
-                          <InfoEtapaModal etapaKey="acabamento" showLabel />
-                        </div>
-                        {acabamentos.map(acabamento => (
-                          <button
-                            key={acabamento.id}
-                            onClick={() => setAcabamentoSelecionado(acabamento.id)}
-                            className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                              acabamentoSelecionado === acabamento.id ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
-                            }`}
-                          >
-                            <span className="truncate">{acabamento.nome_opcao}</span>
-                          </button>
-                        ))}
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="empunhadura" className="border-border">
-                      <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                        <span className="flex items-center gap-2">
-                          4. Empunhadura {empunhaduraSelecionada && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
-                        </span>
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-3 pt-2">
-                        <div className="mb-2 flex justify-end">
-                          <InfoEtapaModal etapaKey="empunhadura" showLabel />
-                        </div>
-                        <div className="space-y-1.5 md:space-y-2">
-                          {empunhaduras.map(empunhadura => (
-                            <button
-                              key={empunhadura.id}
-                              onClick={() => setEmpunhaduraSelecionada(empunhadura.id)}
-                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                                empunhaduraSelecionada === empunhadura.id ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              <span className="truncate">{empunhadura.nome_opcao}</span>
-                            </button>
-                          ))}
-                        </div>
-                        {empunhaduraSelecionada && (
-                          <div className="pt-2 border-t border-border">
-                            <div className="flex items-center gap-2">
-                              <Checkbox
-                                id="dragonScaleSim"
-                                checked={dragonScale}
-                                onCheckedChange={(checked) => setDragonScale(checked === true)}
-                              />
-                              <Label htmlFor="dragonScaleSim" className="text-xs md:text-sm cursor-pointer">
-                                Dragon Scale (opcional)
-                              </Label>
-                            </div>
-                          </div>
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="bainha" className="border-border">
-                      <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                        <span className="flex items-center gap-2">
-                          5. Bainha {bainhaSelecionada && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
-                        </span>
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-3 pt-2">
-                        <div className="mb-2 flex justify-end">
-                          <InfoEtapaModal etapaKey="bainha" showLabel />
-                        </div>
-                        <div className="space-y-1.5 md:space-y-2">
-                          {bainhas.map(bainha => (
-                            <button
-                              key={bainha.id}
-                              onClick={() => setBainhaSelecionada(bainha.id)}
-                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                                bainhaSelecionada === bainha.id ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              <span className="truncate">{bainha.nome_opcao}</span>
-                            </button>
-                          ))}
-                        </div>
-                        {bainhaSelecionada && (
-                          <div className="space-y-1.5 md:space-y-2 pt-2 border-t border-border">
-                            <Label htmlFor="corBainha" className="text-xs">Cor da Bainha</Label>
-                            <Select value={corBainha} onValueChange={setCorBainha}>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Selecione a cor" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {coresBainha.map(cor => (
-                                  <SelectItem key={cor.id} value={cor.nome_opcao}>{cor.nome_opcao}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="laser" className="border-border">
-                      <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                        <span className="flex items-center gap-2">
-                          6. Personalização à Laser {laser && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Ativo</Badge>}
-                        </span>
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-3 pt-2">
-                        <div className="mb-2 flex justify-end">
-                          <InfoEtapaModal etapaKey="laser" showLabel />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="laser"
-                            checked={laser}
-                            onCheckedChange={(checked) => setLaser(checked as boolean)}
-                          />
-                          <Label htmlFor="laser" className="text-xs md:text-sm cursor-pointer">
-                            Adicionar personalização à laser
-                          </Label>
-                        </div>
-                        {laser && (
-                          <div className="space-y-3">
-                            <div className="space-y-1.5 md:space-y-2">
-                              <Label htmlFor="textoLaser" className="text-xs">Texto para gravação</Label>
-                              <Input
-                                id="textoLaser"
-                                placeholder="Digite o texto..."
-                                value={textoLaser}
-                                onChange={(e) => setTextoLaser(e.target.value)}
-                                className="text-xs md:text-sm"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-xs">Local da gravação</Label>
-                              <div className="flex flex-wrap gap-2">
-                                {LOCAIS_GRAVACAO.map(local => (
-                                  <div
-                                    key={local}
-                                    className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
-                                      localGravacao.includes(local)
-                                        ? 'border-accent bg-accent/10'
-                                        : 'border-border hover:border-accent/50'
-                                    }`}
-                                    onClick={() => {
-                                      if (localGravacao.includes(local)) {
-                                        setLocalGravacao(localGravacao.filter(l => l !== local));
-                                      } else {
-                                        setLocalGravacao([...localGravacao, local]);
-                                      }
-                                    }}
-                                  >
-                                    <Checkbox checked={localGravacao.includes(local)} />
-                                    <span className="text-xs">{local}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="embalagem" className="border-border">
-                      <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                        <span className="flex items-center gap-2">
-                          7. Embalagem {embalagem && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
-                        </span>
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-3 pt-2">
-                        <div className="space-y-1.5 md:space-y-2">
-                          {embalagens.map(emb => (
-                            <button
-                              key={emb.id}
-                              onClick={() => setEmbalagem(embalagem === emb.nome_opcao ? '' : emb.nome_opcao)}
-                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                                embalagem === emb.nome_opcao ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <span>{emb.nome_opcao}</span>
-                                {embalagem === emb.nome_opcao && <Check className="h-4 w-4" />}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                        {embalagem && (
-                          <div className="space-y-3 pt-2 border-t border-border">
-                            <div className="flex items-center gap-2">
-                              <Checkbox
-                                id="embalagemGravacao"
-                                checked={embalagemGravacao}
-                                onCheckedChange={(checked) => setEmbalagemGravacao(checked as boolean)}
-                              />
-                              <Label htmlFor="embalagemGravacao" className="text-xs md:text-sm cursor-pointer">
-                                Adicionar gravação na embalagem
-                              </Label>
-                            </div>
-                            {embalagemGravacao && (
-                              <div className="space-y-1.5 md:space-y-2">
-                                <Label htmlFor="embalagemTextoGravacao" className="text-xs">Texto para gravação na embalagem</Label>
-                                <Input
-                                  id="embalagemTextoGravacao"
-                                  placeholder="Digite o texto..."
-                                  value={embalagemTextoGravacao}
-                                  onChange={(e) => setEmbalagemTextoGravacao(e.target.value)}
-                                  className="text-xs md:text-sm"
-                                />
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </div>
-              )}
-
-              {/* Produtos Adicionais */}
-              {produtosAdicionais.length > 0 && (
-                <div className="bg-card rounded-lg border border-border p-3 md:p-6 space-y-3 md:space-y-4">
-                  <h3 className="font-semibold text-base md:text-lg">Produtos Adicionais</h3>
-                  <div className="grid gap-3 grid-cols-2">
-                    {produtosAdicionais.map((produto) => (
-                      <ProdutoAdicionalCard
-                        key={produto.id}
-                        nome={produto.nome_produto}
-                        precoUnitario={produto.preco_unitario}
-                        quantidade={quantidadesProdutos[produto.id] || 0}
-                        onAdd={() => setQuantidadesProdutos(prev => ({
-                          ...prev,
-                          [produto.id]: (prev[produto.id] || 0) + 1
-                        }))}
-                        onRemove={() => setQuantidadesProdutos(prev => ({
-                          ...prev,
-                          [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1)
-                        }))}
+                  {embalagem && (
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="embalagemGravacao"
+                        checked={embalagemGravacao}
+                        onCheckedChange={(checked) => setEmbalagemGravacao(checked as boolean)}
+                        className="h-3.5 w-3.5"
                       />
-                    ))}
-                  </div>
+                      <Label htmlFor="embalagemGravacao" className="text-xs cursor-pointer">Gravação na embalagem</Label>
+                    </div>
+                  )}
+                  {embalagemGravacao && (
+                    <Input
+                      placeholder="Texto para embalagem..."
+                      value={embalagemTextoGravacao}
+                      onChange={(e) => setEmbalagemTextoGravacao(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  )}
                 </div>
-              )}
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        )}
 
-              {/* Botão Adicionar */}
-              {modeloSelecionado && (
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button onClick={adicionarLamina} className="flex-1 bg-accent hover:bg-accent/90 text-xs md:text-sm">
-                    <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 mr-2" />
-                    Adicionar Lâmina
-                  </Button>
-                  <Button onClick={limparFormulario} variant="outline" className="text-xs md:text-sm">
-                    Limpar
-                  </Button>
+        {/* Produtos Adicionais - Colapsável */}
+        {produtosAdicionais.length > 0 && (
+          <Collapsible open={showProdutos} onOpenChange={setShowProdutos}>
+            <div className="bg-card rounded-lg border border-border p-3 mb-3">
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center justify-between w-full text-sm font-medium">
+                  <span>Produtos Adicionais</span>
+                  {showProdutos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  {produtosAdicionais.map((produto) => (
+                    <ProdutoAdicionalCard
+                      key={produto.id}
+                      nome={produto.nome_produto}
+                      precoUnitario={produto.preco_unitario}
+                      quantidade={quantidadesProdutos[produto.id] || 0}
+                      onAdd={() => setQuantidadesProdutos(prev => ({
+                        ...prev,
+                        [produto.id]: (prev[produto.id] || 0) + 1
+                      }))}
+                      onRemove={() => setQuantidadesProdutos(prev => ({
+                        ...prev,
+                        [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1)
+                      }))}
+                    />
+                  ))}
                 </div>
-              )}
+              </CollapsibleContent>
             </div>
+          </Collapsible>
+        )}
 
-            {/* Coluna Lateral - Resumo */}
-            <div className="lg:col-span-1 space-y-4">
-              {/* Resumo em Tempo Real */}
-              {modeloSelecionado && (
-                <div className="bg-card rounded-lg border border-border p-3 md:p-6 lg:sticky lg:top-24 space-y-3 md:space-y-4">
-                  <h3 className="font-semibold text-base md:text-lg flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-accent" />
-                    Configuração Atual
-                  </h3>
-
-                  <div className="space-y-2 text-xs md:text-sm">
-                    <div className="flex justify-between py-1.5 border-b border-border">
-                      <span className="text-muted-foreground">Modelo:</span>
-                      <span className="font-medium text-right max-w-[60%] truncate">{modeloAtual?.nome_modelo || '-'}</span>
-                    </div>
-                    <div className="flex justify-between py-1.5 border-b border-border">
-                      <span className="text-muted-foreground">Aço:</span>
-                      <span className="font-medium text-right max-w-[60%] truncate">{acoAtual?.nome_opcao || '-'}</span>
-                    </div>
-                    <div className="flex justify-between py-1.5 border-b border-border">
-                      <span className="text-muted-foreground">Acabamento:</span>
-                      <span className="font-medium text-right max-w-[60%] truncate">{acabamentoAtual?.nome_opcao || '-'}</span>
-                    </div>
-                    <div className="flex justify-between py-1.5 border-b border-border">
-                      <span className="text-muted-foreground">Empunhadura:</span>
-                      <span className="font-medium text-right max-w-[60%] truncate">
-                        {empunhaduraAtual?.nome_opcao || '-'}{dragonScale ? ' + Dragon Scale' : ''}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-1.5 border-b border-border">
-                      <span className="text-muted-foreground">Bainha:</span>
-                      <span className="font-medium text-right max-w-[60%] truncate">{bainhaAtual?.nome_opcao || '-'}</span>
-                    </div>
-                    {corBainha && (
-                      <div className="flex justify-between py-1.5 border-b border-border">
-                        <span className="text-muted-foreground">Cor da Bainha:</span>
-                        <span className="font-medium text-right max-w-[60%] truncate">{corBainha}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between py-1.5 border-b border-border">
-                      <span className="text-muted-foreground">Laser:</span>
-                      <span className="font-medium">{laser ? (textoLaser || 'Sim') : 'Não'}</span>
-                    </div>
-                    {laser && localGravacao.length > 0 && (
-                      <div className="flex justify-between py-1.5 border-b border-border">
-                        <span className="text-muted-foreground">Local:</span>
-                        <span className="font-medium text-right max-w-[60%] truncate">{localGravacao.join(', ')}</span>
-                      </div>
-                    )}
-                    {embalagem && (
-                      <div className="flex justify-between py-1.5 border-b border-border">
-                        <span className="text-muted-foreground">Embalagem:</span>
-                        <span className="font-medium text-right max-w-[60%] truncate">{embalagem}</span>
-                      </div>
-                    )}
-                    {embalagemGravacao && embalagemTextoGravacao && (
-                      <div className="flex justify-between py-1.5 border-b border-border">
-                        <span className="text-muted-foreground">Gravação Emb.:</span>
-                        <span className="font-medium text-right max-w-[60%] truncate">{embalagemTextoGravacao}</span>
-                      </div>
-                    )}
+        {/* Lâminas Adicionadas - Inline compacto */}
+        {laminasCustomizadas.length > 0 && (
+          <div className="bg-card rounded-lg border border-border p-3 mb-3">
+            <h3 className="font-semibold text-sm mb-2">Lâminas ({laminasCustomizadas.length})</h3>
+            <div className="space-y-1.5">
+              {laminasCustomizadas.map((lamina) => (
+                <div
+                  key={lamina.id}
+                  className="p-2 bg-muted rounded flex items-center justify-between gap-2 cursor-pointer hover:bg-muted/80"
+                  onClick={() => setLaminaModalAberta(lamina)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{lamina.modelo?.nome_modelo}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {[lamina.aco?.nome_opcao, lamina.acabamento?.nome_opcao].filter(Boolean).join(' • ')}
+                    </p>
                   </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removerLamina(lamina.id);
+                    }}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
                 </div>
-              )}
-
-              {/* Lâminas Adicionadas */}
-              <div className="bg-card rounded-lg border border-border p-3 md:p-6 lg:sticky lg:top-24 space-y-3 md:space-y-4" style={{ top: modeloSelecionado ? 'calc(24rem + 6rem)' : '6rem' }}>
-                <h3 className="font-semibold text-base md:text-lg">Lâminas Adicionadas ({laminasCustomizadas.length})</h3>
-
-                {laminasCustomizadas.length === 0 ? (
-                  <p className="text-xs md:text-sm text-muted-foreground text-center py-6 md:py-8">
-                    Nenhuma lâmina adicionada ainda
-                  </p>
-                ) : (
-                  <div className="space-y-2 md:space-y-3">
-                    {laminasCustomizadas.map((lamina) => (
-                      <div
-                        key={lamina.id}
-                        className="p-2 md:p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
-                        onClick={() => setLaminaModalAberta(lamina)}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-xs md:text-sm truncate">{lamina.modelo?.nome_modelo}</p>
-                            <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
-                              {[lamina.aco?.nome_opcao, lamina.acabamento?.nome_opcao, (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '')].filter(Boolean).join(' • ') || 'Clique para ver detalhes'}
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removerLamina(lamina.id);
-                            }}
-                            className="h-7 w-7 md:h-8 md:w-8 p-0"
-                          >
-                            <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Bottom bar fixo com resumo */}
+      {/* Bottom bar fixo */}
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50">
-        <div className="px-4 py-4 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1">
-              <p className="text-xs text-muted-foreground">Total do Pedido</p>
-              <p className="text-2xl font-bold text-accent">R$ {valorTotalCalculado.toFixed(2)}</p>
+        <div className="px-3 py-3">
+          <div className="flex items-center justify-between gap-2 max-w-5xl mx-auto">
+            <div>
+              <p className="text-[10px] text-muted-foreground">Total</p>
+              <p className="text-lg font-bold text-accent">R$ {valorTotalCalculado.toFixed(2)}</p>
             </div>
-
-            {modeloSelecionado && (
-              <Button onClick={adicionarLamina} variant="outline" size="sm" className="flex-shrink-0 border-accent text-accent hover:bg-accent hover:text-accent-foreground">
-                Adicionar
-              </Button>
-            )}
-
-            {(laminasCustomizadas.length > 0 || modeloSelecionado) && (
-              <Button onClick={() => setModalOpen(true)} size="sm" className="flex-shrink-0 bg-accent hover:bg-accent/90">
-                Fechar Pedido
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {modeloSelecionado && (
+                <>
+                  <Button onClick={limparFormulario} variant="outline" size="sm" className="text-xs h-9">
+                    Limpar
+                  </Button>
+                  <Button onClick={adicionarLamina} variant="outline" size="sm" className="text-xs h-9 border-accent text-accent">
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    Adicionar
+                  </Button>
+                </>
+              )}
+              {(laminasCustomizadas.length > 0 || modeloSelecionado) && (
+                <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
+                  Fechar Pedido
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1164,12 +1035,9 @@ ${linhasFormatadas}`;
 
           {laminaModalAberta && (
             <div className="space-y-3 text-sm">
-              {/* Conteúdo exportável */}
               <div ref={laminaModalRef} className="space-y-3 bg-background p-4 rounded-lg">
-                {/* Título para export */}
                 <h3 className="text-center font-bold text-lg">{laminaModalAberta.modelo?.nome_modelo || 'Lâmina'}</h3>
                 
-                {/* SVG do modelo */}
                 <div className="flex justify-center mb-4">
                   <div className="w-full max-w-[200px] h-24 rounded-lg overflow-hidden border border-border bg-white p-2">
                     <img
@@ -1232,7 +1100,6 @@ ${linhasFormatadas}`;
                 )}
               </div>
 
-              {/* Botões de exportação */}
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -1276,7 +1143,7 @@ ${linhasFormatadas}`;
           <DialogHeader>
             <DialogTitle>{pedidoFinalizado ? 'Pedido Finalizado' : 'Finalizar Pedido'}</DialogTitle>
             <DialogDescription>
-              {pedidoFinalizado ? 'Copie as informações abaixo' : 'Preencha os dados do cliente para enviar o pedido para produção'}
+              {pedidoFinalizado ? 'Copie as informações abaixo' : 'Preencha os dados do cliente'}
             </DialogDescription>
           </DialogHeader>
 
@@ -1346,206 +1213,209 @@ ${linhasFormatadas}`;
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="certificado">Nome para Certificado</Label>
-                <Input id="certificado" value={nomeCertificado} onChange={(e) => setNomeCertificado(e.target.value)} />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="pagamento">Forma de Pagamento *</Label>
-                <Input id="pagamento" value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value)} placeholder="Ex: PIX, Cartão de Crédito, etc." required />
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="canal">Canal</Label>
-                  <Input id="canal" value={canal} onChange={(e) => setCanal(e.target.value)} placeholder="Ex: WhatsApp, Instagram" />
+                  <Label htmlFor="nomeCertificado">Nome no Certificado</Label>
+                  <Input id="nomeCertificado" value={nomeCertificado} onChange={(e) => setNomeCertificado(e.target.value)} placeholder="Se diferente do nome" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Input id="status" value={status} onChange={(e) => setStatus(e.target.value)} placeholder="Ex: Pendente, Pago" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="origem">Origem Cliente</Label>
-                  <Input id="origem" value={origemCliente} onChange={(e) => setOrigemCliente(e.target.value)} placeholder="Ex: Indicação, Redes Sociais" />
+                  <Label htmlFor="formaPagamento">Forma de Pagamento *</Label>
+                  <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PIX">PIX</SelectItem>
+                      <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
+                      <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
+                      <SelectItem value="Boleto">Boleto</SelectItem>
+                      <SelectItem value="Transferência">Transferência</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="observacao">Observação</Label>
-                <Input id="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} placeholder="Observações gerais do pedido" />
-              </div>
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
+                    Informações adicionais
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-4 pt-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="canal">Canal de Venda</Label>
+                      <Input id="canal" value={canal} onChange={(e) => setCanal(e.target.value)} placeholder="Ex: WhatsApp, Instagram" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="origemCliente">Origem do Cliente</Label>
+                      <Input id="origemCliente" value={origemCliente} onChange={(e) => setOrigemCliente(e.target.value)} placeholder="Ex: Indicação, Ads" />
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select value={status} onValueChange={setStatus}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pendente">Pendente</SelectItem>
+                          <SelectItem value="Confirmado">Confirmado</SelectItem>
+                          <SelectItem value="Em Produção">Em Produção</SelectItem>
+                          <SelectItem value="Enviado">Enviado</SelectItem>
+                          <SelectItem value="Entregue">Entregue</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cupom">Cupom</Label>
+                      <Input id="cupom" value={cupom} onChange={(e) => setCupom(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="observacao">Observações</Label>
+                    <Input id="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
 
-              <div className="space-y-2">
-                <Label htmlFor="cupom">Cupom</Label>
-                <Input id="cupom" value={cupom} onChange={(e) => setCupom(e.target.value)} placeholder="Código de cupom (se houver)" />
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" onClick={() => setModalOpen(false)} className="flex-1">
+                  Cancelar
+                </Button>
+                <Button onClick={handleFinalizarPedido} disabled={submitting} className="flex-1 bg-accent hover:bg-accent/90">
+                  {submitting ? 'Processando...' : 'Finalizar'}
+                </Button>
               </div>
-
-              <Button onClick={handleFinalizarPedido} disabled={submitting} className="w-full" size="lg">
-                {submitting ? 'Finalizando...' : 'Finalizar Pedido'}
-              </Button>
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Card Visual Exportável */}
-              <div ref={pedidoExportRef} className="bg-white text-black p-6 rounded-lg space-y-4">
-                {/* Header */}
-                <div className="text-center border-b border-gray-200 pb-4">
-                  <h2 className="text-xl font-bold">Confirmação de Pedido</h2>
-                  <p className="text-sm text-gray-500">{new Date().toLocaleDateString('pt-BR')}</p>
+              <div ref={pedidoExportRef} className="bg-background p-4 rounded-lg space-y-4">
+                <div className="text-center border-b border-border pb-3">
+                  <h3 className="font-bold text-lg">Pedido - {nomeCompleto}</h3>
+                  <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('pt-BR')}</p>
                 </div>
 
-                {/* Dados do Cliente */}
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-base border-b border-gray-100 pb-1">Dados do Cliente</h3>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className="text-gray-500">Nome:</span> <span className="font-medium">{nomeCompleto}</span></div>
-                    {cpf && <div><span className="text-gray-500">CPF:</span> <span className="font-medium">{cpf}</span></div>}
-                    {email && <div><span className="text-gray-500">Email:</span> <span className="font-medium">{email}</span></div>}
-                    {celular && <div><span className="text-gray-500">Celular:</span> <span className="font-medium">{celular}</span></div>}
-                    {dataNascimento && <div><span className="text-gray-500">Nascimento:</span> <span className="font-medium">{dataNascimento}</span></div>}
-                  </div>
-                  {(endereco || cidade || estado) && (
-                    <div className="text-sm">
-                      <span className="text-gray-500">Endereço:</span>{' '}
-                      <span className="font-medium">
-                        {[endereco, numero, bairro, cidade, estado, cep].filter(Boolean).join(', ')}
-                        {complemento && ` (${complemento})`}
-                      </span>
-                    </div>
-                  )}
-                  {nomeCertificado && (
-                    <div className="text-sm"><span className="text-gray-500">Nome p/ Certificado:</span> <span className="font-medium">{nomeCertificado}</span></div>
-                  )}
-                  {formaPagamento && (
-                    <div className="text-sm"><span className="text-gray-500">Pagamento:</span> <span className="font-medium">{formaPagamento}</span></div>
-                  )}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><span className="text-muted-foreground">Nome:</span> {nomeCompleto}</div>
+                  <div><span className="text-muted-foreground">CPF:</span> {cpf || '-'}</div>
+                  <div><span className="text-muted-foreground">Email:</span> {email || '-'}</div>
+                  <div><span className="text-muted-foreground">Celular:</span> {celular || '-'}</div>
+                  <div className="col-span-2"><span className="text-muted-foreground">Endereço:</span> {endereco ? `${endereco}, ${numero} - ${bairro}, ${cidade}/${estado}` : '-'}</div>
                 </div>
 
-                {/* Lâminas do Pedido */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-base border-b border-gray-100 pb-1">Lâminas ({laminasCustomizadas.length})</h3>
-                  {laminasCustomizadas.map((lamina, index) => (
-                    <div key={lamina.id} className="bg-gray-50 p-3 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        {/* SVG do modelo */}
-                        <div className="w-16 h-12 bg-white rounded border border-gray-200 p-1 flex-shrink-0">
-                          <img
-                            src={lamina.modelo?.imagem_modelo || edcKnife}
-                            alt={lamina.modelo?.nome_modelo || 'Modelo'}
-                            className="w-full h-full object-contain"
-                          />
+                <div className="border-t border-border pt-3">
+                  <h4 className="font-semibold mb-2">Lâminas do Pedido</h4>
+                  {[...laminasCustomizadas, ...(modeloSelecionado && modeloAtual ? [{
+                    id: 'current',
+                    modelo: modeloAtual,
+                    aco: acoAtual,
+                    acabamento: acabamentoAtual,
+                    empunhadura: empunhaduraAtual,
+                    dragonScale,
+                    bainha: bainhaAtual,
+                    corBainha,
+                    laser,
+                    textoLaser,
+                    localGravacao,
+                    embalagem,
+                    embalagemGravacao,
+                    embalagemTextoGravacao,
+                    subtotal: calcularSubtotal()
+                  }] : [])].map((lamina, index) => (
+                    <div key={lamina.id} className="mb-3 p-2 bg-muted rounded text-xs">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-12 h-8 bg-white rounded overflow-hidden">
+                          <img src={getModeloImagem(lamina.modelo)} alt="" className="w-full h-full object-contain" />
                         </div>
-                        <div className="flex-1 text-sm space-y-1">
-                          <p className="font-semibold">{index + 1}. {lamina.modelo?.nome_modelo || 'Lâmina'}</p>
-                          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
-                            {lamina.aco && <p><span className="text-gray-500">Aço:</span> {lamina.aco.nome_opcao}</p>}
-                            {lamina.acabamento && <p><span className="text-gray-500">Acabamento:</span> {lamina.acabamento.nome_opcao}</p>}
-                            {lamina.empunhadura && (
-                              <p><span className="text-gray-500">Empunhadura:</span> {lamina.empunhadura.nome_opcao}{lamina.dragonScale && ' + Dragon Scale'}</p>
-                            )}
-                            {lamina.bainha && (
-                              <p><span className="text-gray-500">Bainha:</span> {lamina.bainha.nome_opcao}{lamina.corBainha && ` (${lamina.corBainha})`}</p>
-                            )}
-                            {lamina.embalagem && <p><span className="text-gray-500">Embalagem:</span> {lamina.embalagem}</p>}
-                          </div>
-                          {lamina.laser && lamina.textoLaser && (
-                            <p className="text-xs"><span className="text-gray-500">Laser:</span> {lamina.textoLaser} {lamina.localGravacao.length > 0 && `(${lamina.localGravacao.join(', ')})`}</p>
-                          )}
-                        </div>
+                        <span className="font-medium">{lamina.modelo?.nome_modelo}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1 text-muted-foreground">
+                        <span>Aço: {lamina.aco?.nome_opcao || '-'}</span>
+                        <span>Acabamento: {lamina.acabamento?.nome_opcao || '-'}</span>
+                        <span>Empunhadura: {lamina.empunhadura?.nome_opcao || '-'}{lamina.dragonScale ? ' + DS' : ''}</span>
+                        <span>Bainha: {lamina.bainha?.nome_opcao || '-'} {lamina.corBainha}</span>
+                        {lamina.laser && <span className="col-span-2">Laser: {lamina.textoLaser}</span>}
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Observações */}
-                {observacao && (
-                  <div className="text-sm">
-                    <span className="text-gray-500">Observações:</span> <span className="font-medium">{observacao}</span>
-                  </div>
-                )}
+                <div className="border-t border-border pt-3 flex justify-between items-center">
+                  <span className="font-semibold">Total:</span>
+                  <span className="text-xl font-bold text-accent">R$ {valorTotalCalculado.toFixed(2)}</span>
+                </div>
 
-                {/* Vendedor */}
-                {profile?.nome_vendedor && (
-                  <div className="text-sm text-right text-gray-500 pt-2 border-t border-gray-100">
-                    Vendedor: {profile.nome_vendedor}
-                  </div>
-                )}
+                <div className="text-xs text-muted-foreground text-center">
+                  Vendedor: {profile?.nome_vendedor || '-'}
+                </div>
               </div>
 
-              {/* Botões de Exportação Visual */}
-              <div className="flex gap-2">
-                <Button onClick={exportarPedidoComoImagem} variant="outline" className="flex-1">
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-full">
+                    Ver texto formatado
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <pre className="bg-muted p-3 rounded text-xs whitespace-pre-wrap max-h-40 overflow-auto">
+                    {textoFormatado}
+                  </pre>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" onClick={copiarTexto}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copiar Texto
+                </Button>
+                <Button variant="outline" onClick={exportarParaSheets} disabled={exportandoSheets}>
+                  {exportandoSheets ? 'Exportando...' : 'Google Sheets'}
+                </Button>
+                <Button variant="outline" onClick={exportarPedidoComoImagem}>
                   <Image className="h-4 w-4 mr-2" />
                   Imagem
                 </Button>
-                <Button onClick={exportarPedidoComoPDF} variant="outline" className="flex-1">
+                <Button variant="outline" onClick={exportarPedidoComoPDF}>
                   <FileText className="h-4 w-4 mr-2" />
                   PDF
                 </Button>
               </div>
 
-              {/* Texto Formatado (colapsável) */}
-              <details className="bg-muted rounded-lg">
-                <summary className="p-3 cursor-pointer text-sm font-medium">Ver texto formatado</summary>
-                <div className="p-4 pt-0">
-                  <pre className="text-sm whitespace-pre-wrap font-mono">{textoFormatado}</pre>
-                </div>
-              </details>
-
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <Button onClick={copiarTexto} className="flex-1">
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copiar Texto
-                  </Button>
-                  <Button onClick={exportarParaSheets} disabled={exportandoSheets} variant="secondary" className="flex-1">
-                    {exportandoSheets ? 'Exportando...' : 'Planilha'}
-                  </Button>
-                </div>
-                <Button onClick={fecharModal} variant="outline" className="w-full">
-                  Fechar
-                </Button>
-              </div>
+              <Button onClick={fecharModal} className="w-full bg-accent hover:bg-accent/90">
+                Novo Pedido
+              </Button>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Modal de IA para Preencher Dados */}
+      {/* Modal IA */}
       <Dialog open={modalIAOpen} onOpenChange={setModalIAOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Preencher Formulário com IA</DialogTitle>
+            <DialogTitle>Preencher com IA</DialogTitle>
             <DialogDescription>
-              Cole os dados do pedido e a IA reconhecerá e preencherá automaticamente os campos do formulário.
+              Cole os dados do cliente e a IA preencherá automaticamente
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="textoIA">Cole os dados do pedido aqui</Label>
-              <textarea
-                id="textoIA"
-                value={textoIA}
-                onChange={(e) => setTextoIA(e.target.value)}
-                placeholder="Cole aqui as informações do pedido..."
-                className="w-full min-h-[300px] p-3 border border-border rounded-lg bg-background resize-none font-mono text-sm"
-              />
-            </div>
-
+          <div className="space-y-4">
+            <textarea
+              className="w-full h-40 p-3 text-sm border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-accent"
+              placeholder="Cole aqui os dados do cliente..."
+              value={textoIA}
+              onChange={(e) => setTextoIA(e.target.value)}
+            />
             <div className="flex gap-2">
-              <Button onClick={processarTextoComIA} disabled={processandoIA || !textoIA.trim()} className="flex-1">
-                {processandoIA ? 'Processando...' : '✨ Processar com IA'}
-              </Button>
-              <Button
-                onClick={() => {
-                  setModalIAOpen(false);
-                  setTextoIA('');
-                }}
-                variant="outline"
-              >
+              <Button variant="outline" onClick={() => setModalIAOpen(false)} className="flex-1">
                 Cancelar
+              </Button>
+              <Button onClick={processarTextoComIA} disabled={processandoIA} className="flex-1 bg-accent hover:bg-accent/90">
+                {processandoIA ? 'Processando...' : 'Processar'}
               </Button>
             </div>
           </div>
