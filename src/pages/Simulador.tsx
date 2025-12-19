@@ -11,7 +11,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { toast } from 'sonner';
 import { Trash2, Plus, Search, Check, Eye, Copy, X, Image, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import ProdutoAdicionalCard from '@/components/ProdutoAdicionalCard';
 import { InfoEtapaModal } from '@/components/InfoEtapaModal';
 import edcKnife from '@/assets/edc-knife.svg';
 import html2canvas from 'html2canvas';
@@ -85,6 +84,7 @@ export default function Simulador() {
   // Lista de lâminas customizadas
   const [laminasCustomizadas, setLaminasCustomizadas] = useState<LaminaCustomizada[]>([]);
   const [quantidadesProdutos, setQuantidadesProdutos] = useState<Record<string, number>>({});
+  const [observacoesProdutos, setObservacoesProdutos] = useState('');
 
   // Modal para visualizar lâmina
   const [laminaModalAberta, setLaminaModalAberta] = useState<LaminaCustomizada | null>(null);
@@ -124,7 +124,6 @@ export default function Simulador() {
 
   // Collapsibles
   const [showExtras, setShowExtras] = useState(false);
-  const [showProdutos, setShowProdutos] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -925,38 +924,46 @@ ${linhasFormatadas}`;
           </div>
         )}
 
-        {/* Produtos Adicionais - Colapsável */}
+        {/* Produtos Adicionais - Inline */}
         {produtosAdicionais.length > 0 && (
-          <Collapsible open={showProdutos} onOpenChange={setShowProdutos}>
-            <div className="bg-card rounded-lg border border-border p-3 mb-3">
-              <CollapsibleTrigger asChild>
-                <button className="flex items-center justify-between w-full text-sm font-medium">
-                  <span>Produtos Adicionais</span>
-                  {showProdutos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-3">
-                <div className="grid grid-cols-2 gap-2">
-                  {produtosAdicionais.map((produto) => (
-                    <ProdutoAdicionalCard
-                      key={produto.id}
-                      nome={produto.nome_produto}
-                      precoUnitario={produto.preco_unitario}
-                      quantidade={quantidadesProdutos[produto.id] || 0}
-                      onAdd={() => setQuantidadesProdutos(prev => ({
-                        ...prev,
-                        [produto.id]: (prev[produto.id] || 0) + 1
-                      }))}
-                      onRemove={() => setQuantidadesProdutos(prev => ({
+          <div className="bg-card rounded-lg border border-border p-3 mb-3">
+            <h3 className="text-sm font-medium mb-2">Produtos Adicionais</h3>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {produtosAdicionais.map((produto) => {
+                const quantidade = quantidadesProdutos[produto.id] || 0;
+                return (
+                  <button
+                    key={produto.id}
+                    onClick={() => setQuantidadesProdutos(prev => ({
+                      ...prev,
+                      [produto.id]: (prev[produto.id] || 0) + 1
+                    }))}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setQuantidadesProdutos(prev => ({
                         ...prev,
                         [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1)
-                      }))}
-                    />
-                  ))}
-                </div>
-              </CollapsibleContent>
+                      }));
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      quantidade > 0
+                        ? 'bg-accent text-accent-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    {produto.nome_produto} {quantidade > 0 && `(${quantidade})`}
+                    <span className="ml-1 text-[10px] opacity-70">R${produto.preco_unitario.toFixed(0)}</span>
+                  </button>
+                );
+              })}
             </div>
-          </Collapsible>
+            <Input
+              placeholder="Observações sobre produtos adicionais..."
+              value={observacoesProdutos}
+              onChange={(e) => setObservacoesProdutos(e.target.value)}
+              className="h-8 text-xs"
+            />
+          </div>
         )}
 
         {/* Lâminas Adicionadas - Inline compacto */}
@@ -1342,6 +1349,24 @@ ${linhasFormatadas}`;
                     </div>
                   ))}
                 </div>
+
+                {/* Produtos Adicionais no resumo */}
+                {produtosAdicionais.some(p => (quantidadesProdutos[p.id] || 0) > 0) && (
+                  <div className="border-t border-border pt-3">
+                    <h4 className="font-semibold mb-2">Produtos Adicionais</h4>
+                    <div className="space-y-1 text-xs">
+                      {produtosAdicionais.filter(p => (quantidadesProdutos[p.id] || 0) > 0).map(produto => (
+                        <div key={produto.id} className="flex justify-between text-muted-foreground">
+                          <span>{produto.nome_produto} x{quantidadesProdutos[produto.id]}</span>
+                          <span>R$ {(produto.preco_unitario * quantidadesProdutos[produto.id]).toFixed(2)}</span>
+                        </div>
+                      ))}
+                      {observacoesProdutos && (
+                        <p className="text-muted-foreground mt-1 italic">Obs: {observacoesProdutos}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="border-t border-border pt-3 flex justify-between items-center">
                   <span className="font-semibold">Total:</span>
