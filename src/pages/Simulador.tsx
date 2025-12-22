@@ -741,20 +741,20 @@ ${linhasFormatadas}`;
           )}
 
           {modeloSelecionado && modeloAtual && (
-            <div className="mt-2 p-2 bg-muted rounded-lg flex items-center gap-3">
-              <div className="w-16 h-10 bg-white rounded overflow-hidden flex-shrink-0">
+            <div className="mt-3 p-4 bg-muted rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-medium text-sm">{modeloAtual.nome_modelo}</p>
+                <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0">
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <div className="w-full h-32 bg-white rounded overflow-hidden">
                 <img
                   src={getModeloImagem(modeloAtual)}
                   alt={modeloAtual.nome_modelo}
                   className="w-full h-full object-contain"
                 />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{modeloAtual.nome_modelo}</p>
-              </div>
-              <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0">
-                <X className="h-3.5 w-3.5" />
-              </Button>
             </div>
           )}
         </div>
