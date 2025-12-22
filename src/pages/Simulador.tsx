@@ -687,6 +687,25 @@ ${linhasFormatadas}`;
           </Button>
         </div>
 
+        {/* Imagem do modelo selecionado - Acima do card */}
+        {modeloSelecionado && modeloAtual && (
+          <div className="bg-muted rounded-lg p-4 mb-3">
+            <div className="w-full h-32 bg-white rounded overflow-hidden mb-3">
+              <img
+                src={getModeloImagem(modeloAtual)}
+                alt={modeloAtual.nome_modelo}
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="font-medium text-sm">{modeloAtual.nome_modelo}</p>
+              <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0">
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Seleção de Modelo - Compacta */}
         <div className="bg-card rounded-lg border border-border p-3 mb-3">
           <div className="flex items-center gap-2 mb-3">
@@ -737,24 +756,6 @@ ${linhasFormatadas}`;
                   {modeloSelecionado === modelo.id && <Check className="h-3 w-3 flex-shrink-0" />}
                 </button>
               ))}
-            </div>
-          )}
-
-          {modeloSelecionado && modeloAtual && (
-            <div className="mt-3 p-4 bg-muted rounded-lg">
-              <div className="w-full h-32 bg-white rounded overflow-hidden mb-3">
-                <img
-                  src={getModeloImagem(modeloAtual)}
-                  alt={modeloAtual.nome_modelo}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <p className="font-medium text-sm">{modeloAtual.nome_modelo}</p>
-                <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0">
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
             </div>
           )}
         </div>
