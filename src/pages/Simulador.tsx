@@ -742,18 +742,18 @@ ${linhasFormatadas}`;
 
           {modeloSelecionado && modeloAtual && (
             <div className="mt-3 p-4 bg-muted rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <p className="font-medium text-sm">{modeloAtual.nome_modelo}</p>
-                <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0">
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              <div className="w-full h-32 bg-white rounded overflow-hidden">
+              <div className="w-full h-32 bg-white rounded overflow-hidden mb-3">
                 <img
                   src={getModeloImagem(modeloAtual)}
                   alt={modeloAtual.nome_modelo}
                   className="w-full h-full object-contain"
                 />
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-sm">{modeloAtual.nome_modelo}</p>
+                <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0">
+                  <X className="h-3.5 w-3.5" />
+                </Button>
               </div>
             </div>
           )}
