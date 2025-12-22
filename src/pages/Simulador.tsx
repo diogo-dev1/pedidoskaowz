@@ -751,7 +751,6 @@ ${linhasFormatadas}`;
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{modeloAtual.nome_modelo}</p>
-                <p className="text-xs text-muted-foreground">R$ {modeloAtual.preco_base.toFixed(2)}</p>
               </div>
               <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0">
                 <X className="h-3.5 w-3.5" />
@@ -845,7 +844,7 @@ ${linhasFormatadas}`;
                       onCheckedChange={(checked) => setLaser(checked as boolean)}
                       className="h-3.5 w-3.5"
                     />
-                    <Label htmlFor="laser" className="text-xs cursor-pointer">Personalização à Laser (+R$30)</Label>
+                    <Label htmlFor="laser" className="text-xs cursor-pointer">Personalização à Laser</Label>
                     <InfoEtapaModal etapaKey="laser" />
                   </div>
                   {laser && (
@@ -952,7 +951,6 @@ ${linhasFormatadas}`;
                     }`}
                   >
                     {produto.nome_produto} {quantidade > 0 && `(${quantidade})`}
-                    <span className="ml-1 text-[10px] opacity-70">R${produto.preco_unitario.toFixed(0)}</span>
                   </button>
                 );
               })}
@@ -1004,11 +1002,7 @@ ${linhasFormatadas}`;
       {/* Bottom bar fixo */}
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50">
         <div className="px-3 py-3">
-          <div className="flex items-center justify-between gap-2 max-w-5xl mx-auto">
-            <div>
-              <p className="text-[10px] text-muted-foreground">Total</p>
-              <p className="text-lg font-bold text-accent">R$ {valorTotalCalculado.toFixed(2)}</p>
-            </div>
+          <div className="flex items-center justify-end gap-2 max-w-5xl mx-auto">
             <div className="flex gap-2">
               {modeloSelecionado && (
                 <>
@@ -1358,7 +1352,6 @@ ${linhasFormatadas}`;
                       {produtosAdicionais.filter(p => (quantidadesProdutos[p.id] || 0) > 0).map(produto => (
                         <div key={produto.id} className="flex justify-between text-muted-foreground">
                           <span>{produto.nome_produto} x{quantidadesProdutos[produto.id]}</span>
-                          <span>R$ {(produto.preco_unitario * quantidadesProdutos[produto.id]).toFixed(2)}</span>
                         </div>
                       ))}
                       {observacoesProdutos && (
@@ -1368,10 +1361,6 @@ ${linhasFormatadas}`;
                   </div>
                 )}
 
-                <div className="border-t border-border pt-3 flex justify-between items-center">
-                  <span className="font-semibold">Total:</span>
-                  <span className="text-xl font-bold text-accent">R$ {valorTotalCalculado.toFixed(2)}</span>
-                </div>
 
                 <div className="text-xs text-muted-foreground text-center">
                   Vendedor: {profile?.nome_vendedor || '-'}
