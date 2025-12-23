@@ -175,14 +175,17 @@ export default function Simulador() {
   const empunhaduraAtual = componentes.find(c => c.id === empunhaduraSelecionada);
   const bainhaAtual = componentes.find(c => c.id === bainhaSelecionada);
 
+  const espacadorAtualCalc = componentes.find(c => c.id === espacadorSelecionado);
+
   const calcularSubtotal = (): number => {
     const precoBase = modeloAtual?.preco_base || 0;
     const precoAco = acoAtual?.preco_adicional || 0;
     const precoAcabamento = acabamentoAtual?.preco_adicional || 0;
     const precoEmpunhadura = empunhaduraAtual?.preco_adicional || 0;
     const precoBainha = bainhaAtual?.preco_adicional || 0;
+    const precoEspacador = espacadorAtualCalc?.preco_adicional || 0;
     const precoLaser = laser ? 30 : 0;
-    return precoBase + precoAco + precoAcabamento + precoEmpunhadura + precoBainha + precoLaser;
+    return precoBase + precoAco + precoAcabamento + precoEmpunhadura + precoBainha + precoEspacador + precoLaser;
   };
 
   const valorTotalCalculado = useMemo(() => {
@@ -485,13 +488,14 @@ export default function Simulador() {
 
       const descricoesPedidos = todasLaminas.map((lamina, index) => {
         const empunhaduraInfo = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
-        const desc = `${lamina.modelo?.nome_modelo || ''} ${lamina.aco?.nome_opcao || ''} ${lamina.acabamento?.nome_opcao || ''} empunhadura em ${empunhaduraInfo} ${lamina.bainha?.nome_opcao || ''}`;
+        const espacadorInfo = lamina.espacador ? ` espaçador ${lamina.espacador.nome_opcao}` : '';
+        const desc = `${lamina.modelo?.nome_modelo || ''} ${lamina.aco?.nome_opcao || ''} ${lamina.acabamento?.nome_opcao || ''} empunhadura em ${empunhaduraInfo} ${lamina.bainha?.nome_opcao || ''}${espacadorInfo}`;
         return `Lâmina ${index + 1}: ${desc}`;
       }).join('\n');
 
       const linhasFormatadas = todasLaminas.map((lamina) => {
         const empunhaduraInfo = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
-        return `${nomeCompleto}, ${lamina.modelo?.nome_modelo || ''}, ${lamina.aco?.nome_opcao || ''}, ${lamina.acabamento?.nome_opcao || ''}, ${empunhaduraInfo}, ${lamina.bainha?.nome_opcao || ''}, ${lamina.corBainha || ''}`;
+        return `${nomeCompleto}, ${lamina.modelo?.nome_modelo || ''}, ${lamina.aco?.nome_opcao || ''}, ${lamina.acabamento?.nome_opcao || ''}, ${empunhaduraInfo}, ${lamina.bainha?.nome_opcao || ''}, ${lamina.corBainha || ''}, ${lamina.espacador?.nome_opcao || ''}`;
       }).join('\n');
 
       const personalizacoesLaser = todasLaminas
@@ -571,6 +575,7 @@ ${linhasFormatadas}`;
         acabamento: lamina.acabamento?.nome_opcao || '',
         bainha: lamina.bainha?.nome_opcao || '',
         corBainha: lamina.corBainha,
+        espacador: lamina.espacador?.nome_opcao || '',
         laser: lamina.laser,
         textoLaser: lamina.textoLaser,
         localGravacao: lamina.localGravacao.join(', '),
@@ -1100,6 +1105,12 @@ ${linhasFormatadas}`;
                     <div className="bg-muted p-2.5 rounded-lg">
                       <p className="text-muted-foreground text-xs">Cor da Bainha</p>
                       <p className="font-medium">{laminaModalAberta.corBainha}</p>
+                    </div>
+                  )}
+                  {laminaModalAberta.espacador && (
+                    <div className="bg-muted p-2.5 rounded-lg">
+                      <p className="text-muted-foreground text-xs">Espaçador</p>
+                      <p className="font-medium">{laminaModalAberta.espacador.nome_opcao}</p>
                     </div>
                   )}
                   {laminaModalAberta.embalagem && (
