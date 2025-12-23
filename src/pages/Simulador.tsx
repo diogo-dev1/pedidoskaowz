@@ -27,7 +27,7 @@ interface ModeloBase {
 interface OpcaoComponente {
   id: string;
   nome_opcao: string;
-  tipo_opcao: 'Aço' | 'Empunhadura' | 'Acabamento' | 'Bainha' | 'Cor de Bainha' | 'Embalagem';
+  tipo_opcao: 'Aço' | 'Empunhadura' | 'Acabamento' | 'Bainha' | 'Cor de Bainha' | 'Embalagem' | 'Espaçador';
   preco_adicional: number;
 }
 
@@ -46,6 +46,7 @@ interface LaminaCustomizada {
   dragonScale: boolean;
   bainha: OpcaoComponente | null;
   corBainha: string;
+  espacador: OpcaoComponente | null;
   laser: boolean;
   textoLaser: string;
   localGravacao: string[];
@@ -72,6 +73,7 @@ export default function Simulador() {
   const [dragonScale, setDragonScale] = useState(false);
   const [bainhaSelecionada, setBainhaSelecionada] = useState<string>('');
   const [corBainha, setCorBainha] = useState<string>('');
+  const [espacadorSelecionado, setEspacadorSelecionado] = useState<string>('');
   const [laser, setLaser] = useState(false);
   const [textoLaser, setTextoLaser] = useState('');
   const [localGravacao, setLocalGravacao] = useState<string[]>([]);
@@ -154,6 +156,7 @@ export default function Simulador() {
   const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
   const coresBainha = componentes.filter(c => c.tipo_opcao === 'Cor de Bainha');
   const embalagens = componentes.filter(c => c.tipo_opcao === 'Embalagem');
+  const espacadores = componentes.filter(c => c.tipo_opcao === 'Espaçador');
 
   const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
 
@@ -198,6 +201,8 @@ export default function Simulador() {
       return;
     }
 
+    const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
+    
     const novaLamina: LaminaCustomizada = {
       id: `${Date.now()}-${Math.random()}`,
       modelo: modeloAtual || null,
@@ -207,6 +212,7 @@ export default function Simulador() {
       dragonScale,
       bainha: bainhaAtual || null,
       corBainha,
+      espacador: espacadorAtual || null,
       laser,
       textoLaser,
       localGravacao,
@@ -234,6 +240,7 @@ export default function Simulador() {
     setDragonScale(false);
     setBainhaSelecionada('');
     setCorBainha('');
+    setEspacadorSelecionado('');
     setLaser(false);
     setTextoLaser('');
     setLocalGravacao([]);
@@ -455,6 +462,7 @@ export default function Simulador() {
     try {
       const todasLaminas = [...laminasCustomizadas];
       if (modeloSelecionado && modeloAtual) {
+        const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
         todasLaminas.push({
           id: crypto.randomUUID(),
           modelo: modeloAtual,
@@ -464,6 +472,7 @@ export default function Simulador() {
           dragonScale,
           bainha: bainhaAtual || null,
           corBainha,
+          espacador: espacadorAtual || null,
           laser,
           textoLaser,
           localGravacao,
@@ -534,6 +543,7 @@ ${linhasFormatadas}`;
     try {
       const todasLaminas = [...laminasCustomizadas];
       if (modeloSelecionado && modeloAtual) {
+        const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
         todasLaminas.push({
           id: crypto.randomUUID(),
           modelo: modeloAtual,
@@ -543,6 +553,7 @@ ${linhasFormatadas}`;
           dragonScale,
           bainha: bainhaAtual || null,
           corBainha,
+          espacador: espacadorAtual || null,
           laser,
           textoLaser,
           localGravacao,
@@ -822,6 +833,17 @@ ${linhasFormatadas}`;
                   </SelectContent>
                 </Select>
               )}
+            </div>
+
+            {/* Espaçador */}
+            <div className="space-y-2">
+              <SelectionChips 
+                options={espacadores} 
+                selected={espacadorSelecionado} 
+                onSelect={setEspacadorSelecionado} 
+                label="Espaçador"
+                etapaKey="espacador"
+              />
             </div>
 
             {/* Extras colapsável */}
