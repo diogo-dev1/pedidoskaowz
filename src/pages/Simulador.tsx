@@ -440,8 +440,8 @@ export default function Simulador() {
   };
 
   const handleFinalizarPedido = async () => {
-    if (!nomeCompleto || !formaPagamento) {
-      toast.error('Preencha pelo menos o nome e a forma de pagamento');
+    if (!nomeCompleto.trim()) {
+      toast.error('Preencha pelo menos o nome do cliente');
       return;
     }
 
