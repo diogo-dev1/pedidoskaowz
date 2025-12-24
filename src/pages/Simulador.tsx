@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
-import { Trash2, Plus, Search, Check, Eye, Copy, X, Image, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, Plus, Search, Check, Eye, Copy, X, Image, FileText, ChevronDown, ChevronUp, Pencil, Minus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { InfoEtapaModal } from '@/components/InfoEtapaModal';
 import edcKnife from '@/assets/edc-knife.svg';
@@ -54,6 +54,7 @@ interface LaminaCustomizada {
   embalagemGravacao: boolean;
   embalagemTextoGravacao: string;
   subtotal: number;
+  quantidade: number;
 }
 
 const LOCAIS_GRAVACAO = ['Dorso Superior', 'Dorso Inferior', 'Lâmina'];
@@ -91,6 +92,9 @@ export default function Simulador() {
   // Modal para visualizar lâmina
   const [laminaModalAberta, setLaminaModalAberta] = useState<LaminaCustomizada | null>(null);
   const laminaModalRef = useRef<HTMLDivElement>(null);
+  
+  // Estado para edição de lâmina
+  const [laminaEmEdicao, setLaminaEmEdicao] = useState<string | null>(null);
   const pedidoExportRef = useRef<HTMLDivElement>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -189,7 +193,7 @@ export default function Simulador() {
   };
 
   const valorTotalCalculado = useMemo(() => {
-    const totalLaminas = laminasCustomizadas.reduce((sum, l) => sum + l.subtotal, 0);
+    const totalLaminas = laminasCustomizadas.reduce((sum, l) => sum + (l.subtotal * l.quantidade), 0);
     const subtotalAtual = modeloSelecionado ? calcularSubtotal() : 0;
     const precoProdutosAdicionais = produtosAdicionais.reduce((total, produto) => {
       const quantidade = quantidadesProdutos[produto.id] || 0;
@@ -223,6 +227,7 @@ export default function Simulador() {
       embalagemGravacao,
       embalagemTextoGravacao,
       subtotal: calcularSubtotal(),
+      quantidade: 1,
     };
 
     setLaminasCustomizadas([...laminasCustomizadas, novaLamina]);
@@ -232,7 +237,97 @@ export default function Simulador() {
 
   const removerLamina = (id: string) => {
     setLaminasCustomizadas(laminasCustomizadas.filter(l => l.id !== id));
+    setLaminaEmEdicao(null);
     toast.success('Lâmina removida');
+  };
+
+  // Função para editar uma lâmina existente
+  const editarLamina = (lamina: LaminaCustomizada) => {
+    // Carregar os valores da lâmina no formulário
+    setModeloSelecionado(lamina.modelo?.id || '');
+    setAcoSelecionado(lamina.aco?.id || '');
+    setAcabamentoSelecionado(lamina.acabamento?.id || '');
+    setEmpunhaduraSelecionada(lamina.empunhadura?.id || '');
+    setDragonScale(lamina.dragonScale);
+    setBainhaSelecionada(lamina.bainha?.id || '');
+    setCorBainha(lamina.corBainha);
+    setEspacadorSelecionado(lamina.espacador?.id || '');
+    setLaser(lamina.laser);
+    setTextoLaser(lamina.textoLaser);
+    setLocalGravacao(lamina.localGravacao);
+    setEmbalagem(lamina.embalagem);
+    setEmbalagemGravacao(lamina.embalagemGravacao);
+    setEmbalagemTextoGravacao(lamina.embalagemTextoGravacao);
+    setLaminaEmEdicao(lamina.id);
+    setLaminaModalAberta(null);
+    toast.info('Editando lâmina - faça as alterações e clique em Salvar');
+  };
+
+  // Função para salvar alterações na lâmina em edição
+  const salvarEdicaoLamina = () => {
+    if (!laminaEmEdicao || !modeloSelecionado) {
+      toast.error('Selecione um modelo');
+      return;
+    }
+
+    const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
+    const laminaExistente = laminasCustomizadas.find(l => l.id === laminaEmEdicao);
+    
+    const laminaAtualizada: LaminaCustomizada = {
+      id: laminaEmEdicao,
+      modelo: modeloAtual || null,
+      aco: acoAtual || null,
+      acabamento: acabamentoAtual || null,
+      empunhadura: empunhaduraAtual || null,
+      dragonScale,
+      bainha: bainhaAtual || null,
+      corBainha,
+      espacador: espacadorAtual || null,
+      laser,
+      textoLaser,
+      localGravacao,
+      embalagem,
+      embalagemGravacao,
+      embalagemTextoGravacao,
+      subtotal: calcularSubtotal(),
+      quantidade: laminaExistente?.quantidade || 1,
+    };
+
+    setLaminasCustomizadas(laminasCustomizadas.map(l => 
+      l.id === laminaEmEdicao ? laminaAtualizada : l
+    ));
+    limparFormulario();
+    setLaminaEmEdicao(null);
+    toast.success('Lâmina atualizada!');
+  };
+
+  // Função para cancelar edição
+  const cancelarEdicao = () => {
+    limparFormulario();
+    setLaminaEmEdicao(null);
+  };
+
+  // Função para duplicar uma lâmina
+  const duplicarLamina = (lamina: LaminaCustomizada) => {
+    const novaLamina: LaminaCustomizada = {
+      ...lamina,
+      id: `${Date.now()}-${Math.random()}`,
+      quantidade: 1,
+    };
+    setLaminasCustomizadas([...laminasCustomizadas, novaLamina]);
+    toast.success('Lâmina duplicada!');
+  };
+
+  // Função para alterar quantidade de uma lâmina
+  const alterarQuantidadeLamina = (id: string, novaQuantidade: number) => {
+    if (novaQuantidade < 1) return;
+    setLaminasCustomizadas(prev => prev.map(l => 
+      l.id === id ? { ...l, quantidade: novaQuantidade } : l
+    ));
+    // Atualizar também o modal se estiver aberto
+    if (laminaModalAberta?.id === id) {
+      setLaminaModalAberta(prev => prev ? { ...prev, quantidade: novaQuantidade } : null);
+    }
   };
 
   const limparFormulario = () => {
@@ -483,6 +578,7 @@ export default function Simulador() {
           embalagemGravacao,
           embalagemTextoGravacao,
           subtotal: calcularSubtotal(),
+          quantidade: 1,
         });
       }
 
@@ -565,6 +661,7 @@ ${linhasFormatadas}`;
           embalagemGravacao,
           embalagemTextoGravacao,
           subtotal: calcularSubtotal(),
+          quantidade: 1,
         });
       }
 
@@ -955,31 +1052,51 @@ ${linhasFormatadas}`;
         {produtosAdicionais.length > 0 && (
           <div className="bg-card rounded-lg border border-border p-3 mb-3">
             <h3 className="text-sm font-medium mb-2">Produtos Adicionais</h3>
-            <div className="flex flex-wrap gap-1.5 mb-3">
+            <div className="space-y-2 mb-3">
               {produtosAdicionais.map((produto) => {
                 const quantidade = quantidadesProdutos[produto.id] || 0;
                 return (
-                  <button
+                  <div
                     key={produto.id}
-                    onClick={() => setQuantidadesProdutos(prev => ({
-                      ...prev,
-                      [produto.id]: (prev[produto.id] || 0) + 1
-                    }))}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      setQuantidadesProdutos(prev => ({
-                        ...prev,
-                        [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1)
-                      }));
-                    }}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    className={`flex items-center justify-between p-2 rounded-lg transition-all ${
                       quantidade > 0
-                        ? 'bg-accent text-accent-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        ? 'bg-accent/10 border border-accent/30'
+                        : 'bg-muted'
                     }`}
                   >
-                    {produto.nome_produto} {quantidade > 0 && `(${quantidade})`}
-                  </button>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate">{produto.nome_produto}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        R$ {produto.preco_unitario.toFixed(2)} un.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setQuantidadesProdutos(prev => ({
+                          ...prev,
+                          [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1)
+                        }))}
+                        className="h-6 w-6 p-0"
+                        disabled={quantidade <= 0}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="text-xs font-medium w-4 text-center">{quantidade}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setQuantidadesProdutos(prev => ({
+                          ...prev,
+                          [produto.id]: (prev[produto.id] || 0) + 1
+                        }))}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -995,20 +1112,79 @@ ${linhasFormatadas}`;
         {/* Lâminas Adicionadas - Inline compacto */}
         {laminasCustomizadas.length > 0 && (
           <div className="bg-card rounded-lg border border-border p-3 mb-3">
-            <h3 className="font-semibold text-sm mb-2">Lâminas ({laminasCustomizadas.length})</h3>
+            <h3 className="font-semibold text-sm mb-2">
+              Lâminas ({laminasCustomizadas.reduce((sum, l) => sum + l.quantidade, 0)})
+            </h3>
             <div className="space-y-1.5">
               {laminasCustomizadas.map((lamina) => (
                 <div
                   key={lamina.id}
-                  className="p-2 bg-muted rounded flex items-center justify-between gap-2 cursor-pointer hover:bg-muted/80"
-                  onClick={() => setLaminaModalAberta(lamina)}
+                  className={`p-2 rounded flex items-center justify-between gap-2 ${
+                    laminaEmEdicao === lamina.id 
+                      ? 'bg-accent/20 border border-accent' 
+                      : 'bg-muted hover:bg-muted/80'
+                  }`}
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{lamina.modelo?.nome_modelo}</p>
+                  <div 
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => setLaminaModalAberta(lamina)}
+                  >
+                    <p className="text-xs font-medium truncate">
+                      {lamina.modelo?.nome_modelo}
+                      {lamina.quantidade > 1 && (
+                        <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5">
+                          x{lamina.quantidade}
+                        </Badge>
+                      )}
+                    </p>
                     <p className="text-[10px] text-muted-foreground truncate">
                       {[lamina.aco?.nome_opcao, lamina.acabamento?.nome_opcao].filter(Boolean).join(' • ')}
                     </p>
                   </div>
+                  
+                  {/* Controles de quantidade */}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        alterarQuantidadeLamina(lamina.id, lamina.quantidade - 1);
+                      }}
+                      className="h-6 w-6 p-0"
+                      disabled={lamina.quantidade <= 1}
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="text-xs font-medium w-4 text-center">{lamina.quantidade}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        alterarQuantidadeLamina(lamina.id, lamina.quantidade + 1);
+                      }}
+                      className="h-6 w-6 p-0"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+
+                  {/* Botão editar */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      editarLamina(lamina);
+                    }}
+                    className="h-6 w-6 p-0"
+                    title="Editar"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+
+                  {/* Botão remover */}
                   <Button
                     size="sm"
                     variant="ghost"
@@ -1016,7 +1192,8 @@ ${linhasFormatadas}`;
                       e.stopPropagation();
                       removerLamina(lamina.id);
                     }}
-                    className="h-6 w-6 p-0"
+                    className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                    title="Remover"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -1032,21 +1209,35 @@ ${linhasFormatadas}`;
         <div className="px-3 py-3">
           <div className="flex items-center justify-end gap-2 max-w-5xl mx-auto">
             <div className="flex gap-2">
-              {modeloSelecionado && (
+              {laminaEmEdicao ? (
                 <>
-                  <Button onClick={limparFormulario} variant="outline" size="sm" className="text-xs h-9">
-                    Limpar
+                  <Button onClick={cancelarEdicao} variant="outline" size="sm" className="text-xs h-9">
+                    Cancelar
                   </Button>
-                  <Button onClick={adicionarLamina} variant="outline" size="sm" className="text-xs h-9 border-accent text-accent">
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    Adicionar
+                  <Button onClick={salvarEdicaoLamina} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
+                    <Check className="h-3.5 w-3.5 mr-1" />
+                    Salvar Alterações
                   </Button>
                 </>
-              )}
-              {(laminasCustomizadas.length > 0 || modeloSelecionado) && (
-                <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
-                  Fechar Pedido
-                </Button>
+              ) : (
+                <>
+                  {modeloSelecionado && (
+                    <>
+                      <Button onClick={limparFormulario} variant="outline" size="sm" className="text-xs h-9">
+                        Limpar
+                      </Button>
+                      <Button onClick={adicionarLamina} variant="outline" size="sm" className="text-xs h-9 border-accent text-accent">
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Adicionar
+                      </Button>
+                    </>
+                  )}
+                  {(laminasCustomizadas.length > 0 || modeloSelecionado) && (
+                    <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
+                      Fechar Pedido
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -1135,6 +1326,29 @@ ${linhasFormatadas}`;
                 )}
               </div>
 
+              {/* Controle de quantidade no modal */}
+              <div className="flex items-center justify-center gap-3 p-3 bg-muted rounded-lg">
+                <span className="text-sm font-medium">Quantidade:</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => alterarQuantidadeLamina(laminaModalAberta.id, laminaModalAberta.quantidade - 1)}
+                  disabled={laminaModalAberta.quantidade <= 1}
+                  className="h-8 w-8 p-0"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="text-lg font-bold w-8 text-center">{laminaModalAberta.quantidade}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => alterarQuantidadeLamina(laminaModalAberta.id, laminaModalAberta.quantidade + 1)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -1153,6 +1367,28 @@ ${linhasFormatadas}`;
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   PDF
+                </Button>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => editarLamina(laminaModalAberta)}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    duplicarLamina(laminaModalAberta);
+                    setLaminaModalAberta(null);
+                  }}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Duplicar
                 </Button>
               </div>
 
