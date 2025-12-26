@@ -1,5 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Calculator, Settings, LogOut, User, MessageSquare, BookOpen, ShoppingBag, Layers, Package, Info, Boxes } from 'lucide-react';
+import { Calculator, Settings, LogOut, User, MessageSquare, BookOpen, ShoppingBag, Layers, Package, Info, Boxes, CheckSquare } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
   Sidebar,
@@ -27,6 +27,7 @@ export function AppSidebar() {
     { title: 'Catálogo', url: '/catalogo', icon: ShoppingBag },
     { title: 'Auxílio de Vendas', url: '/auxilio-vendas', icon: BookOpen },
     { title: 'Mensagens Padrão', url: '/mensagens', icon: MessageSquare },
+    { title: 'Tarefas', url: '/tarefas', icon: CheckSquare },
   ];
 
   const adminItems = (profile?.cargo === 'admin' || profile?.cargo === 'vendedor') ? [
