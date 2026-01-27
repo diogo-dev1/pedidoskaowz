@@ -743,7 +743,8 @@ ${linhasFormatadas}`;
   };
 
   // Componente de seleção inline compacto
-  const SelectionChips = ({ 
+  // Componente colapsável para seleção limpa
+  const CollapsibleSelect = ({ 
     options, 
     selected, 
     onSelect, 
@@ -755,29 +756,55 @@ ${linhasFormatadas}`;
     onSelect: (id: string) => void, 
     label: string,
     etapaKey?: string 
-  }) => (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
-        {etapaKey && <InfoEtapaModal etapaKey={etapaKey} />}
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {options.map(opt => (
-          <button
-            key={opt.id}
-            onClick={() => onSelect(opt.id)}
-            className={`px-2.5 py-1.5 rounded-md text-xs transition-all ${
-              selected === opt.id
-                ? 'bg-accent text-accent-foreground font-medium'
-                : 'bg-muted hover:bg-muted/80 text-foreground'
-            }`}
-          >
-            {opt.nome_opcao}
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const selectedOption = options.find(o => o.id === selected);
+
+    return (
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between p-2.5 rounded-lg bg-muted hover:bg-muted/80 transition-all">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">{label}</span>
+              {selectedOption && (
+                <Badge variant="secondary" className="text-xs font-medium">
+                  {selectedOption.nome_opcao}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              {etapaKey && (
+                <span onClick={(e) => e.stopPropagation()}>
+                  <InfoEtapaModal etapaKey={etapaKey} />
+                </span>
+              )}
+              {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </div>
           </button>
-        ))}
-      </div>
-    </div>
-  );
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-2">
+          <div className="flex flex-wrap gap-1.5">
+            {options.map(opt => (
+              <button
+                key={opt.id}
+                onClick={() => {
+                  onSelect(opt.id);
+                  setIsOpen(false);
+                }}
+                className={`px-2.5 py-1.5 rounded-md text-xs transition-all ${
+                  selected === opt.id
+                    ? 'bg-accent text-accent-foreground font-medium'
+                    : 'bg-background border border-border hover:border-accent/50'
+                }`}
+              >
+                {opt.nome_opcao}
+              </button>
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  };
 
   if (loading) {
     return <div className="py-8 text-center text-muted-foreground">Carregando opções...</div>;
@@ -873,10 +900,10 @@ ${linhasFormatadas}`;
           )}
         </div>
 
-        {/* Customização - Grid de chips */}
+        {/* Customização - Collapsibles */}
         {modeloSelecionado && (
-          <div className="bg-card rounded-lg border border-border p-3 mb-3 space-y-4">
-            <SelectionChips 
+          <div className="bg-card rounded-lg border border-border p-3 mb-3 space-y-2">
+            <CollapsibleSelect 
               options={acos} 
               selected={acoSelecionado} 
               onSelect={setAcoSelecionado} 
@@ -884,7 +911,7 @@ ${linhasFormatadas}`;
               etapaKey="aco"
             />
 
-            <SelectionChips 
+            <CollapsibleSelect 
               options={acabamentos} 
               selected={acabamentoSelecionado} 
               onSelect={setAcabamentoSelecionado} 
@@ -892,8 +919,8 @@ ${linhasFormatadas}`;
               etapaKey="acabamento"
             />
 
-            <div className="space-y-2">
-              <SelectionChips 
+            <div className="space-y-1.5">
+              <CollapsibleSelect 
                 options={empunhaduras} 
                 selected={empunhaduraSelecionada} 
                 onSelect={setEmpunhaduraSelecionada} 
@@ -901,7 +928,7 @@ ${linhasFormatadas}`;
                 etapaKey="empunhadura"
               />
               {empunhaduraSelecionada && (
-                <div className="flex items-center gap-2 pl-1">
+                <div className="flex items-center gap-2 pl-3">
                   <Checkbox
                     id="dragonScale"
                     checked={dragonScale}
@@ -913,8 +940,8 @@ ${linhasFormatadas}`;
               )}
             </div>
 
-            <div className="space-y-2">
-              <SelectionChips 
+            <div className="space-y-1.5">
+              <CollapsibleSelect 
                 options={bainhas} 
                 selected={bainhaSelecionada} 
                 onSelect={setBainhaSelecionada} 
@@ -923,7 +950,7 @@ ${linhasFormatadas}`;
               />
               {bainhaSelecionada && (
                 <Select value={corBainha} onValueChange={setCorBainha}>
-                  <SelectTrigger className="h-8 text-xs">
+                  <SelectTrigger className="h-8 text-xs ml-3">
                     <SelectValue placeholder="Cor da bainha" />
                   </SelectTrigger>
                   <SelectContent>
@@ -938,15 +965,13 @@ ${linhasFormatadas}`;
             </div>
 
             {/* Espaçador */}
-            <div className="space-y-2">
-              <SelectionChips 
-                options={espacadores} 
-                selected={espacadorSelecionado} 
-                onSelect={setEspacadorSelecionado} 
-                label="Espaçador"
-                etapaKey="espacador"
-              />
-            </div>
+            <CollapsibleSelect 
+              options={espacadores} 
+              selected={espacadorSelecionado} 
+              onSelect={setEspacadorSelecionado} 
+              label="Espaçador"
+              etapaKey="espacador"
+            />
 
             {/* Extras colapsável */}
             <Collapsible open={showExtras} onOpenChange={setShowExtras}>
