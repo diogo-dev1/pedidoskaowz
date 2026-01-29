@@ -162,7 +162,7 @@ export default function Simulador() {
   const embalagens = componentes.filter(c => c.tipo_opcao === 'Embalagem');
   const espacadores = componentes.filter(c => c.tipo_opcao === 'Espaçador');
 
-  const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
+  const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR'];
 
   const modelosFiltrados = modelos.filter(m => {
     const matchBusca = m.nome_modelo.toLowerCase().includes(buscaModelo.toLowerCase());
