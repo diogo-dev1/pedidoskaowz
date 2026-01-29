@@ -325,11 +325,27 @@ export default function Catalogo() {
     carregarModelos();
   };
 
-  const downloadMidia = (url: string, nome: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = nome;
-    link.click();
+  const downloadMidia = async (url: string, nome: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = nome.split('/').pop() || nome;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      toast({
+        title: 'Download iniciado!',
+        description: 'A mídia está sendo baixada.',
+      });
+    } catch (err) {
+      console.error('Erro no download:', err);
+      // Fallback para abrir em nova aba
+      window.open(url, '_blank');
+    }
   };
 
   const copiarLinkMidia = async (url: string) => {
