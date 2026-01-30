@@ -236,15 +236,9 @@ async function exportarParaProducao(
 
       console.log(`Lâmina ${i + 1} inserida, executando script lancarPedido...`);
 
-      // 2. Executar o script "lancarPedido" via Web App
-      const scriptResponse = await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'lancarPedido',
-        }),
+      // 2. Executar o script "lancarPedido" via Web App (GET request)
+      const scriptResponse = await fetch(`${GOOGLE_SCRIPT_WEB_APP_URL}?action=lancarPedido`, {
+        method: 'GET',
       });
 
       if (!scriptResponse.ok) {
