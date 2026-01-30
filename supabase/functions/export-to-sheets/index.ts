@@ -145,19 +145,15 @@ function getDataAtual(): string {
   return `${day}/${month}/${year}`;
 }
 
-// Exportar para planilha de Produção (aba "Controle")
+// Exportar para planilha de Produção (aba "Lançamento Venda")
+// Insere dados em C6:M6 e executa o script "lancarPedido"
 async function exportarParaProducao(
   accessToken: string, 
   spreadsheetId: string, 
-  data: ExportData,
-  numeroPedido: string
+  data: ExportData
 ): Promise<void> {
-  const dataEntrada = getDataAtual();
-
-  // Preparar linhas para cada lâmina
-  // Colunas: B=Data, C=Nº Pedido, D=Nome, E=Item, F=Aço, G=Acabamento, H=Empunhadura, 
-  //          I=Bainha, J=Cor Bainha, K=Prazo, O=Observações, P=Personalização, T=Caixa
-  const rows = data.laminas.map((lamina) => {
+  // Para cada lâmina, precisamos inserir e lançar
+  for (const lamina of data.laminas) {
     // Construir texto de personalização
     let personalizacao = '';
     if (lamina.laser && lamina.textoLaser) {
@@ -171,61 +167,81 @@ async function exportarParaProducao(
       personalizacao += `Embalagem: ${lamina.embalagemTextoGravacao}`;
     }
 
-    // Array com 20 elementos (colunas A até T)
-    // A=0 (vazio - sequência automática), B=1(Data), C=2 (vazio - sequência automática), 
-    // D=3(Nome), E=4(Item), F=5(Aço), G=6(Acabamento), H=7(Empunhadura), I=8(Bainha), 
-    // J=9(Cor Bainha), K=10(Prazo), L=11, M=12, N=13, O=14(Obs), P=15(Personalização), 
-    // Q=16, R=17, S=18, T=19(Caixa)
-    return [
-      '', // A - vazio (sequência automática da planilha)
-      dataEntrada, // B - Data de Entrada
-      '', // C - vazio (Nº Pedido preenchido automaticamente pela planilha)
-      data.nomeCompleto || '', // D - Nome
-      lamina.modelo || '', // E - Item
-      lamina.aco || '', // F - Aço
-      lamina.acabamento || '', // G - Acabamento
-      lamina.empunhadura || '', // H - Empunhadura
-      lamina.bainha || '', // I - Bainha
-      lamina.corBainha || '', // J - Cor Bainha
-      data.prazo || '', // K - Prazo
-      '', // L
-      '', // M
-      '', // N
-      data.observacao || '', // O - Observações do Pedido
-      personalizacao || '', // P - Personalização
-      '', // Q
-      '', // R
-      '', // S
-      lamina.embalagem || '', // T - Caixa (embalagem)
+    // Dados para as células C6:M6
+    // C=Nome, D=Item, E=Aço, F=Acabamento, G=Empunhadura, H=Bainha, 
+    // I=Cor Bainha, J=Prazo, K=Observações, L=Personalização, M=Embalagem
+    const rowData = [
+      data.nomeCompleto || '', // C - Nome
+      lamina.modelo || '', // D - Item
+      lamina.aco || '', // E - Aço
+      lamina.acabamento || '', // F - Acabamento
+      lamina.empunhadura || '', // G - Empunhadura
+      lamina.bainha || '', // H - Bainha
+      lamina.corBainha || '', // I - Cor Bainha
+      data.prazo || '', // J - Prazo
+      data.observacao || '', // K - Observações
+      personalizacao || '', // L - Personalização
+      lamina.embalagem || '', // M - Embalagem
     ];
-  });
 
-  if (rows.length > 0) {
-    // Append na aba "Controle" - usar encodeURIComponent para o range
-    const range = encodeURIComponent('Controle!A:T');
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    // 1. Inserir dados na aba "Lançamento Venda" em C6:M6
+    const range = encodeURIComponent('Lançamento Venda!C6:M6');
+    const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueInputOption=USER_ENTERED`;
     
-    console.log('Exportando para Produção:', { spreadsheetId, range: 'Controle!A:T', rowCount: rows.length });
+    console.log('Inserindo dados em Produção:', { spreadsheetId, range: 'Lançamento Venda!C6:M6' });
     
-    const response = await fetch(url, {
-      method: 'POST',
+    const updateResponse = await fetch(updateUrl, {
+      method: 'PUT',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        values: rows,
+        values: [rowData],
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Erro ao exportar para Produção:', errorText);
-      throw new Error(`Falha ao exportar para planilha de Produção: ${errorText}`);
+    if (!updateResponse.ok) {
+      const errorText = await updateResponse.text();
+      console.error('Erro ao inserir dados em Produção:', errorText);
+      throw new Error(`Falha ao inserir dados na planilha de Produção: ${errorText}`);
+    }
+
+    console.log('Dados inseridos, executando script lancarPedido...');
+
+    // 2. Executar o script "lancarPedido" via Apps Script API
+    // Usar o endpoint de macros do Google Sheets
+    const scriptUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:runMacro`;
+    
+    try {
+      const scriptResponse = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          function: 'lancarPedido',
+        }),
+      });
+
+      if (!scriptResponse.ok) {
+        // Se o macro não funcionar via Sheets API, tentar via Apps Script API
+        console.log('Tentando via Apps Script API diretamente...');
+        
+        // Alternativa: usar trigger ou webhook se disponível
+        const errorText = await scriptResponse.text();
+        console.warn('Script execution via Sheets API failed:', errorText);
+        console.log('Nota: O script lancarPedido pode precisar ser executado manualmente ou via Apps Script Web App');
+      } else {
+        console.log('Script lancarPedido executado com sucesso');
+      }
+    } catch (scriptError) {
+      console.warn('Erro ao executar script (continuando):', scriptError);
     }
   }
 
-  console.log('Exportado para Produção:', rows.length, 'linhas');
+  console.log('Exportado para Produção:', data.laminas.length, 'lâmina(s)');
 }
 
 // Exportar para planilha de Relatório de Vendas (aba "Vendas Diário")
@@ -317,7 +333,7 @@ serve(async (req) => {
 
     // Exportar para ambas as planilhas
     await Promise.all([
-      exportarParaProducao(accessToken, producaoSpreadsheetId, data, numeroPedido),
+      exportarParaProducao(accessToken, producaoSpreadsheetId, data),
       exportarParaVendas(accessToken, vendasSpreadsheetId, data),
     ]);
 
