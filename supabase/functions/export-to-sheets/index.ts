@@ -172,13 +172,14 @@ async function exportarParaProducao(
     }
 
     // Array com 20 elementos (colunas A até T)
-    // A=0, B=1(Data), C=2(Nº Pedido), D=3(Nome), E=4(Item), F=5(Aço), G=6(Acabamento), 
-    // H=7(Empunhadura), I=8(Bainha), J=9(Cor Bainha), K=10(Prazo), L=11, M=12, N=13, 
-    // O=14(Obs), P=15(Personalização), Q=16, R=17, S=18, T=19(Caixa)
+    // A=0 (vazio - sequência automática), B=1(Data), C=2 (vazio - sequência automática), 
+    // D=3(Nome), E=4(Item), F=5(Aço), G=6(Acabamento), H=7(Empunhadura), I=8(Bainha), 
+    // J=9(Cor Bainha), K=10(Prazo), L=11, M=12, N=13, O=14(Obs), P=15(Personalização), 
+    // Q=16, R=17, S=18, T=19(Caixa)
     return [
-      '', // A
+      '', // A - vazio (sequência automática da planilha)
       dataEntrada, // B - Data de Entrada
-      numeroPedido, // C - Nº Pedido
+      '', // C - vazio (Nº Pedido preenchido automaticamente pela planilha)
       data.nomeCompleto || '', // D - Nome
       lamina.modelo || '', // E - Item
       lamina.aco || '', // F - Aço
