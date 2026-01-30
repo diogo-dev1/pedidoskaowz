@@ -124,6 +124,7 @@ export default function Simulador() {
   const [origemCliente, setOrigemCliente] = useState('');
   const [observacao, setObservacao] = useState('');
   const [cupom, setCupom] = useState('');
+  const [prazo, setPrazo] = useState('');
 
   // Modal IA
   const [modalIAOpen, setModalIAOpen] = useState(false);
@@ -378,6 +379,7 @@ export default function Simulador() {
     setOrigemCliente('');
     setObservacao('');
     setCupom('');
+    setPrazo('');
     setPedidoFinalizado(false);
     setTextoFormatado('');
   };
@@ -733,6 +735,7 @@ ${linhasFormatadas}`;
         origemCliente,
         observacao,
         cupom,
+        prazo,
         laminas: laminasFormatadas,
         produtosAdicionais: produtosFormatados,
         valorTotal: valorTotalCalculado,
@@ -745,7 +748,7 @@ ${linhasFormatadas}`;
 
       if (error) throw error;
 
-      toast.success('Pedido exportado para Google Sheets com sucesso!');
+      toast.success('Pedido exportado para Produção e Vendas!');
     } catch (error) {
       console.error('Erro ao exportar para Google Sheets:', error);
       toast.error('Erro ao exportar para Google Sheets. Verifique as configurações.');
@@ -1608,9 +1611,15 @@ ${linhasFormatadas}`;
                       <Input id="cupom" value={cupom} onChange={(e) => setCupom(e.target.value)} />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="observacao">Observações</Label>
-                    <Input id="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="prazo">Prazo de Entrega</Label>
+                      <Input id="prazo" value={prazo} onChange={(e) => setPrazo(e.target.value)} placeholder="Ex: 30/06" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="observacao">Observações</Label>
+                      <Input id="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+                    </div>
                   </div>
                 </CollapsibleContent>
               </Collapsible>
