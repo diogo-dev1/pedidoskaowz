@@ -47,6 +47,7 @@ interface LaminaCustomizada {
   dragonScale: boolean;
   bainha: OpcaoComponente | null;
   corBainha: string;
+  corBainhaPersonalizada: string;
   espacador: OpcaoComponente | null;
   laser: boolean;
   textoLaser: string;
@@ -54,6 +55,7 @@ interface LaminaCustomizada {
   embalagem: string;
   embalagemGravacao: boolean;
   embalagemTextoGravacao: string;
+  observacoesLamina: string;
   subtotal: number;
   quantidade: number;
 }
@@ -76,6 +78,7 @@ export default function Simulador() {
   const [dragonScale, setDragonScale] = useState(false);
   const [bainhaSelecionada, setBainhaSelecionada] = useState<string>('');
   const [corBainha, setCorBainha] = useState<string>('');
+  const [corBainhaPersonalizada, setCorBainhaPersonalizada] = useState<string>('');
   const [espacadorSelecionado, setEspacadorSelecionado] = useState<string>('');
   const [laser, setLaser] = useState(false);
   const [textoLaser, setTextoLaser] = useState('');
@@ -83,6 +86,7 @@ export default function Simulador() {
   const [embalagem, setEmbalagem] = useState('');
   const [embalagemGravacao, setEmbalagemGravacao] = useState(false);
   const [embalagemTextoGravacao, setEmbalagemTextoGravacao] = useState('');
+  const [observacoesLamina, setObservacoesLamina] = useState('');
   const [buscaModelo, setBuscaModelo] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('');
 
@@ -213,6 +217,9 @@ export default function Simulador() {
 
     const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
     
+    // Determinar cor da bainha final (personalizada ou selecionada)
+    const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
+    
     const novaLamina: LaminaCustomizada = {
       id: `${Date.now()}-${Math.random()}`,
       modelo: modeloAtual || null,
@@ -222,7 +229,8 @@ export default function Simulador() {
       empunhadura: empunhaduraAtual || null,
       dragonScale,
       bainha: bainhaAtual || null,
-      corBainha,
+      corBainha: corBainhaFinal,
+      corBainhaPersonalizada,
       espacador: espacadorAtual || null,
       laser,
       textoLaser,
@@ -230,6 +238,7 @@ export default function Simulador() {
       embalagem,
       embalagemGravacao,
       embalagemTextoGravacao,
+      observacoesLamina,
       subtotal: calcularSubtotal(),
       quantidade: 1,
     };
@@ -255,13 +264,25 @@ export default function Simulador() {
     setEmpunhaduraSelecionada(lamina.empunhadura?.id || '');
     setDragonScale(lamina.dragonScale);
     setBainhaSelecionada(lamina.bainha?.id || '');
-    setCorBainha(lamina.corBainha);
+    // Se tiver cor personalizada, setar como OUTRA
+    if (lamina.corBainhaPersonalizada) {
+      setCorBainha('OUTRA');
+      setCorBainhaPersonalizada(lamina.corBainhaPersonalizada);
+    } else {
+      setCorBainha(lamina.corBainha);
+      setCorBainhaPersonalizada('');
+    }
     setEspacadorSelecionado(lamina.espacador?.id || '');
     setLaser(lamina.laser);
     setTextoLaser(lamina.textoLaser);
     setLocalGravacao(lamina.localGravacao);
     setEmbalagem(lamina.embalagem);
     setEmbalagemGravacao(lamina.embalagemGravacao);
+    setEmbalagemTextoGravacao(lamina.embalagemTextoGravacao);
+    setObservacoesLamina(lamina.observacoesLamina || '');
+    setLaminaEmEdicao(lamina.id);
+    setLaminaModalAberta(null);
+    toast.info('Editando lâmina - faça as alterações e clique em Salvar');
     setEmbalagemTextoGravacao(lamina.embalagemTextoGravacao);
     setLaminaEmEdicao(lamina.id);
     setLaminaModalAberta(null);
@@ -278,6 +299,9 @@ export default function Simulador() {
     const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
     const laminaExistente = laminasCustomizadas.find(l => l.id === laminaEmEdicao);
     
+    // Determinar cor da bainha final (personalizada ou selecionada)
+    const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
+    
     const laminaAtualizada: LaminaCustomizada = {
       id: laminaEmEdicao,
       modelo: modeloAtual || null,
@@ -287,7 +311,8 @@ export default function Simulador() {
       empunhadura: empunhaduraAtual || null,
       dragonScale,
       bainha: bainhaAtual || null,
-      corBainha,
+      corBainha: corBainhaFinal,
+      corBainhaPersonalizada,
       espacador: espacadorAtual || null,
       laser,
       textoLaser,
@@ -295,6 +320,7 @@ export default function Simulador() {
       embalagem,
       embalagemGravacao,
       embalagemTextoGravacao,
+      observacoesLamina,
       subtotal: calcularSubtotal(),
       quantidade: laminaExistente?.quantidade || 1,
     };
@@ -345,6 +371,7 @@ export default function Simulador() {
     setDragonScale(false);
     setBainhaSelecionada('');
     setCorBainha('');
+    setCorBainhaPersonalizada('');
     setEspacadorSelecionado('');
     setLaser(false);
     setTextoLaser('');
@@ -352,6 +379,7 @@ export default function Simulador() {
     setEmbalagem('');
     setEmbalagemGravacao(false);
     setEmbalagemTextoGravacao('');
+    setObservacoesLamina('');
     setBuscaModelo('');
     setCategoriaFiltro('');
   };
@@ -581,6 +609,7 @@ export default function Simulador() {
       const todasLaminas = [...laminasCustomizadas];
       if (modeloSelecionado && modeloAtual) {
         const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
+        const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
         todasLaminas.push({
           id: crypto.randomUUID(),
           modelo: modeloAtual,
@@ -590,7 +619,8 @@ export default function Simulador() {
           empunhadura: empunhaduraAtual || null,
           dragonScale,
           bainha: bainhaAtual || null,
-          corBainha,
+          corBainha: corBainhaFinal,
+          corBainhaPersonalizada,
           espacador: espacadorAtual || null,
           laser,
           textoLaser,
@@ -598,6 +628,7 @@ export default function Simulador() {
           embalagem,
           embalagemGravacao,
           embalagemTextoGravacao,
+          observacoesLamina,
           subtotal: calcularSubtotal(),
           quantidade: 1,
         });
@@ -667,6 +698,7 @@ ${linhasFormatadas}`;
       const todasLaminas = [...laminasCustomizadas];
       if (modeloSelecionado && modeloAtual) {
         const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
+        const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
         todasLaminas.push({
           id: crypto.randomUUID(),
           modelo: modeloAtual,
@@ -676,7 +708,8 @@ ${linhasFormatadas}`;
           empunhadura: empunhaduraAtual || null,
           dragonScale,
           bainha: bainhaAtual || null,
-          corBainha,
+          corBainha: corBainhaFinal,
+          corBainhaPersonalizada,
           espacador: espacadorAtual || null,
           laser,
           textoLaser,
@@ -684,6 +717,7 @@ ${linhasFormatadas}`;
           embalagem,
           embalagemGravacao,
           embalagemTextoGravacao,
+          observacoesLamina,
           subtotal: calcularSubtotal(),
           quantidade: 1,
         });
@@ -703,6 +737,7 @@ ${linhasFormatadas}`;
         embalagem: lamina.embalagem,
         embalagemGravacao: lamina.embalagemGravacao,
         embalagemTextoGravacao: lamina.embalagemTextoGravacao,
+        observacoesLamina: lamina.observacoesLamina || '',
         subtotal: lamina.subtotal,
       }));
 
@@ -742,13 +777,20 @@ ${linhasFormatadas}`;
         vendedor: profile?.nome_vendedor || '',
       };
 
-      const { error } = await supabase.functions.invoke('export-to-sheets', {
+      const { data, error } = await supabase.functions.invoke('export-to-sheets', {
         body: exportData,
       });
 
       if (error) throw error;
 
-      toast.success('Pedido exportado para Produção e Vendas!');
+      if (data?.error) {
+        // Erro retornado pela função (ex: lâmina falhou no meio do processo)
+        toast.error(`Erro: ${data.error}${data.processadas ? ` (${data.processadas}/${data.total} lâminas processadas)` : ''}`);
+      } else if (data?.success) {
+        toast.success(data.message || 'Pedido exportado para Produção e Vendas!');
+      } else {
+        toast.success('Pedido exportado para Produção e Vendas!');
+      }
     } catch (error) {
       console.error('Erro ao exportar para Google Sheets:', error);
       toast.error('Erro ao exportar para Google Sheets. Verifique as configurações.');
@@ -987,18 +1029,34 @@ ${linhasFormatadas}`;
                 etapaKey="bainha"
               />
               {bainhaSelecionada && (
-                <Select value={corBainha} onValueChange={setCorBainha}>
-                  <SelectTrigger className="h-8 text-xs ml-3">
-                    <SelectValue placeholder="Cor da bainha" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {coresBainha.map(cor => (
-                      <SelectItem key={cor.id} value={cor.nome_opcao} className="text-xs">
-                        {cor.nome_opcao}
+                <div className="space-y-2 ml-3">
+                  <Select value={corBainha} onValueChange={(value) => {
+                    setCorBainha(value);
+                    if (value !== 'OUTRA') setCorBainhaPersonalizada('');
+                  }}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Cor da bainha" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {coresBainha.map(cor => (
+                        <SelectItem key={cor.id} value={cor.nome_opcao} className="text-xs">
+                          {cor.nome_opcao}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="OUTRA" className="text-xs">
+                        Outra (digitar)
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    </SelectContent>
+                  </Select>
+                  {corBainha === 'OUTRA' && (
+                    <Input
+                      placeholder="Digite a cor desejada..."
+                      value={corBainhaPersonalizada}
+                      onChange={(e) => setCorBainhaPersonalizada(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  )}
+                </div>
               )}
             </div>
 
@@ -1105,6 +1163,17 @@ ${linhasFormatadas}`;
                       className="h-8 text-xs"
                     />
                   )}
+                </div>
+
+                {/* Observações da Lâmina */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Observações da Lâmina</Label>
+                  <Input
+                    placeholder="Observações específicas desta lâmina..."
+                    value={observacoesLamina}
+                    onChange={(e) => setObservacoesLamina(e.target.value)}
+                    className="h-8 text-xs"
+                  />
                 </div>
               </CollapsibleContent>
             </Collapsible>
