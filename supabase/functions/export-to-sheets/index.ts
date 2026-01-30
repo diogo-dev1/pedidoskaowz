@@ -89,6 +89,7 @@ interface LaminaData {
   embalagem: string;
   embalagemGravacao: boolean;
   embalagemTextoGravacao: string;
+  observacoesLamina?: string;
 }
 
 interface ProdutoAdicional {
@@ -126,6 +127,11 @@ interface ExportData {
   vendedor?: string;
 }
 
+// Helper para garantir que campos vazios sejam preenchidos com "-"
+function valorOuTraco(valor: string | undefined | null): string {
+  return valor?.trim() || '-';
+}
+
 // Função para gerar número do pedido baseado em timestamp
 function gerarNumeroPedido(): string {
   const now = new Date();
@@ -148,17 +154,28 @@ function getDataAtual(): string {
 // URL do Web App do Google Apps Script para executar "lancarPedido"
 const GOOGLE_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxp-uq9EJTeB69ptLrE5dsDrcsLMQPn1i89ydZ_EP7NjggRaNZtrdSEu6MxKVY9f2fBsw/exec';
 
+interface LaminaResult {
+  index: number;
+  success: boolean;
+  error?: string;
+}
+
 // Exportar para planilha de Produção (aba "Lançamento Venda")
 // Insere dados em C6:M6 e executa o script "lancarPedido" via Web App
+// Processa lâminas sequencialmente e para em caso de erro
 async function exportarParaProducao(
   accessToken: string, 
   spreadsheetId: string, 
   data: ExportData
-): Promise<void> {
-  // Para cada lâmina, precisamos inserir e lançar
-  for (const lamina of data.laminas) {
+): Promise<{ success: boolean; processadas: number; total: number; erro?: string }> {
+  const total = data.laminas.length;
+  let processadas = 0;
+
+  for (let i = 0; i < data.laminas.length; i++) {
+    const lamina = data.laminas[i];
+    
     // Construir texto de personalização
-    let personalizacao = '';
+    let personalizacao = '-';
     if (lamina.laser && lamina.textoLaser) {
       personalizacao = lamina.textoLaser;
       if (lamina.localGravacao) {
@@ -166,54 +183,60 @@ async function exportarParaProducao(
       }
     }
     if (lamina.embalagemGravacao && lamina.embalagemTextoGravacao) {
-      if (personalizacao) personalizacao += ' | ';
+      if (personalizacao !== '-') personalizacao += ' | ';
+      else personalizacao = '';
       personalizacao += `Embalagem: ${lamina.embalagemTextoGravacao}`;
     }
 
     // Dados para as células C6:M6
     // C=Nome, D=Item, E=Aço, F=Acabamento, G=Empunhadura, H=Bainha, 
-    // I=Cor Bainha, J=Prazo, K=Observações, L=Personalização, M=Embalagem
+    // I=Cor Bainha, J=Prazo, K=Observações (da lâmina), L=Personalização, M=Embalagem
     const rowData = [
-      data.nomeCompleto || '', // C - Nome
-      lamina.modelo || '', // D - Item
-      lamina.aco || '', // E - Aço
-      lamina.acabamento || '', // F - Acabamento
-      lamina.empunhadura || '', // G - Empunhadura
-      lamina.bainha || '', // H - Bainha
-      lamina.corBainha || '', // I - Cor Bainha
-      data.prazo || '', // J - Prazo
-      data.observacao || '', // K - Observações
-      personalizacao || '', // L - Personalização
-      lamina.embalagem || '', // M - Embalagem
+      valorOuTraco(data.nomeCompleto), // C - Nome
+      valorOuTraco(lamina.modelo), // D - Item
+      valorOuTraco(lamina.aco), // E - Aço
+      valorOuTraco(lamina.acabamento), // F - Acabamento
+      valorOuTraco(lamina.empunhadura), // G - Empunhadura
+      valorOuTraco(lamina.bainha), // H - Bainha
+      valorOuTraco(lamina.corBainha), // I - Cor Bainha
+      valorOuTraco(data.prazo), // J - Prazo
+      valorOuTraco(lamina.observacoesLamina), // K - Observações da lâmina específica
+      personalizacao, // L - Personalização
+      valorOuTraco(lamina.embalagem), // M - Embalagem
     ];
 
     // 1. Inserir dados na aba "Lançamento Venda" em C6:M6
     const range = encodeURIComponent('Lançamento Venda!C6:M6');
     const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueInputOption=USER_ENTERED`;
     
-    console.log('Inserindo dados em Produção:', { spreadsheetId, range: 'Lançamento Venda!C6:M6' });
+    console.log(`Inserindo lâmina ${i + 1}/${total} em Produção:`, { modelo: lamina.modelo });
     
-    const updateResponse = await fetch(updateUrl, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        values: [rowData],
-      }),
-    });
-
-    if (!updateResponse.ok) {
-      const errorText = await updateResponse.text();
-      console.error('Erro ao inserir dados em Produção:', errorText);
-      throw new Error(`Falha ao inserir dados na planilha de Produção: ${errorText}`);
-    }
-
-    console.log('Dados inseridos, executando script lancarPedido via Web App...');
-
-    // 2. Executar o script "lancarPedido" via Web App
     try {
+      const updateResponse = await fetch(updateUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          values: [rowData],
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text();
+        console.error(`Erro ao inserir lâmina ${i + 1}:`, errorText);
+        return {
+          success: false,
+          processadas,
+          total,
+          erro: `Erro ao inserir lâmina ${i + 1} (${lamina.modelo || 'sem modelo'}): ${errorText}`
+        };
+      }
+
+      console.log(`Lâmina ${i + 1} inserida, executando script lancarPedido...`);
+
+      // 2. Executar o script "lancarPedido" via Web App
       const scriptResponse = await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
         method: 'POST',
         headers: {
@@ -224,20 +247,35 @@ async function exportarParaProducao(
         }),
       });
 
-      if (scriptResponse.ok) {
-        const result = await scriptResponse.text();
-        console.log('Script lancarPedido executado com sucesso:', result);
-      } else {
+      if (!scriptResponse.ok) {
         const errorText = await scriptResponse.text();
-        console.warn('Aviso: Script pode não ter executado corretamente:', errorText);
+        console.error(`Erro ao executar script para lâmina ${i + 1}:`, errorText);
+        return {
+          success: false,
+          processadas,
+          total,
+          erro: `Erro ao executar lancarPedido para lâmina ${i + 1} (${lamina.modelo || 'sem modelo'}): ${errorText}`
+        };
       }
-    } catch (scriptError) {
-      console.warn('Erro ao executar script via Web App:', scriptError);
-      // Continua mesmo se o script falhar, pois os dados já foram inseridos
+
+      const result = await scriptResponse.text();
+      console.log(`Script lancarPedido executado com sucesso para lâmina ${i + 1}:`, result);
+      processadas++;
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error(`Erro ao processar lâmina ${i + 1}:`, errorMessage);
+      return {
+        success: false,
+        processadas,
+        total,
+        erro: `Erro ao processar lâmina ${i + 1} (${lamina.modelo || 'sem modelo'}): ${errorMessage}`
+      };
     }
   }
 
-  console.log('Exportado para Produção:', data.laminas.length, 'lâmina(s)');
+  console.log('Exportado para Produção:', processadas, 'de', total, 'lâmina(s)');
+  return { success: true, processadas, total };
 }
 
 // Exportar para planilha de Relatório de Vendas (aba "Vendas Diário")
@@ -249,21 +287,21 @@ async function exportarParaVendas(
   const dataAtual = getDataAtual();
 
   // Formatar itens para a coluna "Item"
-  const itens = data.laminas.map(l => l.modelo).filter(Boolean).join(', ');
+  const itens = data.laminas.map(l => l.modelo).filter(Boolean).join(', ') || '-';
 
   // Uma linha por pedido (não por lâmina)
   // Colunas: Data, Nome, Canal, Vendedor, Valor, Forma Pag., Status, Item, OBS, Cupom
   const row = [
     dataAtual, // Data
-    data.nomeCompleto || '', // Nome
-    data.canal || '', // Canal
-    data.vendedor || '', // Vendedor
-    data.valorTotal ? data.valorTotal.toFixed(2).replace('.', ',') : '', // Valor (R$)
-    data.formaPagamento || '', // Forma de Pag.
+    valorOuTraco(data.nomeCompleto), // Nome
+    valorOuTraco(data.canal), // Canal
+    valorOuTraco(data.vendedor), // Vendedor
+    data.valorTotal ? data.valorTotal.toFixed(2).replace('.', ',') : '-', // Valor (R$)
+    valorOuTraco(data.formaPagamento), // Forma de Pag.
     data.status || 'Pendente', // Status
     itens, // Item
-    data.observacao || '', // OBS
-    data.cupom || '', // Cupom
+    valorOuTraco(data.observacao), // OBS
+    valorOuTraco(data.cupom), // Cupom
   ];
 
   // Append na aba "Vendas Diário" - usar encodeURIComponent para o range
@@ -327,19 +365,36 @@ serve(async (req) => {
     // Gerar número do pedido
     const numeroPedido = data.numeroPedido || gerarNumeroPedido();
 
-    // Exportar para ambas as planilhas
-    await Promise.all([
-      exportarParaProducao(accessToken, producaoSpreadsheetId, data),
-      exportarParaVendas(accessToken, vendasSpreadsheetId, data),
-    ]);
+    // Primeiro exportar para Produção (sequencial com validação)
+    const resultadoProducao = await exportarParaProducao(accessToken, producaoSpreadsheetId, data);
+
+    if (!resultadoProducao.success) {
+      console.error('Erro na exportação para Produção:', resultadoProducao.erro);
+      return new Response(
+        JSON.stringify({ 
+          error: resultadoProducao.erro,
+          processadas: resultadoProducao.processadas,
+          total: resultadoProducao.total
+        }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Depois exportar para Vendas
+    await exportarParaVendas(accessToken, vendasSpreadsheetId, data);
 
     console.log('Exportação concluída com sucesso');
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Dados exportados com sucesso para Produção e Vendas!',
-        numeroPedido 
+        message: `${resultadoProducao.processadas} lâmina(s) exportada(s) com sucesso para Produção e Vendas!`,
+        numeroPedido,
+        processadas: resultadoProducao.processadas,
+        total: resultadoProducao.total
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
