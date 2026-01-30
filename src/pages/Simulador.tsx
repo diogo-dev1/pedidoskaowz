@@ -42,6 +42,7 @@ interface LaminaCustomizada {
   modelo: ModeloBase | null;
   aco: OpcaoComponente | null;
   acabamento: OpcaoComponente | null;
+  bruteForge: boolean;
   empunhadura: OpcaoComponente | null;
   dragonScale: boolean;
   bainha: OpcaoComponente | null;
@@ -70,6 +71,7 @@ export default function Simulador() {
   const [modeloSelecionado, setModeloSelecionado] = useState<string>('');
   const [acoSelecionado, setAcoSelecionado] = useState<string>('');
   const [acabamentoSelecionado, setAcabamentoSelecionado] = useState<string>('');
+  const [bruteForge, setBruteForge] = useState(false);
   const [empunhaduraSelecionada, setEmpunhaduraSelecionada] = useState<string>('');
   const [dragonScale, setDragonScale] = useState(false);
   const [bainhaSelecionada, setBainhaSelecionada] = useState<string>('');
@@ -215,6 +217,7 @@ export default function Simulador() {
       modelo: modeloAtual || null,
       aco: acoAtual || null,
       acabamento: acabamentoAtual || null,
+      bruteForge,
       empunhadura: empunhaduraAtual || null,
       dragonScale,
       bainha: bainhaAtual || null,
@@ -247,6 +250,7 @@ export default function Simulador() {
     setModeloSelecionado(lamina.modelo?.id || '');
     setAcoSelecionado(lamina.aco?.id || '');
     setAcabamentoSelecionado(lamina.acabamento?.id || '');
+    setBruteForge(lamina.bruteForge);
     setEmpunhaduraSelecionada(lamina.empunhadura?.id || '');
     setDragonScale(lamina.dragonScale);
     setBainhaSelecionada(lamina.bainha?.id || '');
@@ -278,6 +282,7 @@ export default function Simulador() {
       modelo: modeloAtual || null,
       aco: acoAtual || null,
       acabamento: acabamentoAtual || null,
+      bruteForge,
       empunhadura: empunhaduraAtual || null,
       dragonScale,
       bainha: bainhaAtual || null,
@@ -334,6 +339,7 @@ export default function Simulador() {
     setModeloSelecionado('');
     setAcoSelecionado('');
     setAcabamentoSelecionado('');
+    setBruteForge(false);
     setEmpunhaduraSelecionada('');
     setDragonScale(false);
     setBainhaSelecionada('');
@@ -566,6 +572,7 @@ export default function Simulador() {
           modelo: modeloAtual,
           aco: acoAtual || null,
           acabamento: acabamentoAtual || null,
+          bruteForge,
           empunhadura: empunhaduraAtual || null,
           dragonScale,
           bainha: bainhaAtual || null,
@@ -583,15 +590,17 @@ export default function Simulador() {
       }
 
       const descricoesPedidos = todasLaminas.map((lamina, index) => {
+        const acabamentoInfo = (lamina.acabamento?.nome_opcao || '') + (lamina.bruteForge ? ' + Brute Forge' : '');
         const empunhaduraInfo = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
         const espacadorInfo = lamina.espacador ? ` espaçador ${lamina.espacador.nome_opcao}` : '';
-        const desc = `${lamina.modelo?.nome_modelo || ''} ${lamina.aco?.nome_opcao || ''} ${lamina.acabamento?.nome_opcao || ''} empunhadura em ${empunhaduraInfo} ${lamina.bainha?.nome_opcao || ''}${espacadorInfo}`;
+        const desc = `${lamina.modelo?.nome_modelo || ''} ${lamina.aco?.nome_opcao || ''} ${acabamentoInfo} empunhadura em ${empunhaduraInfo} ${lamina.bainha?.nome_opcao || ''}${espacadorInfo}`;
         return `Lâmina ${index + 1}: ${desc}`;
       }).join('\n');
 
       const linhasFormatadas = todasLaminas.map((lamina) => {
+        const acabamentoInfo = (lamina.acabamento?.nome_opcao || '') + (lamina.bruteForge ? ' + Brute Forge' : '');
         const empunhaduraInfo = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
-        return `${nomeCompleto}, ${lamina.modelo?.nome_modelo || ''}, ${lamina.aco?.nome_opcao || ''}, ${lamina.acabamento?.nome_opcao || ''}, ${empunhaduraInfo}, ${lamina.bainha?.nome_opcao || ''}, ${lamina.corBainha || ''}, ${lamina.espacador?.nome_opcao || ''}`;
+        return `${nomeCompleto}, ${lamina.modelo?.nome_modelo || ''}, ${lamina.aco?.nome_opcao || ''}, ${acabamentoInfo}, ${empunhaduraInfo}, ${lamina.bainha?.nome_opcao || ''}, ${lamina.corBainha || ''}, ${lamina.espacador?.nome_opcao || ''}`;
       }).join('\n');
 
       const personalizacoesLaser = todasLaminas
@@ -649,6 +658,7 @@ ${linhasFormatadas}`;
           modelo: modeloAtual,
           aco: acoAtual || null,
           acabamento: acabamentoAtual || null,
+          bruteForge,
           empunhadura: empunhaduraAtual || null,
           dragonScale,
           bainha: bainhaAtual || null,
@@ -669,7 +679,7 @@ ${linhasFormatadas}`;
         modelo: lamina.modelo?.nome_modelo || '',
         aco: lamina.aco?.nome_opcao || '',
         empunhadura: (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : ''),
-        acabamento: lamina.acabamento?.nome_opcao || '',
+        acabamento: (lamina.acabamento?.nome_opcao || '') + (lamina.bruteForge ? ' + Brute Forge' : ''),
         bainha: lamina.bainha?.nome_opcao || '',
         corBainha: lamina.corBainha,
         espacador: lamina.espacador?.nome_opcao || '',
@@ -911,13 +921,26 @@ ${linhasFormatadas}`;
               etapaKey="aco"
             />
 
-            <CollapsibleSelect 
-              options={acabamentos} 
-              selected={acabamentoSelecionado} 
-              onSelect={setAcabamentoSelecionado} 
-              label="Acabamento"
-              etapaKey="acabamento"
-            />
+            <div className="space-y-1.5">
+              <CollapsibleSelect 
+                options={acabamentos} 
+                selected={acabamentoSelecionado} 
+                onSelect={setAcabamentoSelecionado} 
+                label="Acabamento"
+                etapaKey="acabamento"
+              />
+              {acabamentoSelecionado && (
+                <div className="flex items-center gap-2 pl-3">
+                  <Checkbox
+                    id="bruteForge"
+                    checked={bruteForge}
+                    onCheckedChange={(checked) => setBruteForge(checked === true)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <Label htmlFor="bruteForge" className="text-xs cursor-pointer">Brute Forge</Label>
+                </div>
+              )}
+            </div>
 
             <div className="space-y-1.5">
               <CollapsibleSelect 
@@ -1304,7 +1327,10 @@ ${linhasFormatadas}`;
                   </div>
                   <div className="bg-muted p-2.5 rounded-lg">
                     <p className="text-muted-foreground text-xs">Acabamento</p>
-                    <p className="font-medium">{laminaModalAberta.acabamento?.nome_opcao || '-'}</p>
+                    <p className="font-medium">
+                      {laminaModalAberta.acabamento?.nome_opcao || '-'}
+                      {laminaModalAberta.bruteForge && ' + Brute Forge'}
+                    </p>
                   </div>
                   <div className="bg-muted p-2.5 rounded-lg">
                     <p className="text-muted-foreground text-xs">Empunhadura</p>
