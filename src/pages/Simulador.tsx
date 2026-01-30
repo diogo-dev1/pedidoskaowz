@@ -512,21 +512,33 @@ export default function Simulador() {
 
       const extractedData = data.data;
 
-      // Preencher dados do cliente
-      if (extractedData.cliente) {
-        if (extractedData.cliente.nomeCompleto) setNomeCompleto(extractedData.cliente.nomeCompleto);
-        if (extractedData.cliente.cpf) setCpf(extractedData.cliente.cpf);
-        if (extractedData.cliente.email) setEmail(extractedData.cliente.email);
-        if (extractedData.cliente.celular) setCelular(extractedData.cliente.celular);
-        if (extractedData.cliente.cep) setCep(extractedData.cliente.cep);
-        if (extractedData.cliente.endereco) setEndereco(extractedData.cliente.endereco);
-        if (extractedData.cliente.numero) setNumero(extractedData.cliente.numero);
-        if (extractedData.cliente.bairro) setBairro(extractedData.cliente.bairro);
-        if (extractedData.cliente.cidade) setCidade(extractedData.cliente.cidade);
-        if (extractedData.cliente.estado) setEstado(extractedData.cliente.estado);
-        if (extractedData.cliente.complemento) setComplemento(extractedData.cliente.complemento);
-        if (extractedData.cliente.dataNascimento) setDataNascimento(extractedData.cliente.dataNascimento);
-        if (extractedData.cliente.nomeCertificado) setNomeCertificado(extractedData.cliente.nomeCertificado);
+      // Verificar se é apenas o nome do cliente (cliente já cadastrado)
+      const cliente = extractedData.cliente || {};
+      const temApenasNome = cliente.nomeCompleto && 
+        !cliente.cpf && !cliente.email && !cliente.celular && !cliente.cep && 
+        !cliente.endereco && !cliente.numero && !cliente.bairro && !cliente.cidade && 
+        !cliente.estado && !cliente.dataNascimento;
+
+      if (temApenasNome) {
+        // Cliente já cadastrado - preencher apenas o nome
+        setNomeCompleto(cliente.nomeCompleto);
+        if (cliente.nomeCertificado) setNomeCertificado(cliente.nomeCertificado);
+        toast.info('Cliente já cadastrado - apenas nome preenchido');
+      } else if (extractedData.cliente) {
+        // Cliente novo - preencher todos os dados disponíveis
+        if (cliente.nomeCompleto) setNomeCompleto(cliente.nomeCompleto);
+        if (cliente.cpf) setCpf(cliente.cpf);
+        if (cliente.email) setEmail(cliente.email);
+        if (cliente.celular) setCelular(cliente.celular);
+        if (cliente.cep) setCep(cliente.cep);
+        if (cliente.endereco) setEndereco(cliente.endereco);
+        if (cliente.numero) setNumero(cliente.numero);
+        if (cliente.bairro) setBairro(cliente.bairro);
+        if (cliente.cidade) setCidade(cliente.cidade);
+        if (cliente.estado) setEstado(cliente.estado);
+        if (cliente.complemento) setComplemento(cliente.complemento);
+        if (cliente.dataNascimento) setDataNascimento(cliente.dataNascimento);
+        if (cliente.nomeCertificado) setNomeCertificado(cliente.nomeCertificado);
       }
 
       // Preencher dados do pedido
