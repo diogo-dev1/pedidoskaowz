@@ -200,20 +200,22 @@ async function exportarParaProducao(
   });
 
   if (rows.length > 0) {
-    // Append na aba "Controle"
-    const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Controle!A:T:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          values: rows,
-        }),
-      }
-    );
+    // Append na aba "Controle" - usar encodeURIComponent para o range
+    const range = encodeURIComponent('Controle!A:T');
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    
+    console.log('Exportando para Produção:', { spreadsheetId, range: 'Controle!A:T', rowCount: rows.length });
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        values: rows,
+      }),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -251,20 +253,22 @@ async function exportarParaVendas(
     data.cupom || '', // Cupom
   ];
 
-  // Append na aba "Vendas Diário"
-  const response = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Vendas Diário!A:J:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        values: [row],
-      }),
-    }
-  );
+  // Append na aba "Vendas Diário" - usar encodeURIComponent para o range
+  const range = encodeURIComponent('Vendas Diário!A:J');
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  
+  console.log('Exportando para Vendas:', { spreadsheetId, range: 'Vendas Diário!A:J' });
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      values: [row],
+    }),
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
