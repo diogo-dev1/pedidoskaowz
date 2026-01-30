@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Copy, Download, Upload, X, Loader2, Search, Video, Share2, Eye, EyeOff, ImageIcon, Star } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Copy, Download, Upload, X, Loader2, Search, Video, Share2, 
+  Eye, EyeOff, Star, FileText, Package, Clock, Shield, 
+  ChevronRight, ImageIcon, Play, Edit2, Save, Info
+} from 'lucide-react';
 
 interface Modelo {
   id: string;
@@ -31,12 +37,13 @@ interface Midia {
   visivel_catalogo: boolean;
 }
 
-export default function Catalogo() {
+export default function AuxilioVendas() {
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState<Categoria>('Todas');
   const [buscaTexto, setBuscaTexto] = useState('');
   const [modeloSelecionado, setModeloSelecionado] = useState<Modelo | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [preco, setPreco] = useState('');
   const [apresentacao, setApresentacao] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -104,12 +111,14 @@ export default function Catalogo() {
     setGarantia(modelo.garantia || '');
     setPrazoEntrega(modelo.prazo_entrega || '');
     setModalOpen(true);
+    setEditMode(false);
     carregarMidias(modelo.id);
   };
 
   const fecharModal = () => {
     setModalOpen(false);
     setModeloSelecionado(null);
+    setEditMode(false);
     setPreco('');
     setApresentacao('');
     setVideoUrl('');
@@ -184,8 +193,8 @@ export default function Catalogo() {
       description: 'As alterações foram salvas.',
     });
 
+    setEditMode(false);
     carregarModelos();
-    fecharModal();
   };
 
   const copiarApresentacao = () => {
@@ -222,7 +231,6 @@ export default function Catalogo() {
         .from('catalogo-midias')
         .getPublicUrl(fileName);
 
-      // Salvar na tabela de metadados
       const { error: dbError } = await supabase
         .from('midias_catalogo')
         .insert({
@@ -343,8 +351,21 @@ export default function Catalogo() {
       });
     } catch (err) {
       console.error('Erro no download:', err);
-      // Fallback para abrir em nova aba
       window.open(url, '_blank');
+    }
+  };
+
+  const downloadTodasMidias = async () => {
+    if (midias.length === 0) return;
+    
+    toast({
+      title: 'Iniciando downloads...',
+      description: `Baixando ${midias.length} arquivo(s).`,
+    });
+
+    for (const midia of midias) {
+      await downloadMidia(midia.url, midia.nome_arquivo);
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   };
 
@@ -364,7 +385,6 @@ export default function Catalogo() {
           url: url
         });
       } catch (err) {
-        // User cancelled or error
         copiarLinkMidia(url);
       }
     } else {
@@ -373,7 +393,6 @@ export default function Catalogo() {
   };
 
   const deletarMidia = async (midia: Midia) => {
-    // Deletar do storage
     const { error: storageError } = await supabase.storage
       .from('catalogo-midias')
       .remove([midia.nome_arquivo]);
@@ -382,7 +401,6 @@ export default function Catalogo() {
       console.error('Erro ao deletar do storage:', storageError);
     }
 
-    // Deletar da tabela
     const { error: dbError } = await supabase
       .from('midias_catalogo')
       .delete()
@@ -411,16 +429,22 @@ export default function Catalogo() {
     .filter(m => categoriaAtiva === 'Todas' || m.categoria === categoriaAtiva)
     .filter(m => m.nome_modelo.toLowerCase().includes(buscaTexto.toLowerCase()));
 
+  const midiasImagens = midias.filter(m => !m.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i));
+  const midiasVideos = midias.filter(m => m.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i));
+
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6 text-foreground">Catálogo de Lâminas</h1>
+    <div className="container mx-auto py-6 px-4">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Material de Apoio ao Vendedor</h1>
+        <p className="text-muted-foreground mt-1">Acesse informações e mídias das lâminas para auxiliar nas vendas</p>
+      </div>
       
       {/* Campo de Busca */}
-      <div className="relative mb-6">
+      <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
-          placeholder="Buscar modelos..."
+          placeholder="Buscar lâminas..."
           value={buscaTexto}
           onChange={(e) => setBuscaTexto(e.target.value)}
           className="pl-10"
@@ -428,382 +452,539 @@ export default function Catalogo() {
       </div>
 
       {/* Botões de Filtro */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        {categorias.map((cat) => (
-          <Button
-            key={cat}
-            variant={categoriaAtiva === cat ? 'default' : 'outline'}
-            onClick={() => setCategoriaAtiva(cat)}
-            className="min-w-[100px]"
-          >
-            {cat}
-          </Button>
-        ))}
-      </div>
+      <ScrollArea className="w-full whitespace-nowrap pb-2">
+        <div className="flex gap-2 mb-6">
+          {categorias.map((cat) => (
+            <Button
+              key={cat}
+              variant={categoriaAtiva === cat ? 'default' : 'outline'}
+              onClick={() => setCategoriaAtiva(cat)}
+              size="sm"
+              className="flex-shrink-0"
+            >
+              {cat}
+            </Button>
+          ))}
+        </div>
+      </ScrollArea>
       
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+      {/* Lista de Modelos */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {modelosFiltrados.map((modelo) => (
           <Card
             key={modelo.id}
-            className="cursor-pointer hover:shadow-lg transition-all"
+            className="cursor-pointer hover:shadow-lg transition-all group"
             onClick={() => abrirModal(modelo)}
           >
-            {modelo.imagem_modelo && (
-              <div className="relative aspect-square bg-muted overflow-hidden">
-                <img
-                  src={modelo.imagem_modelo}
-                  alt={modelo.nome_modelo}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-            <CardContent className="p-2 sm:p-4">
-              <div className="flex items-center gap-1">
-                <h3 className="font-semibold text-xs sm:text-lg text-card-foreground truncate flex-1">
-                  {modelo.nome_modelo}
-                </h3>
-                {modelo.video_url && (
-                  <Video className="h-3 w-3 sm:h-4 sm:w-4 text-accent flex-shrink-0" />
+            <div className="flex items-center gap-4 p-4">
+              {/* Thumbnail */}
+              <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+                {modelo.imagem_modelo ? (
+                  <img
+                    src={modelo.imagem_modelo}
+                    alt={modelo.nome_modelo}
+                    className="w-full h-full object-cover"
+                  />
+                ) : modelo.video_url ? (
+                  <div className="w-full h-full flex items-center justify-center bg-accent/10">
+                    <Play className="h-8 w-8 text-accent" />
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package className="h-8 w-8 text-muted-foreground" />
+                  </div>
                 )}
               </div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-1 mt-1 sm:mt-2">
-                <p className="text-accent font-bold text-sm sm:text-base">
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-card-foreground truncate">
+                  {modelo.nome_modelo}
+                </h3>
+                <p className="text-accent font-bold text-lg">
                   R$ {modelo.preco_base.toFixed(2)}
                 </p>
-                <span className="text-[10px] sm:text-xs bg-secondary text-secondary-foreground px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
-                  {modelo.categoria}
-                </span>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="secondary" className="text-xs">
+                    {modelo.categoria}
+                  </Badge>
+                  {modelo.video_url && (
+                    <Badge variant="outline" className="text-xs">
+                      <Video className="h-3 w-3 mr-1" />
+                      Vídeo
+                    </Badge>
+                  )}
+                </div>
               </div>
-            </CardContent>
+
+              {/* Arrow */}
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </div>
           </Card>
         ))}
       </div>
 
+      {modelosFiltrados.length === 0 && (
+        <div className="text-center py-12">
+          <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">Nenhuma lâmina encontrada</p>
+        </div>
+      )}
+
+      {/* Modal de Detalhes */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{modeloSelecionado?.nome_modelo}</DialogTitle>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-xl">{modeloSelecionado?.nome_modelo}</DialogTitle>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge>{categoria}</Badge>
+                  <span className="text-accent font-bold">R$ {parseFloat(preco || '0').toFixed(2)}</span>
+                </div>
+              </div>
+              <Button
+                variant={editMode ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setEditMode(!editMode)}
+              >
+                {editMode ? <Save className="h-4 w-4 mr-2" /> : <Edit2 className="h-4 w-4 mr-2" />}
+                {editMode ? 'Editando' : 'Editar'}
+              </Button>
+            </div>
           </DialogHeader>
 
-          <div className="space-y-6">
-            {/* Campo de Nome */}
-            <div>
-              <Label htmlFor="nome">Nome do Modelo</Label>
-              <Input
-                id="nome"
-                type="text"
-                value={nomeModelo}
-                onChange={(e) => setNomeModelo(e.target.value)}
-                placeholder="Nome do modelo"
-              />
-            </div>
+          <Tabs defaultValue="info" className="flex-1 overflow-hidden flex flex-col">
+            <TabsList className="mx-6 mt-4 grid w-auto grid-cols-2">
+              <TabsTrigger value="info" className="flex items-center gap-2">
+                <Info className="h-4 w-4" />
+                Informações
+              </TabsTrigger>
+              <TabsTrigger value="midias" className="flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                Mídias ({midias.length})
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Campo de Categoria */}
-            <div>
-              <Label htmlFor="categoria">Categoria</Label>
-              <select
-                id="categoria"
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <option value="EDC">EDC</option>
-                <option value="Adaga">Adaga</option>
-                <option value="Campo">Campo</option>
-                <option value="Cozinha">Cozinha</option>
-                <option value="Defesa">Defesa</option>
-                <option value="KZR">KZR</option>
-                <option value="Upsell">Upsell</option>
-              </select>
-            </div>
+            <ScrollArea className="flex-1 px-6 pb-6">
+              {/* Tab Informações */}
+              <TabsContent value="info" className="mt-4 space-y-6">
+                {/* Cards de Info Rápida */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <Package className="h-4 w-4" />
+                      <span className="text-xs">Preço Base</span>
+                    </div>
+                    {editMode ? (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={preco}
+                        onChange={(e) => setPreco(e.target.value)}
+                        className="h-8"
+                      />
+                    ) : (
+                      <p className="font-bold text-lg">R$ {parseFloat(preco || '0').toFixed(2)}</p>
+                    )}
+                  </Card>
 
-            {/* Campo de Preço */}
-            <div>
-              <Label htmlFor="preco">Valor (R$)</Label>
-              <Input
-                id="preco"
-                type="number"
-                step="0.01"
-                value={preco}
-                onChange={(e) => setPreco(e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <Shield className="h-4 w-4" />
+                      <span className="text-xs">Garantia</span>
+                    </div>
+                    {editMode ? (
+                      <Input
+                        value={garantia}
+                        onChange={(e) => setGarantia(e.target.value)}
+                        placeholder="Ex: Vitalícia"
+                        className="h-8"
+                      />
+                    ) : (
+                      <p className="font-semibold">{garantia || '-'}</p>
+                    )}
+                  </Card>
 
-            {/* Campo de Imagem */}
-            <div>
-              <Label htmlFor="imagem">URL da Imagem Principal</Label>
-              <Input
-                id="imagem"
-                type="text"
-                value={imagemModelo}
-                onChange={(e) => setImagemModelo(e.target.value)}
-                placeholder="https://..."
-              />
-              {imagemModelo && (
-                <div className="mt-2 max-w-[150px]">
-                  <img src={imagemModelo} alt="Preview" className="rounded-lg w-full h-auto" />
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <Clock className="h-4 w-4" />
+                      <span className="text-xs">Prazo</span>
+                    </div>
+                    {editMode ? (
+                      <Input
+                        value={prazoEntrega}
+                        onChange={(e) => setPrazoEntrega(e.target.value)}
+                        placeholder="Ex: 45 dias"
+                        className="h-8"
+                      />
+                    ) : (
+                      <p className="font-semibold">{prazoEntrega || '-'}</p>
+                    )}
+                  </Card>
+
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <FileText className="h-4 w-4" />
+                      <span className="text-xs">Categoria</span>
+                    </div>
+                    {editMode ? (
+                      <select
+                        value={categoria}
+                        onChange={(e) => setCategoria(e.target.value)}
+                        className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
+                      >
+                        {['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'].map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className="font-semibold">{categoria}</p>
+                    )}
+                  </Card>
                 </div>
-              )}
-            </div>
 
-            {/* Campo de Vídeo */}
-            <div>
-              <Label>Vídeo de Apresentação</Label>
-              <div className="mt-2">
-                <Button variant="outline" size="sm" asChild>
-                  <label className="cursor-pointer">
-                    <Video className="h-4 w-4 mr-2" />
-                    {videoFile ? 'Trocar Vídeo' : videoUrl ? 'Substituir Vídeo' : 'Upload de Vídeo'}
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="video/*,.mov,.MOV,.mp4,.MP4,.webm,.WEBM"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          setVideoFile(e.target.files[0]);
-                        }
-                      }}
-                    />
-                  </label>
-                </Button>
-                {videoFile && (
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    {videoFile.name}
-                  </span>
-                )}
-              </div>
-              {(videoUrl || videoFile) && (
-                <div className="mt-2 rounded-lg overflow-hidden border max-w-[200px] mx-auto">
-                  <div className="aspect-[9/16]">
-                    <video
-                      src={videoFile ? URL.createObjectURL(videoFile) : videoUrl}
-                      controls
-                      className="w-full h-full object-cover"
+                {/* Nome do Modelo */}
+                {editMode && (
+                  <div>
+                    <Label htmlFor="nome">Nome do Modelo</Label>
+                    <Input
+                      id="nome"
+                      value={nomeModelo}
+                      onChange={(e) => setNomeModelo(e.target.value)}
+                      className="mt-1"
                     />
                   </div>
-                </div>
-              )}
-            </div>
+                )}
 
-            {/* Campo de Apresentação */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label htmlFor="apresentacao">Apresentação de Venda</Label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={copiarApresentacao}
-                  disabled={!apresentacao}
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copiar
-                </Button>
-              </div>
-              <Textarea
-                id="apresentacao"
-                value={apresentacao}
-                onChange={(e) => setApresentacao(e.target.value)}
-                placeholder="Escreva aqui a apresentação de venda..."
-                rows={6}
-              />
-            </div>
-
-            {/* Garantia e Prazo de Entrega */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="garantia">Garantia</Label>
-                <Input
-                  id="garantia"
-                  type="text"
-                  value={garantia}
-                  onChange={(e) => setGarantia(e.target.value)}
-                  placeholder="Ex: Vitalícia"
-                />
-              </div>
-              <div>
-                <Label htmlFor="prazoEntrega">Prazo de Entrega</Label>
-                <Input
-                  id="prazoEntrega"
-                  type="text"
-                  value={prazoEntrega}
-                  onChange={(e) => setPrazoEntrega(e.target.value)}
-                  placeholder="Ex: 45 dias úteis"
-                />
-              </div>
-            </div>
-
-            {/* Mídias */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <Label>Mídias</Label>
-                <Button variant="outline" size="sm" asChild disabled={uploadandoMidia}>
-                  <label className="cursor-pointer">
-                    {uploadandoMidia ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Upload className="h-4 w-4 mr-2" />
-                    )}
-                    {uploadandoMidia ? 'Enviando...' : 'Adicionar Mídia'}
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/*,video/*,.mov,.MOV,.mp4,.MP4"
-                      onChange={handleUploadMidia}
-                      disabled={uploadandoMidia}
+                {/* Apresentação de Venda */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-base font-semibold">Apresentação de Venda</Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copiarApresentacao}
+                      disabled={!apresentacao}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copiar
+                    </Button>
+                  </div>
+                  {editMode ? (
+                    <Textarea
+                      value={apresentacao}
+                      onChange={(e) => setApresentacao(e.target.value)}
+                      placeholder="Escreva aqui a apresentação de venda..."
+                      rows={6}
                     />
-                  </label>
-                </Button>
-              </div>
-
-              {carregandoMidias ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Card className="p-4 bg-muted/50">
+                      {apresentacao ? (
+                        <p className="whitespace-pre-wrap text-sm">{apresentacao}</p>
+                      ) : (
+                        <p className="text-muted-foreground text-sm italic">Nenhuma apresentação cadastrada</p>
+                      )}
+                    </Card>
+                  )}
                 </div>
-              ) : midias.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">
-                  Nenhuma mídia adicionada ainda
-                </p>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  {midias.map((midia) => {
-                    const isVideo = midia.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i);
-                    const isCapa = isVideo 
-                      ? videoUrl === midia.url 
-                      : imagemModelo === midia.url;
-                    return (
-                      <div
-                        key={midia.id}
-                        className={`relative border rounded-lg overflow-hidden bg-muted aspect-[9/16] ${
-                          isCapa ? 'ring-2 ring-accent' : ''
-                        }`}
-                      >
-                        {/* Indicador de visibilidade */}
-                        <div className={`absolute top-2 left-2 z-10 px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
-                          midia.visivel_catalogo 
-                            ? 'bg-green-500/80 text-white' 
-                            : 'bg-zinc-500/80 text-white'
-                        }`}>
-                          {midia.visivel_catalogo ? (
-                            <>
-                              <Eye className="h-3 w-3" />
-                              <span className="hidden sm:inline">Visível</span>
-                            </>
-                          ) : (
-                            <>
-                              <EyeOff className="h-3 w-3" />
-                              <span className="hidden sm:inline">Oculta</span>
-                            </>
-                          )}
-                        </div>
 
-                        {/* Indicador de capa */}
-                        {isCapa && (
-                          <div className="absolute top-2 right-2 z-10 px-2 py-1 rounded-full text-xs flex items-center gap-1 bg-accent text-accent-foreground">
-                            <Star className="h-3 w-3 fill-current" />
-                            <span className="hidden sm:inline">Capa</span>
-                          </div>
-                        )}
-
-                        {isVideo ? (
-                          <video
-                            src={midia.url}
-                            className="w-full h-full object-cover"
-                            muted
-                            autoPlay
-                            loop
-                            playsInline
+                {/* Vídeo de Apresentação */}
+                {editMode && (
+                  <div>
+                    <Label>Vídeo de Apresentação</Label>
+                    <div className="mt-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <label className="cursor-pointer">
+                          <Video className="h-4 w-4 mr-2" />
+                          {videoFile ? 'Trocar Vídeo' : videoUrl ? 'Substituir Vídeo' : 'Upload de Vídeo'}
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="video/*,.mov,.MOV,.mp4,.MP4,.webm,.WEBM"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                setVideoFile(e.target.files[0]);
+                              }
+                            }}
                           />
+                        </label>
+                      </Button>
+                      {videoFile && (
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          {videoFile.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* URL da Imagem Principal */}
+                {editMode && (
+                  <div>
+                    <Label htmlFor="imagem">URL da Imagem Principal</Label>
+                    <Input
+                      id="imagem"
+                      value={imagemModelo}
+                      onChange={(e) => setImagemModelo(e.target.value)}
+                      placeholder="https://..."
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+
+                {/* Botão Salvar */}
+                {editMode && (
+                  <div className="flex justify-end gap-3 pt-4 border-t">
+                    <Button variant="outline" onClick={() => setEditMode(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={salvarAlteracoes} disabled={salvando}>
+                      {salvando && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      Salvar Alterações
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Tab Mídias */}
+              <TabsContent value="midias" className="mt-4 space-y-6">
+                {/* Barra de Ações */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" asChild disabled={uploadandoMidia}>
+                      <label className="cursor-pointer">
+                        {uploadandoMidia ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
-                          <img
-                            src={midia.url}
-                            alt={midia.nome_arquivo}
-                            className="w-full h-full object-cover"
-                          />
+                          <Upload className="h-4 w-4 mr-2" />
                         )}
-                        
-                        {/* Botões de ação sempre visíveis na parte inferior */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                          <div className="flex items-center justify-center gap-1">
-                            <Button
-                              size="sm"
-                              variant={isCapa ? 'default' : 'secondary'}
-                              className="h-8 w-8 p-0"
-                              onClick={() => definirComoCapa(midia)}
-                              title="Definir como capa"
-                              disabled={isCapa}
-                            >
-                              <Star className={`h-4 w-4 ${isCapa ? 'fill-current' : ''}`} />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="h-8 w-8 p-0"
-                              onClick={() => toggleVisibilidade(midia)}
-                              title={midia.visivel_catalogo ? 'Ocultar do catálogo' : 'Mostrar no catálogo'}
-                            >
-                              {midia.visivel_catalogo ? (
-                                <EyeOff className="h-4 w-4" />
-                              ) : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="h-8 w-8 p-0"
-                              onClick={() => compartilharMidia(midia.url, midia.nome_arquivo)}
-                              title="Compartilhar"
-                            >
-                              <Share2 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="h-8 w-8 p-0"
-                              onClick={() => copiarLinkMidia(midia.url)}
-                              title="Copiar link"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="h-8 w-8 p-0"
-                              onClick={() => downloadMidia(midia.url, midia.nome_arquivo)}
-                              title="Baixar"
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="h-8 w-8 p-0"
-                              onClick={() => deletarMidia(midia)}
-                              title="Deletar"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
+                        {uploadandoMidia ? 'Enviando...' : 'Adicionar Mídia'}
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*,video/*,.mov,.MOV,.mp4,.MP4"
+                          onChange={handleUploadMidia}
+                          disabled={uploadandoMidia}
+                        />
+                      </label>
+                    </Button>
+                  </div>
+                  {midias.length > 0 && (
+                    <Button variant="outline" size="sm" onClick={downloadTodasMidias}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Baixar Todas
+                    </Button>
+                  )}
+                </div>
+
+                {carregandoMidias ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : midias.length === 0 ? (
+                  <Card className="p-8 text-center">
+                    <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Nenhuma mídia adicionada ainda</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Clique em "Adicionar Mídia" para enviar fotos e vídeos
+                    </p>
+                  </Card>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Imagens */}
+                    {midiasImagens.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-3 flex items-center gap-2">
+                          <ImageIcon className="h-4 w-4" />
+                          Fotos ({midiasImagens.length})
+                        </h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {midiasImagens.map((midia) => {
+                            const isCapa = imagemModelo === midia.url;
+                            return (
+                              <div
+                                key={midia.id}
+                                className={`relative border rounded-lg overflow-hidden bg-muted aspect-square group ${
+                                  isCapa ? 'ring-2 ring-accent' : ''
+                                }`}
+                              >
+                                {/* Badges */}
+                                <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between">
+                                  <div className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
+                                    midia.visivel_catalogo 
+                                      ? 'bg-green-500/80 text-white' 
+                                      : 'bg-zinc-500/80 text-white'
+                                  }`}>
+                                    {midia.visivel_catalogo ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                                  </div>
+                                  {isCapa && (
+                                    <div className="px-2 py-1 rounded-full text-xs flex items-center gap-1 bg-accent text-accent-foreground">
+                                      <Star className="h-3 w-3 fill-current" />
+                                    </div>
+                                  )}
+                                </div>
+
+                                <img
+                                  src={midia.url}
+                                  alt={midia.nome_arquivo}
+                                  className="w-full h-full object-cover"
+                                />
+                                
+                                {/* Ações */}
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant={isCapa ? 'default' : 'secondary'}
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => definirComoCapa(midia)}
+                                      title="Definir como capa"
+                                      disabled={isCapa}
+                                    >
+                                      <Star className={`h-3 w-3 ${isCapa ? 'fill-current' : ''}`} />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => toggleVisibilidade(midia)}
+                                    >
+                                      {midia.visivel_catalogo ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => downloadMidia(midia.url, midia.nome_arquivo)}
+                                    >
+                                      <Download className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => compartilharMidia(midia.url, midia.nome_arquivo)}
+                                    >
+                                      <Share2 className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => deletarMidia(midia)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                    )}
 
-            {/* Botões de Ação */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={fecharModal}>
-                Cancelar
-              </Button>
-              <Button onClick={salvarAlteracoes} disabled={salvando}>
-                {salvando && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Salvar Alterações
-              </Button>
-            </div>
-          </div>
+                    {/* Vídeos */}
+                    {midiasVideos.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-3 flex items-center gap-2">
+                          <Video className="h-4 w-4" />
+                          Vídeos ({midiasVideos.length})
+                        </h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {midiasVideos.map((midia) => {
+                            const isCapa = videoUrl === midia.url;
+                            return (
+                              <div
+                                key={midia.id}
+                                className={`relative border rounded-lg overflow-hidden bg-muted aspect-[9/16] group ${
+                                  isCapa ? 'ring-2 ring-accent' : ''
+                                }`}
+                              >
+                                {/* Badges */}
+                                <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between">
+                                  <div className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
+                                    midia.visivel_catalogo 
+                                      ? 'bg-green-500/80 text-white' 
+                                      : 'bg-zinc-500/80 text-white'
+                                  }`}>
+                                    {midia.visivel_catalogo ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                                  </div>
+                                  {isCapa && (
+                                    <div className="px-2 py-1 rounded-full text-xs flex items-center gap-1 bg-accent text-accent-foreground">
+                                      <Star className="h-3 w-3 fill-current" />
+                                    </div>
+                                  )}
+                                </div>
+
+                                <video
+                                  src={midia.url}
+                                  className="w-full h-full object-cover"
+                                  muted
+                                  autoPlay
+                                  loop
+                                  playsInline
+                                />
+                                
+                                {/* Ações */}
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant={isCapa ? 'default' : 'secondary'}
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => definirComoCapa(midia)}
+                                      title="Definir como capa"
+                                      disabled={isCapa}
+                                    >
+                                      <Star className={`h-3 w-3 ${isCapa ? 'fill-current' : ''}`} />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => toggleVisibilidade(midia)}
+                                    >
+                                      {midia.visivel_catalogo ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => downloadMidia(midia.url, midia.nome_arquivo)}
+                                    >
+                                      <Download className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => compartilharMidia(midia.url, midia.nome_arquivo)}
+                                    >
+                                      <Share2 className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => deletarMidia(midia)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+            </ScrollArea>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>
