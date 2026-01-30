@@ -145,8 +145,11 @@ function getDataAtual(): string {
   return `${day}/${month}/${year}`;
 }
 
+// URL do Web App do Google Apps Script para executar "lancarPedido"
+const GOOGLE_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxp-uq9EJTeB69ptLrE5dsDrcsLMQPn1i89ydZ_EP7NjggRaNZtrdSEu6MxKVY9f2fBsw/exec';
+
 // Exportar para planilha de Produção (aba "Lançamento Venda")
-// Insere dados em C6:M6 e executa o script "lancarPedido"
+// Insere dados em C6:M6 e executa o script "lancarPedido" via Web App
 async function exportarParaProducao(
   accessToken: string, 
   spreadsheetId: string, 
@@ -207,37 +210,30 @@ async function exportarParaProducao(
       throw new Error(`Falha ao inserir dados na planilha de Produção: ${errorText}`);
     }
 
-    console.log('Dados inseridos, executando script lancarPedido...');
+    console.log('Dados inseridos, executando script lancarPedido via Web App...');
 
-    // 2. Executar o script "lancarPedido" via Apps Script API
-    // Usar o endpoint de macros do Google Sheets
-    const scriptUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:runMacro`;
-    
+    // 2. Executar o script "lancarPedido" via Web App
     try {
-      const scriptResponse = await fetch(scriptUrl, {
+      const scriptResponse = await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          function: 'lancarPedido',
+          action: 'lancarPedido',
         }),
       });
 
-      if (!scriptResponse.ok) {
-        // Se o macro não funcionar via Sheets API, tentar via Apps Script API
-        console.log('Tentando via Apps Script API diretamente...');
-        
-        // Alternativa: usar trigger ou webhook se disponível
-        const errorText = await scriptResponse.text();
-        console.warn('Script execution via Sheets API failed:', errorText);
-        console.log('Nota: O script lancarPedido pode precisar ser executado manualmente ou via Apps Script Web App');
+      if (scriptResponse.ok) {
+        const result = await scriptResponse.text();
+        console.log('Script lancarPedido executado com sucesso:', result);
       } else {
-        console.log('Script lancarPedido executado com sucesso');
+        const errorText = await scriptResponse.text();
+        console.warn('Aviso: Script pode não ter executado corretamente:', errorText);
       }
     } catch (scriptError) {
-      console.warn('Erro ao executar script (continuando):', scriptError);
+      console.warn('Erro ao executar script via Web App:', scriptError);
+      // Continua mesmo se o script falhar, pois os dados já foram inseridos
     }
   }
 
