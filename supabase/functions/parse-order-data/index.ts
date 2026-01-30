@@ -19,40 +19,52 @@ serve(async (req) => {
     }
 
     const systemPrompt = `Você é um assistente especializado em extrair informações de pedidos de facas artesanais.
-Analise o texto fornecido e extraia TODOS os dados disponíveis sobre o pedido, incluindo:
+Analise o texto fornecido e extraia TODOS os dados disponíveis sobre o pedido.
+
+REGRAS IMPORTANTES:
+1. SEMPRE extraia qualquer nome de pessoa que aparecer no texto como "nomeCompleto"
+2. Se o texto contiver apenas um nome (como "João Silva" ou "Maria"), ainda assim extraia como nomeCompleto
+3. Extraia TODOS os dados que conseguir identificar, mesmo que parciais
+4. Não invente dados que não estão no texto
 
 DADOS DO CLIENTE:
-- Nome completo
-- CPF
-- Email
-- Celular
-- CEP
-- Endereço, número, bairro, cidade, estado, complemento
-- Data de nascimento
-- Nome para certificado
+- nomeCompleto: Nome da pessoa (OBRIGATÓRIO se houver qualquer nome no texto)
+- cpf: Número do CPF
+- email: Endereço de email
+- celular: Número de telefone/celular
+- cep: Código postal
+- endereco: Rua/Avenida
+- numero: Número do endereço
+- bairro: Bairro
+- cidade: Cidade
+- estado: Estado (sigla ou nome completo)
+- complemento: Complemento do endereço
+- dataNascimento: Data de nascimento
+- nomeCertificado: Nome para certificado (se diferente do nome completo)
 
 DADOS DO PEDIDO:
-- Canal de venda
-- Status
-- Origem do cliente
-- Observações gerais
-- Cupom de desconto
-- Forma de pagamento
+- canal: Canal de venda (WhatsApp, Instagram, etc)
+- status: Status do pedido
+- origemCliente: Como o cliente chegou
+- observacao: Observações gerais
+- cupom: Cupom de desconto
+- formaPagamento: Forma de pagamento
 
 LÂMINAS (pode haver múltiplas):
-- Modelo
-- Aço
-- Acabamento
-- Empunhadura
-- Bainha
-- Cor da bainha
-- Personalização a laser (texto)
-- Observações da lâmina
+- modelo: Nome/modelo da faca
+- aco: Tipo de aço
+- acabamento: Tipo de acabamento
+- empunhadura: Material da empunhadura
+- bainha: Tipo de bainha
+- corBainha: Cor da bainha
+- textoLaser: Texto para gravação a laser
+- observacao: Observações específicas da lâmina
 
 PRODUTOS ADICIONAIS:
-- Nome do produto e quantidade
+- nome: Nome do produto
+- quantidade: Quantidade
 
-Extraia todas as informações disponíveis, mesmo que parciais. Se algum dado não estiver presente, não inclua o campo.`;
+Extraia todas as informações disponíveis. Se houver apenas um nome de pessoa, extraia como nomeCompleto.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
