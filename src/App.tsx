@@ -19,6 +19,7 @@ import GerenciarComponentes from "./pages/admin/GerenciarComponentes";
 import GerenciarInformativos from "./pages/admin/GerenciarInformativos";
 import MensagensPadrao from "./pages/MensagensPadrao";
 import Tarefas from "./pages/Tarefas";
+import ListaValores from "./pages/ListaValores";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
@@ -134,6 +135,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Tarefas />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lista-valores"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ListaValores />
                   </Layout>
                 </ProtectedRoute>
               }
