@@ -741,15 +741,9 @@ export default function CustomizarLamina() {
                           <Label htmlFor="logo" className="text-xs font-medium cursor-pointer">Logo</Label>
                         </div>
                         {gravacoes.logo.ativo && (
-                          <div className="space-y-2">
-                            <div className="border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center justify-center">
-                              <Plus className="h-6 w-6 text-muted-foreground mb-2" />
-                              <p className="text-xs text-muted-foreground">Escolha uma imagem</p>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground">
-                              Apenas logotipos e símbolos em preto e branco poderão ser gravados. Faça upload do arquivo que deseja gravar e entraremos em contato por WhatsApp.
-                            </p>
-                          </div>
+                          <p className="text-[10px] text-muted-foreground pl-5">
+                            Apenas logotipos e símbolos em preto e branco poderão ser gravados. Envie o arquivo pelo WhatsApp ao solicitar o orçamento.
+                          </p>
                         )}
                       </div>
                     </div>
