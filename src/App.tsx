@@ -107,7 +107,11 @@ const App = () => (
             />
             <Route
               path="/customizar-lamina"
-              element={<CustomizarLamina />}
+              element={
+                <ProtectedRoute>
+                  <CustomizarLamina />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/auxilio-vendas"
