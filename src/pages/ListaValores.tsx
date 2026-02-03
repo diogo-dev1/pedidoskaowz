@@ -38,15 +38,17 @@ export default function ListaValores() {
     if (!data) return [];
     if (!searchTerm.trim()) return data;
 
-    const searchLower = searchTerm.toLowerCase();
+    // Divide a busca em palavras individuais
+    const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(word => word.length > 0);
 
     return data.map(sheet => ({
       ...sheet,
-      items: sheet.items.filter(item =>
-        Object.values(item).some(value =>
-          String(value).toLowerCase().includes(searchLower)
-        )
-      ),
+      items: sheet.items.filter(item => {
+        // Junta todos os valores do item em uma única string
+        const itemText = Object.values(item).join(' ').toLowerCase();
+        // Verifica se TODAS as palavras da busca estão presentes (em qualquer ordem)
+        return searchWords.every(word => itemText.includes(word));
+      }),
     })).filter(sheet => sheet.items.length > 0);
   }, [data, searchTerm]);
 
