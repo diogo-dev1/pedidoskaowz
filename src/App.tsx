@@ -18,7 +18,8 @@ import GerenciarConfiguracoes from "./pages/admin/GerenciarConfiguracoes";
 import GerenciarComponentes from "./pages/admin/GerenciarComponentes";
 import GerenciarInformativos from "./pages/admin/GerenciarInformativos";
 import MensagensPadrao from "./pages/MensagensPadrao";
-import Tarefas from "./pages/Tarefas";
+import Dashboard from "./pages/Dashboard";
+import KanbanBoard from "./pages/KanbanBoard";
 import ListaValores from "./pages/ListaValores";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
@@ -138,7 +139,17 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <Tarefas />
+                    <Dashboard />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tarefas/:boardId"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <KanbanBoard />
                   </Layout>
                 </ProtectedRoute>
               }
