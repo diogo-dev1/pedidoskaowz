@@ -34,6 +34,7 @@ interface LaminaCustomizada {
   modelo: ModeloBase | null;
   aco: OpcaoComponente | null;
   acabamento: OpcaoComponente | null;
+  bruteForge: boolean;
   empunhadura: OpcaoComponente | null;
   dragonScale: boolean;
   bainha: OpcaoComponente | null;
@@ -59,6 +60,7 @@ export default function CustomizarLamina() {
   const [modeloSelecionado, setModeloSelecionado] = useState<string>('');
   const [acoSelecionado, setAcoSelecionado] = useState<string>('');
   const [acabamentoSelecionado, setAcabamentoSelecionado] = useState<string>('');
+  const [bruteForge, setBruteForge] = useState(false);
   const [empunhaduraSelecionada, setEmpunhaduraSelecionada] = useState<string>('');
   const [dragonScale, setDragonScale] = useState(false);
   const [bainhaSelecionada, setBainhaSelecionada] = useState<string>('');
@@ -140,6 +142,7 @@ export default function CustomizarLamina() {
       modelo: modeloAtual || null,
       aco: acoAtual || null,
       acabamento: acabamentoAtual || null,
+      bruteForge,
       empunhadura: empunhaduraAtual || null,
       dragonScale,
       bainha: bainhaAtual || null,
@@ -167,6 +170,7 @@ export default function CustomizarLamina() {
     setModeloSelecionado('');
     setAcoSelecionado('');
     setAcabamentoSelecionado('');
+    setBruteForge(false);
     setEmpunhaduraSelecionada('');
     setDragonScale(false);
     setBainhaSelecionada('');
@@ -194,7 +198,9 @@ export default function CustomizarLamina() {
       mensagem += `*Lâmina ${index + 1}:*\n`;
       mensagem += `- Modelo: ${lamina.modelo?.nome_modelo || '-'}\n`;
       mensagem += `- Aço: ${lamina.aco?.nome_opcao || '-'}\n`;
-      mensagem += `- Acabamento: ${lamina.acabamento?.nome_opcao || '-'}\n`;
+      let acabamentoInfo = lamina.acabamento?.nome_opcao || '-';
+      if (lamina.bruteForge) acabamentoInfo += ' + Brute Forge';
+      mensagem += `- Acabamento: ${acabamentoInfo}\n`;
       let empunhaduraInfo = lamina.empunhadura?.nome_opcao || '-';
       if (lamina.dragonScale) empunhaduraInfo += ' + Dragon Scale';
       mensagem += `- Empunhadura: ${empunhaduraInfo}\n`;
@@ -416,13 +422,26 @@ export default function CustomizarLamina() {
               etapaKey="aco"
             />
 
-            <CollapsibleSelect 
-              options={acabamentos} 
-              selected={acabamentoSelecionado} 
-              onSelect={setAcabamentoSelecionado} 
-              label="Acabamento"
-              etapaKey="acabamento"
-            />
+            <div className="space-y-1.5">
+              <CollapsibleSelect 
+                options={acabamentos} 
+                selected={acabamentoSelecionado} 
+                onSelect={setAcabamentoSelecionado} 
+                label="Acabamento"
+                etapaKey="acabamento"
+              />
+              {acabamentoSelecionado && (
+                <div className="flex items-center gap-2 pl-3">
+                  <Checkbox
+                    id="bruteForge"
+                    checked={bruteForge}
+                    onCheckedChange={(checked) => setBruteForge(checked === true)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <Label htmlFor="bruteForge" className="text-xs cursor-pointer">Brute Forge</Label>
+                </div>
+              )}
+            </div>
 
             <div className="space-y-1.5">
               <CollapsibleSelect 
