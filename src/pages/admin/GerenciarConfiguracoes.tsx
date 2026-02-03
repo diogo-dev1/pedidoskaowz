@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Video } from 'lucide-react';
+import { Plus, Pencil, Trash2, Video, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Configuracao {
   id: string;
@@ -20,6 +21,8 @@ interface Configuracao {
   garantia: string | null;
   prazo_entrega: string | null;
 }
+
+const CATEGORIAS = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
 
 export default function GerenciarConfiguracoes() {
   const [configuracoes, setConfiguracoes] = useState<Configuracao[]>([]);
@@ -35,6 +38,10 @@ export default function GerenciarConfiguracoes() {
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  
+  // Filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoriaFiltro, setCategoriaFiltro] = useState<string>('todas');
 
   useEffect(() => {
     fetchConfiguracoes();
@@ -54,6 +61,15 @@ export default function GerenciarConfiguracoes() {
     }
     setLoading(false);
   };
+
+  const filteredConfiguracoes = useMemo(() => {
+    return configuracoes.filter(config => {
+      const matchesSearch = searchTerm.trim() === '' || 
+        config.nome_modelo.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategoria = categoriaFiltro === 'todas' || config.categoria === categoriaFiltro;
+      return matchesSearch && matchesCategoria;
+    });
+  }, [configuracoes, searchTerm, categoriaFiltro]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,7 +208,7 @@ export default function GerenciarConfiguracoes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
         <div>
           <h1 className="text-3xl font-bold">Gerenciar Configurações</h1>
           <p className="text-muted-foreground">
@@ -234,13 +250,9 @@ export default function GerenciarConfiguracoes() {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     required
                   >
-                    <option value="EDC">EDC</option>
-                    <option value="Adaga">Adaga</option>
-                    <option value="Campo">Campo</option>
-                    <option value="Cozinha">Cozinha</option>
-                    <option value="Defesa">Defesa</option>
-                    <option value="KZR">KZR</option>
-                    <option value="Upsell">Upsell</option>
+                    {CATEGORIAS.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -325,8 +337,37 @@ export default function GerenciarConfiguracoes() {
         </Dialog>
       </div>
 
+      {/* Filtros */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={categoriaFiltro} onValueChange={setCategoriaFiltro}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas ({configuracoes.length})</SelectItem>
+            {CATEGORIAS.map(cat => {
+              const count = configuracoes.filter(c => c.categoria === cat).length;
+              return (
+                <SelectItem key={cat} value={cat}>
+                  {cat} ({count})
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {configuracoes.map((config) => (
+        {filteredConfiguracoes.map((config) => (
           <Card key={config.id}>
             <CardHeader>
               {config.video_url ? (
@@ -380,10 +421,14 @@ export default function GerenciarConfiguracoes() {
         ))}
       </div>
 
-      {configuracoes.length === 0 && (
+      {filteredConfiguracoes.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Nenhuma configuração cadastrada ainda.</p>
+            <p className="text-muted-foreground">
+              {searchTerm || categoriaFiltro !== 'todas' 
+                ? 'Nenhuma configuração encontrada com os filtros aplicados.' 
+                : 'Nenhuma configuração cadastrada ainda.'}
+            </p>
           </CardContent>
         </Card>
       )}
