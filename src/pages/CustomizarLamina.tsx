@@ -1062,68 +1062,13 @@ export default function CustomizarLamina() {
                   )}
 
                   {laminasCustomizadas.length > 0 && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="nomeCliente" className="text-xs">Nome do Cliente</Label>
-                        <Input
-                          id="nomeCliente"
-                          value={nomeCliente}
-                          onChange={(e) => setNomeCliente(e.target.value)}
-                          placeholder="Nome completo do cliente"
-                          className="text-sm"
-                        />
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          onClick={enviarWhatsApp}
-                          className="flex-1 min-w-[80px] bg-accent hover:bg-accent/90 text-xs md:text-sm"
-                        >
-                          <MessageCircle className="h-4 w-4 mr-1" />
-                          WhatsApp
-                        </Button>
-                        <Button
-                          onClick={exportarParaSheets}
-                          disabled={exportando || !nomeCliente.trim()}
-                          variant="outline"
-                          className="flex-1 min-w-[80px] text-xs md:text-sm"
-                        >
-                          {exportando ? (
-                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                          ) : (
-                            <FileSpreadsheet className="h-4 w-4 mr-1" />
-                          )}
-                          Planilha
-                        </Button>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          onClick={exportarResumoComoImagem}
-                          disabled={exportando}
-                          variant="outline"
-                          className="flex-1 min-w-[80px] text-xs md:text-sm"
-                        >
-                          {exportando ? (
-                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                          ) : (
-                            <FileImage className="h-4 w-4 mr-1" />
-                          )}
-                          Imagem
-                        </Button>
-                        <Button
-                          onClick={exportarResumoComoPDF}
-                          disabled={exportando}
-                          variant="outline"
-                          className="flex-1 min-w-[80px] text-xs md:text-sm"
-                        >
-                          {exportando ? (
-                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                          ) : (
-                            <FileText className="h-4 w-4 mr-1" />
-                          )}
-                          PDF
-                        </Button>
-                      </div>
-                    </>
+                    <Button
+                      onClick={enviarWhatsApp}
+                      className="w-full bg-accent hover:bg-accent/90 text-sm"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Solicitar Orçamento
+                    </Button>
                   )}
                 </div>
               </div>
