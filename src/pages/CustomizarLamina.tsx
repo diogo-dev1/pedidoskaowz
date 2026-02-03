@@ -6,10 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, MessageCircle, Search, Check, ArrowLeft, Eye, FileSpreadsheet, Loader2, FileImage, FileText } from 'lucide-react';
+import { Trash2, Plus, MessageCircle, Search, Check, ArrowLeft, Eye, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { toast } from 'sonner';
 import edcKnife from '@/assets/edc-knife.svg';
 import { InfoEtapaModal } from '@/components/InfoEtapaModal';
@@ -38,6 +38,7 @@ interface LaminaCustomizada {
   dragonScale: boolean;
   bainha: OpcaoComponente | null;
   corBainha: string;
+  corBainhaPersonalizada: string;
   laser: boolean;
   textoLaser: string;
   localGravacao: string[];
@@ -62,6 +63,7 @@ export default function CustomizarLamina() {
   const [dragonScale, setDragonScale] = useState(false);
   const [bainhaSelecionada, setBainhaSelecionada] = useState<string>('');
   const [corBainha, setCorBainha] = useState<string>('');
+  const [corBainhaPersonalizada, setCorBainhaPersonalizada] = useState<string>('');
   const [laser, setLaser] = useState(false);
   const [textoLaser, setTextoLaser] = useState('');
   const [localGravacao, setLocalGravacao] = useState<string[]>([]);
@@ -76,149 +78,9 @@ export default function CustomizarLamina() {
   
   // Modal para visualizar lâmina
   const [laminaModalAberta, setLaminaModalAberta] = useState<LaminaCustomizada | null>(null);
-  const [exportando, setExportando] = useState(false);
-  const [nomeCliente, setNomeCliente] = useState('');
   
-  // Ref para exportação
-  const exportCardRef = useRef<HTMLDivElement>(null);
-
-  // Funções de exportação
-  const exportarComoImagem = async () => {
-    if (!exportCardRef.current || !laminaModalAberta) return;
-    
-    try {
-      toast.loading('Gerando imagem...');
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(exportCardRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true,
-      });
-      
-      const link = document.createElement('a');
-      link.download = `lamina-${laminaModalAberta.modelo?.nome_modelo || 'customizada'}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      toast.dismiss();
-      toast.success('Imagem salva!');
-    } catch (error) {
-      toast.dismiss();
-      toast.error('Erro ao gerar imagem');
-      console.error(error);
-    }
-  };
-
-  const exportarComoPDF = async () => {
-    if (!exportCardRef.current || !laminaModalAberta) return;
-    
-    try {
-      toast.loading('Gerando PDF...');
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
-      
-      const canvas = await html2canvas(exportCardRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true,
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a5',
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min((pdfWidth - 20) / imgWidth, (pdfHeight - 20) / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 10;
-      
-      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      pdf.save(`lamina-${laminaModalAberta.modelo?.nome_modelo || 'customizada'}.pdf`);
-      toast.dismiss();
-      toast.success('PDF salvo!');
-    } catch (error) {
-      toast.dismiss();
-      toast.error('Erro ao gerar PDF');
-      console.error(error);
-    }
-  };
-
-  // Funções de exportação do resumo completo
-  const exportarResumoComoImagem = async () => {
-    if (!exportCardRef.current || laminasCustomizadas.length === 0) return;
-    
-    try {
-      setExportando(true);
-      toast.loading('Gerando imagem do resumo...');
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(exportCardRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true,
-      });
-      
-      const link = document.createElement('a');
-      link.download = `pedido-kaowz-${nomeCliente.trim() || 'cliente'}-${new Date().toISOString().split('T')[0]}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      toast.dismiss();
-      toast.success('Imagem do resumo salva!');
-    } catch (error) {
-      toast.dismiss();
-      toast.error('Erro ao gerar imagem');
-      console.error(error);
-    } finally {
-      setExportando(false);
-    }
-  };
-
-  const exportarResumoComoPDF = async () => {
-    if (!exportCardRef.current || laminasCustomizadas.length === 0) return;
-    
-    try {
-      setExportando(true);
-      toast.loading('Gerando PDF do resumo...');
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
-      
-      const canvas = await html2canvas(exportCardRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true,
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min((pdfWidth - 20) / imgWidth, (pdfHeight - 20) / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 10;
-      
-      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      pdf.save(`pedido-kaowz-${nomeCliente.trim() || 'cliente'}-${new Date().toISOString().split('T')[0]}.pdf`);
-      toast.dismiss();
-      toast.success('PDF do resumo salvo!');
-    } catch (error) {
-      toast.dismiss();
-      toast.error('Erro ao gerar PDF');
-      console.error(error);
-    } finally {
-      setExportando(false);
-    }
-  };
+  // Collapsibles
+  const [showExtras, setShowExtras] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -256,6 +118,8 @@ export default function CustomizarLamina() {
     return matchBusca && matchCategoria;
   });
 
+  const mostrarModelos = categoriaFiltro !== '' || buscaModelo.trim() !== '';
+
   // Objetos selecionados para exibição no resumo em tempo real
   const modeloAtual = modelos.find(m => m.id === modeloSelecionado);
   const acoAtual = componentes.find(c => c.id === acoSelecionado);
@@ -269,6 +133,8 @@ export default function CustomizarLamina() {
       return;
     }
 
+    const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
+
     const novaLamina: LaminaCustomizada = {
       id: `${Date.now()}-${Math.random()}`,
       modelo: modeloAtual || null,
@@ -277,7 +143,8 @@ export default function CustomizarLamina() {
       empunhadura: empunhaduraAtual || null,
       dragonScale,
       bainha: bainhaAtual || null,
-      corBainha,
+      corBainha: corBainhaFinal,
+      corBainhaPersonalizada,
       laser,
       textoLaser,
       localGravacao,
@@ -304,6 +171,7 @@ export default function CustomizarLamina() {
     setDragonScale(false);
     setBainhaSelecionada('');
     setCorBainha('');
+    setCorBainhaPersonalizada('');
     setLaser(false);
     setTextoLaser('');
     setLocalGravacao([]);
@@ -358,862 +226,511 @@ export default function CustomizarLamina() {
     toast.success('Redirecionando para WhatsApp...');
   };
 
-  const exportarParaSheets = async () => {
-    if (laminasCustomizadas.length === 0) {
-      toast.error('Adicione pelo menos uma lâmina');
-      return;
-    }
-
-    if (!nomeCliente.trim()) {
-      toast.error('Preencha o nome do cliente');
-      return;
-    }
-
-    setExportando(true);
-    try {
-      const payload = {
-        nomeCliente: nomeCliente.trim(),
-        prazo: '',
-        observacoes: '',
-        laminas: laminasCustomizadas.map(lamina => ({
-          modelo: lamina.modelo?.nome_modelo || '',
-          aco: lamina.aco?.nome_opcao || '',
-          acabamento: lamina.acabamento?.nome_opcao || '',
-          empunhadura: (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : ''),
-          bainha: lamina.bainha?.nome_opcao || '',
-          corBainha: lamina.corBainha || '',
-          laser: lamina.laser,
-          textoLaser: lamina.textoLaser || '',
-          localGravacao: lamina.localGravacao || [],
-          embalagem: lamina.embalagem || '',
-          embalagemGravacao: lamina.embalagemGravacao,
-          embalagemTextoGravacao: lamina.embalagemTextoGravacao || '',
-        })),
-      };
-
-      const { data, error } = await supabase.functions.invoke('export-to-sheets', {
-        body: payload,
-      });
-
-      if (error) throw error;
-
-      toast.success('Exportado para planilha com sucesso!');
-      setLaminasCustomizadas([]);
-      setNomeCliente('');
-      limparFormulario();
-    } catch (error) {
-      console.error('Erro ao exportar:', error);
-      toast.error('Erro ao exportar para planilha');
-    } finally {
-      setExportando(false);
-    }
-  };
-
-  const exportarPedidoPDF = async () => {
-    if (laminasCustomizadas.length === 0) {
-      toast.error('Adicione pelo menos uma lâmina');
-      return;
-    }
-
-    try {
-      setExportando(true);
-      toast.loading('Gerando PDF do pedido...');
-      
-      const { jsPDF } = await import('jspdf');
-      const html2canvas = (await import('html2canvas')).default;
-      
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 15;
-      let yPos = 20;
-      
-      // Header
-      pdf.setFontSize(20);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('KAOWZ - Pedido de Lâminas', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 10;
-      
-      // Data do pedido
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
-      
-      // Dados do cliente
-      if (nomeCliente.trim()) {
-        pdf.setFontSize(12);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Cliente:', margin, yPos);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(nomeCliente.trim(), margin + 20, yPos);
-        yPos += 10;
-      }
-      
-      // Linha separadora
-      pdf.setDrawColor(200);
-      pdf.line(margin, yPos, pageWidth - margin, yPos);
-      yPos += 10;
-      
-      // Lâminas
-      for (let i = 0; i < laminasCustomizadas.length; i++) {
-        const lamina = laminasCustomizadas[i];
-        
-        // Verificar se precisa de nova página
-        if (yPos > 250) {
-          pdf.addPage();
-          yPos = 20;
-        }
-        
-        // Título da lâmina
-        pdf.setFontSize(14);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(0, 0, 0);
-        pdf.text(`Lâmina ${i + 1}: ${lamina.modelo?.nome_modelo || 'Customizada'}`, margin, yPos);
-        yPos += 8;
-        
-        // Especificações
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
-        
-        const specs = [
-          { label: 'Aço', value: lamina.aco?.nome_opcao || '-' },
-          { label: 'Acabamento', value: lamina.acabamento?.nome_opcao || '-' },
-          { label: 'Empunhadura', value: (lamina.empunhadura?.nome_opcao || '-') + (lamina.dragonScale ? ' + Dragon Scale' : '') },
-          { label: 'Bainha', value: lamina.bainha?.nome_opcao || '-' },
-          { label: 'Cor da Bainha', value: lamina.corBainha || '-' },
-        ];
-        
-        if (lamina.embalagem) {
-          specs.push({ label: 'Embalagem', value: lamina.embalagem });
-          if (lamina.embalagemGravacao && lamina.embalagemTextoGravacao) {
-            specs.push({ label: 'Gravação Embalagem', value: lamina.embalagemTextoGravacao });
-          }
-        }
-        
-        if (lamina.laser && lamina.textoLaser) {
-          specs.push({ label: 'Personalização à Laser', value: lamina.textoLaser });
-          if (lamina.localGravacao && lamina.localGravacao.length > 0) {
-            specs.push({ label: 'Local da Gravação', value: lamina.localGravacao.join(', ') });
-          }
-        }
-        
-        specs.forEach(spec => {
-          pdf.setFont('helvetica', 'bold');
-          pdf.text(`${spec.label}:`, margin + 5, yPos);
-          pdf.setFont('helvetica', 'normal');
-          pdf.text(spec.value, margin + 45, yPos);
-          yPos += 6;
-        });
-        
-        yPos += 8;
-        
-        // Linha separadora entre lâminas
-        if (i < laminasCustomizadas.length - 1) {
-          pdf.setDrawColor(220);
-          pdf.line(margin, yPos - 4, pageWidth - margin, yPos - 4);
-        }
-      }
-      
-      // Rodapé
-      const totalPages = pdf.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        pdf.setPage(i);
-        pdf.setFontSize(8);
-        pdf.setTextColor(150);
-        pdf.text(`Página ${i} de ${totalPages}`, pageWidth / 2, 290, { align: 'center' });
-        pdf.text('KAOWZ - Cutelaria Artesanal', pageWidth / 2, 285, { align: 'center' });
-      }
-      
-      pdf.save(`pedido-kaowz-${nomeCliente.trim() || 'cliente'}-${new Date().toISOString().split('T')[0]}.pdf`);
-      toast.dismiss();
-      toast.success('PDF do pedido gerado!');
-    } catch (error) {
-      toast.dismiss();
-      toast.error('Erro ao gerar PDF');
-      console.error(error);
-    } finally {
-      setExportando(false);
-    }
-  };
-
   const getModeloImagem = (modelo: ModeloBase | null | undefined) => {
     if (!modelo) return edcKnife;
     return modelo.imagem_modelo || edcKnife;
   };
 
+  // Componente colapsável para seleção limpa (igual ao Simulador)
+  const CollapsibleSelect = ({ 
+    options, 
+    selected, 
+    onSelect, 
+    label,
+    etapaKey 
+  }: { 
+    options: OpcaoComponente[], 
+    selected: string, 
+    onSelect: (id: string) => void, 
+    label: string,
+    etapaKey?: string 
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const selectedOption = options.find(o => o.id === selected);
+
+    return (
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between p-2.5 rounded-lg bg-muted hover:bg-muted/80 transition-all">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">{label}</span>
+              {selectedOption && (
+                <Badge variant="secondary" className="text-xs font-medium">
+                  {selectedOption.nome_opcao}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              {etapaKey && (
+                <span onClick={(e) => e.stopPropagation()}>
+                  <InfoEtapaModal etapaKey={etapaKey} />
+                </span>
+              )}
+              {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </div>
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-2">
+          <div className="flex flex-wrap gap-1.5">
+            {options.map(opt => (
+              <button
+                key={opt.id}
+                onClick={() => {
+                  onSelect(opt.id);
+                  setIsOpen(false);
+                }}
+                className={`px-2.5 py-1.5 rounded-md text-xs transition-all ${
+                  selected === opt.id
+                    ? 'bg-accent text-accent-foreground font-medium'
+                    : 'bg-background border border-border hover:border-accent/50'
+                }`}
+              >
+                {opt.nome_opcao}
+              </button>
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  };
+
+  if (loading) {
+    return <div className="py-8 text-center text-muted-foreground">Carregando opções...</div>;
+  }
+
   return (
-    <div className="min-h-screen bg-zinc-50 overflow-x-hidden">
+    <div className="min-h-screen bg-background pb-28">
       {/* Header */}
       <header className="bg-black border-b border-white/10 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 md:py-4">
-          <div className="flex items-center gap-2 md:gap-4">
+        <div className="container mx-auto px-3 py-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate('/catalogo')}
-              className="text-white hover:bg-white/10 text-xs md:text-sm"
+              className="text-white hover:bg-white/10 text-xs"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Voltar
             </Button>
-            <h1 className="text-lg md:text-3xl font-bold text-white tracking-tight">
-              Monte Sua Própria Lâmina
+            <h1 className="text-lg font-bold text-white tracking-tight">
+              Monte Sua Lâmina
             </h1>
+            {laminasCustomizadas.length > 0 && (
+              <Badge variant="secondary" className="text-xs ml-auto">
+                {laminasCustomizadas.length} lâmina{laminasCustomizadas.length > 1 ? 's' : ''}
+              </Badge>
+            )}
           </div>
         </div>
       </header>
- 
-      <div className="container mx-auto px-4 py-6">
-        {/* Miniatura do modelo selecionado */}
-        {!loading && modeloSelecionado && (
-          <div className="mb-4 md:mb-6 flex justify-center animate-fade-in">
-            <div className="relative w-full max-w-[300px] md:max-w-[500px] h-32 md:h-40 rounded-lg overflow-hidden border border-accent shadow-lg bg-white p-2 md:p-4">
-              <img 
-                src={getModeloImagem(modeloAtual)} 
-                alt="Modelo selecionado"
-                className="w-full h-full object-contain filter drop-shadow-sm"
-                style={{ filter: 'contrast(1.2) brightness(0.95)' }}
+
+      <div className="container mx-auto px-3 py-4 max-w-5xl">
+        {/* Imagem do modelo selecionado - Acima do card */}
+        {modeloSelecionado && modeloAtual && (
+          <div className="bg-muted rounded-lg p-4 mb-3">
+            <div className="w-full h-32 bg-white rounded overflow-hidden mb-3">
+              <img
+                src={getModeloImagem(modeloAtual)}
+                alt={modeloAtual.nome_modelo}
+                className="w-full h-full object-contain"
               />
             </div>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="py-8 text-center text-muted-foreground">Carregando opções...</div>
-        ) : (
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-              {/* Coluna Principal - Configuração */}
-              <div className="lg:col-span-2 space-y-4 md:space-y-6">
-                {/* Seleção de Modelo */}
-                <div className="bg-white rounded-lg border border-zinc-200 p-3 md:p-6 space-y-3 md:space-y-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-base md:text-lg">1. Escolha o Modelo</h3>
-                      <Badge variant="secondary" className="text-xs">Obrigatório</Badge>
-                    </div>
-                    <InfoEtapaModal etapaKey="modelo" showLabel />
-                  </div>
-
-                  {/* Filtros de Categoria */}
-                  <div className="flex flex-wrap gap-1.5 md:gap-2">
-                    <Button
-                      size="sm"
-                      variant={!categoriaFiltro ? "default" : "outline"}
-                      onClick={() => setCategoriaFiltro('')}
-                      className="h-7 md:h-8 text-xs px-2 md:px-3"
-                    >
-                      Todas
-                    </Button>
-                    {categorias.map(cat => (
-                      <Button
-                        key={cat}
-                        size="sm"
-                        variant={categoriaFiltro === cat ? "default" : "outline"}
-                        onClick={() => setCategoriaFiltro(cat)}
-                        className="h-7 md:h-8 text-xs px-2 md:px-3"
-                      >
-                        {cat}
-                      </Button>
-                    ))}
-                  </div>
-                  
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar modelo..."
-                      value={buscaModelo}
-                      onChange={(e) => setBuscaModelo(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-
-                  {modelosFiltrados.length === 0 ? (
-                    <div className="text-center py-6 md:py-8 text-xs md:text-sm text-muted-foreground border border-border rounded-lg">
-                      Nenhum modelo encontrado
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-1.5 md:gap-2 max-h-48 md:max-h-60 overflow-y-auto border border-border rounded-lg p-1.5 md:p-2">
-                      {modelosFiltrados.map(modelo => (
-                        <button
-                          key={modelo.id}
-                          onClick={() => setModeloSelecionado(modelo.id)}
-                          className={`p-2 md:p-3 rounded-lg text-left transition-all ${
-                            modeloSelecionado === modelo.id
-                              ? 'bg-accent text-accent-foreground shadow-md'
-                              : 'bg-muted hover:bg-muted/80'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-xs md:text-sm truncate">{modelo.nome_modelo}</div>
-                              {modelo.categoria && (
-                                <Badge variant="outline" className="text-[10px] md:text-xs px-1 md:px-1.5 py-0 mt-0.5">
-                                  {modelo.categoria}
-                                </Badge>
-                              )}
-                            </div>
-                            {modeloSelecionado === modelo.id && <Check className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Opções de Customização */}
-                {modeloSelecionado && (
-                  <div className="bg-white rounded-lg border border-zinc-200 p-3 md:p-6">
-                    <Accordion type="single" collapsible className="w-full">
-                      <AccordionItem value="aco" className="border-border">
-                        <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                          <span className="flex items-center gap-2">
-                            2. Tipo de Aço {acoSelecionado && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
-                          </span>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
-                          <div className="mb-2 flex justify-end">
-                            <InfoEtapaModal etapaKey="aco" showLabel />
-                          </div>
-                          {acos.map(aco => (
-                            <button
-                              key={aco.id}
-                              onClick={() => setAcoSelecionado(aco.id)}
-                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                                acoSelecionado === aco.id
-                                  ? 'bg-accent text-accent-foreground'
-                                  : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              <span className="truncate">{aco.nome_opcao}</span>
-                            </button>
-                          ))}
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="acabamento" className="border-border">
-                        <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                          <span className="flex items-center gap-2">
-                            3. Acabamento {acabamentoSelecionado && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
-                          </span>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-1.5 md:space-y-2 pt-2">
-                          <div className="mb-2 flex justify-end">
-                            <InfoEtapaModal etapaKey="acabamento" showLabel />
-                          </div>
-                          {acabamentos.map(acabamento => (
-                            <button
-                              key={acabamento.id}
-                              onClick={() => setAcabamentoSelecionado(acabamento.id)}
-                              className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                                acabamentoSelecionado === acabamento.id
-                                  ? 'bg-accent text-accent-foreground'
-                                  : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              <span className="truncate">{acabamento.nome_opcao}</span>
-                            </button>
-                          ))}
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="empunhadura" className="border-border">
-                        <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                          <span className="flex items-center gap-2">
-                            4. Empunhadura {empunhaduraSelecionada && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
-                          </span>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-3 pt-2">
-                          <div className="mb-2 flex justify-end">
-                            <InfoEtapaModal etapaKey="empunhadura" showLabel />
-                          </div>
-                          <div className="space-y-1.5 md:space-y-2">
-                            {empunhaduras.map(empunhadura => (
-                              <button
-                                key={empunhadura.id}
-                                onClick={() => setEmpunhaduraSelecionada(empunhadura.id)}
-                                className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                                  empunhaduraSelecionada === empunhadura.id
-                                    ? 'bg-accent text-accent-foreground'
-                                    : 'bg-muted hover:bg-muted/80'
-                                }`}
-                              >
-                                <span className="truncate">{empunhadura.nome_opcao}</span>
-                              </button>
-                            ))}
-                          </div>
-                          {empunhaduraSelecionada && (
-                            <div className="pt-2 border-t border-border">
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  id="dragonScale"
-                                  checked={dragonScale}
-                                  onCheckedChange={(checked) => setDragonScale(checked === true)}
-                                />
-                                <Label htmlFor="dragonScale" className="text-xs md:text-sm cursor-pointer">
-                                  Dragon Scale (opcional)
-                                </Label>
-                              </div>
-                            </div>
-                          )}
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="bainha" className="border-border">
-                        <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                          <span className="flex items-center gap-2">
-                            5. Bainha {bainhaSelecionada && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
-                          </span>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-3 pt-2">
-                          <div className="mb-2 flex justify-end">
-                            <InfoEtapaModal etapaKey="bainha" showLabel />
-                          </div>
-                          <div className="space-y-1.5 md:space-y-2">
-                            {bainhas.map(bainha => (
-                              <button
-                                key={bainha.id}
-                                onClick={() => setBainhaSelecionada(bainha.id)}
-                                className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                                  bainhaSelecionada === bainha.id
-                                    ? 'bg-accent text-accent-foreground'
-                                    : 'bg-muted hover:bg-muted/80'
-                                }`}
-                              >
-                                <span className="truncate">{bainha.nome_opcao}</span>
-                              </button>
-                            ))}
-                          </div>
-                          {bainhaSelecionada && (
-                            <div className="space-y-1.5 md:space-y-2 pt-2 border-t border-border">
-                              <Label htmlFor="corBainha" className="text-xs">Cor da Bainha</Label>
-                              <Select value={corBainha} onValueChange={setCorBainha}>
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Selecione a cor" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {coresBainha.map(cor => (
-                                    <SelectItem key={cor.id} value={cor.nome_opcao}>{cor.nome_opcao}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="laser" className="border-border">
-                        <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                          <span className="flex items-center gap-2">
-                            6. Personalização à Laser {laser && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Ativo</Badge>}
-                          </span>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-3 pt-2">
-                          <div className="mb-2 flex justify-end">
-                            <InfoEtapaModal etapaKey="laser" showLabel />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="laser"
-                              checked={laser}
-                              onCheckedChange={(checked) => setLaser(checked as boolean)}
-                            />
-                            <Label htmlFor="laser" className="text-xs md:text-sm cursor-pointer">
-                              Adicionar personalização à laser
-                            </Label>
-                          </div>
-                          {laser && (
-                            <div className="space-y-3">
-                              <div className="space-y-1.5 md:space-y-2">
-                                <Label htmlFor="textoLaser" className="text-xs">Texto para gravação</Label>
-                                <Input
-                                  id="textoLaser"
-                                  placeholder="Digite o texto..."
-                                  value={textoLaser}
-                                  onChange={(e) => setTextoLaser(e.target.value)}
-                                  className="text-xs md:text-sm"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label className="text-xs">Local da gravação</Label>
-                                <div className="flex flex-wrap gap-2">
-                                  {LOCAIS_GRAVACAO.map(local => (
-                                    <div
-                                      key={local}
-                                      className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
-                                        localGravacao.includes(local)
-                                          ? 'border-accent bg-accent/10'
-                                          : 'border-border hover:border-accent/50'
-                                      }`}
-                                      onClick={() => {
-                                        if (localGravacao.includes(local)) {
-                                          setLocalGravacao(localGravacao.filter(l => l !== local));
-                                        } else {
-                                          setLocalGravacao([...localGravacao, local]);
-                                        }
-                                      }}
-                                    >
-                                      <Checkbox checked={localGravacao.includes(local)} />
-                                      <span className="text-xs">{local}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="embalagem" className="border-border">
-                        <AccordionTrigger className="text-xs md:text-sm font-medium hover:no-underline py-3 md:py-4">
-                          <span className="flex items-center gap-2">
-                            7. Embalagem {embalagem && <Badge variant="outline" className="ml-1 text-[10px] md:text-xs">Selecionado</Badge>}
-                          </span>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-3 pt-2">
-                          <div className="space-y-1.5 md:space-y-2">
-                            {embalagensOpcoes.map(emb => (
-                              <button
-                                key={emb.id}
-                                onClick={() => setEmbalagem(embalagem === emb.nome_opcao ? '' : emb.nome_opcao)}
-                                className={`w-full p-2 md:p-2.5 rounded text-left text-xs md:text-sm transition-all ${
-                                  embalagem === emb.nome_opcao ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <span>{emb.nome_opcao}</span>
-                                  {embalagem === emb.nome_opcao && <Check className="h-4 w-4" />}
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                          {embalagem && (
-                            <div className="space-y-3 pt-2 border-t border-border">
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  id="embalagemGravacao"
-                                  checked={embalagemGravacao}
-                                  onCheckedChange={(checked) => setEmbalagemGravacao(checked as boolean)}
-                                />
-                                <Label htmlFor="embalagemGravacao" className="text-xs md:text-sm cursor-pointer">
-                                  Adicionar gravação na embalagem
-                                </Label>
-                              </div>
-                              {embalagemGravacao && (
-                                <div className="space-y-1.5 md:space-y-2">
-                                  <Label htmlFor="embalagemTextoGravacao" className="text-xs">Texto para gravação na embalagem</Label>
-                                  <Input
-                                    id="embalagemTextoGravacao"
-                                    placeholder="Digite o texto..."
-                                    value={embalagemTextoGravacao}
-                                    onChange={(e) => setEmbalagemTextoGravacao(e.target.value)}
-                                    className="text-xs md:text-sm"
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </div>
-                )}
-
-                {/* Botão Adicionar */}
-                {modeloSelecionado && (
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button
-                      onClick={adicionarLamina}
-                      className="flex-1 bg-accent hover:bg-accent/90 text-xs md:text-sm"
-                    >
-                      <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 mr-2" />
-                      Adicionar Lâmina
-                    </Button>
-                    <Button
-                      onClick={limparFormulario}
-                      variant="outline"
-                      className="text-xs md:text-sm"
-                    >
-                      Limpar
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Coluna Lateral - Resumo */}
-              <div className="lg:col-span-1 space-y-4">
-                {/* Resumo em Tempo Real */}
-                {modeloSelecionado && (
-                  <div className="bg-white rounded-lg border border-zinc-200 p-3 md:p-6 lg:sticky lg:top-24 space-y-3 md:space-y-4">
-                    <h3 className="font-semibold text-base md:text-lg flex items-center gap-2">
-                      <Eye className="h-4 w-4 text-accent" />
-                      Configuração Atual
-                    </h3>
-                    
-                    <div className="space-y-2 text-xs md:text-sm">
-                      <div className="flex justify-between py-1.5 border-b border-border">
-                        <span className="text-muted-foreground">Modelo:</span>
-                        <span className="font-medium text-right max-w-[60%] truncate">{modeloAtual?.nome_modelo || '-'}</span>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-border">
-                        <span className="text-muted-foreground">Aço:</span>
-                        <span className="font-medium text-right max-w-[60%] truncate">{acoAtual?.nome_opcao || '-'}</span>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-border">
-                        <span className="text-muted-foreground">Acabamento:</span>
-                        <span className="font-medium text-right max-w-[60%] truncate">{acabamentoAtual?.nome_opcao || '-'}</span>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-border">
-                        <span className="text-muted-foreground">Empunhadura:</span>
-                        <span className="font-medium text-right max-w-[60%] truncate">
-                          {empunhaduraAtual?.nome_opcao || '-'}{dragonScale ? ' + Dragon Scale' : ''}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-1.5 border-b border-border">
-                        <span className="text-muted-foreground">Bainha:</span>
-                        <span className="font-medium text-right max-w-[60%] truncate">{bainhaAtual?.nome_opcao || '-'}</span>
-                      </div>
-                      {corBainha && (
-                        <div className="flex justify-between py-1.5 border-b border-border">
-                          <span className="text-muted-foreground">Cor da Bainha:</span>
-                          <span className="font-medium text-right max-w-[60%] truncate">{corBainha}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between py-1.5 border-b border-border">
-                        <span className="text-muted-foreground">Laser:</span>
-                        <span className="font-medium">{laser ? (textoLaser || 'Sim') : 'Não'}</span>
-                      </div>
-                      {laser && localGravacao.length > 0 && (
-                        <div className="flex justify-between py-1.5 border-b border-border">
-                          <span className="text-muted-foreground">Local:</span>
-                          <span className="font-medium text-right max-w-[60%] truncate">{localGravacao.join(', ')}</span>
-                        </div>
-                      )}
-                      {embalagem && (
-                        <div className="flex justify-between py-1.5 border-b border-border">
-                          <span className="text-muted-foreground">Embalagem:</span>
-                          <span className="font-medium text-right max-w-[60%] truncate">{embalagem}</span>
-                        </div>
-                      )}
-                      {embalagemGravacao && embalagemTextoGravacao && (
-                        <div className="flex justify-between py-1.5 border-b border-border">
-                          <span className="text-muted-foreground">Gravação Emb.:</span>
-                          <span className="font-medium text-right max-w-[60%] truncate">{embalagemTextoGravacao}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Lâminas Adicionadas */}
-                <div 
-                  ref={exportCardRef}
-                  className="bg-white rounded-lg border border-zinc-200 p-3 md:p-6 lg:sticky lg:top-24 space-y-3 md:space-y-4" 
-                  style={{ top: modeloSelecionado ? 'calc(24rem + 6rem)' : '6rem' }}
-                >
-                  <h3 className="font-semibold text-base md:text-lg">Lâminas Adicionadas ({laminasCustomizadas.length})</h3>
-                  
-                  {laminasCustomizadas.length === 0 ? (
-                    <p className="text-xs md:text-sm text-muted-foreground text-center py-6 md:py-8">
-                      Nenhuma lâmina adicionada ainda
-                    </p>
-                  ) : (
-                    <div className="space-y-2 md:space-y-3">
-                      {laminasCustomizadas.map((lamina, index) => (
-                        <div 
-                          key={lamina.id} 
-                          className="p-2 md:p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
-                          onClick={() => setLaminaModalAberta(lamina)}
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <p className="font-semibold text-xs md:text-sm">Lâmina {index + 1}: {lamina.modelo?.nome_modelo}</p>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removerLamina(lamina.id);
-                              }}
-                              className="h-6 w-6 p-0 flex-shrink-0"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          <div className="text-[10px] md:text-xs text-muted-foreground space-y-0.5">
-                            <p>- Aço: {lamina.aco?.nome_opcao || '-'}</p>
-                            <p>- Acabamento: {lamina.acabamento?.nome_opcao || '-'}</p>
-                            <p>- Empunhadura: {lamina.empunhadura?.nome_opcao || '-'}{lamina.dragonScale ? ' + Dragon Scale' : ''}</p>
-                            <p>- Bainha: {lamina.bainha?.nome_opcao || '-'}{lamina.corBainha ? ` (${lamina.corBainha})` : ''}</p>
-                            {lamina.laser && (
-                              <p>- Laser: {lamina.textoLaser || 'Sim'}{lamina.localGravacao.length > 0 ? ` (${lamina.localGravacao.join(', ')})` : ''}</p>
-                            )}
-                            {lamina.embalagem && (
-                              <p>- Embalagem: {lamina.embalagem}{lamina.embalagemGravacao && lamina.embalagemTextoGravacao ? ` - "${lamina.embalagemTextoGravacao}"` : ''}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {laminasCustomizadas.length > 0 && (
-                    <Button
-                      onClick={enviarWhatsApp}
-                      className="w-full bg-accent hover:bg-accent/90 text-sm"
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Solicitar Orçamento
-                    </Button>
-                  )}
-                </div>
-              </div>
+            <div className="flex items-center justify-between">
+              <p className="font-medium text-sm">{modeloAtual.nome_modelo}</p>
+              <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0">
+                <X className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
         )}
-      </div>
 
-      {/* Modal de Detalhes da Lâmina */}
-      <Dialog open={!!laminaModalAberta} onOpenChange={() => setLaminaModalAberta(null)}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold">
-              {laminaModalAberta?.modelo?.nome_modelo || 'Detalhes da Lâmina'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          {laminaModalAberta && (
-            <div className="space-y-4 text-sm">
-              {/* Card para exportação */}
-              <div 
-                ref={exportCardRef}
-                className="bg-white p-5 rounded-xl border border-zinc-200"
-                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+        {/* Seleção de Modelo - Compacta */}
+        <div className="bg-card rounded-lg border border-border p-3 mb-3">
+          <div className="flex items-center gap-2 mb-3">
+            <h3 className="font-semibold text-sm">Modelo</h3>
+            <InfoEtapaModal etapaKey="modelo" />
+          </div>
+
+          {/* Filtros inline */}
+          <div className="flex flex-wrap gap-1 mb-2">
+            {categorias.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setCategoriaFiltro(cat === categoriaFiltro ? '' : cat)}
+                className={`px-2 py-1 rounded text-xs transition-all ${
+                  categoriaFiltro === cat 
+                    ? 'bg-accent text-accent-foreground' 
+                    : 'bg-muted hover:bg-muted/80'
+                }`}
               >
-                {/* Título */}
-                <h2 className="text-lg font-bold text-zinc-900 mb-3 text-center">
-                  {laminaModalAberta.modelo?.nome_modelo || 'Lâmina Customizada'}
-                </h2>
+                {cat}
+              </button>
+            ))}
+          </div>
 
-                {/* Imagem do modelo */}
-                <div className="flex justify-center mb-4">
-                  <div className="w-full max-w-[180px] h-20 rounded-lg overflow-hidden border border-zinc-200 bg-zinc-50 p-2">
-                    <img
-                      src={getModeloImagem(laminaModalAberta.modelo)}
-                      alt="Modelo"
-                      className="w-full h-full object-contain"
-                      crossOrigin="anonymous"
-                    />
-                  </div>
+          <div className="relative mb-2">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar..."
+              value={buscaModelo}
+              onChange={(e) => setBuscaModelo(e.target.value)}
+              className="pl-8 h-8 text-xs"
+            />
+          </div>
+
+          {mostrarModelos && modelosFiltrados.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-32 overflow-y-auto">
+              {modelosFiltrados.map(modelo => (
+                <button
+                  key={modelo.id}
+                  onClick={() => setModeloSelecionado(modelo.id)}
+                  className={`p-2 rounded text-left text-xs transition-all flex items-center justify-between ${
+                    modeloSelecionado === modelo.id
+                      ? 'bg-accent text-accent-foreground'
+                      : 'bg-muted hover:bg-muted/80'
+                  }`}
+                >
+                  <span className="truncate">{modelo.nome_modelo}</span>
+                  {modeloSelecionado === modelo.id && <Check className="h-3 w-3 flex-shrink-0" />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {mostrarModelos && modelosFiltrados.length === 0 && (
+            <div className="text-center py-4 text-xs text-muted-foreground">
+              Nenhum modelo encontrado
+            </div>
+          )}
+        </div>
+
+        {/* Customização - Collapsibles */}
+        {modeloSelecionado && (
+          <div className="bg-card rounded-lg border border-border p-3 mb-3 space-y-2">
+            <CollapsibleSelect 
+              options={acos} 
+              selected={acoSelecionado} 
+              onSelect={setAcoSelecionado} 
+              label="Aço"
+              etapaKey="aco"
+            />
+
+            <CollapsibleSelect 
+              options={acabamentos} 
+              selected={acabamentoSelecionado} 
+              onSelect={setAcabamentoSelecionado} 
+              label="Acabamento"
+              etapaKey="acabamento"
+            />
+
+            <div className="space-y-1.5">
+              <CollapsibleSelect 
+                options={empunhaduras} 
+                selected={empunhaduraSelecionada} 
+                onSelect={setEmpunhaduraSelecionada} 
+                label="Empunhadura"
+                etapaKey="empunhadura"
+              />
+              {empunhaduraSelecionada && (
+                <div className="flex items-center gap-2 pl-3">
+                  <Checkbox
+                    id="dragonScale"
+                    checked={dragonScale}
+                    onCheckedChange={(checked) => setDragonScale(checked === true)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <Label htmlFor="dragonScale" className="text-xs cursor-pointer">Dragon Scale</Label>
                 </div>
+              )}
+            </div>
 
-                {/* Grid de especificações */}
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
-                    <p className="text-zinc-500 text-[10px] mb-0.5">Modelo</p>
-                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.modelo?.nome_modelo || '-'}</p>
+            <div className="space-y-1.5">
+              <CollapsibleSelect 
+                options={bainhas} 
+                selected={bainhaSelecionada} 
+                onSelect={setBainhaSelecionada} 
+                label="Bainha"
+                etapaKey="bainha"
+              />
+              {bainhaSelecionada && (
+                <div className="space-y-2 ml-3">
+                  <Select value={corBainha} onValueChange={(value) => {
+                    setCorBainha(value);
+                    if (value !== 'OUTRA') setCorBainhaPersonalizada('');
+                  }}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Cor da bainha" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {coresBainha.map(cor => (
+                        <SelectItem key={cor.id} value={cor.nome_opcao} className="text-xs">
+                          {cor.nome_opcao}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="OUTRA" className="text-xs">
+                        Outra (digitar)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {corBainha === 'OUTRA' && (
+                    <Input
+                      placeholder="Digite a cor desejada..."
+                      value={corBainhaPersonalizada}
+                      onChange={(e) => setCorBainhaPersonalizada(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Extras colapsável */}
+            <Collapsible open={showExtras} onOpenChange={setShowExtras}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center justify-between w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <span className="flex items-center gap-1.5">
+                    Laser & Embalagem
+                    {(laser || embalagem) && <Badge variant="outline" className="text-[10px] px-1 py-0">Ativo</Badge>}
+                  </span>
+                  {showExtras ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-2">
+                {/* Laser */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="laser"
+                      checked={laser}
+                      onCheckedChange={(checked) => setLaser(checked as boolean)}
+                      className="h-3.5 w-3.5"
+                    />
+                    <Label htmlFor="laser" className="text-xs cursor-pointer">Personalização à Laser</Label>
+                    <InfoEtapaModal etapaKey="laser" />
                   </div>
-                  <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
-                    <p className="text-zinc-500 text-[10px] mb-0.5">Aço</p>
-                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.aco?.nome_opcao || '-'}</p>
-                  </div>
-                  <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
-                    <p className="text-zinc-500 text-[10px] mb-0.5">Acabamento</p>
-                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.acabamento?.nome_opcao || '-'}</p>
-                  </div>
-                  <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
-                    <p className="text-zinc-500 text-[10px] mb-0.5">Empunhadura</p>
-                    <p className="font-semibold text-zinc-900 text-xs">
-                      {laminaModalAberta.empunhadura?.nome_opcao || '-'}{laminaModalAberta.dragonScale ? ' + Dragon Scale' : ''}
-                    </p>
-                  </div>
-                  <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
-                    <p className="text-zinc-500 text-[10px] mb-0.5">Bainha</p>
-                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.bainha?.nome_opcao || '-'}</p>
-                  </div>
-                  {laminaModalAberta.corBainha && (
-                    <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
-                      <p className="text-zinc-500 text-[10px] mb-0.5">Cor da Bainha</p>
-                      <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.corBainha}</p>
+                  {laser && (
+                    <div className="space-y-2 pl-5">
+                      <Input
+                        placeholder="Texto para gravação..."
+                        value={textoLaser}
+                        onChange={(e) => setTextoLaser(e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                      <div className="flex flex-wrap gap-1.5">
+                        {LOCAIS_GRAVACAO.map(local => (
+                          <button
+                            key={local}
+                            onClick={() => {
+                              if (localGravacao.includes(local)) {
+                                setLocalGravacao(localGravacao.filter(l => l !== local));
+                              } else {
+                                setLocalGravacao([...localGravacao, local]);
+                              }
+                            }}
+                            className={`px-2 py-1 rounded text-xs transition-all ${
+                              localGravacao.includes(local)
+                                ? 'bg-accent text-accent-foreground'
+                                : 'bg-muted hover:bg-muted/80'
+                            }`}
+                          >
+                            {local}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
 
                 {/* Embalagem */}
-                {laminaModalAberta.embalagem && (
-                  <div className="mt-2 bg-zinc-50 p-2.5 rounded-lg border border-zinc-100">
-                    <p className="text-zinc-500 text-[10px] mb-0.5">Embalagem</p>
-                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.embalagem}</p>
-                    {laminaModalAberta.embalagemGravacao && laminaModalAberta.embalagemTextoGravacao && (
-                      <p className="text-[10px] text-zinc-500 mt-0.5">Gravação: {laminaModalAberta.embalagemTextoGravacao}</p>
-                    )}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Embalagem</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {embalagensOpcoes.map(emb => (
+                      <button
+                        key={emb.id}
+                        onClick={() => setEmbalagem(embalagem === emb.nome_opcao ? '' : emb.nome_opcao)}
+                        className={`px-2.5 py-1.5 rounded-md text-xs transition-all ${
+                          embalagem === emb.nome_opcao
+                            ? 'bg-accent text-accent-foreground'
+                            : 'bg-muted hover:bg-muted/80'
+                        }`}
+                      >
+                        {emb.nome_opcao}
+                      </button>
+                    ))}
                   </div>
-                )}
-
-                {/* Personalização à Laser */}
-                {laminaModalAberta.laser && (
-                  <div className="mt-2 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-                    <p className="text-amber-700 text-[10px] mb-0.5">Personalização à Laser</p>
-                    <p className="font-semibold text-zinc-900 text-xs">{laminaModalAberta.textoLaser || 'Sim'}</p>
-                    {Array.isArray(laminaModalAberta.localGravacao) && laminaModalAberta.localGravacao.length > 0 && (
-                      <p className="text-[10px] text-amber-700 mt-0.5">Local: {laminaModalAberta.localGravacao.join(', ')}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Botões de exportação */}
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <Button
-                    onClick={exportarComoImagem}
-                    variant="outline"
-                    className="flex-1"
-                    size="sm"
-                  >
-                    <FileImage className="h-4 w-4 mr-2" />
-                    Imagem
-                  </Button>
-                  <Button
-                    onClick={exportarComoPDF}
-                    variant="outline"
-                    className="flex-1"
-                    size="sm"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    PDF
-                  </Button>
-                </div>
-                <Button
-                  onClick={exportarPedidoPDF}
-                  disabled={exportando}
-                  variant="default"
-                  className="w-full bg-accent hover:bg-accent/90"
-                >
-                  {exportando ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <FileText className="h-4 w-4 mr-2" />
+                  {embalagem && (
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="embalagemGravacao"
+                        checked={embalagemGravacao}
+                        onCheckedChange={(checked) => setEmbalagemGravacao(checked as boolean)}
+                        className="h-3.5 w-3.5"
+                      />
+                      <Label htmlFor="embalagemGravacao" className="text-xs cursor-pointer">Gravação na embalagem</Label>
+                    </div>
                   )}
-                  Gerar PDF do Pedido Completo
-                </Button>
-              </div>
+                  {embalagemGravacao && (
+                    <Input
+                      placeholder="Texto para embalagem..."
+                      value={embalagemTextoGravacao}
+                      onChange={(e) => setEmbalagemTextoGravacao(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        )}
 
-              <Button
-                variant="destructive"
-                className="w-full"
-                onClick={() => {
-                  removerLamina(laminaModalAberta.id);
-                  setLaminaModalAberta(null);
-                }}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Remover Lâmina
-              </Button>
+        {/* Lâminas Adicionadas */}
+        {laminasCustomizadas.length > 0 && (
+          <div className="bg-card rounded-lg border border-border p-3 mb-3">
+            <h3 className="font-semibold text-sm mb-2">
+              Lâminas ({laminasCustomizadas.length})
+            </h3>
+            <div className="space-y-1.5">
+              {laminasCustomizadas.map((lamina, index) => (
+                <div
+                  key={lamina.id}
+                  className="flex items-center justify-between p-2 bg-muted rounded-lg"
+                >
+                  <button
+                    onClick={() => setLaminaModalAberta(lamina)}
+                    className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                  >
+                    <div className="w-8 h-8 bg-white rounded overflow-hidden flex-shrink-0">
+                      <img
+                        src={getModeloImagem(lamina.modelo)}
+                        alt={lamina.modelo?.nome_modelo || 'Modelo'}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium truncate">{lamina.modelo?.nome_modelo}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {[lamina.aco?.nome_opcao, lamina.acabamento?.nome_opcao].filter(Boolean).join(' • ')}
+                      </p>
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setLaminaModalAberta(lamina)}
+                      className="h-7 w-7 p-0"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removerLamina(lamina.id)}
+                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Barra de Ações Fixa */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-3 shadow-lg z-50">
+        <div className="container mx-auto max-w-5xl flex items-center gap-2">
+          {modeloSelecionado && (
+            <Button
+              onClick={adicionarLamina}
+              variant="outline"
+              className="flex-1 text-xs"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Adicionar Lâmina
+            </Button>
+          )}
+          
+          {laminasCustomizadas.length > 0 && (
+            <Button
+              onClick={enviarWhatsApp}
+              className="flex-1 bg-accent hover:bg-accent/90 text-sm"
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Solicitar Orçamento
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Modal de Detalhes da Lâmina */}
+      <Dialog open={!!laminaModalAberta} onOpenChange={() => setLaminaModalAberta(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg">Detalhes da Lâmina</DialogTitle>
+          </DialogHeader>
+          {laminaModalAberta && (
+            <div className="space-y-4">
+              {/* Imagem do modelo */}
+              <div className="w-full h-24 bg-muted rounded-lg overflow-hidden">
+                <img
+                  src={getModeloImagem(laminaModalAberta.modelo)}
+                  alt={laminaModalAberta.modelo?.nome_modelo || 'Modelo'}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              
+              {/* Especificações */}
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-1 border-b border-border">
+                  <span className="text-muted-foreground">Modelo</span>
+                  <span className="font-medium">{laminaModalAberta.modelo?.nome_modelo || '-'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-border">
+                  <span className="text-muted-foreground">Aço</span>
+                  <span className="font-medium">{laminaModalAberta.aco?.nome_opcao || '-'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-border">
+                  <span className="text-muted-foreground">Acabamento</span>
+                  <span className="font-medium">{laminaModalAberta.acabamento?.nome_opcao || '-'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-border">
+                  <span className="text-muted-foreground">Empunhadura</span>
+                  <span className="font-medium">
+                    {laminaModalAberta.empunhadura?.nome_opcao || '-'}
+                    {laminaModalAberta.dragonScale && ' + Dragon Scale'}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-border">
+                  <span className="text-muted-foreground">Bainha</span>
+                  <span className="font-medium">
+                    {laminaModalAberta.bainha?.nome_opcao || '-'}
+                    {laminaModalAberta.corBainha && ` (${laminaModalAberta.corBainha})`}
+                  </span>
+                </div>
+                {laminaModalAberta.laser && (
+                  <div className="flex justify-between py-1 border-b border-border">
+                    <span className="text-muted-foreground">Laser</span>
+                    <span className="font-medium">
+                      {laminaModalAberta.textoLaser || 'Sim'}
+                      {laminaModalAberta.localGravacao.length > 0 && ` (${laminaModalAberta.localGravacao.join(', ')})`}
+                    </span>
+                  </div>
+                )}
+                {laminaModalAberta.embalagem && (
+                  <div className="flex justify-between py-1 border-b border-border">
+                    <span className="text-muted-foreground">Embalagem</span>
+                    <span className="font-medium">
+                      {laminaModalAberta.embalagem}
+                      {laminaModalAberta.embalagemGravacao && laminaModalAberta.embalagemTextoGravacao && 
+                        ` - Gravação: "${laminaModalAberta.embalagemTextoGravacao}"`}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
