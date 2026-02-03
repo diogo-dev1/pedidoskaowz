@@ -18,6 +18,7 @@ export interface ColunaKanban {
   id: string;
   nome: string;
   ordem: number;
+  cor?: string;
 }
 
 export interface BoardKanban {
