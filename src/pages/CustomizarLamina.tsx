@@ -376,12 +376,12 @@ export default function CustomizarLamina() {
           </div>
 
           <div className="relative mb-2">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
             <Input
-              placeholder="Buscar..."
+              placeholder="Buscar modelo..."
               value={buscaModelo}
               onChange={(e) => setBuscaModelo(e.target.value)}
-              className="pl-8 h-8 text-xs"
+              className="pl-7 h-7 text-xs w-full"
             />
           </div>
 
@@ -478,8 +478,8 @@ export default function CustomizarLamina() {
                     setCorBainha(value);
                     if (value !== 'OUTRA') setCorBainhaPersonalizada('');
                   }}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Cor da bainha" />
+                    <SelectTrigger className="h-7 text-xs w-full">
+                      <SelectValue placeholder="Cor bainha" />
                     </SelectTrigger>
                     <SelectContent>
                       {coresBainha.map(cor => (
@@ -494,10 +494,10 @@ export default function CustomizarLamina() {
                   </Select>
                   {corBainha === 'OUTRA' && (
                     <Input
-                      placeholder="Digite a cor desejada..."
+                      placeholder="Cor desejada..."
                       value={corBainhaPersonalizada}
                       onChange={(e) => setCorBainhaPersonalizada(e.target.value)}
-                      className="h-8 text-xs"
+                      className="h-7 text-xs w-full"
                     />
                   )}
                 </div>
@@ -531,10 +531,10 @@ export default function CustomizarLamina() {
                   {laser && (
                     <div className="space-y-2 pl-5">
                       <Input
-                        placeholder="Texto para gravação..."
+                        placeholder="Texto gravação..."
                         value={textoLaser}
                         onChange={(e) => setTextoLaser(e.target.value)}
-                        className="h-8 text-xs"
+                        className="h-7 text-xs w-full"
                       />
                       <div className="flex flex-wrap gap-1.5">
                         {LOCAIS_GRAVACAO.map(local => (
@@ -592,10 +592,10 @@ export default function CustomizarLamina() {
                   )}
                   {embalagemGravacao && (
                     <Input
-                      placeholder="Texto para embalagem..."
+                      placeholder="Texto embalagem..."
                       value={embalagemTextoGravacao}
                       onChange={(e) => setEmbalagemTextoGravacao(e.target.value)}
-                      className="h-8 text-xs"
+                      className="h-7 text-xs w-full"
                     />
                   )}
                 </div>
