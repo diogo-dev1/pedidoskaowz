@@ -37,9 +37,7 @@ interface LaminaCustomizada {
   bruteForge: boolean;
   empunhadura: OpcaoComponente | null;
   dragonScale: boolean;
-  bainha: OpcaoComponente | null;
-  corBainha: string;
-  corBainhaPersonalizada: string;
+  bainhas: { bainha: OpcaoComponente; corBainha: string }[];
   laser: boolean;
   textoLaser: string;
   localGravacao: string[];
@@ -63,9 +61,7 @@ export default function CustomizarLamina() {
   const [bruteForge, setBruteForge] = useState(false);
   const [empunhaduraSelecionada, setEmpunhaduraSelecionada] = useState<string>('');
   const [dragonScale, setDragonScale] = useState(false);
-  const [bainhaSelecionada, setBainhaSelecionada] = useState<string>('');
-  const [corBainha, setCorBainha] = useState<string>('');
-  const [corBainhaPersonalizada, setCorBainhaPersonalizada] = useState<string>('');
+  const [bainhasSelecionadas, setBainhasSelecionadas] = useState<{ bainhaId: string; corBainha: string }[]>([]);
   const [laser, setLaser] = useState(false);
   const [textoLaser, setTextoLaser] = useState('');
   const [localGravacao, setLocalGravacao] = useState<string[]>([]);
@@ -111,6 +107,15 @@ export default function CustomizarLamina() {
   const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
   const coresBainha = componentes.filter(c => c.tipo_opcao === 'Cor de Bainha');
   const embalagensOpcoes = componentes.filter(c => c.tipo_opcao === 'Embalagem');
+  
+  // Filtrar acabamentos baseado no aço selecionado
+  const acoAtualNome = componentes.find(c => c.id === acoSelecionado)?.nome_opcao || '';
+  const acabamentosFiltrados = acoAtualNome.toUpperCase().includes('SAE52100') 
+    ? acabamentos.filter(a => 
+        a.nome_opcao.toLowerCase().includes('black stone') || 
+        a.nome_opcao.toLowerCase().includes('tactical')
+      )
+    : acabamentos;
 
   const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Customização'];
   
@@ -127,7 +132,19 @@ export default function CustomizarLamina() {
   const acoAtual = componentes.find(c => c.id === acoSelecionado);
   const acabamentoAtual = componentes.find(c => c.id === acabamentoSelecionado);
   const empunhaduraAtual = componentes.find(c => c.id === empunhaduraSelecionada);
-  const bainhaAtual = componentes.find(c => c.id === bainhaSelecionada);
+  
+  // Limpar acabamento se aço mudar para SAE52100 e acabamento não for compatível
+  useEffect(() => {
+    if (acoAtualNome.toUpperCase().includes('SAE52100') && acabamentoSelecionado) {
+      const acabamentoAtualObj = acabamentos.find(a => a.id === acabamentoSelecionado);
+      if (acabamentoAtualObj && 
+          !acabamentoAtualObj.nome_opcao.toLowerCase().includes('black stone') && 
+          !acabamentoAtualObj.nome_opcao.toLowerCase().includes('tactical')) {
+        setAcabamentoSelecionado('');
+        setBruteForge(false);
+      }
+    }
+  }, [acoSelecionado]);
 
   const adicionarLamina = () => {
     if (!modeloSelecionado) {
@@ -135,7 +152,10 @@ export default function CustomizarLamina() {
       return;
     }
 
-    const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
+    const bainhasFinais = bainhasSelecionadas.map(bs => ({
+      bainha: bainhas.find(b => b.id === bs.bainhaId)!,
+      corBainha: bs.corBainha
+    })).filter(bs => bs.bainha);
 
     const novaLamina: LaminaCustomizada = {
       id: `${Date.now()}-${Math.random()}`,
@@ -145,9 +165,7 @@ export default function CustomizarLamina() {
       bruteForge,
       empunhadura: empunhaduraAtual || null,
       dragonScale,
-      bainha: bainhaAtual || null,
-      corBainha: corBainhaFinal,
-      corBainhaPersonalizada,
+      bainhas: bainhasFinais,
       laser,
       textoLaser,
       localGravacao,
@@ -173,9 +191,7 @@ export default function CustomizarLamina() {
     setBruteForge(false);
     setEmpunhaduraSelecionada('');
     setDragonScale(false);
-    setBainhaSelecionada('');
-    setCorBainha('');
-    setCorBainhaPersonalizada('');
+    setBainhasSelecionadas([]);
     setLaser(false);
     setTextoLaser('');
     setLocalGravacao([]);
@@ -204,7 +220,13 @@ export default function CustomizarLamina() {
       let empunhaduraInfo = lamina.empunhadura?.nome_opcao || '-';
       if (lamina.dragonScale) empunhaduraInfo += ' + Dragon Scale';
       mensagem += `- Empunhadura: ${empunhaduraInfo}\n`;
-      mensagem += `- Bainha: ${lamina.bainha?.nome_opcao || '-'}${lamina.corBainha ? ` (${lamina.corBainha})` : ''}\n`;
+      
+      if (lamina.bainhas.length > 0) {
+        const bainhasInfo = lamina.bainhas.map(b => `${b.bainha.nome_opcao}${b.corBainha ? ` (${b.corBainha})` : ''}`).join(', ');
+        mensagem += `- Bainha(s): ${bainhasInfo}\n`;
+      } else {
+        mensagem += `- Bainha: -\n`;
+      }
       
       let laserInfo = '-';
       if (lamina.laser) {
@@ -424,10 +446,10 @@ export default function CustomizarLamina() {
 
             <div className="space-y-1.5">
               <CollapsibleSelect 
-                options={acabamentos} 
+                options={acabamentosFiltrados} 
                 selected={acabamentoSelecionado} 
                 onSelect={setAcabamentoSelecionado} 
-                label="Acabamento"
+                label={acoAtualNome.toUpperCase().includes('SAE52100') ? "Acabamento (SAE52100)" : "Acabamento"}
                 etapaKey="acabamento"
               />
               {acabamentoSelecionado && (
@@ -464,44 +486,85 @@ export default function CustomizarLamina() {
               )}
             </div>
 
-            <div className="space-y-1.5">
-              <CollapsibleSelect 
-                options={bainhas} 
-                selected={bainhaSelecionada} 
-                onSelect={setBainhaSelecionada} 
-                label="Bainha"
-                etapaKey="bainha"
-              />
-              {bainhaSelecionada && (
-                <div className="space-y-2 ml-3">
-                  <Select value={corBainha} onValueChange={(value) => {
-                    setCorBainha(value);
-                    if (value !== 'OUTRA') setCorBainhaPersonalizada('');
-                  }}>
-                    <SelectTrigger className="h-7 text-xs w-full">
-                      <SelectValue placeholder="Cor bainha" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {coresBainha.map(cor => (
-                        <SelectItem key={cor.id} value={cor.nome_opcao} className="text-xs">
-                          {cor.nome_opcao}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="OUTRA" className="text-xs">
-                        Outra (digitar)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {corBainha === 'OUTRA' && (
-                    <Input
-                      placeholder="Cor desejada..."
-                      value={corBainhaPersonalizada}
-                      onChange={(e) => setCorBainhaPersonalizada(e.target.value)}
-                      className="h-7 text-xs w-full"
-                    />
-                  )}
+            {/* Bainhas - Múltiplas */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Bainhas</span>
+                  <InfoEtapaModal etapaKey="bainha" />
                 </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setBainhasSelecionadas([...bainhasSelecionadas, { bainhaId: '', corBainha: '' }])}
+                  className="h-6 text-xs px-2"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Adicionar
+                </Button>
+              </div>
+              
+              {bainhasSelecionadas.length === 0 && (
+                <p className="text-xs text-muted-foreground pl-2">Nenhuma bainha adicionada</p>
               )}
+              
+              {bainhasSelecionadas.map((bs, index) => (
+                <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+                  <div className="flex-1 space-y-1.5">
+                    <Select 
+                      value={bs.bainhaId} 
+                      onValueChange={(value) => {
+                        const updated = [...bainhasSelecionadas];
+                        updated[index].bainhaId = value;
+                        setBainhasSelecionadas(updated);
+                      }}
+                    >
+                      <SelectTrigger className="h-7 text-xs w-full">
+                        <SelectValue placeholder="Tipo de bainha" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {bainhas.map(bainha => (
+                          <SelectItem key={bainha.id} value={bainha.id} className="text-xs">
+                            {bainha.nome_opcao}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {bs.bainhaId && (
+                      <Select 
+                        value={bs.corBainha} 
+                        onValueChange={(value) => {
+                          const updated = [...bainhasSelecionadas];
+                          updated[index].corBainha = value;
+                          setBainhasSelecionadas(updated);
+                        }}
+                      >
+                        <SelectTrigger className="h-7 text-xs w-full">
+                          <SelectValue placeholder="Cor da bainha" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {coresBainha.map(cor => (
+                            <SelectItem key={cor.id} value={cor.nome_opcao} className="text-xs">
+                              {cor.nome_opcao}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setBainhasSelecionadas(bainhasSelecionadas.filter((_, i) => i !== index));
+                    }}
+                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
             </div>
 
             {/* Extras colapsável */}
@@ -630,7 +693,7 @@ export default function CustomizarLamina() {
                     <div className="min-w-0">
                       <p className="text-xs font-medium truncate">{lamina.modelo?.nome_modelo}</p>
                       <p className="text-[10px] text-muted-foreground truncate">
-                        {[lamina.aco?.nome_opcao, lamina.acabamento?.nome_opcao].filter(Boolean).join(' • ')}
+                        {[lamina.aco?.nome_opcao, lamina.acabamento?.nome_opcao, lamina.bainhas.length > 0 ? `${lamina.bainhas.length} bainha(s)` : null].filter(Boolean).join(' • ')}
                       </p>
                     </div>
                   </button>
@@ -724,10 +787,15 @@ export default function CustomizarLamina() {
                   </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border">
-                  <span className="text-muted-foreground">Bainha</span>
-                  <span className="font-medium">
-                    {laminaModalAberta.bainha?.nome_opcao || '-'}
-                    {laminaModalAberta.corBainha && ` (${laminaModalAberta.corBainha})`}
+                  <span className="text-muted-foreground">Bainha(s)</span>
+                  <span className="font-medium text-right">
+                    {laminaModalAberta.bainhas.length > 0 
+                      ? laminaModalAberta.bainhas.map((b, i) => (
+                          <span key={i} className="block">
+                            {b.bainha.nome_opcao}{b.corBainha && ` (${b.corBainha})`}
+                          </span>
+                        ))
+                      : '-'}
                   </span>
                 </div>
                 {laminaModalAberta.laser && (
