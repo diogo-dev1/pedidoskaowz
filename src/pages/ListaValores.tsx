@@ -2,12 +2,11 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Loader2, AlertCircle } from 'lucide-react';
+import { Search, Loader2, AlertCircle, ChevronRight } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 interface SheetData {
   sheetName: string;
@@ -26,17 +25,15 @@ export default function ListaValores() {
       if (!data.success) throw new Error(data.error);
       return data.data as SheetData[];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Set active tab to first sheet when data loads
   useMemo(() => {
     if (data && data.length > 0 && !activeTab) {
       setActiveTab(data[0].sheetName);
     }
   }, [data, activeTab]);
 
-  // Filter items based on search term across all columns
   const filteredData = useMemo(() => {
     if (!data) return [];
     if (!searchTerm.trim()) return data;
@@ -53,7 +50,6 @@ export default function ListaValores() {
     })).filter(sheet => sheet.items.length > 0);
   }, [data, searchTerm]);
 
-  // Get headers from first item of each sheet
   const getHeaders = (items: Record<string, string>[]) => {
     if (items.length === 0) return [];
     const firstItem = items[0];
@@ -62,101 +58,115 @@ export default function ListaValores() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-muted-foreground">Carregando lista de valores...</span>
+        <span className="text-sm text-muted-foreground">Carregando valores...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <Alert variant="destructive" className="max-w-2xl mx-auto mt-8">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Erro ao carregar a lista de valores: {error.message}
-        </AlertDescription>
-      </Alert>
+      <div className="p-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-sm">
+            Erro ao carregar: {error.message}
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-foreground">Lista de Valores</h1>
-        <div className="relative w-full sm:w-80">
+    <div className="flex flex-col h-full">
+      {/* Header fixo */}
+      <div className="sticky top-0 z-10 bg-background border-b px-4 py-3 space-y-3">
+        <h1 className="text-lg font-semibold text-foreground">Lista de Valores</h1>
+        
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar em todas as abas..."
+            placeholder="Buscar..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-9 h-10 text-sm"
           />
         </div>
       </div>
 
       {filteredData.length === 0 ? (
-        <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">
-              {searchTerm ? 'Nenhum resultado encontrado para a busca.' : 'Nenhum dado disponível.'}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex-1 flex items-center justify-center p-8">
+          <p className="text-sm text-muted-foreground text-center">
+            {searchTerm ? 'Nenhum resultado encontrado.' : 'Nenhum dado disponível.'}
+          </p>
+        </div>
       ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <ScrollArea className="w-full">
-            <TabsList className="mb-4 flex-wrap h-auto gap-1 p-1">
-              {filteredData.map((sheet) => (
-                <TabsTrigger
-                  key={sheet.sheetName}
-                  value={sheet.sheetName}
-                  className="text-xs sm:text-sm"
-                >
-                  {sheet.sheetName}
-                  <span className="ml-1 text-xs text-muted-foreground">
-                    ({sheet.items.length})
-                  </span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </ScrollArea>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+          {/* Tabs com scroll horizontal */}
+          <div className="border-b bg-muted/30">
+            <ScrollArea className="w-full">
+              <TabsList className="inline-flex h-auto p-1 gap-1 bg-transparent w-max">
+                {filteredData.map((sheet) => (
+                  <TabsTrigger
+                    key={sheet.sheetName}
+                    value={sheet.sheetName}
+                    className="text-xs px-3 py-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap"
+                  >
+                    {sheet.sheetName}
+                    <span className="ml-1.5 text-[10px] opacity-70">
+                      ({sheet.items.length})
+                    </span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <ScrollBar orientation="horizontal" className="h-1.5" />
+            </ScrollArea>
+          </div>
 
-          {filteredData.map((sheet) => (
-            <TabsContent key={sheet.sheetName} value={sheet.sheetName}>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">{sheet.sheetName}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="w-full">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          {getHeaders(sheet.items).map((header) => (
-                            <TableHead key={header} className="whitespace-nowrap font-semibold">
-                              {header}
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {sheet.items.map((item, index) => (
-                          <TableRow key={index}>
-                            {getHeaders(sheet.items).map((header) => (
-                              <TableCell key={header} className="whitespace-nowrap">
+          {/* Conteúdo das tabs */}
+          <div className="flex-1 overflow-auto">
+            {filteredData.map((sheet) => (
+              <TabsContent 
+                key={sheet.sheetName} 
+                value={sheet.sheetName}
+                className="m-0 h-full"
+              >
+                <div className="divide-y">
+                  {sheet.items.map((item, index) => {
+                    const headers = getHeaders([item]);
+                    const primaryHeader = headers[0];
+                    const primaryValue = item[primaryHeader];
+                    const secondaryHeaders = headers.slice(1);
+
+                    return (
+                      <div 
+                        key={index}
+                        className="px-4 py-3 bg-background hover:bg-muted/30 transition-colors"
+                      >
+                        {/* Valor principal */}
+                        <div className="font-medium text-sm text-foreground mb-1">
+                          {primaryValue || '-'}
+                        </div>
+                        
+                        {/* Valores secundários em grid */}
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                          {secondaryHeaders.map((header) => (
+                            <div key={header} className="flex items-baseline gap-1.5 text-xs">
+                              <span className="text-muted-foreground truncate">{header}:</span>
+                              <span className="text-foreground font-medium truncate">
                                 {item[header] || '-'}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ))}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+            ))}
+          </div>
         </Tabs>
       )}
     </div>
