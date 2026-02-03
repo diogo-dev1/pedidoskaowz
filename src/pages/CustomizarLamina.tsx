@@ -29,6 +29,12 @@ interface OpcaoComponente {
   preco_adicional: number;
 }
 
+interface GravacaoRegiao {
+  ativo: boolean;
+  tipo: 'texto' | 'logo'; // para Lâmina especificamente
+  texto: string;
+}
+
 interface LaminaCustomizada {
   id: string;
   modelo: ModeloBase | null;
@@ -39,14 +45,17 @@ interface LaminaCustomizada {
   dragonScale: boolean;
   bainhas: { bainha: OpcaoComponente; corBainha: string }[];
   laser: boolean;
-  textoLaser: string;
-  localGravacao: string[];
+  gravacoes: {
+    dorsoSuperior: GravacaoRegiao;
+    dorsoInferior: GravacaoRegiao;
+    lamina: GravacaoRegiao;
+  };
   embalagem: string;
   embalagemGravacao: boolean;
   embalagemTextoGravacao: string;
 }
 
-const LOCAIS_GRAVACAO = ['Dorso Superior', 'Dorso Inferior', 'Lâmina'];
+const LOCAIS_GRAVACAO = ['Dorso Superior', 'Dorso Inferior', 'Lâmina'] as const;
 
 export default function CustomizarLamina() {
   const navigate = useNavigate();
@@ -63,8 +72,15 @@ export default function CustomizarLamina() {
   const [dragonScale, setDragonScale] = useState(false);
   const [bainhasSelecionadas, setBainhasSelecionadas] = useState<{ bainhaId: string; corBainha: string }[]>([]);
   const [laser, setLaser] = useState(false);
-  const [textoLaser, setTextoLaser] = useState('');
-  const [localGravacao, setLocalGravacao] = useState<string[]>([]);
+  const [gravacoes, setGravacoes] = useState<{
+    dorsoSuperior: GravacaoRegiao;
+    dorsoInferior: GravacaoRegiao;
+    lamina: GravacaoRegiao;
+  }>({
+    dorsoSuperior: { ativo: false, tipo: 'texto', texto: '' },
+    dorsoInferior: { ativo: false, tipo: 'texto', texto: '' },
+    lamina: { ativo: false, tipo: 'texto', texto: '' },
+  });
   const [embalagem, setEmbalagem] = useState('');
   const [embalagemGravacao, setEmbalagemGravacao] = useState(false);
   const [embalagemTextoGravacao, setEmbalagemTextoGravacao] = useState('');
@@ -167,8 +183,7 @@ export default function CustomizarLamina() {
       dragonScale,
       bainhas: bainhasFinais,
       laser,
-      textoLaser,
-      localGravacao,
+      gravacoes: { ...gravacoes },
       embalagem,
       embalagemGravacao,
       embalagemTextoGravacao,
@@ -193,8 +208,11 @@ export default function CustomizarLamina() {
     setDragonScale(false);
     setBainhasSelecionadas([]);
     setLaser(false);
-    setTextoLaser('');
-    setLocalGravacao([]);
+    setGravacoes({
+      dorsoSuperior: { ativo: false, tipo: 'texto', texto: '' },
+      dorsoInferior: { ativo: false, tipo: 'texto', texto: '' },
+      lamina: { ativo: false, tipo: 'texto', texto: '' },
+    });
     setEmbalagem('');
     setEmbalagemGravacao(false);
     setEmbalagemTextoGravacao('');
@@ -228,14 +246,23 @@ export default function CustomizarLamina() {
         mensagem += `- Bainha: -\n`;
       }
       
-      let laserInfo = '-';
+      // Gravações laser
       if (lamina.laser) {
-        laserInfo = lamina.textoLaser || 'Sim';
-        if (lamina.localGravacao.length > 0) {
-          laserInfo += ` (${lamina.localGravacao.join(', ')})`;
+        const gravacoesAtivas: string[] = [];
+        if (lamina.gravacoes.dorsoSuperior.ativo && lamina.gravacoes.dorsoSuperior.texto) {
+          gravacoesAtivas.push(`Dorso Superior: "${lamina.gravacoes.dorsoSuperior.texto}"`);
         }
+        if (lamina.gravacoes.dorsoInferior.ativo && lamina.gravacoes.dorsoInferior.texto) {
+          gravacoesAtivas.push(`Dorso Inferior: "${lamina.gravacoes.dorsoInferior.texto}"`);
+        }
+        if (lamina.gravacoes.lamina.ativo) {
+          const tipoLamina = lamina.gravacoes.lamina.tipo === 'logo' ? 'Logo' : `"${lamina.gravacoes.lamina.texto}"`;
+          gravacoesAtivas.push(`Lâmina: ${tipoLamina}`);
+        }
+        mensagem += `- Laser: ${gravacoesAtivas.length > 0 ? gravacoesAtivas.join('; ') : 'Sim'}\n`;
+      } else {
+        mensagem += `- Laser: -\n`;
       }
-      mensagem += `- Laser: ${laserInfo}\n`;
       
       let embalagemInfo = '-';
       if (lamina.embalagem) {
@@ -592,33 +619,121 @@ export default function CustomizarLamina() {
                     <InfoEtapaModal etapaKey="laser" />
                   </div>
                   {laser && (
-                    <div className="space-y-2 pl-5">
-                      <Input
-                        placeholder="Texto gravação..."
-                        value={textoLaser}
-                        onChange={(e) => setTextoLaser(e.target.value)}
-                        className="h-7 text-xs w-full"
-                      />
-                      <div className="flex flex-wrap gap-1.5">
-                        {LOCAIS_GRAVACAO.map(local => (
-                          <button
-                            key={local}
-                            onClick={() => {
-                              if (localGravacao.includes(local)) {
-                                setLocalGravacao(localGravacao.filter(l => l !== local));
-                              } else {
-                                setLocalGravacao([...localGravacao, local]);
-                              }
-                            }}
-                            className={`px-2 py-1 rounded text-xs transition-all ${
-                              localGravacao.includes(local)
-                                ? 'bg-accent text-accent-foreground'
-                                : 'bg-muted hover:bg-muted/80'
-                            }`}
-                          >
-                            {local}
-                          </button>
-                        ))}
+                    <div className="space-y-3 pl-5">
+                      {/* Dorso Superior */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="dorsoSuperior"
+                            checked={gravacoes.dorsoSuperior.ativo}
+                            onCheckedChange={(checked) => setGravacoes(prev => ({
+                              ...prev,
+                              dorsoSuperior: { ...prev.dorsoSuperior, ativo: checked === true }
+                            }))}
+                            className="h-3.5 w-3.5"
+                          />
+                          <Label htmlFor="dorsoSuperior" className="text-xs cursor-pointer">Dorso Superior</Label>
+                        </div>
+                        {gravacoes.dorsoSuperior.ativo && (
+                          <Input
+                            placeholder="Texto..."
+                            value={gravacoes.dorsoSuperior.texto}
+                            onChange={(e) => setGravacoes(prev => ({
+                              ...prev,
+                              dorsoSuperior: { ...prev.dorsoSuperior, texto: e.target.value }
+                            }))}
+                            className="h-7 text-xs w-full"
+                          />
+                        )}
+                      </div>
+                      
+                      {/* Dorso Inferior */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="dorsoInferior"
+                            checked={gravacoes.dorsoInferior.ativo}
+                            onCheckedChange={(checked) => setGravacoes(prev => ({
+                              ...prev,
+                              dorsoInferior: { ...prev.dorsoInferior, ativo: checked === true }
+                            }))}
+                            className="h-3.5 w-3.5"
+                          />
+                          <Label htmlFor="dorsoInferior" className="text-xs cursor-pointer">Dorso Inferior</Label>
+                        </div>
+                        {gravacoes.dorsoInferior.ativo && (
+                          <Input
+                            placeholder="Texto..."
+                            value={gravacoes.dorsoInferior.texto}
+                            onChange={(e) => setGravacoes(prev => ({
+                              ...prev,
+                              dorsoInferior: { ...prev.dorsoInferior, texto: e.target.value }
+                            }))}
+                            className="h-7 text-xs w-full"
+                          />
+                        )}
+                      </div>
+                      
+                      {/* Lâmina - com opção logo/texto */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="laminaGravacao"
+                            checked={gravacoes.lamina.ativo}
+                            onCheckedChange={(checked) => setGravacoes(prev => ({
+                              ...prev,
+                              lamina: { ...prev.lamina, ativo: checked === true }
+                            }))}
+                            className="h-3.5 w-3.5"
+                          />
+                          <Label htmlFor="laminaGravacao" className="text-xs cursor-pointer">Lâmina</Label>
+                        </div>
+                        {gravacoes.lamina.ativo && (
+                          <div className="space-y-1.5 pl-5">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setGravacoes(prev => ({
+                                  ...prev,
+                                  lamina: { ...prev.lamina, tipo: 'texto' }
+                                }))}
+                                className={`px-2 py-1 rounded text-xs transition-all ${
+                                  gravacoes.lamina.tipo === 'texto'
+                                    ? 'bg-accent text-accent-foreground'
+                                    : 'bg-muted hover:bg-muted/80'
+                                }`}
+                              >
+                                Texto
+                              </button>
+                              <button
+                                onClick={() => setGravacoes(prev => ({
+                                  ...prev,
+                                  lamina: { ...prev.lamina, tipo: 'logo' }
+                                }))}
+                                className={`px-2 py-1 rounded text-xs transition-all ${
+                                  gravacoes.lamina.tipo === 'logo'
+                                    ? 'bg-accent text-accent-foreground'
+                                    : 'bg-muted hover:bg-muted/80'
+                                }`}
+                              >
+                                Logo
+                              </button>
+                            </div>
+                            {gravacoes.lamina.tipo === 'texto' && (
+                              <Input
+                                placeholder="Texto..."
+                                value={gravacoes.lamina.texto}
+                                onChange={(e) => setGravacoes(prev => ({
+                                  ...prev,
+                                  lamina: { ...prev.lamina, texto: e.target.value }
+                                }))}
+                                className="h-7 text-xs w-full"
+                              />
+                            )}
+                            {gravacoes.lamina.tipo === 'logo' && (
+                              <p className="text-xs text-muted-foreground">Logo será aplicado na lâmina</p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -799,12 +914,19 @@ export default function CustomizarLamina() {
                   </span>
                 </div>
                 {laminaModalAberta.laser && (
-                  <div className="flex justify-between py-1 border-b border-border">
-                    <span className="text-muted-foreground">Laser</span>
-                    <span className="font-medium">
-                      {laminaModalAberta.textoLaser || 'Sim'}
-                      {laminaModalAberta.localGravacao.length > 0 && ` (${laminaModalAberta.localGravacao.join(', ')})`}
-                    </span>
+                  <div className="py-1 border-b border-border">
+                    <span className="text-muted-foreground block mb-1">Laser</span>
+                    <div className="font-medium text-sm space-y-0.5">
+                      {laminaModalAberta.gravacoes.dorsoSuperior.ativo && (
+                        <p>Dorso Superior: "{laminaModalAberta.gravacoes.dorsoSuperior.texto}"</p>
+                      )}
+                      {laminaModalAberta.gravacoes.dorsoInferior.ativo && (
+                        <p>Dorso Inferior: "{laminaModalAberta.gravacoes.dorsoInferior.texto}"</p>
+                      )}
+                      {laminaModalAberta.gravacoes.lamina.ativo && (
+                        <p>Lâmina: {laminaModalAberta.gravacoes.lamina.tipo === 'logo' ? 'Logo' : `"${laminaModalAberta.gravacoes.lamina.texto}"`}</p>
+                      )}
+                    </div>
                   </div>
                 )}
                 {laminaModalAberta.embalagem && (
