@@ -472,10 +472,18 @@ export default function Simulador() {
     try {
       const canvas = await html2canvas(pedidoExportRef.current, {
         backgroundColor: '#ffffff',
-        scale: 4,
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         logging: false,
+        imageTimeout: 0,
+        onclone: (clonedDoc) => {
+          // Garantir que imagens tenham tamanho adequado no clone
+          const images = clonedDoc.querySelectorAll('img');
+          images.forEach((img) => {
+            img.style.objectFit = 'contain';
+          });
+        }
       });
       
       const link = document.createElement('a');
@@ -493,25 +501,92 @@ export default function Simulador() {
     if (!pedidoExportRef.current) return;
     
     try {
-      const canvas = await html2canvas(pedidoExportRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 4,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-      });
-      
-      const imgData = canvas.toDataURL('image/png', 1.0);
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, Math.min(imgHeight, 297));
+      // Dimensões A4 em mm
+      const A4_WIDTH_MM = 210;
+      const A4_HEIGHT_MM = 297;
+      const MARGIN_MM = 10;
+      const CONTENT_WIDTH_MM = A4_WIDTH_MM - (MARGIN_MM * 2);
+      const SECTION_GAP_MM = 3;
+
+      // Buscar seções do pedido para captura individual
+      const sections = Array.from(
+        pedidoExportRef.current.querySelectorAll('[data-pdf-section]')
+      ) as HTMLElement[];
+
+      // Se não houver seções marcadas, capturar tudo de uma vez
+      if (sections.length === 0) {
+        const canvas = await html2canvas(pedidoExportRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          imageTimeout: 0,
+        });
+        
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4',
+        });
+        
+        const imgWidth = CONTENT_WIDTH_MM;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', MARGIN_MM, MARGIN_MM, imgWidth, Math.min(imgHeight, A4_HEIGHT_MM - MARGIN_MM * 2));
+        pdf.save(`pedido-${nomeCompleto || 'cliente'}-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+        toast.success('PDF do pedido exportado!');
+        return;
+      }
+
+      // Capturar cada seção individualmente
+      const sectionData: { canvas: HTMLCanvasElement; heightMM: number }[] = [];
+
+      for (const section of sections) {
+        const canvas = await html2canvas(section, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          imageTimeout: 0,
+          onclone: (clonedDoc, element) => {
+            // Garantir que imagens mantenham proporção
+            const images = element.querySelectorAll('img');
+            images.forEach((img) => {
+              img.style.objectFit = 'contain';
+            });
+          }
+        });
+
+        // Calcular altura em mm
+        const widthPx = canvas.width / 2;
+        const heightPx = canvas.height / 2;
+        const scaleFactor = CONTENT_WIDTH_MM / widthPx;
+        const heightMM = heightPx * scaleFactor;
+
+        sectionData.push({ canvas, heightMM });
+      }
+
+      // Criar PDF com quebras de página inteligentes
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      let currentY = MARGIN_MM;
+
+      for (const { canvas, heightMM } of sectionData) {
+        const remainingSpace = A4_HEIGHT_MM - MARGIN_MM - currentY;
+
+        // Se seção não couber na página atual, adicionar nova página
+        if (heightMM > remainingSpace && currentY > MARGIN_MM) {
+          pdf.addPage();
+          currentY = MARGIN_MM;
+        }
+
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        pdf.addImage(imgData, 'PNG', MARGIN_MM, currentY, CONTENT_WIDTH_MM, heightMM);
+        currentY += heightMM + SECTION_GAP_MM;
+      }
+
       pdf.save(`pedido-${nomeCompleto || 'cliente'}-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
       toast.success('PDF do pedido exportado!');
     } catch (error) {
@@ -1705,12 +1780,14 @@ ${linhasFormatadas}`;
           ) : (
             <div className="space-y-4">
               <div ref={pedidoExportRef} className="bg-background p-4 rounded-lg space-y-4">
-                <div className="text-center border-b border-border pb-3">
+                {/* Cabeçalho do pedido */}
+                <div data-pdf-section className="text-center border-b border-border pb-3">
                   <h3 className="font-bold text-lg">Pedido - {nomeCompleto}</h3>
                   <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('pt-BR')}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                {/* Dados do cliente */}
+                <div data-pdf-section className="grid grid-cols-2 gap-2 text-sm">
                   <div><span className="text-muted-foreground">Nome:</span> {nomeCompleto}</div>
                   <div><span className="text-muted-foreground">CPF:</span> {cpf || '-'}</div>
                   <div><span className="text-muted-foreground">Email:</span> {email || '-'}</div>
@@ -1718,46 +1795,57 @@ ${linhasFormatadas}`;
                   <div className="col-span-2"><span className="text-muted-foreground">Endereço:</span> {endereco ? `${endereco}, ${numero} - ${bairro}, ${cidade}/${estado}` : '-'}</div>
                 </div>
 
-                <div className="border-t border-border pt-3">
+                {/* Título das lâminas */}
+                <div data-pdf-section className="border-t border-border pt-3">
                   <h4 className="font-semibold mb-2">Lâminas do Pedido</h4>
-                  {[...laminasCustomizadas, ...(modeloSelecionado && modeloAtual ? [{
-                    id: 'current',
-                    modelo: modeloAtual,
-                    aco: acoAtual,
-                    acabamento: acabamentoAtual,
-                    empunhadura: empunhaduraAtual,
-                    dragonScale,
-                    bainha: bainhaAtual,
-                    corBainha,
-                    laser,
-                    textoLaser,
-                    localGravacao,
-                    embalagem,
-                    embalagemGravacao,
-                    embalagemTextoGravacao,
-                    subtotal: calcularSubtotal()
-                  }] : [])].map((lamina, index) => (
-                    <div key={lamina.id} className="mb-3 p-2 bg-muted rounded text-xs">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-12 h-8 bg-white rounded overflow-hidden">
-                          <img src={getModeloImagem(lamina.modelo)} alt="" className="w-full h-full object-contain" />
-                        </div>
-                        <span className="font-medium">{lamina.modelo?.nome_modelo}</span>
+                </div>
+
+                {/* Cada lâmina em seção separada */}
+                {[...laminasCustomizadas, ...(modeloSelecionado && modeloAtual ? [{
+                  id: 'current',
+                  modelo: modeloAtual,
+                  aco: acoAtual,
+                  acabamento: acabamentoAtual,
+                  empunhadura: empunhaduraAtual,
+                  dragonScale,
+                  bainha: bainhaAtual,
+                  corBainha,
+                  laser,
+                  textoLaser,
+                  localGravacao,
+                  embalagem,
+                  embalagemGravacao,
+                  embalagemTextoGravacao,
+                  subtotal: calcularSubtotal()
+                }] : [])].map((lamina, index) => (
+                  <div key={lamina.id} data-pdf-section className="mb-3 p-3 bg-muted rounded text-xs">
+                    <div className="flex items-start gap-3 mb-2">
+                      <div className="w-20 h-14 bg-white rounded overflow-hidden flex-shrink-0">
+                        <img 
+                          src={getModeloImagem(lamina.modelo)} 
+                          alt={lamina.modelo?.nome_modelo || ''} 
+                          className="w-full h-full object-contain"
+                          crossOrigin="anonymous"
+                        />
                       </div>
-                      <div className="grid grid-cols-2 gap-1 text-muted-foreground">
-                        <span>Aço: {lamina.aco?.nome_opcao || '-'}</span>
-                        <span>Acabamento: {lamina.acabamento?.nome_opcao || '-'}</span>
-                        <span>Empunhadura: {lamina.empunhadura?.nome_opcao || '-'}{lamina.dragonScale ? ' + DS' : ''}</span>
-                        <span>Bainha: {lamina.bainha?.nome_opcao || '-'} {lamina.corBainha}</span>
-                        {lamina.laser && <span className="col-span-2">Laser: {lamina.textoLaser}</span>}
+                      <div className="flex-1">
+                        <span className="font-semibold text-sm">{lamina.modelo?.nome_modelo}</span>
+                        <span className="text-muted-foreground ml-2">#{index + 1}</span>
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div className="grid grid-cols-2 gap-1 text-muted-foreground">
+                      <span>Aço: {lamina.aco?.nome_opcao || '-'}</span>
+                      <span>Acabamento: {lamina.acabamento?.nome_opcao || '-'}</span>
+                      <span>Empunhadura: {lamina.empunhadura?.nome_opcao || '-'}{lamina.dragonScale ? ' + DS' : ''}</span>
+                      <span>Bainha: {lamina.bainha?.nome_opcao || '-'} {lamina.corBainha}</span>
+                      {lamina.laser && <span className="col-span-2">Laser: {lamina.textoLaser}</span>}
+                    </div>
+                  </div>
+                ))}
 
                 {/* Produtos Adicionais no resumo */}
                 {produtosAdicionais.some(p => (quantidadesProdutos[p.id] || 0) > 0) && (
-                  <div className="border-t border-border pt-3">
+                  <div data-pdf-section className="border-t border-border pt-3">
                     <h4 className="font-semibold mb-2">Produtos Adicionais</h4>
                     <div className="space-y-1 text-xs">
                       {produtosAdicionais.filter(p => (quantidadesProdutos[p.id] || 0) > 0).map(produto => (
@@ -1772,8 +1860,8 @@ ${linhasFormatadas}`;
                   </div>
                 )}
 
-
-                <div className="text-xs text-muted-foreground text-center">
+                {/* Rodapé */}
+                <div data-pdf-section className="text-xs text-muted-foreground text-center pt-2">
                   Vendedor: {profile?.nome_vendedor || '-'}
                 </div>
               </div>
