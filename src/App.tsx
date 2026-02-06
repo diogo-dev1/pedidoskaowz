@@ -21,6 +21,7 @@ import MensagensPadrao from "./pages/MensagensPadrao";
 import Dashboard from "./pages/Dashboard";
 import KanbanBoard from "./pages/KanbanBoard";
 import ListaValores from "./pages/ListaValores";
+import Leads from "./pages/Leads";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
@@ -160,6 +161,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <ListaValores />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leads"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Leads />
                   </Layout>
                 </ProtectedRoute>
               }
