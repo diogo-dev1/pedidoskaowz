@@ -92,6 +92,45 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          observacao: string | null
+          origem: string | null
+          situacao: string
+          telefone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome: string
+          observacao?: string | null
+          origem?: string | null
+          situacao?: string
+          telefone: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          observacao?: string | null
+          origem?: string | null
+          situacao?: string
+          telefone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       mensagens_padrao: {
         Row: {
           conteudo: string
