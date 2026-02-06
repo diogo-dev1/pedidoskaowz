@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -34,24 +34,21 @@ import {
   Filter,
   MoreVertical,
   Phone,
-  Mail,
   Calendar,
-  User,
   MapPin,
   Edit,
   Trash2,
-  X,
   Users,
   TrendingUp,
   Clock,
   CheckCircle,
+  Copy,
 } from "lucide-react";
 
 interface Lead {
   id: string;
   nome: string;
   telefone: string;
-  email: string | null;
   situacao: string;
   origem: string | null;
   observacao: string | null;
@@ -86,10 +83,14 @@ export default function Leads() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   
+  // Inline editing state
+  const [editingObsId, setEditingObsId] = useState<string | null>(null);
+  const [editingObsValue, setEditingObsValue] = useState("");
+  const obsTextareaRef = useRef<HTMLTextAreaElement>(null);
+  
   // Form state
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
-  const [email, setEmail] = useState("");
   const [situacao, setSituacao] = useState("novo");
   const [origem, setOrigem] = useState("");
   const [observacao, setObservacao] = useState("");
@@ -99,6 +100,12 @@ export default function Leads() {
       fetchLeads();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (editingObsId && obsTextareaRef.current) {
+      obsTextareaRef.current.focus();
+    }
+  }, [editingObsId]);
 
   const fetchLeads = async () => {
     try {
@@ -120,7 +127,6 @@ export default function Leads() {
   const resetForm = () => {
     setNome("");
     setTelefone("");
-    setEmail("");
     setSituacao("novo");
     setOrigem("");
     setObservacao("");
@@ -131,7 +137,6 @@ export default function Leads() {
     setEditingLead(lead);
     setNome(lead.nome);
     setTelefone(lead.telefone);
-    setEmail(lead.email || "");
     setSituacao(lead.situacao);
     setOrigem(lead.origem || "");
     setObservacao(lead.observacao || "");
@@ -139,8 +144,8 @@ export default function Leads() {
   };
 
   const handleSubmit = async () => {
-    if (!nome.trim() || !telefone.trim()) {
-      toast.error("Nome e telefone são obrigatórios");
+    if (!telefone.trim()) {
+      toast.error("Telefone é obrigatório");
       return;
     }
 
@@ -149,9 +154,8 @@ export default function Leads() {
         const { error } = await supabase
           .from("leads")
           .update({
-            nome: nome.trim(),
+            nome: nome.trim() || "Sem nome",
             telefone: telefone.trim(),
-            email: email.trim() || null,
             situacao,
             origem: origem || null,
             observacao: observacao.trim() || null,
@@ -163,9 +167,8 @@ export default function Leads() {
       } else {
         const { error } = await supabase.from("leads").insert({
           user_id: user?.id,
-          nome: nome.trim(),
+          nome: nome.trim() || "Sem nome",
           telefone: telefone.trim(),
-          email: email.trim() || null,
           situacao,
           origem: origem || null,
           observacao: observacao.trim() || null,
@@ -214,6 +217,49 @@ export default function Leads() {
     }
   };
 
+  const handleObsClick = (lead: Lead) => {
+    setEditingObsId(lead.id);
+    setEditingObsValue(lead.observacao || "");
+  };
+
+  const handleObsBlur = async (leadId: string) => {
+    const lead = leads.find(l => l.id === leadId);
+    const newValue = editingObsValue.trim() || null;
+    
+    // Only update if value changed
+    if (lead && lead.observacao !== newValue) {
+      try {
+        const { error } = await supabase
+          .from("leads")
+          .update({ observacao: newValue })
+          .eq("id", leadId);
+
+        if (error) throw error;
+        
+        // Update local state
+        setLeads(prev => prev.map(l => 
+          l.id === leadId ? { ...l, observacao: newValue } : l
+        ));
+        toast.success("Observação salva!");
+      } catch (error) {
+        console.error("Erro ao salvar observação:", error);
+        toast.error("Erro ao salvar observação");
+      }
+    }
+    
+    setEditingObsId(null);
+    setEditingObsValue("");
+  };
+
+  const copyPhone = async (phone: string) => {
+    try {
+      await navigator.clipboard.writeText(phone);
+      toast.success("Telefone copiado!");
+    } catch {
+      toast.error("Erro ao copiar telefone");
+    }
+  };
+
   const getSituacaoStyle = (situacao: string) => {
     return SITUACOES.find((s) => s.value === situacao)?.color || "bg-gray-500/20 text-gray-400";
   };
@@ -230,8 +276,7 @@ export default function Leads() {
   const filteredLeads = leads.filter((lead) => {
     const matchesSearch =
       lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.telefone.includes(searchTerm) ||
-      (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase()));
+      lead.telefone.includes(searchTerm);
     const matchesSituacao = filterSituacao === "todos" || lead.situacao === filterSituacao;
     const matchesOrigem = filterOrigem === "todos" || lead.origem === filterOrigem;
     return matchesSearch && matchesSituacao && matchesOrigem;
@@ -281,9 +326,9 @@ export default function Leads() {
             </DialogHeader>
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label>Nome *</Label>
+                <Label>Nome</Label>
                 <Input
-                  placeholder="Nome do lead"
+                  placeholder="Nome do lead (opcional)"
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
                 />
@@ -294,15 +339,6 @@ export default function Leads() {
                   placeholder="(00) 00000-0000"
                   value={telefone}
                   onChange={(e) => setTelefone(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  placeholder="email@exemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -427,7 +463,7 @@ export default function Leads() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome, telefone ou email..."
+            placeholder="Buscar por nome ou telefone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -488,7 +524,7 @@ export default function Leads() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0 space-y-2">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <h3 className="font-semibold truncate">{lead.nome}</h3>
+                      <h3 className="font-semibold truncate">{lead.nome || "Sem nome"}</h3>
                       <Badge
                         variant="outline"
                         className={`${getSituacaoStyle(lead.situacao)} border text-xs`}
@@ -502,31 +538,50 @@ export default function Leads() {
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                      <a
-                        href={`tel:${lead.telefone}`}
-                        className="flex items-center gap-1.5 hover:text-primary transition-colors"
-                      >
-                        <Phone className="h-3.5 w-3.5" />
-                        {formatPhone(lead.telefone)}
-                      </a>
-                      {lead.email && (
+                      <div className="flex items-center gap-1.5">
                         <a
-                          href={`mailto:${lead.email}`}
+                          href={`tel:${lead.telefone}`}
                           className="flex items-center gap-1.5 hover:text-primary transition-colors"
                         >
-                          <Mail className="h-3.5 w-3.5" />
-                          <span className="truncate max-w-[200px]">{lead.email}</span>
+                          <Phone className="h-3.5 w-3.5" />
+                          {formatPhone(lead.telefone)}
                         </a>
-                      )}
+                        <button
+                          onClick={() => copyPhone(lead.telefone)}
+                          className="p-1 rounded hover:bg-muted transition-colors"
+                          title="Copiar telefone"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                       <span className="flex items-center gap-1.5 text-xs">
                         <Calendar className="h-3.5 w-3.5" />
                         {new Date(lead.created_at).toLocaleDateString("pt-BR")}
                       </span>
                     </div>
-                    {lead.observacao && (
-                      <p className="text-sm text-muted-foreground/80 line-clamp-2 bg-muted/30 rounded-md p-2 mt-2">
-                        {lead.observacao}
-                      </p>
+                    
+                    {/* Inline editable observation */}
+                    {editingObsId === lead.id ? (
+                      <Textarea
+                        ref={obsTextareaRef}
+                        value={editingObsValue}
+                        onChange={(e) => setEditingObsValue(e.target.value)}
+                        onBlur={() => handleObsBlur(lead.id)}
+                        placeholder="Adicionar observação..."
+                        className="text-sm bg-muted/50 border-primary/30 min-h-[60px] mt-2"
+                        rows={2}
+                      />
+                    ) : (
+                      <div
+                        onClick={() => handleObsClick(lead)}
+                        className="text-sm text-muted-foreground/80 bg-muted/30 rounded-md p-2 mt-2 cursor-pointer hover:bg-muted/50 transition-colors min-h-[40px]"
+                      >
+                        {lead.observacao || (
+                          <span className="text-muted-foreground/50 italic">
+                            Clique para adicionar observação...
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
