@@ -43,6 +43,8 @@ import {
   Clock,
   CheckCircle,
   Copy,
+  Settings,
+  X,
 } from "lucide-react";
 
 interface Lead {
@@ -56,12 +58,30 @@ interface Lead {
   updated_at: string;
 }
 
-const SITUACOES = [
-  { value: "novo", label: "Novo", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-  { value: "contato", label: "Em Contato", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
-  { value: "negociando", label: "Negociando", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
-  { value: "fechado", label: "Fechado", color: "bg-green-500/20 text-green-400 border-green-500/30" },
-  { value: "perdido", label: "Perdido", color: "bg-red-500/20 text-red-400 border-red-500/30" },
+interface Situacao {
+  id: string;
+  nome: string;
+  cor: string;
+  ordem: number;
+}
+
+const CORES_DISPONIVEIS = [
+  { value: "blue", label: "Azul", class: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+  { value: "yellow", label: "Amarelo", class: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+  { value: "purple", label: "Roxo", class: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+  { value: "green", label: "Verde", class: "bg-green-500/20 text-green-400 border-green-500/30" },
+  { value: "red", label: "Vermelho", class: "bg-red-500/20 text-red-400 border-red-500/30" },
+  { value: "orange", label: "Laranja", class: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+  { value: "pink", label: "Rosa", class: "bg-pink-500/20 text-pink-400 border-pink-500/30" },
+  { value: "cyan", label: "Ciano", class: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30" },
+];
+
+const DEFAULT_SITUACOES = [
+  { nome: "Novo", cor: "blue", ordem: 0 },
+  { nome: "Em Contato", cor: "yellow", ordem: 1 },
+  { nome: "Negociando", cor: "purple", ordem: 2 },
+  { nome: "Fechado", cor: "green", ordem: 3 },
+  { nome: "Perdido", cor: "red", ordem: 4 },
 ];
 
 const ORIGENS = [
@@ -76,11 +96,13 @@ const ORIGENS = [
 export default function Leads() {
   const { user } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [situacoes, setSituacoes] = useState<Situacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSituacao, setFilterSituacao] = useState<string>("todos");
   const [filterOrigem, setFilterOrigem] = useState<string>("todos");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   
   // Inline editing state
@@ -91,12 +113,18 @@ export default function Leads() {
   // Form state
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
-  const [situacao, setSituacao] = useState("novo");
+  const [situacao, setSituacao] = useState("");
   const [origem, setOrigem] = useState("");
   const [observacao, setObservacao] = useState("");
 
+  // Situacao form state
+  const [novaSituacaoNome, setNovaSituacaoNome] = useState("");
+  const [novaSituacaoCor, setNovaSituacaoCor] = useState("blue");
+  const [editingSituacao, setEditingSituacao] = useState<Situacao | null>(null);
+
   useEffect(() => {
     if (user) {
+      fetchSituacoes();
       fetchLeads();
     }
   }, [user]);
@@ -106,6 +134,53 @@ export default function Leads() {
       obsTextareaRef.current.focus();
     }
   }, [editingObsId]);
+
+  const fetchSituacoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("situacoes_leads")
+        .select("*")
+        .order("ordem", { ascending: true });
+
+      if (error) throw error;
+      
+      // If no custom situacoes, create defaults
+      if (!data || data.length === 0) {
+        await createDefaultSituacoes();
+      } else {
+        setSituacoes(data);
+        if (!situacao && data.length > 0) {
+          setSituacao(data[0].nome);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao buscar situações:", error);
+    }
+  };
+
+  const createDefaultSituacoes = async () => {
+    try {
+      const inserts = DEFAULT_SITUACOES.map((s) => ({
+        user_id: user?.id,
+        nome: s.nome,
+        cor: s.cor,
+        ordem: s.ordem,
+      }));
+
+      const { data, error } = await supabase
+        .from("situacoes_leads")
+        .insert(inserts)
+        .select();
+
+      if (error) throw error;
+      setSituacoes(data || []);
+      if (data && data.length > 0) {
+        setSituacao(data[0].nome);
+      }
+    } catch (error) {
+      console.error("Erro ao criar situações padrão:", error);
+    }
+  };
 
   const fetchLeads = async () => {
     try {
@@ -127,7 +202,7 @@ export default function Leads() {
   const resetForm = () => {
     setNome("");
     setTelefone("");
-    setSituacao("novo");
+    setSituacao(situacoes.length > 0 ? situacoes[0].nome : "");
     setOrigem("");
     setObservacao("");
     setEditingLead(null);
@@ -149,6 +224,8 @@ export default function Leads() {
       return;
     }
 
+    const situacaoToUse = situacao || (situacoes.length > 0 ? situacoes[0].nome : "Novo");
+
     try {
       if (editingLead) {
         const { error } = await supabase
@@ -156,7 +233,7 @@ export default function Leads() {
           .update({
             nome: nome.trim() || "Sem nome",
             telefone: telefone.trim(),
-            situacao,
+            situacao: situacaoToUse,
             origem: origem || null,
             observacao: observacao.trim() || null,
           })
@@ -169,7 +246,7 @@ export default function Leads() {
           user_id: user?.id,
           nome: nome.trim() || "Sem nome",
           telefone: telefone.trim(),
-          situacao,
+          situacao: situacaoToUse,
           origem: origem || null,
           observacao: observacao.trim() || null,
         });
@@ -201,7 +278,7 @@ export default function Leads() {
     }
   };
 
-  const updateSituacao = async (id: string, novaSituacao: string) => {
+  const updateLeadSituacao = async (id: string, novaSituacao: string) => {
     try {
       const { error } = await supabase
         .from("leads")
@@ -226,7 +303,6 @@ export default function Leads() {
     const lead = leads.find(l => l.id === leadId);
     const newValue = editingObsValue.trim() || null;
     
-    // Only update if value changed
     if (lead && lead.observacao !== newValue) {
       try {
         const { error } = await supabase
@@ -236,7 +312,6 @@ export default function Leads() {
 
         if (error) throw error;
         
-        // Update local state
         setLeads(prev => prev.map(l => 
           l.id === leadId ? { ...l, observacao: newValue } : l
         ));
@@ -260,12 +335,97 @@ export default function Leads() {
     }
   };
 
-  const getSituacaoStyle = (situacao: string) => {
-    return SITUACOES.find((s) => s.value === situacao)?.color || "bg-gray-500/20 text-gray-400";
+  // Situacao management
+  const handleAddSituacao = async () => {
+    if (!novaSituacaoNome.trim()) {
+      toast.error("Nome da situação é obrigatório");
+      return;
+    }
+
+    try {
+      const maxOrdem = situacoes.reduce((max, s) => Math.max(max, s.ordem), 0);
+      
+      const { error } = await supabase.from("situacoes_leads").insert({
+        user_id: user?.id,
+        nome: novaSituacaoNome.trim(),
+        cor: novaSituacaoCor,
+        ordem: maxOrdem + 1,
+      });
+
+      if (error) throw error;
+      toast.success("Situação criada!");
+      setNovaSituacaoNome("");
+      setNovaSituacaoCor("blue");
+      fetchSituacoes();
+    } catch (error) {
+      console.error("Erro ao criar situação:", error);
+      toast.error("Erro ao criar situação");
+    }
   };
 
-  const getSituacaoLabel = (situacao: string) => {
-    return SITUACOES.find((s) => s.value === situacao)?.label || situacao;
+  const handleUpdateSituacao = async () => {
+    if (!editingSituacao || !novaSituacaoNome.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from("situacoes_leads")
+        .update({
+          nome: novaSituacaoNome.trim(),
+          cor: novaSituacaoCor,
+        })
+        .eq("id", editingSituacao.id);
+
+      if (error) throw error;
+      toast.success("Situação atualizada!");
+      setEditingSituacao(null);
+      setNovaSituacaoNome("");
+      setNovaSituacaoCor("blue");
+      fetchSituacoes();
+    } catch (error) {
+      console.error("Erro ao atualizar situação:", error);
+      toast.error("Erro ao atualizar situação");
+    }
+  };
+
+  const handleDeleteSituacao = async (id: string) => {
+    const situacaoToDelete = situacoes.find(s => s.id === id);
+    const leadsUsing = leads.filter(l => l.situacao === situacaoToDelete?.nome);
+    
+    if (leadsUsing.length > 0) {
+      toast.error(`Esta situação está sendo usada por ${leadsUsing.length} lead(s)`);
+      return;
+    }
+
+    if (!confirm("Tem certeza que deseja excluir esta situação?")) return;
+
+    try {
+      const { error } = await supabase.from("situacoes_leads").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Situação excluída!");
+      fetchSituacoes();
+    } catch (error) {
+      console.error("Erro ao excluir situação:", error);
+      toast.error("Erro ao excluir situação");
+    }
+  };
+
+  const startEditSituacao = (s: Situacao) => {
+    setEditingSituacao(s);
+    setNovaSituacaoNome(s.nome);
+    setNovaSituacaoCor(s.cor);
+  };
+
+  const cancelEditSituacao = () => {
+    setEditingSituacao(null);
+    setNovaSituacaoNome("");
+    setNovaSituacaoCor("blue");
+  };
+
+  const getSituacaoStyle = (situacaoNome: string) => {
+    const sit = situacoes.find((s) => s.nome === situacaoNome);
+    if (!sit) return "bg-muted text-muted-foreground";
+    const cor = CORES_DISPONIVEIS.find(c => c.value === sit.cor);
+    return cor?.class || "bg-muted text-muted-foreground";
   };
 
   const getOrigemLabel = (origem: string | null) => {
@@ -282,12 +442,17 @@ export default function Leads() {
     return matchesSearch && matchesSituacao && matchesOrigem;
   });
 
-  // Stats
   const stats = {
     total: leads.length,
-    novos: leads.filter((l) => l.situacao === "novo").length,
-    emContato: leads.filter((l) => l.situacao === "contato" || l.situacao === "negociando").length,
-    fechados: leads.filter((l) => l.situacao === "fechado").length,
+    novos: leads.filter((l) => situacoes.find(s => s.nome === l.situacao)?.ordem === 0).length,
+    emContato: leads.filter((l) => {
+      const sit = situacoes.find(s => s.nome === l.situacao);
+      return sit && sit.ordem > 0 && sit.ordem < situacoes.length - 1;
+    }).length,
+    fechados: leads.filter((l) => {
+      const sit = situacoes.find(s => s.nome === l.situacao);
+      return sit && sit.cor === "green";
+    }).length,
   };
 
   const formatPhone = (phone: string) => {
@@ -310,96 +475,188 @@ export default function Leads() {
           <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
           <p className="text-muted-foreground text-sm">Gerencie seus contatos e oportunidades</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Novo Lead
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingLead ? "Editar Lead" : "Novo Lead"}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label>Nome</Label>
-                <Input
-                  placeholder="Nome do lead (opcional)"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Telefone *</Label>
-                <Input
-                  placeholder="(00) 00000-0000"
-                  value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+        <div className="flex gap-2">
+          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Gerenciar Situações</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                {/* Add/Edit form */}
+                <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Nome da situação"
+                      value={novaSituacaoNome}
+                      onChange={(e) => setNovaSituacaoNome(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Select value={novaSituacaoCor} onValueChange={setNovaSituacaoCor}>
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CORES_DISPONIVEIS.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-3 h-3 rounded-full ${c.class.split(" ")[0].replace("/20", "")}`} />
+                              {c.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2">
+                    {editingSituacao ? (
+                      <>
+                        <Button size="sm" onClick={handleUpdateSituacao} className="flex-1">
+                          Salvar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={cancelEditSituacao}>
+                          Cancelar
+                        </Button>
+                      </>
+                    ) : (
+                      <Button size="sm" onClick={handleAddSituacao} className="w-full">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* List */}
                 <div className="space-y-2">
-                  <Label>Situação</Label>
-                  <Select value={situacao} onValueChange={setSituacao}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SITUACOES.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>
-                          {s.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {situacoes.map((s) => (
+                    <div
+                      key={s.id}
+                      className="flex items-center justify-between p-2 bg-muted/20 rounded-md"
+                    >
+                      <Badge variant="outline" className={`${getSituacaoStyle(s.nome)} border`}>
+                        {s.nome}
+                      </Badge>
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => startEditSituacao(s)}
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteSituacao(s.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Lead
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingLead ? "Editar Lead" : "Novo Lead"}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label>Nome</Label>
+                  <Input
+                    placeholder="Nome do lead (opcional)"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Origem</Label>
-                  <Select value={origem} onValueChange={setOrigem}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ORIGENS.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Telefone *</Label>
+                  <Input
+                    placeholder="(00) 00000-0000"
+                    value={telefone}
+                    onChange={(e) => setTelefone(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Situação</Label>
+                    <Select value={situacao} onValueChange={setSituacao}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {situacoes.map((s) => (
+                          <SelectItem key={s.id} value={s.nome}>
+                            {s.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Origem</Label>
+                    <Select value={origem} onValueChange={setOrigem}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ORIGENS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Observação</Label>
+                  <Textarea
+                    placeholder="Anotações sobre o lead..."
+                    value={observacao}
+                    onChange={(e) => setObservacao(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      resetForm();
+                      setIsDialogOpen(false);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button className="flex-1" onClick={handleSubmit}>
+                    {editingLead ? "Salvar" : "Cadastrar"}
+                  </Button>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Observação</Label>
-                <Textarea
-                  placeholder="Anotações sobre o lead..."
-                  value={observacao}
-                  onChange={(e) => setObservacao(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    resetForm();
-                    setIsDialogOpen(false);
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button className="flex-1" onClick={handleSubmit}>
-                  {editingLead ? "Salvar" : "Cadastrar"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -477,9 +734,9 @@ export default function Leads() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todas</SelectItem>
-              {SITUACOES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
+              {situacoes.map((s) => (
+                <SelectItem key={s.id} value={s.nome}>
+                  {s.nome}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -529,7 +786,7 @@ export default function Leads() {
                         variant="outline"
                         className={`${getSituacaoStyle(lead.situacao)} border text-xs`}
                       >
-                        {getSituacaoLabel(lead.situacao)}
+                        {lead.situacao}
                       </Badge>
                       {lead.origem && (
                         <Badge variant="secondary" className="text-xs">
@@ -587,7 +844,7 @@ export default function Leads() {
                   <div className="flex items-center gap-1">
                     <Select
                       value={lead.situacao}
-                      onValueChange={(value) => updateSituacao(lead.id, value)}
+                      onValueChange={(value) => updateLeadSituacao(lead.id, value)}
                     >
                       <SelectTrigger className="h-8 w-8 p-0 border-0 bg-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="w-full h-full flex items-center justify-center">
@@ -595,9 +852,9 @@ export default function Leads() {
                         </div>
                       </SelectTrigger>
                       <SelectContent>
-                        {SITUACOES.map((s) => (
-                          <SelectItem key={s.value} value={s.value}>
-                            {s.label}
+                        {situacoes.map((s) => (
+                          <SelectItem key={s.id} value={s.nome}>
+                            {s.nome}
                           </SelectItem>
                         ))}
                       </SelectContent>
