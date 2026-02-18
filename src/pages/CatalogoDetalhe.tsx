@@ -153,7 +153,7 @@ export default function CatalogoDetalhe() {
               </div>
             )}
 
-            {/* Galeria de imagens */}
+            {/* Imagem principal */}
             {imagensDisponiveis.length > 0 && (
               <div className="relative aspect-square bg-zinc-800 rounded-lg overflow-hidden">
                 <img
@@ -161,45 +161,17 @@ export default function CatalogoDetalhe() {
                   alt={modelo.nome_modelo}
                   className="w-full h-full object-cover"
                 />
-                
-                {imagensDisponiveis.length > 1 && (
-                  <>
-                    <button
-                      onClick={imagemAnterior}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 rounded-full p-2"
-                    >
-                      <ChevronLeft className="h-5 w-5 text-white" />
-                    </button>
-                    <button
-                      onClick={proximaImagem}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 rounded-full p-2"
-                    >
-                      <ChevronRight className="h-5 w-5 text-white" />
-                    </button>
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                      {imagensDisponiveis.map((_, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => setImagemAtual(idx)}
-                          className={`w-2 h-2 rounded-full transition-all ${
-                            idx === imagemAtual ? 'bg-accent w-4' : 'bg-white/40'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
               </div>
             )}
 
-            {/* Miniaturas */}
+            {/* Miniaturas horizontais */}
             {imagensDisponiveis.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {imagensDisponiveis.slice(0, 4).map((img, idx) => (
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                {imagensDisponiveis.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setImagemAtual(idx)}
-                    className={`aspect-square rounded-lg overflow-hidden transition-all ${
+                    className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden transition-all ${
                       idx === imagemAtual ? 'ring-2 ring-accent' : 'opacity-50 hover:opacity-100'
                     }`}
                   >

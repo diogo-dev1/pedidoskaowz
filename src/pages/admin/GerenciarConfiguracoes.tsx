@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Video, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Video, Search, Upload, Star, Loader2, X, Image as ImageIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -20,6 +20,13 @@ interface Configuracao {
   apresentacao_venda: string | null;
   garantia: string | null;
   prazo_entrega: string | null;
+}
+
+interface Midia {
+  id: string;
+  nome_arquivo: string;
+  url: string;
+  visivel_catalogo: boolean;
 }
 
 const CATEGORIAS = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
@@ -38,6 +45,13 @@ export default function GerenciarConfiguracoes() {
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Media management
+  const [midiaDialogOpen, setMidiaDialogOpen] = useState(false);
+  const [midiaConfig, setMidiaConfig] = useState<Configuracao | null>(null);
+  const [midias, setMidias] = useState<Midia[]>([]);
+  const [carregandoMidias, setCarregandoMidias] = useState(false);
+  const [uploadandoMidia, setUploadandoMidia] = useState(false);
   
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -78,7 +92,6 @@ export default function GerenciarConfiguracoes() {
     let imagemUrl = editingConfig?.imagem_modelo || null;
     let videoUrl = editingConfig?.video_url || null;
 
-    // Upload da imagem se houver
     if (imagemFile) {
       const fileExt = imagemFile.name.split('.').pop();
       const fileName = `config-${Math.random()}.${fileExt}`;
@@ -99,7 +112,6 @@ export default function GerenciarConfiguracoes() {
       imagemUrl = publicUrl;
     }
 
-    // Upload do vídeo se houver
     if (videoFile) {
       const fileExt = videoFile.name.split('.').pop();
       const fileName = `videos/config-${Math.random()}.${fileExt}`;
@@ -200,6 +212,107 @@ export default function GerenciarConfiguracoes() {
     setPrazoEntrega('');
     setImagemFile(null);
     setVideoFile(null);
+  };
+
+  // --- Media management functions ---
+  const abrirMidiaDialog = (config: Configuracao) => {
+    setMidiaConfig(config);
+    setMidiaDialogOpen(true);
+    carregarMidias(config.id);
+  };
+
+  const carregarMidias = async (modeloId: string) => {
+    setCarregandoMidias(true);
+    const { data, error } = await supabase
+      .from('midias_catalogo')
+      .select('*')
+      .eq('modelo_id', modeloId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao carregar mídias:', error);
+      setMidias([]);
+    } else {
+      setMidias(data || []);
+    }
+    setCarregandoMidias(false);
+  };
+
+  const handleUploadMidia = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!midiaConfig || !e.target.files?.length) return;
+
+    setUploadandoMidia(true);
+    const files = Array.from(e.target.files);
+
+    for (const file of files) {
+      const fileName = `${midiaConfig.id}/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('catalogo-midias')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        toast.error(`Erro ao enviar ${file.name}`);
+        continue;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('catalogo-midias')
+        .getPublicUrl(fileName);
+
+      await supabase.from('midias_catalogo').insert({
+        modelo_id: midiaConfig.id,
+        nome_arquivo: fileName,
+        url: urlData.publicUrl,
+        visivel_catalogo: true,
+      });
+    }
+
+    toast.success('Upload realizado!');
+    carregarMidias(midiaConfig.id);
+    setUploadandoMidia(false);
+    e.target.value = '';
+  };
+
+  const definirComoCapa = async (midia: Midia) => {
+    if (!midiaConfig) return;
+
+    const isVideo = midia.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i);
+
+    const updateData: Record<string, string | null> = {};
+    if (isVideo) {
+      updateData.video_url = midia.url;
+      updateData.imagem_modelo = null;
+    } else {
+      updateData.imagem_modelo = midia.url;
+      updateData.video_url = null;
+    }
+
+    const { error } = await supabase
+      .from('catalogo_modelos')
+      .update(updateData)
+      .eq('id', midiaConfig.id);
+
+    if (error) {
+      toast.error('Erro ao definir capa');
+      return;
+    }
+
+    setMidiaConfig(prev => prev ? { ...prev, ...updateData } : null);
+    toast.success('Capa definida com sucesso!');
+    fetchConfiguracoes();
+  };
+
+  const deletarMidia = async (midia: Midia) => {
+    await supabase.storage.from('catalogo-midias').remove([midia.nome_arquivo]);
+    const { error } = await supabase.from('midias_catalogo').delete().eq('id', midia.id);
+
+    if (error) {
+      toast.error('Erro ao deletar mídia');
+      return;
+    }
+
+    setMidias(prev => prev.filter(m => m.id !== midia.id));
+    toast.success('Mídia removida');
   };
 
   if (loading) {
@@ -401,6 +514,15 @@ export default function GerenciarConfiguracoes() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => abrirMidiaDialog(config)}
+                className="flex-1"
+              >
+                <ImageIcon className="mr-2 h-4 w-4" />
+                Fotos
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => openEditDialog(config)}
                 className="flex-1"
               >
@@ -411,10 +533,8 @@ export default function GerenciarConfiguracoes() {
                 variant="destructive"
                 size="sm"
                 onClick={() => handleDelete(config.id)}
-                className="flex-1"
               >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Excluir
+                <Trash2 className="h-4 w-4" />
               </Button>
             </CardContent>
           </Card>
@@ -432,6 +552,120 @@ export default function GerenciarConfiguracoes() {
           </CardContent>
         </Card>
       )}
+
+      {/* Dialog de Mídias */}
+      <Dialog open={midiaDialogOpen} onOpenChange={setMidiaDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Fotos - {midiaConfig?.nome_modelo}</DialogTitle>
+            <DialogDescription>
+              Faça upload de fotos e escolha qual será a capa do catálogo
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Upload */}
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="upload-midias"
+              className="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-4 cursor-pointer hover:border-accent transition-colors"
+            >
+              {uploadandoMidia ? (
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              ) : (
+                <Upload className="h-5 w-5 text-muted-foreground" />
+              )}
+              <span className="text-sm text-muted-foreground">
+                {uploadandoMidia ? 'Enviando...' : 'Clique para enviar fotos'}
+              </span>
+            </Label>
+            <Input
+              id="upload-midias"
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={handleUploadMidia}
+              className="hidden"
+              disabled={uploadandoMidia}
+            />
+          </div>
+
+          {/* Capa atual */}
+          {midiaConfig && (midiaConfig.imagem_modelo || midiaConfig.video_url) && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Capa atual:</p>
+              <div className="w-24 h-24 rounded-lg overflow-hidden ring-2 ring-accent">
+                {midiaConfig.imagem_modelo ? (
+                  <img src={midiaConfig.imagem_modelo} alt="Capa" className="w-full h-full object-cover" />
+                ) : midiaConfig.video_url ? (
+                  <video src={midiaConfig.video_url} className="w-full h-full object-cover" muted />
+                ) : null}
+              </div>
+            </div>
+          )}
+
+          {/* Grid de mídias */}
+          {carregandoMidias ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : midias.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              Nenhuma foto enviada ainda
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {midias.map((midia) => {
+                const isVideo = midia.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i);
+                const isCapa = midiaConfig?.imagem_modelo === midia.url || midiaConfig?.video_url === midia.url;
+
+                return (
+                  <div
+                    key={midia.id}
+                    className={`relative group aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                      isCapa ? 'border-accent' : 'border-transparent hover:border-border'
+                    }`}
+                  >
+                    {isVideo ? (
+                      <video src={midia.url} className="w-full h-full object-cover" muted />
+                    ) : (
+                      <img src={midia.url} alt="" className="w-full h-full object-cover" />
+                    )}
+
+                    {isCapa && (
+                      <div className="absolute top-1 left-1 bg-accent rounded-full p-1">
+                        <Star className="h-3 w-3 text-accent-foreground fill-current" />
+                      </div>
+                    )}
+
+                    {/* Overlay com ações */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      {!isCapa && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-8 text-xs"
+                          onClick={() => definirComoCapa(midia)}
+                        >
+                          <Star className="h-3 w-3 mr-1" />
+                          Capa
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-8 text-xs"
+                        onClick={() => deletarMidia(midia)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
