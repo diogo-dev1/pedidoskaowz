@@ -166,7 +166,7 @@ export default function CatalogoDetalhe() {
 
             {/* Miniaturas horizontais */}
             {imagensDisponiveis.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin justify-center">
                 {imagensDisponiveis.map((img, idx) => (
                   <button
                     key={idx}
