@@ -155,11 +155,11 @@ export default function CatalogoDetalhe() {
 
             {/* Imagem principal */}
             {imagensDisponiveis.length > 0 && (
-              <div className="relative aspect-square bg-zinc-800 rounded-lg overflow-hidden">
+              <div className="relative bg-zinc-800 rounded-lg overflow-hidden flex items-center justify-center min-h-[300px] md:min-h-[400px]">
                 <img
                   src={imagensDisponiveis[imagemAtual]}
                   alt={modelo.nome_modelo}
-                  className="w-full h-full object-cover"
+                  className="max-w-full max-h-[500px] object-contain"
                 />
               </div>
             )}
