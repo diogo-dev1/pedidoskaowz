@@ -129,6 +129,7 @@ export default function Simulador() {
   const [observacao, setObservacao] = useState('');
   const [cupom, setCupom] = useState('');
   const [prazo, setPrazo] = useState('');
+  const [brindes, setBrindes] = useState('');
 
   // Modal IA
   const [modalIAOpen, setModalIAOpen] = useState(false);
@@ -408,6 +409,7 @@ export default function Simulador() {
     setObservacao('');
     setCupom('');
     setPrazo('');
+    setBrindes('');
     setPedidoFinalizado(false);
     setTextoFormatado('');
   };
@@ -709,24 +711,48 @@ export default function Simulador() {
         });
       }
 
-      const descricoesPedidos = todasLaminas.map((lamina, index) => {
-        const acabamentoInfo = (lamina.acabamento?.nome_opcao || '') + (lamina.bruteForge ? ' + Brute Forge' : '');
-        const empunhaduraInfo = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
-        const espacadorInfo = lamina.espacador ? ` espaçador ${lamina.espacador.nome_opcao}` : '';
-        const desc = `${lamina.modelo?.nome_modelo || ''} ${lamina.aco?.nome_opcao || ''} ${acabamentoInfo} empunhadura em ${empunhaduraInfo} ${lamina.bainha?.nome_opcao || ''}${espacadorInfo}`;
-        return `Lâmina ${index + 1}: ${desc}`;
-      }).join('\n');
+      // Formatar itens no padrão: Modelo Aço Acabamento Empunhadura Bainha [Tipo] [Cor]
+      const itensPedido = todasLaminas.map((lamina, index) => {
+        const modelo = lamina.modelo?.nome_modelo || '';
+        const aco = lamina.aco?.nome_opcao || '';
+        const acabamento = (lamina.acabamento?.nome_opcao || '') + (lamina.bruteForge ? ' + Brute Forge' : '');
+        const empunhadura = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
+        
+        // Formato bainha: "Bainha [Tipo] [Cor]"
+        const bainhaFormatada = lamina.bainha?.nome_opcao 
+          ? `Bainha ${lamina.bainha.nome_opcao}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
+          : '';
+        
+        const espacadorInfo = lamina.espacador ? `Espaçador ${lamina.espacador.nome_opcao}` : '';
+        
+        const partes = [modelo, aco, acabamento, empunhadura, bainhaFormatada, espacadorInfo].filter(Boolean).join(' ');
+        return `Item ${index + 1}: ${partes}`;
+      }).join('\n\n');
 
-      const linhasFormatadas = todasLaminas.map((lamina) => {
-        const acabamentoInfo = (lamina.acabamento?.nome_opcao || '') + (lamina.bruteForge ? ' + Brute Forge' : '');
-        const empunhaduraInfo = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
-        return `${nomeCompleto}, ${lamina.modelo?.nome_modelo || ''}, ${lamina.aco?.nome_opcao || ''}, ${acabamentoInfo}, ${empunhaduraInfo}, ${lamina.bainha?.nome_opcao || ''}, ${lamina.corBainha || ''}, ${lamina.espacador?.nome_opcao || ''}`;
-      }).join('\n');
+      // Personalização à laser
+      const laminasComLaser = todasLaminas.filter(l => l.laser && l.textoLaser);
+      let personalizacaoTexto = 'Não';
+      if (laminasComLaser.length > 0) {
+        const todasIguais = laminasComLaser.every(l => l.textoLaser === laminasComLaser[0].textoLaser);
+        if (todasIguais && laminasComLaser.length === todasLaminas.length) {
+          personalizacaoTexto = laminasComLaser[0].textoLaser;
+        } else {
+          personalizacaoTexto = '\n' + laminasComLaser.map((l, i) => {
+            const idx = todasLaminas.indexOf(l) + 1;
+            return `Item ${idx}: ${l.textoLaser}`;
+          }).join('\n');
+        }
+      }
 
-      const personalizacoesLaser = todasLaminas
-        .filter(l => l.laser && l.textoLaser)
-        .map((l, index) => `Lâmina ${index + 1}: ${l.textoLaser} (${l.localGravacao.join(', ') || 'Não especificado'})`)
-        .join('\n');
+      // Embalagem consolidada
+      const embalagens = todasLaminas.map(l => l.embalagem).filter(Boolean);
+      const embalagemTexto = embalagens.length > 0 ? embalagens.join(', ') : '-';
+
+      // Produtos adicionais como brindes ou itens extras
+      const produtosSelecionados = produtosAdicionais
+        .filter(p => (quantidadesProdutos[p.id] || 0) > 0)
+        .map(p => `${p.nome_produto} x${quantidadesProdutos[p.id]}`)
+        .join(', ');
 
       const texto = `1. NOME: ${nomeCompleto}
 2. CPF: ${cpf}
@@ -741,14 +767,19 @@ export default function Simulador() {
 11. E-MAIL: ${email}
 12. DATA DE NASCIMENTO: ${dataNascimento}
 13. PEDIDO:
-${descricoesPedidos}
+${itensPedido}
 14. VALOR: ${valorTotalCalculado.toFixed(2)}
 15. FORMA DE PAGAMENTO: ${formaPagamento}
-16. PERSONALIZAÇÃO À LASER: ${personalizacoesLaser || 'Não'}
+16. PERSONALIZAÇÃO À LASER: ${personalizacaoTexto}
 17. NOME PROPRIETÁRIO P/ CERTIFICADO: ${nomeCertificado || nomeCompleto}
-Vendedor: ${profile?.nome_vendedor || ''}
-
-${linhasFormatadas}`;
+18. VENDEDOR: ${profile?.nome_vendedor || ''}
+19. CANAL DE VENDA: ${canal || '-'}
+20. CUPOM: ${cupom || '-'}
+21. STATUS DO PEDIDO: ${status}
+22. PRAZO: ${prazo || '-'}
+23. EMBALAGEM: ${embalagemTexto}
+24. BRINDES: ${brindes || produtosSelecionados || '-'}
+OBS: ${observacao || '-'}`;
 
       setTextoFormatado(texto);
       setPedidoFinalizado(true);
@@ -1758,12 +1789,16 @@ ${linhasFormatadas}`;
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="prazo">Prazo de Entrega</Label>
-                      <Input id="prazo" value={prazo} onChange={(e) => setPrazo(e.target.value)} placeholder="Ex: 30/06" />
+                      <Input id="prazo" value={prazo} onChange={(e) => setPrazo(e.target.value)} placeholder="DD/MM/AAAA" />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="observacao">Observações</Label>
-                      <Input id="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+                      <Label htmlFor="brindes">Brindes</Label>
+                      <Input id="brindes" value={brindes} onChange={(e) => setBrindes(e.target.value)} placeholder="Ex: Chaveiro, Adesivo" />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="observacao">Observações</Label>
+                    <Input id="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
                   </div>
                 </CollapsibleContent>
               </Collapsible>
