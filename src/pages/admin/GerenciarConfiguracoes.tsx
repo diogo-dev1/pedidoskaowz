@@ -486,7 +486,7 @@ export default function GerenciarConfiguracoes() {
               {config.video_url ? (
                 <video
                   src={config.video_url}
-                  className="w-full h-48 object-cover rounded-md mb-4"
+                  className="w-full h-48 object-contain bg-muted rounded-md mb-4"
                   controls
                   muted
                 />
@@ -494,7 +494,7 @@ export default function GerenciarConfiguracoes() {
                 <img
                   src={config.imagem_modelo}
                   alt={config.nome_modelo}
-                  className="w-full h-48 object-cover rounded-md mb-4"
+                  className="w-full h-48 object-contain bg-muted rounded-md mb-4"
                 />
               ) : (
                 <div className="w-full h-48 bg-muted rounded-md mb-4 flex items-center justify-center">
@@ -518,7 +518,7 @@ export default function GerenciarConfiguracoes() {
                 className="flex-1"
               >
                 <ImageIcon className="mr-2 h-4 w-4" />
-                Fotos
+                Mídias
               </Button>
               <Button
                 variant="outline"
@@ -557,9 +557,9 @@ export default function GerenciarConfiguracoes() {
       <Dialog open={midiaDialogOpen} onOpenChange={setMidiaDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Fotos - {midiaConfig?.nome_modelo}</DialogTitle>
+            <DialogTitle>Mídias - {midiaConfig?.nome_modelo}</DialogTitle>
             <DialogDescription>
-              Faça upload de fotos e escolha qual será a capa do catálogo
+              Gerencie fotos e vídeos. Escolha a capa e controle a visibilidade no catálogo.
             </DialogDescription>
           </DialogHeader>
 
@@ -575,7 +575,7 @@ export default function GerenciarConfiguracoes() {
                 <Upload className="h-5 w-5 text-muted-foreground" />
               )}
               <span className="text-sm text-muted-foreground">
-                {uploadandoMidia ? 'Enviando...' : 'Clique para enviar fotos'}
+                {uploadandoMidia ? 'Enviando...' : 'Clique para enviar fotos ou vídeos'}
               </span>
             </Label>
             <Input
@@ -593,11 +593,11 @@ export default function GerenciarConfiguracoes() {
           {midiaConfig && (midiaConfig.imagem_modelo || midiaConfig.video_url) && (
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">Capa atual:</p>
-              <div className="w-24 h-24 rounded-lg overflow-hidden ring-2 ring-accent">
+              <div className="w-24 h-24 rounded-lg overflow-hidden ring-2 ring-accent bg-muted">
                 {midiaConfig.imagem_modelo ? (
-                  <img src={midiaConfig.imagem_modelo} alt="Capa" className="w-full h-full object-cover" />
+                  <img src={midiaConfig.imagem_modelo} alt="Capa" className="w-full h-full object-contain" />
                 ) : midiaConfig.video_url ? (
-                  <video src={midiaConfig.video_url} className="w-full h-full object-cover" muted />
+                  <video src={midiaConfig.video_url} className="w-full h-full object-contain" muted />
                 ) : null}
               </div>
             </div>
@@ -610,7 +610,7 @@ export default function GerenciarConfiguracoes() {
             </div>
           ) : midias.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
-              Nenhuma foto enviada ainda
+              Nenhuma mídia enviada ainda
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-3">
@@ -622,13 +622,13 @@ export default function GerenciarConfiguracoes() {
                   <div
                     key={midia.id}
                     className={`relative group aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                      isCapa ? 'border-accent' : 'border-transparent hover:border-border'
+                      isCapa ? 'border-accent' : midia.visivel_catalogo ? 'border-transparent hover:border-border' : 'border-transparent opacity-50 hover:border-border'
                     }`}
                   >
                     {isVideo ? (
-                      <video src={midia.url} className="w-full h-full object-cover" muted />
+                      <video src={midia.url} className="w-full h-full object-contain bg-muted" muted />
                     ) : (
-                      <img src={midia.url} alt="" className="w-full h-full object-cover" />
+                      <img src={midia.url} alt="" className="w-full h-full object-contain bg-muted" />
                     )}
 
                     {isCapa && (
@@ -637,13 +637,19 @@ export default function GerenciarConfiguracoes() {
                       </div>
                     )}
 
+                    {!midia.visivel_catalogo && (
+                      <div className="absolute top-1 right-1 bg-destructive rounded-full px-1.5 py-0.5">
+                        <span className="text-[9px] text-destructive-foreground font-medium">Oculto</span>
+                      </div>
+                    )}
+
                     {/* Overlay com ações */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
                       {!isCapa && (
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="h-8 text-xs"
+                          className="h-7 text-xs w-24"
                           onClick={() => definirComoCapa(midia)}
                         >
                           <Star className="h-3 w-3 mr-1" />
@@ -652,11 +658,31 @@ export default function GerenciarConfiguracoes() {
                       )}
                       <Button
                         size="sm"
+                        variant={midia.visivel_catalogo ? "outline" : "secondary"}
+                        className="h-7 text-xs w-24"
+                        onClick={async () => {
+                          const { error } = await supabase
+                            .from('midias_catalogo')
+                            .update({ visivel_catalogo: !midia.visivel_catalogo })
+                            .eq('id', midia.id);
+                          if (error) {
+                            toast.error('Erro ao alterar visibilidade');
+                            return;
+                          }
+                          setMidias(prev => prev.map(m => m.id === midia.id ? { ...m, visivel_catalogo: !m.visivel_catalogo } : m));
+                          toast.success(midia.visivel_catalogo ? 'Oculto do catálogo' : 'Visível no catálogo');
+                        }}
+                      >
+                        {midia.visivel_catalogo ? 'Ocultar' : 'Mostrar'}
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="destructive"
-                        className="h-8 text-xs"
+                        className="h-7 text-xs w-24"
                         onClick={() => deletarMidia(midia)}
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-3 w-3 mr-1" />
+                        Excluir
                       </Button>
                     </div>
                   </div>
