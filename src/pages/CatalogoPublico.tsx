@@ -65,7 +65,6 @@ export default function CatalogoPublico() {
   useEffect(() => {
     carregarModelos();
     
-    // Verifica se há categoria ou parâmetro para mostrar tudo
     const catParam = searchParams.get('categoria');
     const verTudoParam = searchParams.get('ver');
     
@@ -91,13 +90,26 @@ export default function CatalogoPublico() {
 
   const carregarModelos = async () => {
     try {
+      // Buscar IDs de modelos que têm mídias
+      const { data: midiasData, error: midiasError } = await supabase
+        .from('midias_catalogo')
+        .select('modelo_id')
+        .eq('visivel_catalogo', true);
+
+      if (midiasError) throw midiasError;
+
+      const modelosComMidia = new Set((midiasData || []).map(m => m.modelo_id));
+
       const { data, error } = await supabase
         .from('catalogo_modelos')
         .select('*')
         .order('nome_modelo');
 
       if (error) throw error;
-      setModelos(data || []);
+      
+      // Filtrar apenas modelos que têm mídia
+      const modelosFiltrados = (data || []).filter(m => modelosComMidia.has(m.id));
+      setModelos(modelosFiltrados);
     } catch (error) {
       console.error('Erro ao carregar modelos:', error);
       toast.error('Erro ao carregar catálogo');
@@ -350,7 +362,7 @@ export default function CatalogoPublico() {
                               {modelo.video_url ? (
                                 <video
                                   src={modelo.video_url}
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-contain bg-zinc-800"
                                   muted
                                   loop
                                   autoPlay
@@ -360,7 +372,7 @@ export default function CatalogoPublico() {
                                 <img
                                   src={modelo.imagem_modelo}
                                   alt={modelo.nome_modelo}
-                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                  className="w-full h-full object-contain bg-zinc-800 group-hover:scale-110 transition-transform duration-500"
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-zinc-500">
