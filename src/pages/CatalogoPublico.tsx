@@ -90,15 +90,14 @@ export default function CatalogoPublico() {
 
   const carregarModelos = async () => {
     try {
-      // Buscar IDs de modelos que têm mídias
+      // Buscar IDs de modelos que têm mídias na tabela midias_catalogo
       const { data: midiasData, error: midiasError } = await supabase
         .from('midias_catalogo')
-        .select('modelo_id')
-        .eq('visivel_catalogo', true);
+        .select('modelo_id');
 
       if (midiasError) throw midiasError;
 
-      const modelosComMidia = new Set((midiasData || []).map(m => m.modelo_id));
+      const modelosComMidiaCatalogo = new Set((midiasData || []).map(m => m.modelo_id));
 
       const { data, error } = await supabase
         .from('catalogo_modelos')
@@ -107,8 +106,10 @@ export default function CatalogoPublico() {
 
       if (error) throw error;
       
-      // Filtrar apenas modelos que têm mídia
-      const modelosFiltrados = (data || []).filter(m => modelosComMidia.has(m.id));
+      // Filtrar modelos que têm qualquer mídia (imagem, vídeo ou mídias na tabela)
+      const modelosFiltrados = (data || []).filter(m => 
+        m.imagem_modelo || m.video_url || modelosComMidiaCatalogo.has(m.id)
+      );
       setModelos(modelosFiltrados);
     } catch (error) {
       console.error('Erro ao carregar modelos:', error);
