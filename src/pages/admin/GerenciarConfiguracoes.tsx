@@ -223,18 +223,29 @@ export default function GerenciarConfiguracoes() {
 
   const carregarMidias = async (modeloId: string) => {
     setCarregandoMidias(true);
-    const { data, error } = await supabase
-      .from('midias_catalogo')
-      .select('*')
-      .eq('modelo_id', modeloId)
-      .order('created_at', { ascending: false });
+    let allMidias: Midia[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    
+    while (true) {
+      const { data, error } = await supabase
+        .from('midias_catalogo')
+        .select('*')
+        .eq('modelo_id', modeloId)
+        .order('created_at', { ascending: false })
+        .range(from, from + pageSize - 1);
 
-    if (error) {
-      console.error('Erro ao carregar mídias:', error);
-      setMidias([]);
-    } else {
-      setMidias(data || []);
+      if (error) {
+        console.error('Erro ao carregar mídias:', error);
+        break;
+      }
+      
+      allMidias = [...allMidias, ...(data || [])];
+      if (!data || data.length < pageSize) break;
+      from += pageSize;
     }
+
+    setMidias(allMidias);
     setCarregandoMidias(false);
   };
 
