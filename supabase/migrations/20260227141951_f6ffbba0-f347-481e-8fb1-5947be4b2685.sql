@@ -1,0 +1,1 @@
+ALTER TABLE public.catalogo_modelos ADD COLUMN aspect_ratio text NOT NULL DEFAULT '9/16';

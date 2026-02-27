@@ -20,6 +20,7 @@ interface Configuracao {
   apresentacao_venda: string | null;
   garantia: string | null;
   prazo_entrega: string | null;
+  aspect_ratio: string;
 }
 
 interface Midia {
@@ -42,6 +43,7 @@ export default function GerenciarConfiguracoes() {
   const [apresentacaoVenda, setApresentacaoVenda] = useState('');
   const [garantia, setGarantia] = useState('');
   const [prazoEntrega, setPrazoEntrega] = useState('');
+  const [aspectRatio, setAspectRatio] = useState('9/16');
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -141,6 +143,7 @@ export default function GerenciarConfiguracoes() {
       apresentacao_venda: apresentacaoVenda || null,
       garantia: garantia || null,
       prazo_entrega: prazoEntrega || null,
+      aspect_ratio: aspectRatio,
     };
 
     if (editingConfig) {
@@ -199,6 +202,7 @@ export default function GerenciarConfiguracoes() {
     setApresentacaoVenda(config.apresentacao_venda || '');
     setGarantia(config.garantia || '');
     setPrazoEntrega(config.prazo_entrega || '');
+    setAspectRatio(config.aspect_ratio || '9/16');
     setDialogOpen(true);
   };
 
@@ -210,6 +214,7 @@ export default function GerenciarConfiguracoes() {
     setApresentacaoVenda('');
     setGarantia('');
     setPrazoEntrega('');
+    setAspectRatio('9/16');
     setImagemFile(null);
     setVideoFile(null);
   };
@@ -405,14 +410,31 @@ export default function GerenciarConfiguracoes() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="prazoEntrega">Prazo de Entrega</Label>
-                <Input
-                  id="prazoEntrega"
-                  value={prazoEntrega}
-                  onChange={(e) => setPrazoEntrega(e.target.value)}
-                  placeholder="Ex: 30 a 45 dias úteis"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="prazoEntrega">Prazo de Entrega</Label>
+                  <Input
+                    id="prazoEntrega"
+                    value={prazoEntrega}
+                    onChange={(e) => setPrazoEntrega(e.target.value)}
+                    placeholder="Ex: 30 a 45 dias úteis"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="aspectRatio">Proporção da Imagem</Label>
+                  <select
+                    id="aspectRatio"
+                    value={aspectRatio}
+                    onChange={(e) => setAspectRatio(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="9/16">Vertical (9:16)</option>
+                    <option value="3/4">Retrato (3:4)</option>
+                    <option value="1/1">Quadrado (1:1)</option>
+                    <option value="4/3">Paisagem (4:3)</option>
+                    <option value="16/9">Horizontal (16:9)</option>
+                  </select>
+                </div>
               </div>
 
               <div className="space-y-2">

@@ -17,6 +17,7 @@ interface Modelo {
   categoria: string | null;
   apresentacao_venda: string | null;
   video_url: string | null;
+  aspect_ratio: string;
 }
 
 export default function CatalogoPublico() {
@@ -357,7 +358,8 @@ export default function CatalogoPublico() {
                           <div className="relative">
                             {/* Imagem ou Vídeo */}
                             <div
-                              className="aspect-[9/16] bg-zinc-700 overflow-hidden cursor-pointer"
+                              className="bg-zinc-700 overflow-hidden cursor-pointer"
+                              style={{ aspectRatio: modelo.aspect_ratio?.replace('/', ' / ') || '9 / 16' }}
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               {modelo.video_url ? (
