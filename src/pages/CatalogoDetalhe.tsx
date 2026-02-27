@@ -16,6 +16,7 @@ interface Modelo {
   video_url: string | null;
   garantia: string | null;
   prazo_entrega: string | null;
+  aspect_ratio: string;
 }
 
 interface Midia {
@@ -141,7 +142,7 @@ export default function CatalogoDetalhe() {
           <div className="space-y-4">
             {/* Vídeo */}
             {videoUrl && (
-              <div className="aspect-[9/16] bg-zinc-800 rounded-lg overflow-hidden">
+              <div className="bg-zinc-800 rounded-lg overflow-hidden" style={{ aspectRatio: modelo.aspect_ratio?.replace('/', ' / ') || '9 / 16' }}>
                 <video
                   src={videoUrl}
                   autoPlay
@@ -155,7 +156,7 @@ export default function CatalogoDetalhe() {
 
             {/* Imagem principal */}
             {imagensDisponiveis.length > 0 && (
-              <div className="relative aspect-[9/16] bg-zinc-800 rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="relative bg-zinc-800 rounded-lg overflow-hidden flex items-center justify-center" style={{ aspectRatio: modelo.aspect_ratio?.replace('/', ' / ') || '9 / 16' }}>
                 <img
                   src={imagensDisponiveis[imagemAtual]}
                   alt={modelo.nome_modelo}

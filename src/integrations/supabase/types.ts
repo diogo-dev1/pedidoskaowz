@@ -17,6 +17,7 @@ export type Database = {
       catalogo_modelos: {
         Row: {
           apresentacao_venda: string | null
+          aspect_ratio: string
           categoria: string | null
           created_at: string
           garantia: string | null
@@ -30,6 +31,7 @@ export type Database = {
         }
         Insert: {
           apresentacao_venda?: string | null
+          aspect_ratio?: string
           categoria?: string | null
           created_at?: string
           garantia?: string | null
@@ -43,6 +45,7 @@ export type Database = {
         }
         Update: {
           apresentacao_venda?: string | null
+          aspect_ratio?: string
           categoria?: string | null
           created_at?: string
           garantia?: string | null
