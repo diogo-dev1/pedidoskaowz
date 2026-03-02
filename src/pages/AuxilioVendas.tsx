@@ -57,43 +57,96 @@ export default function AuxilioVendas() {
   const [salvando, setSalvando] = useState(false);
   const [carregandoMidias, setCarregandoMidias] = useState(false);
   const [uploadandoMidia, setUploadandoMidia] = useState(false);
-  const [syncingShopify, setSyncingShopify] = useState(false);
+  const [importandoCsv, setImportandoCsv] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     carregarModelos();
   }, []);
 
-  const sincronizarShopify = async () => {
-    setSyncingShopify(true);
+  const importarCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportandoCsv(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      if (!token) {
-        toast({ title: 'Erro', description: 'Você precisa estar logado.', variant: 'destructive' });
+      const text = await file.text();
+      const lines = text.split('\n').filter(l => l.trim());
+      if (lines.length < 2) {
+        toast({ title: 'CSV vazio', description: 'O arquivo não contém dados.', variant: 'destructive' });
         return;
       }
 
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/sync-shopify`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      // Parse header
+      const header = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
+      const nomeIdx = header.findIndex(h => h.includes('nome') || h.includes('title') || h.includes('produto'));
+      const precoIdx = header.findIndex(h => h.includes('preco') || h.includes('price') || h.includes('valor'));
+      const catIdx = header.findIndex(h => h.includes('categoria') || h.includes('category') || h.includes('tipo'));
+      const descIdx = header.findIndex(h => h.includes('descri') || h.includes('apresenta') || h.includes('body'));
+      const imgIdx = header.findIndex(h => h.includes('imagem') || h.includes('image') || h.includes('foto'));
 
-      const result = await res.json();
-      if (result.success) {
-        toast({ title: 'Sincronização concluída', description: `${result.synced} produtos importados da Shopify.` });
-        carregarModelos();
-      } else {
-        toast({ title: 'Erro na sincronização', description: result.error, variant: 'destructive' });
+      if (nomeIdx === -1) {
+        toast({ title: 'Coluna de nome não encontrada', description: 'O CSV precisa ter uma coluna com "nome", "title" ou "produto".', variant: 'destructive' });
+        return;
       }
+
+      const parseCsvLine = (line: string): string[] => {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        for (const char of line) {
+          if (char === '"') { inQuotes = !inQuotes; continue; }
+          if (char === ',' && !inQuotes) { result.push(current.trim()); current = ''; continue; }
+          current += char;
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      let synced = 0;
+      let errors = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseCsvLine(lines[i]);
+        const nome = cols[nomeIdx];
+        if (!nome) continue;
+
+        const preco = precoIdx !== -1 ? parseFloat(cols[precoIdx]?.replace(/[^\d.,]/g, '').replace(',', '.')) || 0 : 0;
+        const cat = catIdx !== -1 ? cols[catIdx] || 'EDC' : 'EDC';
+        const desc = descIdx !== -1 ? cols[descIdx] || null : null;
+        const img = imgIdx !== -1 ? cols[imgIdx] || null : null;
+
+        const { error } = await supabase
+          .from('catalogo_modelos')
+          .upsert(
+            {
+              nome_modelo: nome,
+              preco_base: preco,
+              categoria: cat,
+              apresentacao_venda: desc,
+              imagem_modelo: img,
+            },
+            { onConflict: 'nome_modelo' }
+          );
+
+        if (error) {
+          console.error(`Erro ao importar "${nome}":`, error);
+          errors++;
+        } else {
+          synced++;
+        }
+      }
+
+      toast({
+        title: 'Importação concluída',
+        description: `${synced} produtos importados${errors > 0 ? `, ${errors} erros` : ''}.`,
+      });
+      carregarModelos();
     } catch (err: any) {
-      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+      toast({ title: 'Erro na importação', description: err.message, variant: 'destructive' });
     } finally {
-      setSyncingShopify(false);
+      setImportandoCsv(false);
+      e.target.value = '';
     }
   };
 
@@ -473,16 +526,28 @@ export default function AuxilioVendas() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Material de Apoio ao Vendedor</h1>
           <p className="text-muted-foreground mt-1">Acesse informações e mídias das lâminas para auxiliar nas vendas</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={sincronizarShopify}
-          disabled={syncingShopify}
-          className="flex-shrink-0"
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${syncingShopify ? 'animate-spin' : ''}`} />
-          {syncingShopify ? 'Sincronizando...' : 'Sync Shopify'}
-        </Button>
+        <label htmlFor="csv-import">
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            disabled={importandoCsv}
+            className="flex-shrink-0 cursor-pointer"
+          >
+            <span>
+              <Upload className={`mr-2 h-4 w-4 ${importandoCsv ? 'animate-pulse' : ''}`} />
+              {importandoCsv ? 'Importando...' : 'Importar CSV'}
+            </span>
+          </Button>
+        </label>
+        <input
+          id="csv-import"
+          type="file"
+          accept=".csv"
+          className="hidden"
+          onChange={importarCsv}
+          disabled={importandoCsv}
+        />
       </div>
       
       {/* Campo de Busca */}
