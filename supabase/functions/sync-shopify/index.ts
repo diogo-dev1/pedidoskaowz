@@ -139,13 +139,14 @@ serve(async (req) => {
         : 0;
       const mainImage = product.featuredImage?.url || product.images?.edges?.[0]?.node?.url || null;
 
-      // Map product_type to categoria
-      const tipo = (product.productType || '').toLowerCase();
+      // Map tags to categoria
+      const tags = (product.tags || []).map((t: string) => t.toLowerCase());
       let categoria = 'EDC';
-      if (tipo.includes('campo') || tipo.includes('caça')) categoria = 'Campo';
-      else if (tipo.includes('cozinha') || tipo.includes('churrasco')) categoria = 'Cozinha';
-      else if (tipo.includes('tático') || tipo.includes('tatico') || tipo.includes('defesa')) categoria = 'Defesa';
-      else if (tipo.includes('kzr')) categoria = 'KZR';
+      if (tags.some((t: string) => t.includes('adaga'))) categoria = 'Adaga';
+      else if (tags.some((t: string) => t.includes('campo') || t.includes('caça'))) categoria = 'Campo';
+      else if (tags.some((t: string) => t.includes('cozinha') || t.includes('churrasco'))) categoria = 'Cozinha';
+      else if (tags.some((t: string) => t.includes('tático') || t.includes('tatico') || t.includes('defesa'))) categoria = 'Defesa';
+      else if (tags.some((t: string) => t.includes('kzr'))) categoria = 'KZR';
 
       const { data: modeloData, error: modeloError } = await supabaseAdmin
         .from('catalogo_modelos')
