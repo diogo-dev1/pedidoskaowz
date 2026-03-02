@@ -121,7 +121,7 @@ export default function CatalogoDetalhe() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-900">
+    <div className="min-h-screen bg-zinc-900 overflow-x-hidden">
       {/* Header */}
       <header className="bg-black sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3">
@@ -137,10 +137,10 @@ export default function CatalogoDetalhe() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6">
+      <div className="w-full max-w-full overflow-hidden px-4 py-6 mx-auto" style={{ maxWidth: '100vw' }}>
         <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           {/* Mídia */}
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0 overflow-hidden">
             {/* Vídeo */}
             {videoUrl && (
               <div className="bg-zinc-800 rounded-lg overflow-hidden aspect-[3/4] max-h-[70vh]">
@@ -185,7 +185,7 @@ export default function CatalogoDetalhe() {
           </div>
 
           {/* Informações */}
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0 overflow-hidden">
             {/* Nome e categoria */}
             <div>
             {modelo.categorias && modelo.categorias.length > 0 && (
@@ -197,7 +197,7 @@ export default function CatalogoDetalhe() {
                   ))}
                 </div>
               )}
-              <h1 className="text-2xl md:text-3xl font-bold text-white">
+              <h1 className="text-2xl md:text-3xl font-bold text-white break-words">
                 {modelo.nome_modelo}
               </h1>
             </div>
@@ -231,7 +231,7 @@ export default function CatalogoDetalhe() {
                 <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide mb-3">
                   Sobre o produto
                 </h2>
-                <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-line">
+                <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-line break-words">
                   {modelo.apresentacao_venda}
                 </p>
               </div>
