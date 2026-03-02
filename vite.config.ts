@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
+      includeAssets: ["favicon.jpg", "apple-touch-icon.jpg", "mask-icon.svg"],
       manifest: {
         name: "Kaowz Blade Builder",
         short_name: "Kaowz",
@@ -28,26 +28,15 @@ export default defineConfig(({ mode }) => ({
         start_url: "/",
         icons: [
           {
-            src: "pwa-64x64.png",
-            sizes: "64x64",
-            type: "image/png"
-          },
-          {
-            src: "pwa-192x192.png",
+            src: "pwa-192x192.jpg",
             sizes: "192x192",
-            type: "image/png"
+            type: "image/jpeg"
           },
           {
-            src: "pwa-512x512.png",
+            src: "pwa-512x512.jpg",
             sizes: "512x512",
-            type: "image/png",
-            purpose: "any"
-          },
-          {
-            src: "maskable-icon-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable"
+            type: "image/jpeg",
+            purpose: "any maskable"
           }
         ]
       },
