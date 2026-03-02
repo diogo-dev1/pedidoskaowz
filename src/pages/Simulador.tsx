@@ -1651,89 +1651,89 @@ OBS: ${observacao || '-'}`;
 
       {/* Modal de Finalização */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-3 sm:p-6">
           <DialogHeader>
-            <DialogTitle>{pedidoFinalizado ? 'Pedido Finalizado' : 'Finalizar Pedido'}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base">{pedidoFinalizado ? 'Pedido Finalizado' : 'Finalizar Pedido'}</DialogTitle>
+            <DialogDescription className="text-xs">
               {pedidoFinalizado ? 'Copie as informações abaixo' : 'Preencha os dados do cliente'}
             </DialogDescription>
           </DialogHeader>
 
           {!pedidoFinalizado ? (
-            <div className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nome">Nome Completo *</Label>
-                  <Input id="nome" value={nomeCompleto} onChange={(e) => setNomeCompleto(e.target.value)} required />
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="nome" className="text-xs">Nome *</Label>
+                  <Input id="nome" value={nomeCompleto} onChange={(e) => setNomeCompleto(e.target.value)} className="h-8 text-xs" required />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cpf">CPF</Label>
-                  <Input id="cpf" value={cpf} onChange={(e) => setCpf(e.target.value)} />
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="celular">Celular</Label>
-                  <Input id="celular" value={celular} onChange={(e) => setCelular(e.target.value)} />
+                <div className="space-y-1">
+                  <Label htmlFor="cpf" className="text-xs">CPF</Label>
+                  <Input id="cpf" value={cpf} onChange={(e) => setCpf(e.target.value)} className="h-8 text-xs" />
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dataNascimento">Data de Nascimento</Label>
-                  <Input id="dataNascimento" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} placeholder="DD/MM/AAAA" />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="email" className="text-xs">Email</Label>
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-8 text-xs" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cep">CEP</Label>
-                  <Input id="cep" value={cep} onChange={(e) => setCep(e.target.value)} />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="endereco">Endereço</Label>
-                <Input id="endereco" value={endereco} onChange={(e) => setEndereco(e.target.value)} />
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="numero">Número</Label>
-                  <Input id="numero" value={numero} onChange={(e) => setNumero(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bairro">Bairro</Label>
-                  <Input id="bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cidade">Cidade</Label>
-                  <Input id="cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} />
+                <div className="space-y-1">
+                  <Label htmlFor="celular" className="text-xs">Celular</Label>
+                  <Input id="celular" value={celular} onChange={(e) => setCelular(e.target.value)} className="h-8 text-xs" />
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="estado">Estado</Label>
-                  <Input id="estado" value={estado} onChange={(e) => setEstado(e.target.value)} />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="dataNascimento" className="text-xs">Nascimento</Label>
+                  <Input id="dataNascimento" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} placeholder="DD/MM/AAAA" className="h-8 text-xs" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="complemento">Complemento</Label>
-                  <Input id="complemento" value={complemento} onChange={(e) => setComplemento(e.target.value)} />
+                <div className="space-y-1">
+                  <Label htmlFor="cep" className="text-xs">CEP</Label>
+                  <Input id="cep" value={cep} onChange={(e) => setCep(e.target.value)} className="h-8 text-xs" />
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nomeCertificado">Nome no Certificado</Label>
-                  <Input id="nomeCertificado" value={nomeCertificado} onChange={(e) => setNomeCertificado(e.target.value)} placeholder="Se diferente do nome" />
+              <div className="space-y-1">
+                <Label htmlFor="endereco" className="text-xs">Endereço</Label>
+                <Input id="endereco" value={endereco} onChange={(e) => setEndereco(e.target.value)} className="h-8 text-xs" />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="numero" className="text-xs">Nº</Label>
+                  <Input id="numero" value={numero} onChange={(e) => setNumero(e.target.value)} className="h-8 text-xs" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="formaPagamento">Forma de Pagamento *</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="bairro" className="text-xs">Bairro</Label>
+                  <Input id="bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="cidade" className="text-xs">Cidade</Label>
+                  <Input id="cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} className="h-8 text-xs" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="estado" className="text-xs">Estado</Label>
+                  <Input id="estado" value={estado} onChange={(e) => setEstado(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="complemento" className="text-xs">Complemento</Label>
+                  <Input id="complemento" value={complemento} onChange={(e) => setComplemento(e.target.value)} className="h-8 text-xs" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="nomeCertificado" className="text-xs">Certificado</Label>
+                  <Input id="nomeCertificado" value={nomeCertificado} onChange={(e) => setNomeCertificado(e.target.value)} placeholder="Se diferente" className="h-8 text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="formaPagamento" className="text-xs">Pagamento *</Label>
                   <Select value={formaPagamento} onValueChange={setFormaPagamento}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1754,22 +1754,22 @@ OBS: ${observacao || '-'}`;
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-4 pt-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="canal">Canal de Venda</Label>
-                      <Input id="canal" value={canal} onChange={(e) => setCanal(e.target.value)} placeholder="Ex: WhatsApp, Instagram" />
+                <CollapsibleContent className="space-y-3 pt-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="canal" className="text-xs">Canal</Label>
+                      <Input id="canal" value={canal} onChange={(e) => setCanal(e.target.value)} placeholder="WhatsApp, Instagram" className="h-8 text-xs" />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="origemCliente">Origem do Cliente</Label>
-                      <Input id="origemCliente" value={origemCliente} onChange={(e) => setOrigemCliente(e.target.value)} placeholder="Ex: Indicação, Ads" />
+                    <div className="space-y-1">
+                      <Label htmlFor="origemCliente" className="text-xs">Origem</Label>
+                      <Input id="origemCliente" value={origemCliente} onChange={(e) => setOrigemCliente(e.target.value)} placeholder="Indicação, Ads" className="h-8 text-xs" />
                     </div>
                   </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="status">Status</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="status" className="text-xs">Status</Label>
                       <Select value={status} onValueChange={setStatus}>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1781,24 +1781,24 @@ OBS: ${observacao || '-'}`;
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cupom">Cupom</Label>
-                      <Input id="cupom" value={cupom} onChange={(e) => setCupom(e.target.value)} />
+                    <div className="space-y-1">
+                      <Label htmlFor="cupom" className="text-xs">Cupom</Label>
+                      <Input id="cupom" value={cupom} onChange={(e) => setCupom(e.target.value)} className="h-8 text-xs" />
                     </div>
                   </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="prazo">Prazo de Entrega</Label>
-                      <Input id="prazo" value={prazo} onChange={(e) => setPrazo(e.target.value)} placeholder="DD/MM/AAAA" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="prazo" className="text-xs">Prazo</Label>
+                      <Input id="prazo" value={prazo} onChange={(e) => setPrazo(e.target.value)} placeholder="DD/MM/AAAA" className="h-8 text-xs" />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="brindes">Brindes</Label>
-                      <Input id="brindes" value={brindes} onChange={(e) => setBrindes(e.target.value)} placeholder="Ex: Chaveiro, Adesivo" />
+                    <div className="space-y-1">
+                      <Label htmlFor="brindes" className="text-xs">Brindes</Label>
+                      <Input id="brindes" value={brindes} onChange={(e) => setBrindes(e.target.value)} placeholder="Chaveiro, Adesivo" className="h-8 text-xs" />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="observacao">Observações</Label>
-                    <Input id="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+                  <div className="space-y-1">
+                    <Label htmlFor="observacao" className="text-xs">Observações</Label>
+                    <Input id="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} className="h-8 text-xs" />
                   </div>
                 </CollapsibleContent>
               </Collapsible>
