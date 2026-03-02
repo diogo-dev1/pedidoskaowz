@@ -468,12 +468,12 @@ export default function Leads() {
   }
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-3 pb-20 px-3 py-3">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
-          <p className="text-muted-foreground text-sm">Gerencie seus contatos e oportunidades</p>
+          <h1 className="text-lg font-bold tracking-tight">Leads</h1>
+          <p className="text-muted-foreground text-xs">Gerencie seus contatos e oportunidades</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
@@ -660,55 +660,47 @@ export default function Leads() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
+      <div className="grid grid-cols-4 gap-2">
+        <Card className="border-border/50">
+          <CardContent className="p-2.5">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary flex-shrink-0" />
               <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-lg font-bold leading-none">{stats.total}</p>
+                <p className="text-[10px] text-muted-foreground">Total</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Clock className="h-5 w-5 text-blue-400" />
-              </div>
+        <Card className="border-border/50">
+          <CardContent className="p-2.5">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-blue-400 flex-shrink-0" />
               <div>
-                <p className="text-2xl font-bold">{stats.novos}</p>
-                <p className="text-xs text-muted-foreground">Novos</p>
+                <p className="text-lg font-bold leading-none">{stats.novos}</p>
+                <p className="text-[10px] text-muted-foreground">Novos</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-yellow-500/10">
-                <TrendingUp className="h-5 w-5 text-yellow-400" />
-              </div>
+        <Card className="border-border/50">
+          <CardContent className="p-2.5">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-yellow-400 flex-shrink-0" />
               <div>
-                <p className="text-2xl font-bold">{stats.emContato}</p>
-                <p className="text-xs text-muted-foreground">Em Progresso</p>
+                <p className="text-lg font-bold leading-none">{stats.emContato}</p>
+                <p className="text-[10px] text-muted-foreground">Progresso</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-card to-card/50 border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <CheckCircle className="h-5 w-5 text-green-400" />
-              </div>
+        <Card className="border-border/50">
+          <CardContent className="p-2.5">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
               <div>
-                <p className="text-2xl font-bold">{stats.fechados}</p>
-                <p className="text-xs text-muted-foreground">Fechados</p>
+                <p className="text-lg font-bold leading-none">{stats.fechados}</p>
+                <p className="text-[10px] text-muted-foreground">Fechados</p>
               </div>
             </div>
           </CardContent>
@@ -716,20 +708,20 @@ export default function Leads() {
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome ou telefone..."
+            placeholder="Buscar..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-8 h-8 text-xs"
           />
         </div>
         <div className="flex gap-2">
           <Select value={filterSituacao} onValueChange={setFilterSituacao}>
-            <SelectTrigger className="w-[140px]">
-              <Filter className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[120px] h-8 text-xs">
+              <Filter className="h-3.5 w-3.5 mr-1" />
               <SelectValue placeholder="Situação" />
             </SelectTrigger>
             <SelectContent>
@@ -742,8 +734,8 @@ export default function Leads() {
             </SelectContent>
           </Select>
           <Select value={filterOrigem} onValueChange={setFilterOrigem}>
-            <SelectTrigger className="w-[140px]">
-              <MapPin className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[120px] h-8 text-xs">
+              <MapPin className="h-3.5 w-3.5 mr-1" />
               <SelectValue placeholder="Origem" />
             </SelectTrigger>
             <SelectContent>
@@ -771,20 +763,20 @@ export default function Leads() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-2">
           {filteredLeads.map((lead) => (
             <Card
               key={lead.id}
-              className="group hover:border-primary/30 transition-all duration-200 bg-gradient-to-r from-card to-card/80"
+              className="group hover:border-primary/30 transition-all duration-200"
             >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <h3 className="font-semibold truncate">{lead.nome || "Sem nome"}</h3>
+              <CardContent className="p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-sm truncate">{lead.nome || "Sem nome"}</h3>
                       <Badge
                         variant="outline"
-                        className={`${getSituacaoStyle(lead.situacao)} border text-xs`}
+                        className={`${getSituacaoStyle(lead.situacao)} border text-[10px] px-1.5`}
                       >
                         {lead.situacao}
                       </Badge>
@@ -831,7 +823,7 @@ export default function Leads() {
                     ) : (
                       <div
                         onClick={() => handleObsClick(lead)}
-                        className="text-sm text-muted-foreground/80 bg-muted/30 rounded-md p-2 mt-2 cursor-pointer hover:bg-muted/50 transition-colors min-h-[40px]"
+                        className="text-xs text-muted-foreground/80 bg-muted/30 rounded-md p-1.5 cursor-pointer hover:bg-muted/50 transition-colors min-h-[28px]"
                       >
                         {lead.observacao || (
                           <span className="text-muted-foreground/50 italic">
@@ -846,9 +838,9 @@ export default function Leads() {
                       value={lead.situacao}
                       onValueChange={(value) => updateLeadSituacao(lead.id, value)}
                     >
-                      <SelectTrigger className="h-8 w-8 p-0 border-0 bg-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <SelectTrigger className="h-7 w-7 p-0 border-0 bg-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <div className="w-full h-full flex items-center justify-center">
-                          <TrendingUp className="h-4 w-4" />
+                          <TrendingUp className="h-3.5 w-3.5" />
                         </div>
                       </SelectTrigger>
                       <SelectContent>
@@ -864,7 +856,7 @@ export default function Leads() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-7 w-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                         >
                           <MoreVertical className="h-4 w-4" />
                         </Button>
