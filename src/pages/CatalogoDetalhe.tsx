@@ -143,25 +143,25 @@ export default function CatalogoDetalhe() {
           <div className="space-y-4">
             {/* Vídeo */}
             {videoUrl && (
-              <div className="bg-zinc-800 rounded-lg overflow-hidden aspect-[3/4]">
+              <div className="bg-zinc-800 rounded-lg overflow-hidden aspect-[3/4] max-h-[70vh]">
                 <video
                   src={videoUrl}
                   autoPlay
                   loop
                   muted
                   playsInline
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </div>
             )}
 
             {/* Imagem principal */}
             {imagensDisponiveis.length > 0 && (
-              <div className="relative bg-zinc-800 rounded-lg overflow-hidden flex items-center justify-center aspect-[3/4]">
+              <div className="relative bg-zinc-800 rounded-lg overflow-hidden flex items-center justify-center aspect-[3/4] max-h-[70vh]">
                 <img
                   src={imagensDisponiveis[imagemAtual]}
                   alt={modelo.nome_modelo}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </div>
             )}
