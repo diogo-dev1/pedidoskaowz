@@ -23,12 +23,13 @@ interface Modelo {
   imagem_modelo: string | null;
   apresentacao_venda: string | null;
   categoria: string;
+  categorias: string[];
   video_url: string | null;
   garantia: string | null;
   prazo_entrega: string | null;
 }
 
-type Categoria = 'Todas' | 'EDC' | 'Adaga' | 'Campo' | 'Cozinha' | 'Defesa' | 'KZR' | 'Upsell';
+type Categoria = 'Todas' | 'Defesa' | 'EDCs' | 'EDC Mini' | 'Campo' | 'Cozinha' | 'Churrasco' | 'Kits' | 'Utensílios' | 'Vestuário' | 'Cafés';
 
 interface Midia {
   id: string;
@@ -441,10 +442,10 @@ export default function AuxilioVendas() {
     setMidias(prev => prev.filter(m => m.id !== midia.id));
   };
 
-  const categorias: Categoria[] = ['Todas', 'EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
+  const categorias: Categoria[] = ['Todas', 'Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
 
   const modelosFiltrados = modelos
-    .filter(m => categoriaAtiva === 'Todas' || m.categoria === categoriaAtiva)
+    .filter(m => categoriaAtiva === 'Todas' || (m.categorias && m.categorias.includes(categoriaAtiva)))
     .filter(m => m.nome_modelo.toLowerCase().includes(buscaTexto.toLowerCase()));
 
   const midiasImagens = midias.filter(m => !m.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i));
@@ -535,9 +536,11 @@ export default function AuxilioVendas() {
                   R$ {modelo.preco_base.toFixed(2)}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="secondary" className="text-xs">
-                    {modelo.categoria}
-                  </Badge>
+                  {modelo.categorias && modelo.categorias.map((cat: string) => (
+                    <Badge key={cat} variant="secondary" className="text-xs">
+                      {cat}
+                    </Badge>
+                  ))}
                   {modelo.video_url && (
                     <Badge variant="outline" className="text-xs">
                       <Video className="h-3 w-3 mr-1" />

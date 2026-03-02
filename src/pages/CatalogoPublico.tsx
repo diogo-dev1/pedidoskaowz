@@ -14,7 +14,7 @@ interface Modelo {
   nome_modelo: string;
   preco_base: number;
   imagem_modelo: string | null;
-  categoria: string | null;
+  categorias: string[];
   apresentacao_venda: string | null;
   video_url: string | null;
   aspect_ratio: string;
@@ -30,37 +30,37 @@ export default function CatalogoPublico() {
   const [loading, setLoading] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
 
-  const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
+  const categorias = ['Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
 
   const categoriasVenda = [
-    {
-      titulo: 'Facas Utilitárias',
-      subtitulo: "EDC's",
-      descricao: 'Para portar no dia-a-dia',
-      categoria: 'EDC',
-      icon: Sword,
-    },
     {
       titulo: 'Facas Táticas',
       subtitulo: 'DEFESA',
       descricao: 'Resistência e performance',
-      categoria: 'Campo',
+      categoria: 'Defesa',
       icon: Shield,
     },
     {
-      titulo: 'Facas de Churrasco',
-      subtitulo: 'COZINHA',
-      descricao: 'Precisão no corte',
-      categoria: 'Cozinha',
-      icon: ChefHat,
+      titulo: 'Facas Utilitárias',
+      subtitulo: "EDC's",
+      descricao: 'Para portar no dia-a-dia',
+      categoria: 'EDCs',
+      icon: Sword,
     },
     {
       titulo: 'Facas de Campo',
-      subtitulo: 'CAÇA',
+      subtitulo: 'CAMPO',
       descricao: 'Durabilidade extrema',
       categoria: 'Campo',
       icon: Trees,
-    }
+    },
+    {
+      titulo: 'Facas de Churrasco',
+      subtitulo: 'CHURRASCO',
+      descricao: 'Precisão no corte',
+      categoria: 'Churrasco',
+      icon: ChefHat,
+    },
   ];
 
   useEffect(() => {
@@ -121,7 +121,7 @@ export default function CatalogoPublico() {
   };
 
   const modelosFiltrados = modelos.filter((modelo) => {
-    const matchCategoria = !categoriaAtiva || modelo.categoria === categoriaAtiva;
+    const matchCategoria = !categoriaAtiva || (modelo.categorias && modelo.categorias.includes(categoriaAtiva));
     const matchBusca = !busca || 
       modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
     return matchCategoria && matchBusca;
@@ -399,9 +399,9 @@ export default function CatalogoPublico() {
                             </button>
 
                             {/* Badge de categoria */}
-                            {modelo.categoria && (
+                            {modelo.categorias && modelo.categorias.length > 0 && (
                               <Badge className="absolute bottom-3 left-3 bg-accent text-white border-0">
-                                {modelo.categoria}
+                                {modelo.categorias[0]}
                               </Badge>
                             )}
                           </div>

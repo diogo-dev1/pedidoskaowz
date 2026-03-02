@@ -11,6 +11,7 @@ interface Modelo {
   nome_modelo: string;
   preco_base: number;
   imagem_modelo: string | null;
+  categorias: string[];
   categoria: string | null;
   apresentacao_venda: string | null;
   video_url: string | null;
@@ -187,10 +188,14 @@ export default function CatalogoDetalhe() {
           <div className="space-y-6">
             {/* Nome e categoria */}
             <div>
-              {modelo.categoria && (
-                <Badge className="bg-zinc-800 text-zinc-300 border-zinc-700 mb-2">
-                  {modelo.categoria}
-                </Badge>
+            {modelo.categorias && modelo.categorias.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {modelo.categorias.map((cat: string) => (
+                    <Badge key={cat} className="bg-zinc-800 text-zinc-300 border-zinc-700">
+                      {cat}
+                    </Badge>
+                  ))}
+                </div>
               )}
               <h1 className="text-2xl md:text-3xl font-bold text-white">
                 {modelo.nome_modelo}

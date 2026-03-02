@@ -30,7 +30,7 @@ interface Midia {
   visivel_catalogo: boolean;
 }
 
-const CATEGORIAS = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'];
+const CATEGORIAS = ['Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
 
 export default function GerenciarConfiguracoes() {
   const [configuracoes, setConfiguracoes] = useState<Configuracao[]>([]);
@@ -82,7 +82,7 @@ export default function GerenciarConfiguracoes() {
     return configuracoes.filter(config => {
       const matchesSearch = searchTerm.trim() === '' || 
         config.nome_modelo.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategoria = categoriaFiltro === 'todas' || config.categoria === categoriaFiltro;
+      const matchesCategoria = categoriaFiltro === 'todas' || (config.categoria === categoriaFiltro) || ((config as any).categorias && (config as any).categorias.includes(categoriaFiltro));
       return matchesSearch && matchesCategoria;
     });
   }, [configuracoes, searchTerm, categoriaFiltro]);
@@ -501,7 +501,7 @@ export default function GerenciarConfiguracoes() {
           <SelectContent>
             <SelectItem value="todas">Todas ({configuracoes.length})</SelectItem>
             {CATEGORIAS.map(cat => {
-              const count = configuracoes.filter(c => c.categoria === cat).length;
+              const count = configuracoes.filter(c => c.categoria === cat || ((c as any).categorias && (c as any).categorias.includes(cat))).length;
               return (
                 <SelectItem key={cat} value={cat}>
                   {cat} ({count})
