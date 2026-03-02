@@ -13,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Copy, Download, Upload, X, Loader2, Search, Video, Share2, 
   Eye, EyeOff, Star, FileText, Package, Clock, Shield, 
-  ChevronRight, ImageIcon, Play, Edit2, Save, Info
+  ChevronRight, ImageIcon, Play, Edit2, Save, Info, RefreshCw
 } from 'lucide-react';
 
 interface Modelo {
@@ -57,11 +57,45 @@ export default function AuxilioVendas() {
   const [salvando, setSalvando] = useState(false);
   const [carregandoMidias, setCarregandoMidias] = useState(false);
   const [uploadandoMidia, setUploadandoMidia] = useState(false);
+  const [syncingShopify, setSyncingShopify] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     carregarModelos();
   }, []);
+
+  const sincronizarShopify = async () => {
+    setSyncingShopify(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) {
+        toast({ title: 'Erro', description: 'Você precisa estar logado.', variant: 'destructive' });
+        return;
+      }
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/sync-shopify`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        toast({ title: 'Sincronização concluída', description: `${result.synced} produtos importados da Shopify.` });
+        carregarModelos();
+      } else {
+        toast({ title: 'Erro na sincronização', description: result.error, variant: 'destructive' });
+      }
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    } finally {
+      setSyncingShopify(false);
+    }
+  };
 
   const carregarModelos = async () => {
     const { data, error } = await supabase
@@ -434,9 +468,21 @@ export default function AuxilioVendas() {
 
   return (
     <div className="container mx-auto py-6 px-4">
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Material de Apoio ao Vendedor</h1>
-        <p className="text-muted-foreground mt-1">Acesse informações e mídias das lâminas para auxiliar nas vendas</p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Material de Apoio ao Vendedor</h1>
+          <p className="text-muted-foreground mt-1">Acesse informações e mídias das lâminas para auxiliar nas vendas</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={sincronizarShopify}
+          disabled={syncingShopify}
+          className="flex-shrink-0"
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${syncingShopify ? 'animate-spin' : ''}`} />
+          {syncingShopify ? 'Sincronizando...' : 'Sync Shopify'}
+        </Button>
       </div>
       
       {/* Campo de Busca */}
