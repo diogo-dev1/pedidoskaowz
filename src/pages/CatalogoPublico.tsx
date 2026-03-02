@@ -33,34 +33,16 @@ export default function CatalogoPublico() {
   const categorias = ['Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
 
   const categoriasVenda = [
-    {
-      titulo: 'Facas Táticas',
-      subtitulo: 'DEFESA',
-      descricao: 'Resistência e performance',
-      categoria: 'Defesa',
-      icon: Shield,
-    },
-    {
-      titulo: 'Facas Utilitárias',
-      subtitulo: "EDC's",
-      descricao: 'Para portar no dia-a-dia',
-      categoria: 'EDCs',
-      icon: Sword,
-    },
-    {
-      titulo: 'Facas de Campo',
-      subtitulo: 'CAMPO',
-      descricao: 'Durabilidade extrema',
-      categoria: 'Campo',
-      icon: Trees,
-    },
-    {
-      titulo: 'Facas de Churrasco',
-      subtitulo: 'CHURRASCO',
-      descricao: 'Precisão no corte',
-      categoria: 'Churrasco',
-      icon: ChefHat,
-    },
+    { subtitulo: 'Defesa', categoria: 'Defesa', icon: Shield },
+    { subtitulo: "EDC's", categoria: 'EDCs', icon: Sword },
+    { subtitulo: 'EDC Mini', categoria: 'EDC Mini', icon: Sword },
+    { subtitulo: 'Campo', categoria: 'Campo', icon: Trees },
+    { subtitulo: 'Cozinha', categoria: 'Cozinha', icon: ChefHat },
+    { subtitulo: 'Churrasco', categoria: 'Churrasco', icon: ChefHat },
+    { subtitulo: 'Kits', categoria: 'Kits', icon: Wrench },
+    { subtitulo: 'Utensílios', categoria: 'Utensílios', icon: Wrench },
+    { subtitulo: 'Vestuário', categoria: 'Vestuário', icon: Wrench },
+    { subtitulo: 'Cafés', categoria: 'Cafés', icon: ChefHat },
   ];
 
   useEffect(() => {
@@ -164,7 +146,7 @@ export default function CatalogoPublico() {
         <header className="py-8 md:py-12">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-2xl md:text-4xl font-bold text-white mb-2 tracking-tight">
-              CATÁLOGO DE LÂMINAS
+              CATÁLOGO KAOWZ
             </h1>
             <p className="text-zinc-400 text-sm md:text-base">Escolha uma categoria</p>
           </div>
@@ -172,7 +154,7 @@ export default function CatalogoPublico() {
 
         <div className="container mx-auto px-4 pb-12">
           {/* Grid de Categorias */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 max-w-4xl mx-auto mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 max-w-5xl mx-auto mb-8">
             {categoriasVenda.map((cat, idx) => {
               const Icon = cat.icon;
               return (
@@ -181,9 +163,9 @@ export default function CatalogoPublico() {
                   className="group cursor-pointer"
                   onClick={() => selecionarCategoria(cat.categoria)}
                 >
-                  <div className="bg-zinc-800 border border-zinc-700 hover:border-accent rounded-lg p-4 md:p-6 transition-all text-center">
-                    <Icon className="h-8 w-8 md:h-10 md:w-10 mx-auto mb-2 md:mb-3 text-accent" />
-                    <h3 className="text-white font-semibold text-sm md:text-base">
+                  <div className="bg-zinc-800 border border-zinc-700 hover:border-accent rounded-lg p-4 md:p-5 transition-all text-center">
+                    <Icon className="h-7 w-7 md:h-9 md:w-9 mx-auto mb-2 text-accent" />
+                    <h3 className="text-white font-semibold text-xs md:text-sm">
                       {cat.subtitulo}
                     </h3>
                   </div>
@@ -193,21 +175,13 @@ export default function CatalogoPublico() {
           </div>
 
           {/* Opções de Ação */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
+          <div className="flex justify-center max-w-md mx-auto">
             <Button
               variant="outline"
               onClick={verTudo}
               className="w-full border-zinc-600 text-zinc-300 hover:bg-accent hover:text-white hover:border-accent"
             >
               Ver todo o catálogo
-            </Button>
-            
-            <Button
-              onClick={() => navigate('/customizar-lamina')}
-              className="w-full bg-accent hover:bg-accent/90 text-white"
-            >
-              <Wrench className="h-4 w-4 mr-2" />
-              Montar Lâmina
             </Button>
           </div>
 
@@ -251,7 +225,7 @@ export default function CatalogoPublico() {
               >
                 ← Voltar
               </Button>
-              <h1 className="text-lg md:text-3xl font-bold text-white tracking-tight">CATÁLOGO</h1>
+              <h1 className="text-lg md:text-3xl font-bold text-white tracking-tight">CATÁLOGO KAOWZ</h1>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
               <div className="relative flex-1 md:w-80">
