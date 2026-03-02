@@ -134,19 +134,36 @@ serve(async (req) => {
     let errors = 0;
 
     for (const product of allProducts) {
+      // Skip HTML fragments / garbage entries
+      const title = product.title?.trim() || '';
+      if (!title || title.startsWith('com ') || title.startsWith('cerca ') || title.includes('<strong') || title.includes('<br') || title.length < 3) {
+        console.log(`Skipping garbage entry: "${title}"`);
+        continue;
+      }
+
       const price = product.priceRange?.minVariantPrice?.amount
         ? parseFloat(product.priceRange.minVariantPrice.amount)
         : 0;
       const mainImage = product.featuredImage?.url || product.images?.edges?.[0]?.node?.url || null;
 
-      // Map tags to categoria
+      // Map categoria: first check tags, then fallback to product name
       const tags = (product.tags || []).map((t: string) => t.toLowerCase());
-      let categoria = 'EDC';
+      const titleLower = title.toLowerCase();
+
+      let categoria = 'EDC'; // default
+
+      // Priority 1: Tags
       if (tags.some((t: string) => t.includes('adaga'))) categoria = 'Adaga';
       else if (tags.some((t: string) => t.includes('campo') || t.includes('caça'))) categoria = 'Campo';
       else if (tags.some((t: string) => t.includes('cozinha') || t.includes('churrasco'))) categoria = 'Cozinha';
       else if (tags.some((t: string) => t.includes('tático') || t.includes('tatico') || t.includes('defesa'))) categoria = 'Defesa';
       else if (tags.some((t: string) => t.includes('kzr'))) categoria = 'KZR';
+      // Priority 2: Fallback by product name
+      else if (titleLower.includes('adaga') || titleLower.includes('nimbowie') || titleLower.includes('defcon')) categoria = 'Adaga';
+      else if (titleLower.includes('camp knife') || titleLower.includes('camp-knife') || titleLower.includes('jagunço') || titleLower.includes('jagunc')) categoria = 'Campo';
+      else if (titleLower.includes('chef') || titleLower.includes('butcher') || titleLower.includes('picanheira') || titleLower.includes('chaira') || titleLower.includes('garfo') || titleLower.includes('churrasco') || titleLower.includes('santoku') || titleLower.includes('nakiri') || titleLower.includes('petty') || titleLower.includes('paring') || titleLower.includes('steak') || titleLower.includes('desossa') || titleLower.includes('kit de churrasco') || titleLower.includes('kit churrasco') || titleLower.includes('kit cozinha')) categoria = 'Cozinha';
+      else if (titleLower.includes('tactical') && !titleLower.includes('edc')) categoria = 'Defesa';
+      else if (titleLower.includes('kzr')) categoria = 'KZR';
 
       const { data: modeloData, error: modeloError } = await supabaseAdmin
         .from('catalogo_modelos')
