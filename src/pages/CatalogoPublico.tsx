@@ -18,6 +18,13 @@ interface Modelo {
   apresentacao_venda: string | null;
   video_url: string | null;
   aspect_ratio: string;
+  visivel_catalogo: boolean;
+}
+
+interface CategoriaVisivel {
+  categoria: string;
+  visivel: boolean;
+  ordem: number;
 }
 
 export default function CatalogoPublico() {
@@ -29,25 +36,33 @@ export default function CatalogoPublico() {
   const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
+  const [categoriasVisiveis, setCategoriasVisiveis] = useState<CategoriaVisivel[]>([]);
 
-  const categorias = ['Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
+  const allCategorias = ['Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
 
-  const categoriasVenda = [
-    { subtitulo: 'Defesa', categoria: 'Defesa', icon: Shield },
-    { subtitulo: "EDC's", categoria: 'EDCs', icon: Sword },
-    { subtitulo: 'EDC Mini', categoria: 'EDC Mini', icon: Sword },
-    { subtitulo: 'Campo', categoria: 'Campo', icon: Trees },
-    { subtitulo: 'Cozinha', categoria: 'Cozinha', icon: ChefHat },
-    { subtitulo: 'Churrasco', categoria: 'Churrasco', icon: ChefHat },
-    { subtitulo: 'Kits', categoria: 'Kits', icon: Wrench },
-    { subtitulo: 'Utensílios', categoria: 'Utensílios', icon: Wrench },
-    { subtitulo: 'Vestuário', categoria: 'Vestuário', icon: Wrench },
-    { subtitulo: 'Cafés', categoria: 'Cafés', icon: ChefHat },
-  ];
+  const iconMap: Record<string, typeof Shield> = {
+    'Defesa': Shield, 'EDCs': Sword, 'EDC Mini': Sword, 'Campo': Trees,
+    'Cozinha': ChefHat, 'Churrasco': ChefHat, 'Kits': Wrench,
+    'Utensílios': Wrench, 'Vestuário': Wrench, 'Cafés': ChefHat,
+  };
+
+  const categoriasVisiveisNomes = new Set(
+    categoriasVisiveis.filter(c => c.visivel).map(c => c.categoria)
+  );
+
+  const categorias = categoriasVisiveis.length > 0
+    ? allCategorias.filter(c => categoriasVisiveisNomes.has(c))
+    : allCategorias;
+
+  const categoriasVenda = categorias.map(cat => ({
+    subtitulo: cat === 'EDCs' ? "EDC's" : cat,
+    categoria: cat,
+    icon: iconMap[cat] || Wrench,
+  }));
 
   useEffect(() => {
     carregarModelos();
-    
+    carregarCategoriasVisiveis();
     const catParam = searchParams.get('categoria');
     const verTudoParam = searchParams.get('ver');
     
@@ -71,9 +86,16 @@ export default function CatalogoPublico() {
     setSearchParams({});
   };
 
+  const carregarCategoriasVisiveis = async () => {
+    const { data } = await supabase
+      .from('categorias_catalogo_visiveis')
+      .select('*')
+      .order('ordem');
+    if (data) setCategoriasVisiveis(data);
+  };
+
   const carregarModelos = async () => {
     try {
-      // Buscar IDs de modelos que têm mídias na tabela midias_catalogo
       const { data: midiasData, error: midiasError } = await supabase
         .from('midias_catalogo')
         .select('modelo_id');
@@ -85,11 +107,11 @@ export default function CatalogoPublico() {
       const { data, error } = await supabase
         .from('catalogo_modelos')
         .select('*')
+        .eq('visivel_catalogo', true)
         .order('nome_modelo');
 
       if (error) throw error;
       
-      // Filtrar modelos que têm qualquer mídia (imagem, vídeo ou mídias na tabela)
       const modelosFiltrados = (data || []).filter(m => 
         m.imagem_modelo || m.video_url || modelosComMidiaCatalogo.has(m.id)
       );

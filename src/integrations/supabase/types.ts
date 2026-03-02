@@ -29,6 +29,7 @@ export type Database = {
           preco_base: number
           updated_at: string
           video_url: string | null
+          visivel_catalogo: boolean
         }
         Insert: {
           apresentacao_venda?: string | null
@@ -44,6 +45,7 @@ export type Database = {
           preco_base: number
           updated_at?: string
           video_url?: string | null
+          visivel_catalogo?: boolean
         }
         Update: {
           apresentacao_venda?: string | null
@@ -59,6 +61,31 @@ export type Database = {
           preco_base?: number
           updated_at?: string
           video_url?: string | null
+          visivel_catalogo?: boolean
+        }
+        Relationships: []
+      }
+      categorias_catalogo_visiveis: {
+        Row: {
+          categoria: string
+          created_at: string
+          id: string
+          ordem: number
+          visivel: boolean
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          id?: string
+          ordem?: number
+          visivel?: boolean
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          id?: string
+          ordem?: number
+          visivel?: boolean
         }
         Relationships: []
       }
