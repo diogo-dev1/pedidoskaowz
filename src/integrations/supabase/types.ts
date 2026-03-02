@@ -19,6 +19,7 @@ export type Database = {
           apresentacao_venda: string | null
           aspect_ratio: string
           categoria: string | null
+          categorias: string[] | null
           created_at: string
           garantia: string | null
           id: string
@@ -33,6 +34,7 @@ export type Database = {
           apresentacao_venda?: string | null
           aspect_ratio?: string
           categoria?: string | null
+          categorias?: string[] | null
           created_at?: string
           garantia?: string | null
           id?: string
@@ -47,6 +49,7 @@ export type Database = {
           apresentacao_venda?: string | null
           aspect_ratio?: string
           categoria?: string | null
+          categorias?: string[] | null
           created_at?: string
           garantia?: string | null
           id?: string
