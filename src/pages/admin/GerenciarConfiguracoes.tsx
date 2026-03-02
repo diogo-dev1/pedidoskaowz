@@ -336,12 +336,12 @@ export default function GerenciarConfiguracoes() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Gerenciar Configurações</h1>
-          <p className="text-muted-foreground">
-            Configurações específicas de lâminas do catálogo (ex: Adaga Full Size Sandvik SW)
+    <div className="space-y-4 px-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-2xl font-bold">Configurações</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">
+            Configurações de lâminas do catálogo
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
@@ -512,64 +512,57 @@ export default function GerenciarConfiguracoes() {
         </Select>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {filteredConfiguracoes.map((config) => (
-          <Card key={config.id}>
-            <CardHeader>
-              {config.video_url ? (
-                <video
-                  src={config.video_url}
-                  className="w-full h-48 object-contain bg-muted rounded-md mb-4"
-                  controls
-                  muted
-                />
-              ) : config.imagem_modelo ? (
-                <img
-                  src={config.imagem_modelo}
-                  alt={config.nome_modelo}
-                  className="w-full h-48 object-contain bg-muted rounded-md mb-4"
-                />
-              ) : (
-                <div className="w-full h-48 bg-muted rounded-md mb-4 flex items-center justify-center">
-                  <span className="text-muted-foreground text-sm">Sem mídia</span>
+          <Card key={config.id} className="overflow-hidden">
+            <div className="flex items-center gap-3 p-3">
+              {/* Thumbnail compacto */}
+              <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+                {config.video_url ? (
+                  <video
+                    src={config.video_url}
+                    className="w-full h-full object-cover"
+                    muted
+                  />
+                ) : config.imagem_modelo ? (
+                  <img
+                    src={config.imagem_modelo}
+                    alt={config.nome_modelo}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-muted-foreground text-[10px]">Sem mídia</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm truncate flex items-center gap-1">
+                  {config.nome_modelo}
+                  {config.video_url && <Video className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
+                </h3>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[10px] bg-accent/20 px-1.5 py-0.5 rounded">{config.categoria}</span>
+                  <span className="font-semibold text-accent text-xs">R$ {config.preco_base.toFixed(2)}</span>
                 </div>
-              )}
-              <CardTitle className="flex items-center gap-2 text-base">
-                {config.nome_modelo}
-                {config.video_url && <Video className="h-4 w-4 text-muted-foreground" />}
-              </CardTitle>
-              <CardDescription>
-                <span className="text-xs bg-accent/20 px-2 py-1 rounded mr-2">{config.categoria}</span>
-                <span className="font-semibold text-accent">R$ {config.preco_base.toFixed(2)}</span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => abrirMidiaDialog(config)}
-                className="flex-1"
-              >
-                <ImageIcon className="mr-2 h-4 w-4" />
-                Mídias
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => openEditDialog(config)}
-                className="flex-1"
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Editar
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleDelete(config.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </CardContent>
+                {/* Botões inline */}
+                <div className="flex gap-1.5 mt-1.5">
+                  <Button variant="outline" size="sm" onClick={() => abrirMidiaDialog(config)} className="h-7 text-xs px-2">
+                    <ImageIcon className="h-3 w-3 mr-1" />
+                    Mídias
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => openEditDialog(config)} className="h-7 text-xs px-2">
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Editar
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleDelete(config.id)} className="h-7 text-xs px-2">
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           </Card>
         ))}
       </div>
