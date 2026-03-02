@@ -319,12 +319,12 @@ export default function CatalogoPublico() {
           {/* Grid de Produtos */}
           <main className="flex-1">
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 animate-pulse">
-                    <div className="aspect-square bg-zinc-700 rounded-lg mb-3" />
-                    <div className="h-4 bg-zinc-700 rounded mb-2" />
-                    <div className="h-6 bg-zinc-700 rounded w-1/2" />
+                  <div key={i} className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 animate-pulse">
+                    <div className="aspect-[3/4] bg-zinc-700 rounded-lg mb-2" />
+                    <div className="h-3 bg-zinc-700 rounded mb-1.5" />
+                    <div className="h-5 bg-zinc-700 rounded w-1/2" />
                   </div>
                 ))}
               </div>
@@ -358,14 +358,13 @@ export default function CatalogoPublico() {
                           <div className="relative">
                             {/* Imagem ou Vídeo */}
                             <div
-                              className="bg-zinc-700 overflow-hidden cursor-pointer"
-                              style={{ aspectRatio: modelo.aspect_ratio?.replace('/', ' / ') || '9 / 16' }}
+                              className="bg-zinc-700 overflow-hidden cursor-pointer aspect-[3/4]"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               {modelo.video_url ? (
                                 <video
                                   src={modelo.video_url}
-                                  className="w-full h-full object-contain bg-zinc-800"
+                                  className="w-full h-full object-cover bg-zinc-800"
                                   muted
                                   loop
                                   autoPlay
@@ -375,7 +374,7 @@ export default function CatalogoPublico() {
                                 <img
                                   src={modelo.imagem_modelo}
                                   alt={modelo.nome_modelo}
-                                  className="w-full h-full object-contain bg-zinc-800 group-hover:scale-110 transition-transform duration-500"
+                                  className="w-full h-full object-cover bg-zinc-800 group-hover:scale-110 transition-transform duration-500"
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-zinc-500">
@@ -408,7 +407,7 @@ export default function CatalogoPublico() {
                           </div>
 
                           {/* Info do produto */}
-                          <div className="p-2 md:p-4 h-[120px] md:h-[140px] flex flex-col">
+                          <div className="p-2 md:p-4 h-[100px] md:h-[140px] flex flex-col">
                             <h3
                               className="font-semibold mb-1 md:mb-2 line-clamp-1 text-xs md:text-base text-white hover:text-accent transition-colors cursor-pointer"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}

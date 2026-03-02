@@ -142,7 +142,7 @@ export default function CatalogoDetalhe() {
           <div className="space-y-4">
             {/* Vídeo */}
             {videoUrl && (
-              <div className="bg-zinc-800 rounded-lg overflow-hidden" style={{ aspectRatio: modelo.aspect_ratio?.replace('/', ' / ') || '9 / 16' }}>
+              <div className="bg-zinc-800 rounded-lg overflow-hidden aspect-[3/4]">
                 <video
                   src={videoUrl}
                   autoPlay
@@ -156,11 +156,11 @@ export default function CatalogoDetalhe() {
 
             {/* Imagem principal */}
             {imagensDisponiveis.length > 0 && (
-              <div className="relative bg-zinc-800 rounded-lg overflow-hidden flex items-center justify-center" style={{ aspectRatio: modelo.aspect_ratio?.replace('/', ' / ') || '9 / 16' }}>
+              <div className="relative bg-zinc-800 rounded-lg overflow-hidden flex items-center justify-center aspect-[3/4]">
                 <img
                   src={imagensDisponiveis[imagemAtual]}
                   alt={modelo.nome_modelo}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-cover"
                 />
               </div>
             )}

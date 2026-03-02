@@ -451,11 +451,11 @@ export default function AuxilioVendas() {
   const midiasVideos = midias.filter(m => m.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i));
 
   return (
-    <div className="container mx-auto py-6 px-4">
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Material de Apoio ao Vendedor</h1>
-          <p className="text-muted-foreground mt-1">Acesse informações e mídias das lâminas para auxiliar nas vendas</p>
+    <div className="container mx-auto py-4 px-3 md:py-6 md:px-4">
+      <div className="mb-4 md:mb-6 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Material de Apoio</h1>
+          <p className="text-muted-foreground mt-0.5 text-xs sm:text-sm">Informações e mídias para vendas</p>
         </div>
         <Button
           variant="outline"
@@ -499,7 +499,7 @@ export default function AuxilioVendas() {
       </ScrollArea>
       
       {/* Lista de Modelos */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {modelosFiltrados.map((modelo) => (
           <Card
             key={modelo.id}
