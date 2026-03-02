@@ -262,6 +262,7 @@ export type Database = {
       modelos: {
         Row: {
           categoria: string | null
+          categorias: string[] | null
           created_at: string
           id: string
           imagem_modelo: string | null
@@ -272,6 +273,7 @@ export type Database = {
         }
         Insert: {
           categoria?: string | null
+          categorias?: string[] | null
           created_at?: string
           id?: string
           imagem_modelo?: string | null
@@ -282,6 +284,7 @@ export type Database = {
         }
         Update: {
           categoria?: string | null
+          categorias?: string[] | null
           created_at?: string
           id?: string
           imagem_modelo?: string | null
