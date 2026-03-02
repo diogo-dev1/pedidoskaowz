@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Video, Search, Upload, Star, Loader2, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Video, Search, Upload, Star, Loader2, X, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 interface Configuracao {
   id: string;
@@ -21,6 +22,14 @@ interface Configuracao {
   garantia: string | null;
   prazo_entrega: string | null;
   aspect_ratio: string;
+  visivel_catalogo: boolean;
+}
+
+interface CategoriaVisivel {
+  id: string;
+  categoria: string;
+  visivel: boolean;
+  ordem: number;
 }
 
 interface Midia {
@@ -58,10 +67,49 @@ export default function GerenciarConfiguracoes() {
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('todas');
+  
+  // Categorias visíveis
+  const [categoriasVisiveis, setCategoriasVisiveis] = useState<CategoriaVisivel[]>([]);
+  const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchConfiguracoes();
+    fetchCategoriasVisiveis();
   }, []);
+
+  const fetchCategoriasVisiveis = async () => {
+    const { data, error } = await supabase
+      .from('categorias_catalogo_visiveis')
+      .select('*')
+      .order('ordem');
+    if (!error && data) setCategoriasVisiveis(data);
+  };
+
+  const toggleCategoriaVisivel = async (cat: CategoriaVisivel) => {
+    const { error } = await supabase
+      .from('categorias_catalogo_visiveis')
+      .update({ visivel: !cat.visivel })
+      .eq('id', cat.id);
+    if (error) {
+      toast.error('Erro ao alterar categoria');
+      return;
+    }
+    setCategoriasVisiveis(prev => prev.map(c => c.id === cat.id ? { ...c, visivel: !c.visivel } : c));
+    toast.success(cat.visivel ? `${cat.categoria} oculta do catálogo` : `${cat.categoria} visível no catálogo`);
+  };
+
+  const toggleVisivelCatalogo = async (config: Configuracao) => {
+    const { error } = await supabase
+      .from('catalogo_modelos')
+      .update({ visivel_catalogo: !config.visivel_catalogo })
+      .eq('id', config.id);
+    if (error) {
+      toast.error('Erro ao alterar visibilidade');
+      return;
+    }
+    setConfiguracoes(prev => prev.map(c => c.id === config.id ? { ...c, visivel_catalogo: !c.visivel_catalogo } : c));
+    toast.success(config.visivel_catalogo ? 'Produto oculto do catálogo' : 'Produto visível no catálogo');
+  };
 
   const fetchConfiguracoes = async () => {
     const { data, error } = await supabase
@@ -344,13 +392,18 @@ export default function GerenciarConfiguracoes() {
             Configurações de lâminas do catálogo
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Configuração
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setCategoriasDialogOpen(true)}>
+            <Eye className="mr-2 h-4 w-4" />
+            Categorias
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Configuração
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingConfig ? 'Editar' : 'Nova'} Configuração</DialogTitle>
@@ -481,6 +534,7 @@ export default function GerenciarConfiguracoes() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -514,7 +568,7 @@ export default function GerenciarConfiguracoes() {
 
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {filteredConfiguracoes.map((config) => (
-          <Card key={config.id} className="overflow-hidden">
+          <Card key={config.id} className={`overflow-hidden ${!config.visivel_catalogo ? 'opacity-50' : ''}`}>
             <div className="flex items-center gap-3 p-3">
               {/* Thumbnail compacto */}
               <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-muted">
@@ -542,6 +596,7 @@ export default function GerenciarConfiguracoes() {
                 <h3 className="font-semibold text-sm truncate flex items-center gap-1">
                   {config.nome_modelo}
                   {config.video_url && <Video className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
+                  {!config.visivel_catalogo && <EyeOff className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
                 </h3>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-[10px] bg-accent/20 px-1.5 py-0.5 rounded">{config.categoria}</span>
@@ -549,6 +604,16 @@ export default function GerenciarConfiguracoes() {
                 </div>
                 {/* Botões inline */}
                 <div className="flex gap-1.5 mt-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toggleVisivelCatalogo(config)}
+                    className={`h-7 text-xs px-2 ${!config.visivel_catalogo ? 'text-muted-foreground' : ''}`}
+                    title={config.visivel_catalogo ? 'Ocultar do catálogo' : 'Mostrar no catálogo'}
+                  >
+                    {config.visivel_catalogo ? <Eye className="h-3 w-3 mr-1" /> : <EyeOff className="h-3 w-3 mr-1" />}
+                    {config.visivel_catalogo ? 'Visível' : 'Oculto'}
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => abrirMidiaDialog(config)} className="h-7 text-xs px-2">
                     <ImageIcon className="h-3 w-3 mr-1" />
                     Mídias
@@ -716,6 +781,29 @@ export default function GerenciarConfiguracoes() {
               })}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Categorias Visíveis */}
+      <Dialog open={categoriasDialogOpen} onOpenChange={setCategoriasDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Categorias do Catálogo</DialogTitle>
+            <DialogDescription>
+              Escolha quais categorias aparecem na tela inicial do catálogo público.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {categoriasVisiveis.map((cat) => (
+              <div key={cat.id} className="flex items-center justify-between py-2 px-3 rounded-lg border">
+                <span className="text-sm font-medium">{cat.categoria}</span>
+                <Switch
+                  checked={cat.visivel}
+                  onCheckedChange={() => toggleCategoriaVisivel(cat)}
+                />
+              </div>
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
