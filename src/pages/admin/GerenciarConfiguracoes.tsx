@@ -16,6 +16,7 @@ interface Configuracao {
   nome_modelo: string;
   preco_base: number;
   categoria: string | null;
+  categorias: string[] | null;
   imagem_modelo: string | null;
   video_url: string | null;
   apresentacao_venda: string | null;
@@ -48,7 +49,7 @@ export default function GerenciarConfiguracoes() {
   const [editingConfig, setEditingConfig] = useState<Configuracao | null>(null);
   const [nomeModelo, setNomeModelo] = useState('');
   const [precoBase, setPrecoBase] = useState('');
-  const [categoria, setCategoria] = useState<string>('EDC');
+  const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<string[]>(['EDCs']);
   const [apresentacaoVenda, setApresentacaoVenda] = useState('');
   const [garantia, setGarantia] = useState('');
   const [prazoEntrega, setPrazoEntrega] = useState('');
@@ -185,7 +186,8 @@ export default function GerenciarConfiguracoes() {
     const configData = {
       nome_modelo: nomeModelo,
       preco_base: parseFloat(precoBase),
-      categoria: categoria,
+      categoria: categoriasSelecionadas[0] || 'EDCs',
+      categorias: categoriasSelecionadas,
       imagem_modelo: imagemUrl,
       video_url: videoUrl,
       apresentacao_venda: apresentacaoVenda || null,
@@ -246,7 +248,7 @@ export default function GerenciarConfiguracoes() {
     setEditingConfig(config);
     setNomeModelo(config.nome_modelo);
     setPrecoBase(config.preco_base.toString());
-    setCategoria(config.categoria || 'EDC');
+    setCategoriasSelecionadas(config.categorias && config.categorias.length > 0 ? config.categorias : [config.categoria || 'EDCs']);
     setApresentacaoVenda(config.apresentacao_venda || '');
     setGarantia(config.garantia || '');
     setPrazoEntrega(config.prazo_entrega || '');
@@ -258,7 +260,7 @@ export default function GerenciarConfiguracoes() {
     setEditingConfig(null);
     setNomeModelo('');
     setPrecoBase('');
-    setCategoria('EDC');
+    setCategoriasSelecionadas(['EDCs']);
     setApresentacaoVenda('');
     setGarantia('');
     setPrazoEntrega('');
@@ -424,18 +426,30 @@ export default function GerenciarConfiguracoes() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="categoria">Categoria</Label>
-                  <select
-                    id="categoria"
-                    value={categoria}
-                    onChange={(e) => setCategoria(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    required
-                  >
-                    {CATEGORIAS.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
+                  <Label>Categorias</Label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {CATEGORIAS.map((cat) => {
+                      const checked = categoriasSelecionadas.includes(cat);
+                      return (
+                        <label key={cat} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setCategoriasSelecionadas(prev =>
+                                checked ? prev.filter(c => c !== cat) : [...prev, cat]
+                              );
+                            }}
+                            className="rounded border-input"
+                          />
+                          {cat}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {categoriasSelecionadas.length === 0 && (
+                    <p className="text-xs text-destructive">Selecione ao menos uma categoria</p>
+                  )}
                 </div>
               </div>
 
