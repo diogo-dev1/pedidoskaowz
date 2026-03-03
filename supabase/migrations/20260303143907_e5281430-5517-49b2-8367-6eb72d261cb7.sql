@@ -1,0 +1,1 @@
+ALTER TABLE public.categorias_catalogo_visiveis ADD COLUMN icone text NOT NULL DEFAULT 'Sword';
