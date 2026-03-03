@@ -18,6 +18,7 @@ const PRODUCTS_QUERY = `
           id
           title
           description
+          descriptionHtml
           productType
           tags
           priceRange {
@@ -80,6 +81,7 @@ serve(async (req) => {
       id: string;
       title: string;
       description: string;
+      descriptionHtml: string;
       productType: string;
       tags: string[];
       priceRange: { minVariantPrice: { amount: string } };
@@ -152,7 +154,7 @@ serve(async (req) => {
 
       const cats: string[] = [];
 
-      // Defesa: adagas, defcons, wharncliffe, ring tanto, jagunço, nimbus, tantô
+      // Defesa
       if (titleLower.includes('adaga') || titleLower.includes('defcon') || titleLower.includes('wharncliffe') ||
           titleLower.includes('ring tant') || titleLower.includes('jagunç') || titleLower.includes('jagunc') ||
           titleLower.includes('nimbus') || titleLower.includes('tantô') || titleLower.includes('tanto') ||
@@ -169,7 +171,7 @@ serve(async (req) => {
           !titleLower.includes('edc- mini') && !titleLower.includes('edc-mini') && !titleLower.includes('edc mini'))
         cats.push('EDCs');
 
-      // Campo: camp knife, big camp, nimbowie, kzr full size
+      // Campo
       if (titleLower.includes('camp knife') || titleLower.includes('camp-knife') ||
           titleLower.includes('big camp') || titleLower.includes('big-camp') ||
           titleLower.includes('nimbowie') || titleLower.includes('kzr full') || titleLower.includes('kzr-full') ||
@@ -194,7 +196,7 @@ serve(async (req) => {
       if (titleLower.startsWith('kit ') || titleLower.startsWith('kit-'))
         cats.push('Kits');
 
-      // Utensílios: bainhas, clipes, strops, passadores
+      // Utensílios
       if (titleLower.includes('bainha') || titleLower.includes('clipe') ||
           titleLower.includes('strop') || titleLower.includes('passador'))
         cats.push('Utensílios');
@@ -209,7 +211,7 @@ serve(async (req) => {
       if (titleLower.includes('café') || titleLower.includes('cafe'))
         cats.push('Cafés');
 
-      // Default: if no category matched, put in EDCs
+      // Default
       if (cats.length === 0) cats.push('EDCs');
 
       const { data: modeloData, error: modeloError } = await supabaseAdmin
@@ -221,7 +223,8 @@ serve(async (req) => {
             categoria: cats[0],
             categorias: cats,
             imagem_modelo: mainImage,
-            apresentacao_venda: product.description ? product.description.substring(0, 500) : null,
+            apresentacao_venda: product.description || null,
+            descricao_html: product.descriptionHtml || null,
           },
           { onConflict: 'nome_modelo' }
         )
