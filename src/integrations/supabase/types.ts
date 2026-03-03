@@ -114,6 +114,7 @@ export type Database = {
         Row: {
           categoria: string
           created_at: string
+          icone: string
           id: string
           ordem: number
           visivel: boolean
@@ -122,6 +123,7 @@ export type Database = {
         Insert: {
           categoria: string
           created_at?: string
+          icone?: string
           id?: string
           ordem?: number
           visivel?: boolean
@@ -130,6 +132,7 @@ export type Database = {
         Update: {
           categoria?: string
           created_at?: string
+          icone?: string
           id?: string
           ordem?: number
           visivel?: boolean
