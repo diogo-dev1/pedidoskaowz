@@ -12,6 +12,7 @@ import Lote from "./pages/Lote";
 import AuxilioVendas from "./pages/AuxilioVendas";
 import CatalogoPublico from "./pages/CatalogoPublico";
 import CatalogoDetalhe from "./pages/CatalogoDetalhe";
+import MontarKit from "./pages/MontarKit";
 import CustomizarLamina from "./pages/CustomizarLamina";
 import GerenciarModelos from "./pages/admin/GerenciarModelos";
 import GerenciarConfiguracoes from "./pages/admin/GerenciarConfiguracoes";
@@ -113,6 +114,10 @@ const App = () => (
             <Route
               path="/catalogo"
               element={<CatalogoPublico />}
+            />
+            <Route
+              path="/catalogo/montar-kit"
+              element={<MontarKit />}
             />
             <Route
               path="/catalogo/:id"
