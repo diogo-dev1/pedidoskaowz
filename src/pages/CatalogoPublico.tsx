@@ -438,6 +438,9 @@ export default function CatalogoPublico() {
                               <p className="text-[10px] md:text-xs text-zinc-400 line-clamp-2">{modelo.apresentacao_venda}</p>
                             )}
                             <div className="mt-1">
+                              <p className="text-xs md:text-sm text-emerald-400 font-bold">
+                                R$ {(modelo.preco_base * 0.95).toFixed(2)} <span className="text-[10px] md:text-xs font-medium text-emerald-500">no PIX (5% OFF)</span>
+                              </p>
                               <p className="text-lg md:text-2xl font-black text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
                                 R$ {modelo.preco_base.toFixed(2)}
                               </p>
