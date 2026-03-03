@@ -29,6 +29,8 @@ interface Modelo {
   video_url: string | null;
   aspect_ratio: string;
   visivel_catalogo: boolean;
+  visivel_todas: boolean;
+  ordem_catalogo: number;
 }
 
 interface CategoriaVisivel {
@@ -167,12 +169,13 @@ export default function CatalogoPublico() {
       const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
       return matchCategoria && matchBusca;
     }
-    // "Todas" - só mostra categorias com visivel_todas = true
-    const temCategoriaPermitida = categoriasVisiveis.length === 0 || 
+    // "Todas" - respects both category-level and product-level visivel_todas
+    const categoriaPermitida = categoriasVisiveis.length === 0 || 
       (modelo.categorias && modelo.categorias.some(c => categoriasPermitidasTodas.has(c)));
+    const produtoPermitido = modelo.visivel_todas !== false;
     const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
-    return temCategoriaPermitida && matchBusca;
-  });
+    return categoriaPermitida && produtoPermitido && matchBusca;
+  }).sort((a, b) => (a.ordem_catalogo || 999) - (b.ordem_catalogo || 999));
 
   const toggleSelecao = (id: string) => {
     const novaSelecao = new Set(modelosSelecionados);
@@ -460,7 +463,7 @@ export default function CatalogoPublico() {
                         {/* Diagonal accent strip */}
                         <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/50 to-accent z-10"></div>
                         
-                        <div className="bg-zinc-800 border border-zinc-700 hover:border-accent hover:shadow-lg transition-all rounded-lg overflow-hidden">
+                        <div className="bg-zinc-800 border border-zinc-700 hover:border-accent hover:shadow-lg transition-all rounded-lg overflow-hidden h-full flex flex-col">
                           <div className="relative">
                             {/* Imagem ou Vídeo */}
                             <div
@@ -512,7 +515,7 @@ export default function CatalogoPublico() {
                             )}
                           </div>
 
-                            {/* Info do produto - mais vendável */}
+                            {/* Info do produto */}
                           <div className="p-3 md:p-4 flex flex-col gap-1">
                             <h3
                               className="font-bold line-clamp-1 text-sm md:text-base text-white hover:text-accent transition-colors cursor-pointer"
@@ -520,15 +523,12 @@ export default function CatalogoPublico() {
                             >
                               {modelo.nome_modelo}
                             </h3>
-                            {modelo.apresentacao_venda && (
-                              <p className="text-[10px] md:text-xs text-zinc-400 line-clamp-2">{modelo.apresentacao_venda}</p>
-                            )}
                             <div className="mt-1">
-                              <p className="text-xs md:text-sm text-emerald-400 font-bold">
-                                R$ {(modelo.preco_base * 0.95).toFixed(2)} <span className="text-[10px] md:text-xs font-medium text-emerald-500">no PIX (5% OFF)</span>
-                              </p>
                               <p className="text-lg md:text-2xl font-black text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
                                 R$ {modelo.preco_base.toFixed(2)}
+                              </p>
+                              <p className="text-xs md:text-sm text-emerald-400 font-bold mt-0.5">
+                                R$ {(modelo.preco_base * 0.95).toFixed(2)} <span className="text-[10px] md:text-xs font-medium text-emerald-500">no PIX (5% OFF)</span>
                               </p>
                               <div className="text-[10px] md:text-xs text-zinc-400 mt-0.5">
                                 3x sem juros ou até 12x no cartão

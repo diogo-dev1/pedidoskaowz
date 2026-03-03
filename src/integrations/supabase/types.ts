@@ -61,11 +61,13 @@ export type Database = {
           id: string
           imagem_modelo: string | null
           nome_modelo: string
+          ordem_catalogo: number
           prazo_entrega: string | null
           preco_base: number
           updated_at: string
           video_url: string | null
           visivel_catalogo: boolean
+          visivel_todas: boolean
         }
         Insert: {
           apresentacao_venda?: string | null
@@ -77,11 +79,13 @@ export type Database = {
           id?: string
           imagem_modelo?: string | null
           nome_modelo: string
+          ordem_catalogo?: number
           prazo_entrega?: string | null
           preco_base: number
           updated_at?: string
           video_url?: string | null
           visivel_catalogo?: boolean
+          visivel_todas?: boolean
         }
         Update: {
           apresentacao_venda?: string | null
@@ -93,11 +97,13 @@ export type Database = {
           id?: string
           imagem_modelo?: string | null
           nome_modelo?: string
+          ordem_catalogo?: number
           prazo_entrega?: string | null
           preco_base?: number
           updated_at?: string
           video_url?: string | null
           visivel_catalogo?: boolean
+          visivel_todas?: boolean
         }
         Relationships: []
       }
