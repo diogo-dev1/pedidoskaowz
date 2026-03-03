@@ -100,3 +100,112 @@ All colors MUST be HSL.
     scroll-behavior: smooth;
   }
 }
+
+/* Shopify description HTML overrides */
+.shopify-description,
+.shopify-description * {
+  color: #d4d4d8 !important;
+  background: transparent !important;
+}
+
+.shopify-description div,
+.shopify-description section {
+  display: contents;
+}
+
+.shopify-description h1,
+.shopify-description h2,
+.shopify-description .theme-title {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: hsl(28, 90%, 55%) !important;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.shopify-description h3 {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: hsl(28, 90%, 55%) !important;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.shopify-description h4 {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: hsl(28, 90%, 55%) !important;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.shopify-description p {
+  display: block;
+  margin-bottom: 0.75rem;
+  line-height: 1.75;
+}
+
+.shopify-description strong {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.shopify-description ul {
+  display: block;
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.shopify-description ol {
+  display: block;
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.shopify-description li {
+  line-height: 1.75;
+  margin-bottom: 0.25rem;
+}
+
+.shopify-description hr {
+  display: block;
+  border-color: #3f3f46;
+  margin: 1.5rem 0;
+}
+
+.shopify-description table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.shopify-description th {
+  background: #3f3f46 !important;
+  color: #ffffff !important;
+  padding: 0.75rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.shopify-description td {
+  border-bottom: 1px solid #3f3f46;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.shopify-description a {
+  color: hsl(28, 90%, 55%) !important;
+  text-decoration: underline;
+}
+
+.shopify-description img {
+  border-radius: 0.5rem;
+  margin: 0.75rem 0;
+  max-width: 100%;
+}
