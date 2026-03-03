@@ -57,6 +57,14 @@ export default function ConfiguracoesCatalogo() {
   const [exibirPrecos, setExibirPrecos] = useState(true);
   const [loadingPrecos, setLoadingPrecos] = useState(true);
 
+  // Formas de pagamento
+  const [exibirFormasPagamento, setExibirFormasPagamento] = useState(true);
+  const [descontoPix, setDescontoPix] = useState('5');
+  const [textoPix, setTextoPix] = useState('no PIX');
+  const [textoParcelamento, setTextoParcelamento] = useState('3x sem juros ou até 12x no cartão');
+  const [loadingPagamento, setLoadingPagamento] = useState(true);
+  const [salvandoPagamento, setSalvandoPagamento] = useState(false);
+
   // Destaques "Todas"
   const [todosModelos, setTodosModelos] = useState<ModeloCatalogo[]>([]);
   const [destaquesIds, setDestaquesIds] = useState<string[]>([]);
@@ -66,6 +74,7 @@ export default function ConfiguracoesCatalogo() {
     fetchCategoriasVisiveis();
     fetchBanners();
     fetchConfigPrecos();
+    fetchConfigPagamento();
     fetchModelosParaDestaques();
   }, []);
 
@@ -78,6 +87,50 @@ export default function ConfiguracoesCatalogo() {
       .single();
     if (data) setExibirPrecos(data.valor === 'true');
     setLoadingPrecos(false);
+  };
+
+  // --- Formas de Pagamento ---
+  const fetchConfigPagamento = async () => {
+    const { data } = await supabase
+      .from('configuracoes_catalogo')
+      .select('*')
+      .in('chave', ['exibir_formas_pagamento', 'desconto_pix', 'texto_pix', 'texto_parcelamento']);
+    if (data) {
+      data.forEach(d => {
+        if (d.chave === 'exibir_formas_pagamento') setExibirFormasPagamento(d.valor === 'true');
+        if (d.chave === 'desconto_pix') setDescontoPix(d.valor);
+        if (d.chave === 'texto_pix') setTextoPix(d.valor);
+        if (d.chave === 'texto_parcelamento') setTextoParcelamento(d.valor);
+      });
+    }
+    setLoadingPagamento(false);
+  };
+
+  const toggleFormasPagamento = async () => {
+    const newVal = !exibirFormasPagamento;
+    const { error } = await supabase
+      .from('configuracoes_catalogo')
+      .update({ valor: newVal.toString() })
+      .eq('chave', 'exibir_formas_pagamento');
+    if (error) { toast.error('Erro ao alterar configuração'); return; }
+    setExibirFormasPagamento(newVal);
+    toast.success(newVal ? 'Formas de pagamento visíveis' : 'Formas de pagamento ocultas');
+  };
+
+  const salvarConfigPagamento = async () => {
+    setSalvandoPagamento(true);
+    try {
+      await Promise.all([
+        supabase.from('configuracoes_catalogo').update({ valor: descontoPix }).eq('chave', 'desconto_pix'),
+        supabase.from('configuracoes_catalogo').update({ valor: textoPix }).eq('chave', 'texto_pix'),
+        supabase.from('configuracoes_catalogo').update({ valor: textoParcelamento }).eq('chave', 'texto_parcelamento'),
+      ]);
+      toast.success('Configurações de pagamento salvas!');
+    } catch {
+      toast.error('Erro ao salvar');
+    } finally {
+      setSalvandoPagamento(false);
+    }
   };
 
   // --- Destaques ---
@@ -307,7 +360,7 @@ export default function ConfiguracoesCatalogo() {
             <CardHeader>
               <CardTitle className="text-base">Exibição de Preços</CardTitle>
               <CardDescription>
-                Quando desativado, os preços são substituídos por uma breve descrição do produto no catálogo.
+                Quando desativado, os valores são removidos dos cards e da página de detalhes do produto.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -318,7 +371,7 @@ export default function ConfiguracoesCatalogo() {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {exibirPrecos 
-                      ? 'Clientes veem valor integral, PIX e parcelamento' 
+                      ? 'Clientes veem o valor dos produtos' 
                       : 'Clientes veem apenas nome e descrição do produto'}
                   </p>
                 </div>
@@ -328,6 +381,73 @@ export default function ConfiguracoesCatalogo() {
                   disabled={loadingPrecos}
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Formas de Pagamento</CardTitle>
+              <CardDescription>
+                Ative/desative e edite as informações de PIX e parcelamento exibidas no catálogo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">
+                    {exibirFormasPagamento ? 'Formas de pagamento visíveis' : 'Formas de pagamento ocultas'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Informações de PIX e parcelamento nos cards e detalhes
+                  </p>
+                </div>
+                <Switch
+                  checked={exibirFormasPagamento}
+                  onCheckedChange={toggleFormasPagamento}
+                  disabled={loadingPagamento}
+                />
+              </div>
+
+              {exibirFormasPagamento && (
+                <div className="space-y-3 pt-2 border-t">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Desconto PIX (%)</Label>
+                    <Input
+                      type="number"
+                      value={descontoPix}
+                      onChange={e => setDescontoPix(e.target.value)}
+                      placeholder="5"
+                      className="h-8"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Texto do PIX</Label>
+                    <Input
+                      value={textoPix}
+                      onChange={e => setTextoPix(e.target.value)}
+                      placeholder="no PIX"
+                      className="h-8"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Texto do Parcelamento</Label>
+                    <Input
+                      value={textoParcelamento}
+                      onChange={e => setTextoParcelamento(e.target.value)}
+                      placeholder="3x sem juros ou até 12x no cartão"
+                      className="h-8"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={salvarConfigPagamento}
+                    disabled={salvandoPagamento}
+                    className="w-full"
+                  >
+                    {salvandoPagamento ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : 'Salvar configurações de pagamento'}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

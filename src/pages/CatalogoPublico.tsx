@@ -53,6 +53,10 @@ export default function CatalogoPublico() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [bannerAtual, setBannerAtual] = useState(0);
   const [exibirPrecos, setExibirPrecos] = useState(true);
+  const [exibirFormasPagamento, setExibirFormasPagamento] = useState(true);
+  const [descontoPix, setDescontoPix] = useState(5);
+  const [textoPix, setTextoPix] = useState('no PIX');
+  const [textoParcelamento, setTextoParcelamento] = useState('3x sem juros ou até 12x no cartão');
 
   const allCategorias = ['Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
 
@@ -114,9 +118,16 @@ export default function CatalogoPublico() {
     const { data } = await supabase
       .from('configuracoes_catalogo')
       .select('*')
-      .eq('chave', 'exibir_precos')
-      .single();
-    if (data) setExibirPrecos(data.valor === 'true');
+      .in('chave', ['exibir_precos', 'exibir_formas_pagamento', 'desconto_pix', 'texto_pix', 'texto_parcelamento']);
+    if (data) {
+      data.forEach(d => {
+        if (d.chave === 'exibir_precos') setExibirPrecos(d.valor === 'true');
+        if (d.chave === 'exibir_formas_pagamento') setExibirFormasPagamento(d.valor === 'true');
+        if (d.chave === 'desconto_pix') setDescontoPix(parseFloat(d.valor) || 5);
+        if (d.chave === 'texto_pix') setTextoPix(d.valor);
+        if (d.chave === 'texto_parcelamento') setTextoParcelamento(d.valor);
+      });
+    }
   };
 
   const selecionarCategoria = (categoria: string) => {
@@ -535,23 +546,26 @@ export default function CatalogoPublico() {
                               {modelo.nome_modelo}
                             </h3>
                             <div className="flex-1">
-                              {exibirPrecos ? (
+                              {exibirPrecos && (
                                 <div className="mt-1">
                                   <p className="text-lg md:text-2xl font-black text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
                                     R$ {modelo.preco_base.toFixed(2)}
                                   </p>
-                                  <p className="text-xs md:text-sm text-emerald-400 font-bold mt-0.5">
-                                    R$ {(modelo.preco_base * 0.95).toFixed(2)} <span className="text-[10px] md:text-xs font-medium text-emerald-500">no PIX (5% OFF)</span>
-                                  </p>
-                                  <div className="text-[10px] md:text-xs text-zinc-400 mt-0.5">
-                                    3x sem juros ou até 12x no cartão
-                                  </div>
+                                  {exibirFormasPagamento && (
+                                    <>
+                                      <p className="text-xs md:text-sm text-emerald-400 font-bold mt-0.5">
+                                        R$ {(modelo.preco_base * (1 - descontoPix / 100)).toFixed(2)} <span className="text-[10px] md:text-xs font-medium text-emerald-500">{textoPix} ({descontoPix}% OFF)</span>
+                                      </p>
+                                      <div className="text-[10px] md:text-xs text-zinc-400 mt-0.5">
+                                        {textoParcelamento}
+                                      </div>
+                                    </>
+                                  )}
                                 </div>
-                              ) : (
-                                modelo.apresentacao_venda ? (
-                                  <p className="text-[10px] md:text-xs text-zinc-400 line-clamp-3 mt-1">{modelo.apresentacao_venda}</p>
-                                ) : null
                               )}
+                              {!exibirPrecos && modelo.apresentacao_venda ? (
+                                <p className="text-[10px] md:text-xs text-zinc-400 line-clamp-3 mt-1">{modelo.apresentacao_venda}</p>
+                              ) : null}
                             </div>
                             <Button
                               size="sm"

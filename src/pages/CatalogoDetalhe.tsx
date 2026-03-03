@@ -33,13 +33,35 @@ export default function CatalogoDetalhe() {
   const [midias, setMidias] = useState<Midia[]>([]);
   const [imagemAtual, setImagemAtual] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [exibirPrecos, setExibirPrecos] = useState(true);
+  const [exibirFormasPagamento, setExibirFormasPagamento] = useState(true);
+  const [descontoPix, setDescontoPix] = useState(5);
+  const [textoPix, setTextoPix] = useState('no PIX');
+  const [textoParcelamento, setTextoParcelamento] = useState('3x sem juros ou até 12x no cartão');
 
   useEffect(() => {
     if (id) {
       carregarModelo();
       carregarMidias();
+      carregarConfigs();
     }
   }, [id]);
+
+  const carregarConfigs = async () => {
+    const { data } = await supabase
+      .from('configuracoes_catalogo')
+      .select('*')
+      .in('chave', ['exibir_precos', 'exibir_formas_pagamento', 'desconto_pix', 'texto_pix', 'texto_parcelamento']);
+    if (data) {
+      data.forEach(d => {
+        if (d.chave === 'exibir_precos') setExibirPrecos(d.valor === 'true');
+        if (d.chave === 'exibir_formas_pagamento') setExibirFormasPagamento(d.valor === 'true');
+        if (d.chave === 'desconto_pix') setDescontoPix(parseFloat(d.valor) || 5);
+        if (d.chave === 'texto_pix') setTextoPix(d.valor);
+        if (d.chave === 'texto_parcelamento') setTextoParcelamento(d.valor);
+      });
+    }
+  };
 
   const carregarModelo = async () => {
     try {
@@ -78,7 +100,9 @@ export default function CatalogoDetalhe() {
   const enviarWhatsApp = () => {
     if (!modelo) return;
 
-    const mensagem = `Olá! Gostaria de saber mais sobre:\n\n${modelo.nome_modelo}\nR$ ${modelo.preco_base.toFixed(2)}`;
+    const mensagem = exibirPrecos
+      ? `Olá! Gostaria de saber mais sobre:\n\n${modelo.nome_modelo}\nR$ ${modelo.preco_base.toFixed(2)}`
+      : `Olá! Gostaria de saber mais sobre:\n\n${modelo.nome_modelo}`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
@@ -203,17 +227,21 @@ export default function CatalogoDetalhe() {
             </div>
 
             {/* Preço */}
-            <div className="bg-zinc-800 rounded-lg p-4">
-              <p className="text-3xl font-bold text-accent mb-1">
-                R$ {modelo.preco_base.toFixed(2)}
-              </p>
-              <p className="text-sm text-zinc-400">
-                12x de R$ {(modelo.preco_base / 12).toFixed(2)} ou{' '}
-                <span className="text-accent font-semibold">
-                  R$ {(modelo.preco_base * 0.95).toFixed(2)} no PIX
-                </span>
-              </p>
-            </div>
+            {exibirPrecos && (
+              <div className="bg-zinc-800 rounded-lg p-4">
+                <p className="text-3xl font-bold text-accent mb-1">
+                  R$ {modelo.preco_base.toFixed(2)}
+                </p>
+                {exibirFormasPagamento && (
+                  <p className="text-sm text-zinc-400">
+                    {textoParcelamento} ou{' '}
+                    <span className="text-accent font-semibold">
+                      R$ {(modelo.preco_base * (1 - descontoPix / 100)).toFixed(2)} {textoPix}
+                    </span>
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Botão WhatsApp */}
             <Button
@@ -263,14 +291,13 @@ export default function CatalogoDetalhe() {
             {/* Benefícios */}
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-full">
-                ✓ Frete grátis +R$999
-              </span>
-              <span className="bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-full">
-                ✓ 3x sem juros
-              </span>
-              <span className="bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-full">
                 ✓ Compra segura
               </span>
+              {exibirFormasPagamento && (
+                <span className="bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-full">
+                  ✓ {textoParcelamento.split(' ou')[0] || 'Parcelamento'}
+                </span>
+              )}
             </div>
           </div>
         </div>
