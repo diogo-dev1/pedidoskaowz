@@ -77,7 +77,7 @@ export default function Simulador() {
   const [empunhaduraSelecionada, setEmpunhaduraSelecionada] = useState<string>('');
   const [dragonScale, setDragonScale] = useState(false);
   const [bainhaSelecionada, setBainhaSelecionada] = useState<string>('');
-  const [corBainha, setCorBainha] = useState<string>('');
+  const [corBainha, setCorBainha] = useState<string>('Preto');
   const [corBainhaPersonalizada, setCorBainhaPersonalizada] = useState<string>('');
   const [espacadorSelecionado, setEspacadorSelecionado] = useState<string>('');
   const [laser, setLaser] = useState(false);
@@ -125,6 +125,7 @@ export default function Simulador() {
   const [dataNascimento, setDataNascimento] = useState('');
   const [canal, setCanal] = useState('');
   const [status, setStatus] = useState('Pendente');
+  const [clienteAntigo, setClienteAntigo] = useState(false);
   const [origemCliente, setOrigemCliente] = useState('');
   const [observacao, setObservacao] = useState('');
   const [cupom, setCupom] = useState('');
@@ -371,7 +372,7 @@ export default function Simulador() {
     setEmpunhaduraSelecionada('');
     setDragonScale(false);
     setBainhaSelecionada('');
-    setCorBainha('');
+    setCorBainha('Preto');
     setCorBainhaPersonalizada('');
     setEspacadorSelecionado('');
     setLaser(false);
@@ -405,6 +406,7 @@ export default function Simulador() {
     setDataNascimento('');
     setCanal('');
     setStatus('Pendente');
+    setClienteAntigo(false);
     setOrigemCliente('');
     setObservacao('');
     setCupom('');
@@ -744,9 +746,12 @@ export default function Simulador() {
         }
       }
 
-      // Embalagem consolidada
-      const embalagens = todasLaminas.map(l => l.embalagem).filter(Boolean);
-      const embalagemTexto = embalagens.length > 0 ? embalagens.join(', ') : '-';
+      // Embalagem por lâmina
+      const embalagemPorLamina = todasLaminas.map((l, i) => {
+        if (!l.embalagem) return null;
+        return `Item ${i + 1}: ${l.embalagem}`;
+      }).filter(Boolean);
+      const embalagemTexto = embalagemPorLamina.length > 0 ? embalagemPorLamina.join('\n') : '-';
 
       // Produtos adicionais como brindes ou itens extras
       const produtosSelecionados = produtosAdicionais
@@ -1661,74 +1666,91 @@ OBS: ${observacao || '-'}`;
 
           {!pedidoFinalizado ? (
             <div className="space-y-3">
+              {/* Cliente Antigo toggle */}
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-muted">
+                <Checkbox
+                  id="clienteAntigo"
+                  checked={clienteAntigo}
+                  onCheckedChange={(checked) => setClienteAntigo(checked === true)}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="clienteAntigo" className="text-xs cursor-pointer font-medium">Cliente Antigo (apenas nome)</Label>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label htmlFor="nome" className="text-xs">Nome *</Label>
                   <Input id="nome" value={nomeCompleto} onChange={(e) => setNomeCompleto(e.target.value)} className="h-8 text-xs" required />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="cpf" className="text-xs">CPF</Label>
-                  <Input id="cpf" value={cpf} onChange={(e) => setCpf(e.target.value)} className="h-8 text-xs" />
-                </div>
+                {!clienteAntigo && (
+                  <div className="space-y-1">
+                    <Label htmlFor="cpf" className="text-xs">CPF</Label>
+                    <Input id="cpf" value={cpf} onChange={(e) => setCpf(e.target.value)} className="h-8 text-xs" />
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label htmlFor="email" className="text-xs">Email</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-8 text-xs" />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="celular" className="text-xs">Celular</Label>
-                  <Input id="celular" value={celular} onChange={(e) => setCelular(e.target.value)} className="h-8 text-xs" />
-                </div>
-              </div>
+              {!clienteAntigo && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="email" className="text-xs">Email</Label>
+                      <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="celular" className="text-xs">Celular</Label>
+                      <Input id="celular" value={celular} onChange={(e) => setCelular(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label htmlFor="dataNascimento" className="text-xs">Nascimento</Label>
-                  <Input id="dataNascimento" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} placeholder="DD/MM/AAAA" className="h-8 text-xs" />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="cep" className="text-xs">CEP</Label>
-                  <Input id="cep" value={cep} onChange={(e) => setCep(e.target.value)} className="h-8 text-xs" />
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="dataNascimento" className="text-xs">Nascimento</Label>
+                      <Input id="dataNascimento" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} placeholder="DD/MM/AAAA" className="h-8 text-xs" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="cep" className="text-xs">CEP</Label>
+                      <Input id="cep" value={cep} onChange={(e) => setCep(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                  </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="endereco" className="text-xs">Endereço</Label>
-                <Input id="endereco" value={endereco} onChange={(e) => setEndereco(e.target.value)} className="h-8 text-xs" />
-              </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="endereco" className="text-xs">Endereço</Label>
+                    <Input id="endereco" value={endereco} onChange={(e) => setEndereco(e.target.value)} className="h-8 text-xs" />
+                  </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <Label htmlFor="numero" className="text-xs">Nº</Label>
-                  <Input id="numero" value={numero} onChange={(e) => setNumero(e.target.value)} className="h-8 text-xs" />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="bairro" className="text-xs">Bairro</Label>
-                  <Input id="bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} className="h-8 text-xs" />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="cidade" className="text-xs">Cidade</Label>
-                  <Input id="cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} className="h-8 text-xs" />
-                </div>
-              </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="numero" className="text-xs">Nº</Label>
+                      <Input id="numero" value={numero} onChange={(e) => setNumero(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="bairro" className="text-xs">Bairro</Label>
+                      <Input id="bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="cidade" className="text-xs">Cidade</Label>
+                      <Input id="cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label htmlFor="estado" className="text-xs">Estado</Label>
-                  <Input id="estado" value={estado} onChange={(e) => setEstado(e.target.value)} className="h-8 text-xs" />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="complemento" className="text-xs">Complemento</Label>
-                  <Input id="complemento" value={complemento} onChange={(e) => setComplemento(e.target.value)} className="h-8 text-xs" />
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="estado" className="text-xs">Estado</Label>
+                      <Input id="estado" value={estado} onChange={(e) => setEstado(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="complemento" className="text-xs">Complemento</Label>
+                      <Input id="complemento" value={complemento} onChange={(e) => setComplemento(e.target.value)} className="h-8 text-xs" />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label htmlFor="nomeCertificado" className="text-xs">Certificado</Label>
-                  <Input id="nomeCertificado" value={nomeCertificado} onChange={(e) => setNomeCertificado(e.target.value)} placeholder="Se diferente" className="h-8 text-xs" />
+                  <Input id="nomeCertificado" value={nomeCertificado || nomeCompleto} onChange={(e) => setNomeCertificado(e.target.value)} placeholder="Nome do certificado" className="h-8 text-xs" />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="formaPagamento" className="text-xs">Pagamento *</Label>
@@ -1744,6 +1766,25 @@ OBS: ${observacao || '-'}`;
                       <SelectItem value="Transferência">Transferência</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="statusPagamento" className="text-xs">Status Pagamento</Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pago">Pago</SelectItem>
+                      <SelectItem value="Pendente">Pendente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="prazo" className="text-xs">Prazo</Label>
+                  <Input id="prazo" value={prazo} onChange={(e) => setPrazo(e.target.value)} placeholder="DD/MM/AAAA" className="h-8 text-xs" />
                 </div>
               </div>
 
@@ -1767,29 +1808,8 @@ OBS: ${observacao || '-'}`;
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label htmlFor="status" className="text-xs">Status</Label>
-                      <Select value={status} onValueChange={setStatus}>
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Pendente">Pendente</SelectItem>
-                          <SelectItem value="Confirmado">Confirmado</SelectItem>
-                          <SelectItem value="Em Produção">Em Produção</SelectItem>
-                          <SelectItem value="Enviado">Enviado</SelectItem>
-                          <SelectItem value="Entregue">Entregue</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
                       <Label htmlFor="cupom" className="text-xs">Cupom</Label>
                       <Input id="cupom" value={cupom} onChange={(e) => setCupom(e.target.value)} className="h-8 text-xs" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label htmlFor="prazo" className="text-xs">Prazo</Label>
-                      <Input id="prazo" value={prazo} onChange={(e) => setPrazo(e.target.value)} placeholder="DD/MM/AAAA" className="h-8 text-xs" />
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="brindes" className="text-xs">Brindes</Label>
@@ -1821,41 +1841,55 @@ OBS: ${observacao || '-'}`;
                   <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('pt-BR')}</p>
                 </div>
 
-                {/* Dados do cliente */}
-                <div data-pdf-section className="grid grid-cols-2 gap-2 text-sm">
-                  <div><span className="text-muted-foreground">Nome:</span> {nomeCompleto}</div>
-                  <div><span className="text-muted-foreground">CPF:</span> {cpf || '-'}</div>
-                  <div><span className="text-muted-foreground">Email:</span> {email || '-'}</div>
-                  <div><span className="text-muted-foreground">Celular:</span> {celular || '-'}</div>
-                  <div className="col-span-2"><span className="text-muted-foreground">Endereço:</span> {endereco ? `${endereco}, ${numero} - ${bairro}, ${cidade}/${estado}` : '-'}</div>
-                </div>
+                {/* Dados do cliente - completo ou simplificado */}
+                {clienteAntigo ? (
+                  <div data-pdf-section className="text-sm space-y-1">
+                    <div><span className="text-muted-foreground font-medium">Cliente:</span> {nomeCompleto}</div>
+                  </div>
+                ) : (
+                  <div data-pdf-section className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-muted-foreground">Nome:</span> {nomeCompleto}</div>
+                    <div><span className="text-muted-foreground">CPF:</span> {cpf || '-'}</div>
+                    <div><span className="text-muted-foreground">Email:</span> {email || '-'}</div>
+                    <div><span className="text-muted-foreground">Celular:</span> {celular || '-'}</div>
+                    {endereco && (
+                      <div className="col-span-2"><span className="text-muted-foreground">Endereço:</span> {`${endereco}, ${numero} - ${bairro}, ${cidade}/${estado}`}{complemento ? ` (${complemento})` : ''}</div>
+                    )}
+                    {cep && <div><span className="text-muted-foreground">CEP:</span> {cep}</div>}
+                    {dataNascimento && <div><span className="text-muted-foreground">Nascimento:</span> {dataNascimento}</div>}
+                  </div>
+                )}
 
                 {/* Título das lâminas */}
                 <div data-pdf-section className="border-t border-border pt-3">
                   <h4 className="font-semibold mb-2">Lâminas do Pedido</h4>
                 </div>
 
-                {/* Cada lâmina em seção separada */}
+                {/* Cada lâmina como card similar à imagem de referência */}
                 {[...laminasCustomizadas, ...(modeloSelecionado && modeloAtual ? [{
                   id: 'current',
                   modelo: modeloAtual,
                   aco: acoAtual,
                   acabamento: acabamentoAtual,
+                  bruteForge,
                   empunhadura: empunhaduraAtual,
                   dragonScale,
                   bainha: bainhaAtual,
                   corBainha,
+                  espacador: espacadorAtualCalc,
                   laser,
                   textoLaser,
                   localGravacao,
                   embalagem,
                   embalagemGravacao,
                   embalagemTextoGravacao,
-                  subtotal: calcularSubtotal()
+                  observacoesLamina,
+                  subtotal: calcularSubtotal(),
+                  quantidade: 1,
                 }] : [])].map((lamina, index) => (
-                  <div key={lamina.id} data-pdf-section className="mb-3 p-3 bg-muted rounded text-xs">
-                    <div className="flex items-start gap-3 mb-2">
-                      <div className="w-20 h-14 bg-white rounded overflow-hidden flex-shrink-0">
+                  <div key={lamina.id} data-pdf-section className="mb-3 p-4 border border-border rounded-lg bg-card">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-28 h-20 bg-white rounded-lg overflow-hidden flex-shrink-0 border border-border p-1">
                         <img 
                           src={getModeloImagem(lamina.modelo)} 
                           alt={lamina.modelo?.nome_modelo || ''} 
@@ -1864,16 +1898,22 @@ OBS: ${observacao || '-'}`;
                         />
                       </div>
                       <div className="flex-1">
-                        <span className="font-semibold text-sm">{lamina.modelo?.nome_modelo}</span>
-                        <span className="text-muted-foreground ml-2">#{index + 1}</span>
+                        <span className="font-bold text-base">{lamina.modelo?.nome_modelo}</span>
+                        <span className="text-muted-foreground ml-2 text-sm">#{index + 1}</span>
+                        {(lamina as any).quantidade > 1 && (
+                          <Badge variant="secondary" className="ml-2 text-xs">x{(lamina as any).quantidade}</Badge>
+                        )}
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-1 text-muted-foreground">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                       <span>Aço: {lamina.aco?.nome_opcao || '-'}</span>
-                      <span>Acabamento: {lamina.acabamento?.nome_opcao || '-'}</span>
+                      <span>Acabamento: {lamina.acabamento?.nome_opcao || '-'}{(lamina as any).bruteForge ? ' + Brute Forge' : ''}</span>
                       <span>Empunhadura: {lamina.empunhadura?.nome_opcao || '-'}{lamina.dragonScale ? ' + DS' : ''}</span>
                       <span>Bainha: {lamina.bainha?.nome_opcao || '-'} {lamina.corBainha}</span>
-                      {lamina.laser && <span className="col-span-2">Laser: {lamina.textoLaser}</span>}
+                      {(lamina as any).espacador && <span>Espaçador: {(lamina as any).espacador.nome_opcao}</span>}
+                      {lamina.embalagem && <span>Embalagem: {lamina.embalagem}</span>}
+                      {lamina.laser && <span className="col-span-2">Laser: {lamina.textoLaser}{lamina.localGravacao?.length > 0 ? ` (${lamina.localGravacao.join(', ')})` : ''}</span>}
+                      {(lamina as any).observacoesLamina && <span className="col-span-2 text-muted-foreground italic">Obs: {(lamina as any).observacoesLamina}</span>}
                     </div>
                   </div>
                 ))}
@@ -1895,8 +1935,32 @@ OBS: ${observacao || '-'}`;
                   </div>
                 )}
 
+                {/* Informações de Pagamento */}
+                <div data-pdf-section className="border-t border-border pt-3">
+                  <h4 className="font-semibold mb-2">Pagamento</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-muted-foreground">Valor Total:</span> <span className="font-bold">R$ {valorTotalCalculado.toFixed(2)}</span></div>
+                    <div><span className="text-muted-foreground">Forma:</span> {formaPagamento || '-'}</div>
+                    <div><span className="text-muted-foreground">Status:</span> <span className={status === 'Pago' ? 'text-green-600 font-medium' : 'text-yellow-600 font-medium'}>{status}</span></div>
+                    {prazo && <div><span className="text-muted-foreground">Prazo:</span> {prazo}</div>}
+                    {cupom && <div><span className="text-muted-foreground">Cupom:</span> {cupom}</div>}
+                  </div>
+                </div>
+
+                {/* Certificado */}
+                <div data-pdf-section className="text-sm">
+                  <span className="text-muted-foreground">Certificado:</span> {nomeCertificado || nomeCompleto}
+                </div>
+
+                {/* Observações */}
+                {observacao && (
+                  <div data-pdf-section className="text-sm">
+                    <span className="text-muted-foreground">Observações:</span> {observacao}
+                  </div>
+                )}
+
                 {/* Rodapé */}
-                <div data-pdf-section className="text-xs text-muted-foreground text-center pt-2">
+                <div data-pdf-section className="text-xs text-muted-foreground text-center pt-2 border-t border-border">
                   Vendedor: {profile?.nome_vendedor || '-'}
                 </div>
               </div>
