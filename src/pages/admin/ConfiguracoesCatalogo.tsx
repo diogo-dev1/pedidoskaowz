@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { IconPicker } from '@/components/IconPicker';
+import { getIconComponent } from '@/lib/icon-utils';
 
 interface CategoriaVisivel {
   id: string;
@@ -16,6 +18,7 @@ interface CategoriaVisivel {
   visivel: boolean;
   visivel_todas: boolean;
   ordem: number;
+  icone: string;
 }
 
 interface BannerCatalogo {
@@ -73,6 +76,10 @@ export default function ConfiguracoesCatalogo() {
 
   // Pronta Entrega
   const [salvandoProntaEntrega, setSalvandoProntaEntrega] = useState(false);
+
+  // Nova categoria
+  const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
+  const [novaCategoriaIcone, setNovaCategoriaIcone] = useState('Sword');
 
   useEffect(() => {
     fetchCategoriasVisiveis();
@@ -252,7 +259,42 @@ export default function ConfiguracoesCatalogo() {
     toast.success(`Link da categoria "${categoria}" copiado!`);
   };
 
-  // --- Pronta Entrega ---
+  const atualizarIconeCategoria = async (cat: CategoriaVisivel, icone: string) => {
+    const { error } = await supabase
+      .from('categorias_catalogo_visiveis')
+      .update({ icone })
+      .eq('id', cat.id);
+    if (error) { toast.error('Erro ao alterar ícone'); return; }
+    setCategoriasVisiveis(prev => prev.map(c => c.id === cat.id ? { ...c, icone } : c));
+    toast.success('Ícone atualizado');
+  };
+
+  const criarCategoria = async () => {
+    if (!novaCategoriaNome.trim()) { toast.error('Digite o nome da categoria'); return; }
+    const existe = categoriasVisiveis.some(c => c.categoria.toLowerCase() === novaCategoriaNome.trim().toLowerCase());
+    if (existe) { toast.error('Categoria já existe'); return; }
+    const maxOrdem = categoriasVisiveis.reduce((max, c) => Math.max(max, c.ordem), 0);
+    const { error } = await supabase.from('categorias_catalogo_visiveis').insert({
+      categoria: novaCategoriaNome.trim(),
+      icone: novaCategoriaIcone,
+      visivel: true,
+      visivel_todas: true,
+      ordem: maxOrdem + 1,
+    });
+    if (error) { toast.error('Erro ao criar categoria'); return; }
+    toast.success('Categoria criada!');
+    setNovaCategoriaNome('');
+    setNovaCategoriaIcone('Sword');
+    fetchCategoriasVisiveis();
+  };
+
+  const deletarCategoria = async (cat: CategoriaVisivel) => {
+    if (!confirm(`Excluir a categoria "${cat.categoria}"?`)) return;
+    const { error } = await supabase.from('categorias_catalogo_visiveis').delete().eq('id', cat.id);
+    if (error) { toast.error('Erro ao excluir'); return; }
+    setCategoriasVisiveis(prev => prev.filter(c => c.id !== cat.id));
+    toast.success('Categoria excluída');
+  };
   const toggleProntaEntrega = async (modelo: ModeloCatalogo) => {
     setSalvandoProntaEntrega(true);
     const { error } = await supabase
@@ -553,43 +595,89 @@ export default function ConfiguracoesCatalogo() {
 
         {/* Aba Categorias */}
         <TabsContent value="categorias" className="space-y-3 mt-4">
+          {/* Criar nova categoria */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Nova Categoria</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end gap-2">
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs">Nome</Label>
+                  <Input
+                    value={novaCategoriaNome}
+                    onChange={e => setNovaCategoriaNome(e.target.value)}
+                    placeholder="Nome da categoria"
+                    className="h-8"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Ícone</Label>
+                  <IconPicker value={novaCategoriaIcone} onChange={setNovaCategoriaIcone} />
+                </div>
+                <Button size="sm" onClick={criarCategoria} className="h-10">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Criar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Categorias do Catálogo</CardTitle>
               <CardDescription className="text-xs">
-                Visibilidade na landing page, na visão "Todas" e links de compartilhamento.
+                Visibilidade, ícone e links de compartilhamento.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              {categoriasVisiveis.map((cat) => (
-                <div key={cat.id} className="flex flex-col gap-2 py-2 px-3 rounded-lg border">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{cat.categoria}</span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => copiarLinkCategoria(cat.categoria)}
-                        title="Copiar link da categoria"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
+              {categoriasVisiveis.map((cat) => {
+                const CatIcon = getIconComponent(cat.icone);
+                return (
+                  <div key={cat.id} className="flex flex-col gap-2 py-2 px-3 rounded-lg border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <IconPicker
+                          value={cat.icone}
+                          onChange={(icone) => atualizarIconeCategoria(cat, icone)}
+                        />
+                        <span className="text-sm font-medium">{cat.categoria}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => copiarLinkCategoria(cat.categoria)}
+                          title="Copiar link"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                          onClick={() => deletarCategoria(cat)}
+                          title="Excluir categoria"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                        <Switch
+                          checked={cat.visivel}
+                          onCheckedChange={() => toggleCategoriaVisivel(cat)}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Exibir em "Todas"</span>
                       <Switch
-                        checked={cat.visivel}
-                        onCheckedChange={() => toggleCategoriaVisivel(cat)}
+                        checked={cat.visivel_todas}
+                        onCheckedChange={() => toggleVisivelTodas(cat)}
                       />
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Exibir em "Todas"</span>
-                    <Switch
-                      checked={cat.visivel_todas}
-                      onCheckedChange={() => toggleVisivelTodas(cat)}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </TabsContent>

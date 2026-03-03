@@ -4,10 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench, ChevronDown, Shirt, Coffee, Package, Flame, Star, ArrowRight, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
+import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
+import { getIconComponent } from '@/lib/icon-utils';
 
 interface Banner {
   id: string;
@@ -39,6 +40,7 @@ interface CategoriaVisivel {
   visivel: boolean;
   visivel_todas: boolean;
   ordem: number;
+  icone: string;
 }
 
 export default function CatalogoPublico() {
@@ -60,26 +62,12 @@ export default function CatalogoPublico() {
   const [textoParcelamento, setTextoParcelamento] = useState('3x sem juros ou até 12x no cartão');
   const [filtroProntaEntrega, setFiltroProntaEntrega] = useState(false);
 
-  const allCategorias = ['Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
-
-  const iconMap: Record<string, typeof Shield> = {
-    'Defesa': Shield, 'EDCs': Sword, 'EDC Mini': Sword, 'Campo': Trees,
-    'Cozinha': ChefHat, 'Churrasco': Flame, 'Kits': Package,
-    'Utensílios': Wrench, 'Vestuário': Shirt, 'Cafés': Coffee,
-  };
-
-  const categoriasVisiveisNomes = new Set(
-    categoriasVisiveis.filter(c => c.visivel).map(c => c.categoria)
-  );
-
-  const categorias = categoriasVisiveis.length > 0
-    ? allCategorias.filter(c => categoriasVisiveisNomes.has(c))
-    : allCategorias;
+  const categorias = categoriasVisiveis.filter(c => c.visivel);
 
   const categoriasVenda = categorias.map(cat => ({
-    subtitulo: cat === 'EDCs' ? "EDC's" : cat,
-    categoria: cat,
-    icon: iconMap[cat] || Wrench,
+    subtitulo: cat.categoria,
+    categoria: cat.categoria,
+    icon: getIconComponent(cat.icone),
   }));
 
   useEffect(() => {
@@ -478,17 +466,17 @@ export default function CatalogoPublico() {
                   </Button>
                   {categorias.map((cat) => (
                     <Button
-                      key={cat}
-                      variant={categoriaAtiva === cat ? "default" : "ghost"}
+                      key={cat.categoria}
+                      variant={categoriaAtiva === cat.categoria ? "default" : "ghost"}
                       size="sm"
                       className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 ${
-                        categoriaAtiva === cat 
+                        categoriaAtiva === cat.categoria 
                           ? 'bg-accent text-white hover:bg-accent/90' 
                           : 'text-zinc-300 hover:bg-zinc-700'
                       }`}
-                      onClick={() => { setCategoriaAtiva(cat); setFiltroProntaEntrega(false); }}
+                      onClick={() => { setCategoriaAtiva(cat.categoria); setFiltroProntaEntrega(false); }}
                     >
-                      {cat}
+                      {cat.categoria}
                     </Button>
                   ))}
                 </div>
