@@ -253,11 +253,11 @@ export default function CatalogoPublico() {
   // Landing Page
   if (mostrarLanding) {
     return (
-      <div className="min-h-screen bg-zinc-950 overflow-x-hidden">
+      <div className="min-h-screen bg-zinc-950 overflow-x-hidden max-w-[100vw]">
         {/* Hero Header */}
         <header className="relative py-10 md:py-16 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-accent/10 via-transparent to-transparent" />
-          <div className="container mx-auto px-4 text-center relative z-10">
+          <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 text-center relative z-10">
             <div className="inline-block mb-3">
               <span className="text-accent text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">Cutelaria Artesanal</span>
             </div>
@@ -270,7 +270,7 @@ export default function CatalogoPublico() {
           </div>
         </header>
 
-        <div className="container mx-auto px-4 pb-16">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 pb-16">
           {/* Banner Carousel */}
           {banners.length > 0 && (
             <div className="relative max-w-5xl mx-auto mb-8 rounded-xl overflow-hidden">
@@ -405,10 +405,10 @@ export default function CatalogoPublico() {
 
   // Catálogo de Produtos
   return (
-    <div className="min-h-screen bg-zinc-950 overflow-x-hidden">
+    <div className="min-h-screen bg-zinc-950 overflow-x-hidden max-w-[100vw]">
       {/* Header */}
       <header className="bg-black border-b border-white/10 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 md:py-4">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-3 md:py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
             <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto">
               <Button
@@ -444,8 +444,8 @@ export default function CatalogoPublico() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-4 md:py-6">
-        <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-4 md:py-6">
+        <div className="flex flex-col lg:flex-row gap-4 md:gap-6 min-w-0">
           {/* Sidebar - Categorias */}
           <aside className="lg:w-64 shrink-0">
             <Collapsible defaultOpen={false} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-24 shadow-sm">
@@ -548,7 +548,7 @@ export default function CatalogoPublico() {
           </aside>
 
           {/* Grid de Produtos */}
-          <main className="flex-1">
+          <main className="flex-1 min-w-0">
             {loading ? (
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 {[...Array(6)].map((_, i) => (
@@ -656,15 +656,15 @@ export default function CatalogoPublico() {
                             <div className="flex-1">
                               {exibirPrecos && (
                                 <div className="mt-1">
-                                  <p className="text-lg md:text-2xl font-black text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
+                      <p className="text-base md:text-2xl font-black text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)] truncate">
                                     R$ {modelo.preco_base.toFixed(2)}
                                   </p>
                                   {exibirFormasPagamento && (
                                     <>
-                                      <p className="text-xs md:text-sm text-emerald-400 font-bold mt-0.5">
-                                        R$ {(modelo.preco_base * (1 - descontoPix / 100)).toFixed(2)} <span className="text-[10px] md:text-xs font-medium text-emerald-500">{textoPix} ({descontoPix}% OFF)</span>
+                                      <p className="text-[10px] md:text-sm text-emerald-400 font-bold mt-0.5 truncate">
+                                        R$ {(modelo.preco_base * (1 - descontoPix / 100)).toFixed(2)} <span className="font-medium text-emerald-500">{textoPix} ({descontoPix}% OFF)</span>
                                       </p>
-                                      <div className="text-[10px] md:text-xs text-zinc-400 mt-0.5">
+                                      <div className="text-[10px] md:text-xs text-zinc-400 mt-0.5 truncate">
                                         {textoParcelamento}
                                       </div>
                                     </>
