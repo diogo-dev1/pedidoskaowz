@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ interface Modelo {
   categorias: string[];
   categoria: string | null;
   apresentacao_venda: string | null;
+  descricao_html: string | null;
   video_url: string | null;
   garantia: string | null;
   prazo_entrega: string | null;
@@ -66,9 +67,9 @@ export default function CatalogoDetalhe() {
 
   const carregarModelo = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('catalogo_modelos')
-        .select('*')
+        .select('*') as any)
         .eq('id', id)
         .maybeSingle();
 
@@ -91,7 +92,6 @@ export default function CatalogoDetalhe() {
         .eq('visivel_catalogo', true);
 
       if (error) throw error;
-
       setMidias(data || []);
     } catch (error) {
       console.error('Erro ao carregar mídias:', error);
@@ -100,28 +100,23 @@ export default function CatalogoDetalhe() {
 
   const enviarWhatsApp = () => {
     if (!modelo) return;
-
     const imagemPrincipal = modelo.imagem_modelo || (imagensDisponiveis.length > 0 ? imagensDisponiveis[0] : null);
-
     let mensagem = exibirPrecos
       ? `Olá! Gostaria de saber mais sobre:\n\n${modelo.nome_modelo}\nR$ ${modelo.preco_base.toFixed(2)}`
       : `Olá! Gostaria de saber mais sobre:\n\n${modelo.nome_modelo}`;
-
     if (imagemPrincipal) {
       mensagem += `\n\n${imagemPrincipal}`;
     }
-
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
 
-  // Separar vídeo principal das imagens
   const videoUrl = modelo?.video_url;
-  
-  const imagensDisponiveis = [
+
+  const imagensDisponiveis = useMemo(() => [
     ...(modelo?.imagem_modelo ? [modelo.imagem_modelo] : []),
     ...midias.filter(m => !m.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i)).map(m => m.url)
-  ];
+  ], [modelo, midias]);
 
   if (loading) {
     return (
@@ -165,7 +160,6 @@ export default function CatalogoDetalhe() {
         <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           {/* Mídia */}
           <div className="space-y-4 min-w-0 overflow-hidden">
-            {/* Vídeo */}
             {videoUrl && (
               <div className="bg-zinc-800 rounded-lg overflow-hidden aspect-[3/4] max-h-[70vh]">
                 <video
@@ -179,7 +173,6 @@ export default function CatalogoDetalhe() {
               </div>
             )}
 
-            {/* Imagem principal */}
             {imagensDisponiveis.length > 0 && (
               <div className="relative bg-zinc-800 rounded-lg overflow-hidden flex items-center justify-center aspect-[3/4] max-h-[70vh]">
                 <img
@@ -190,7 +183,6 @@ export default function CatalogoDetalhe() {
               </div>
             )}
 
-            {/* Miniaturas horizontais */}
             {imagensDisponiveis.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin justify-center">
                 {imagensDisponiveis.map((img, idx) => (
@@ -257,8 +249,37 @@ export default function CatalogoDetalhe() {
               Consultar no WhatsApp
             </Button>
 
-            {/* Descrição */}
-            {modelo.apresentacao_venda && (
+            {/* Descrição completa HTML da Shopify */}
+            {modelo.descricao_html && (
+              <div className="bg-zinc-800/50 rounded-lg p-4">
+                <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide mb-3">
+                  Descrição completa
+                </h2>
+                <div
+                  className="text-zinc-300 text-sm leading-relaxed break-words prose prose-sm prose-invert max-w-none
+                    [&_h1]:text-lg [&_h1]:font-bold [&_h1]:text-white [&_h1]:mt-4 [&_h1]:mb-2
+                    [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-4 [&_h2]:mb-2
+                    [&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-white [&_h3]:mt-3 [&_h3]:mb-1
+                    [&_p]:mb-2 [&_p]:text-zinc-300
+                    [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ul]:space-y-1
+                    [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_ol]:space-y-1
+                    [&_li]:text-zinc-300
+                    [&_strong]:text-white [&_strong]:font-semibold
+                    [&_em]:italic
+                    [&_table]:w-full [&_table]:border-collapse [&_table]:mb-3
+                    [&_th]:bg-zinc-700 [&_th]:text-white [&_th]:p-2 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold
+                    [&_td]:border-b [&_td]:border-zinc-700 [&_td]:p-2 [&_td]:text-xs [&_td]:text-zinc-300
+                    [&_tr:hover]:bg-zinc-700/30
+                    [&_a]:text-accent [&_a]:underline [&_a]:hover:text-accent/80
+                    [&_img]:rounded-lg [&_img]:my-2 [&_img]:max-w-full
+                    [&_br]:block [&_br]:mb-1"
+                  dangerouslySetInnerHTML={{ __html: modelo.descricao_html }}
+                />
+              </div>
+            )}
+
+            {/* Descrição texto simples (fallback) */}
+            {!modelo.descricao_html && modelo.apresentacao_venda && (
               <div className="bg-zinc-800/50 rounded-lg p-4">
                 <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide mb-3">
                   Sobre o produto

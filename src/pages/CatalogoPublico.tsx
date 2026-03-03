@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package } from 'lucide-react';
+import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
@@ -61,7 +62,8 @@ export default function CatalogoPublico() {
   const [textoPix, setTextoPix] = useState('no PIX');
   const [textoParcelamento, setTextoParcelamento] = useState('3x sem juros ou até 12x no cartão');
   const [filtroProntaEntrega, setFiltroProntaEntrega] = useState(false);
-
+  const [faixaPreco, setFaixaPreco] = useState<[number, number]>([0, 10000]);
+  const [precoMaxGlobal, setPrecoMaxGlobal] = useState(10000);
   const categorias = categoriasVisiveis.filter(c => c.visivel);
 
   const categoriasVenda = categorias.map(cat => ({
@@ -175,6 +177,13 @@ export default function CatalogoPublico() {
         m.imagem_modelo || m.video_url || modelosComMidiaCatalogo.has(m.id)
       );
       setModelos(modelosFiltrados as Modelo[]);
+      
+      // Calculate max price for filter
+      if (modelosFiltrados.length > 0) {
+        const maxP = Math.ceil(Math.max(...modelosFiltrados.map(m => m.preco_base)) / 100) * 100;
+        setPrecoMaxGlobal(maxP);
+        setFaixaPreco([0, maxP]);
+      }
     } catch (error) {
       console.error('Erro ao carregar modelos:', error);
       toast.error('Erro ao carregar catálogo');
@@ -189,6 +198,9 @@ export default function CatalogoPublico() {
   );
 
   const modelosFiltrados = modelos.filter((modelo) => {
+    // Filtro por faixa de preço
+    if (modelo.preco_base < faixaPreco[0] || modelo.preco_base > faixaPreco[1]) return false;
+    
     // Filtro pronta entrega
     if (filtroProntaEntrega && !modelo.pronta_entrega) return false;
 
@@ -494,6 +506,45 @@ export default function CatalogoPublico() {
                 </div>
               </CollapsibleContent>
             </Collapsible>
+
+            {/* Filtro por Valor */}
+            {exibirPrecos && (
+              <Collapsible defaultOpen={false} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-44 shadow-sm mt-3">
+                <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
+                  <div className="flex items-center gap-2">
+                    <SlidersHorizontal className="h-4 w-4 text-accent" />
+                    <span className="font-semibold text-base md:text-lg">Faixa de Preço</span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="px-3 md:px-4 pb-4">
+                  <div className="space-y-4 pt-2">
+                    <Slider
+                      min={0}
+                      max={precoMaxGlobal}
+                      step={50}
+                      value={faixaPreco}
+                      onValueChange={(v) => setFaixaPreco(v as [number, number])}
+                      className="w-full"
+                    />
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-zinc-400">R$ {faixaPreco[0].toFixed(0)}</span>
+                      <span className="text-zinc-400">R$ {faixaPreco[1].toFixed(0)}</span>
+                    </div>
+                    {(faixaPreco[0] > 0 || faixaPreco[1] < precoMaxGlobal) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-xs text-zinc-400 hover:text-white"
+                        onClick={() => setFaixaPreco([0, precoMaxGlobal])}
+                      >
+                        Limpar filtro
+                      </Button>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </aside>
 
           {/* Grid de Produtos */}
