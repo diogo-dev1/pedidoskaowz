@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign, Star, ArrowUp, ArrowDown, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -36,6 +36,7 @@ interface ModeloCatalogo {
   ordem_catalogo: number;
   visivel_todas: boolean;
   categorias: string[] | null;
+  pronta_entrega: boolean;
 }
 
 export default function ConfiguracoesCatalogo() {
@@ -69,6 +70,9 @@ export default function ConfiguracoesCatalogo() {
   const [todosModelos, setTodosModelos] = useState<ModeloCatalogo[]>([]);
   const [destaquesIds, setDestaquesIds] = useState<string[]>([]);
   const [salvandoDestaques, setSalvandoDestaques] = useState(false);
+
+  // Pronta Entrega
+  const [salvandoProntaEntrega, setSalvandoProntaEntrega] = useState(false);
 
   useEffect(() => {
     fetchCategoriasVisiveis();
@@ -137,12 +141,11 @@ export default function ConfiguracoesCatalogo() {
   const fetchModelosParaDestaques = async () => {
     const { data } = await supabase
       .from('catalogo_modelos')
-      .select('id, nome_modelo, imagem_modelo, preco_base, ordem_catalogo, visivel_todas, categorias')
+      .select('id, nome_modelo, imagem_modelo, preco_base, ordem_catalogo, visivel_todas, categorias, pronta_entrega')
       .eq('visivel_catalogo', true)
       .order('ordem_catalogo');
     if (data) {
-      setTodosModelos(data);
-      // Os que já estão com ordem < 999 e visivel_todas são os destaques atuais
+      setTodosModelos(data as ModeloCatalogo[]);
       const atuais = data
         .filter(m => m.visivel_todas && m.ordem_catalogo < 999)
         .sort((a, b) => a.ordem_catalogo - b.ordem_catalogo)
@@ -176,15 +179,13 @@ export default function ConfiguracoesCatalogo() {
   const salvarDestaques = async () => {
     setSalvandoDestaques(true);
     try {
-      // Reset all to ordem 999
       const { error: resetError } = await supabase
         .from('catalogo_modelos')
         .update({ ordem_catalogo: 999 })
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // update all
+        .neq('id', '00000000-0000-0000-0000-000000000000');
 
       if (resetError) throw resetError;
 
-      // Set ordem for selected destaques
       for (let i = 0; i < destaquesIds.length; i++) {
         const { error } = await supabase
           .from('catalogo_modelos')
@@ -243,6 +244,28 @@ export default function ConfiguracoesCatalogo() {
     if (error) { toast.error('Erro ao alterar configuração'); return; }
     setCategoriasVisiveis(prev => prev.map(c => c.id === cat.id ? { ...c, visivel_todas: !c.visivel_todas } : c));
     toast.success(!cat.visivel_todas ? `${cat.categoria} aparecerá em "Todas"` : `${cat.categoria} removida de "Todas"`);
+  };
+
+  const copiarLinkCategoria = (categoria: string) => {
+    const url = `${window.location.origin}/catalogo?categoria=${encodeURIComponent(categoria)}`;
+    navigator.clipboard.writeText(url);
+    toast.success(`Link da categoria "${categoria}" copiado!`);
+  };
+
+  // --- Pronta Entrega ---
+  const toggleProntaEntrega = async (modelo: ModeloCatalogo) => {
+    setSalvandoProntaEntrega(true);
+    const { error } = await supabase
+      .from('catalogo_modelos')
+      .update({ pronta_entrega: !modelo.pronta_entrega })
+      .eq('id', modelo.id);
+    if (error) {
+      toast.error('Erro ao alterar');
+    } else {
+      setTodosModelos(prev => prev.map(m => m.id === modelo.id ? { ...m, pronta_entrega: !m.pronta_entrega } : m));
+      toast.success(modelo.pronta_entrega ? 'Removido de pronta entrega' : 'Marcado como pronta entrega');
+    }
+    setSalvandoProntaEntrega(false);
   };
 
   // --- Banners ---
@@ -335,21 +358,25 @@ export default function ConfiguracoesCatalogo() {
       </div>
 
       <Tabs defaultValue="geral" className="w-full">
-        <TabsList className="w-full justify-start flex-wrap">
-          <TabsTrigger value="geral" className="gap-1.5">
-            <DollarSign className="h-3.5 w-3.5" />
+        <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full h-auto gap-1">
+          <TabsTrigger value="geral" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
+            <DollarSign className="h-3.5 w-3.5 hidden sm:block" />
             Geral
           </TabsTrigger>
-          <TabsTrigger value="destaques" className="gap-1.5">
-            <Star className="h-3.5 w-3.5" />
+          <TabsTrigger value="destaques" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
+            <Star className="h-3.5 w-3.5 hidden sm:block" />
             Destaques
           </TabsTrigger>
-          <TabsTrigger value="categorias" className="gap-1.5">
-            <Tags className="h-3.5 w-3.5" />
+          <TabsTrigger value="categorias" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
+            <Tags className="h-3.5 w-3.5 hidden sm:block" />
             Categorias
           </TabsTrigger>
-          <TabsTrigger value="banners" className="gap-1.5">
-            <Megaphone className="h-3.5 w-3.5" />
+          <TabsTrigger value="pronta-entrega" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
+            <Package className="h-3.5 w-3.5 hidden sm:block" />
+            Pronta Entrega
+          </TabsTrigger>
+          <TabsTrigger value="banners" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
+            <Megaphone className="h-3.5 w-3.5 hidden sm:block" />
             Banners
           </TabsTrigger>
         </TabsList>
@@ -357,10 +384,10 @@ export default function ConfiguracoesCatalogo() {
         {/* Aba Geral */}
         <TabsContent value="geral" className="space-y-4 mt-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle className="text-base">Exibição de Preços</CardTitle>
-              <CardDescription>
-                Quando desativado, os valores são removidos dos cards e da página de detalhes do produto.
+              <CardDescription className="text-xs">
+                Quando desativado, os valores são removidos dos cards e detalhes.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -368,11 +395,6 @@ export default function ConfiguracoesCatalogo() {
                 <div>
                   <p className="text-sm font-medium">
                     {exibirPrecos ? 'Preços visíveis' : 'Preços ocultos'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {exibirPrecos 
-                      ? 'Clientes veem o valor dos produtos' 
-                      : 'Clientes veem apenas nome e descrição do produto'}
                   </p>
                 </div>
                 <Switch
@@ -385,22 +407,17 @@ export default function ConfiguracoesCatalogo() {
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle className="text-base">Formas de Pagamento</CardTitle>
-              <CardDescription>
-                Ative/desative e edite as informações de PIX e parcelamento exibidas no catálogo.
+              <CardDescription className="text-xs">
+                Edite PIX e parcelamento exibidos no catálogo.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">
-                    {exibirFormasPagamento ? 'Formas de pagamento visíveis' : 'Formas de pagamento ocultas'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Informações de PIX e parcelamento nos cards e detalhes
-                  </p>
-                </div>
+                <p className="text-sm font-medium">
+                  {exibirFormasPagamento ? 'Visíveis' : 'Ocultas'}
+                </p>
                 <Switch
                   checked={exibirFormasPagamento}
                   onCheckedChange={toggleFormasPagamento}
@@ -410,26 +427,28 @@ export default function ConfiguracoesCatalogo() {
 
               {exibirFormasPagamento && (
                 <div className="space-y-3 pt-2 border-t">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Desconto PIX (%)</Label>
-                    <Input
-                      type="number"
-                      value={descontoPix}
-                      onChange={e => setDescontoPix(e.target.value)}
-                      placeholder="5"
-                      className="h-8"
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Desconto PIX (%)</Label>
+                      <Input
+                        type="number"
+                        value={descontoPix}
+                        onChange={e => setDescontoPix(e.target.value)}
+                        placeholder="5"
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Texto do PIX</Label>
+                      <Input
+                        value={textoPix}
+                        onChange={e => setTextoPix(e.target.value)}
+                        placeholder="no PIX"
+                        className="h-8"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Texto do PIX</Label>
-                    <Input
-                      value={textoPix}
-                      onChange={e => setTextoPix(e.target.value)}
-                      placeholder="no PIX"
-                      className="h-8"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <Label className="text-xs">Texto do Parcelamento</Label>
                     <Input
                       value={textoParcelamento}
@@ -444,7 +463,7 @@ export default function ConfiguracoesCatalogo() {
                     disabled={salvandoPagamento}
                     className="w-full"
                   >
-                    {salvandoPagamento ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : 'Salvar configurações de pagamento'}
+                    {salvandoPagamento ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : 'Salvar pagamento'}
                   </Button>
                 </div>
               )}
@@ -455,55 +474,38 @@ export default function ConfiguracoesCatalogo() {
         {/* Aba Destaques */}
         <TabsContent value="destaques" className="space-y-4 mt-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle className="text-base">Primeiras 10 Lâminas em "Todas"</CardTitle>
-              <CardDescription>
-                Selecione e ordene as 10 primeiras lâminas que aparecem quando o cliente clica em "Ver todo o catálogo".
+              <CardDescription className="text-xs">
+                Selecione e ordene as 10 primeiras lâminas da visão geral.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Lista de destaques selecionados */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label className="text-sm font-semibold">Selecionadas ({destaquesIds.length}/10)</Label>
                 {destaquesIds.length === 0 && (
-                  <p className="text-xs text-muted-foreground py-4 text-center">Nenhuma lâmina selecionada. Escolha abaixo.</p>
+                  <p className="text-xs text-muted-foreground py-4 text-center">Nenhuma lâmina selecionada.</p>
                 )}
                 {destaquesIds.map((id, index) => {
                   const modelo = todosModelos.find(m => m.id === id);
                   if (!modelo) return null;
                   return (
-                    <div key={id} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30">
-                      <span className="text-xs font-bold text-accent w-6 text-center">{index + 1}º</span>
+                    <div key={id} className="flex items-center gap-2 p-1.5 rounded-lg border bg-muted/30">
+                      <span className="text-xs font-bold text-accent w-5 text-center">{index + 1}º</span>
                       {modelo.imagem_modelo && (
-                        <img src={modelo.imagem_modelo} alt="" className="w-8 h-8 rounded object-cover" />
+                        <img src={modelo.imagem_modelo} alt="" className="w-7 h-7 rounded object-cover" />
                       )}
-                      <span className="text-sm flex-1 truncate">{modelo.nome_modelo}</span>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0"
-                          disabled={index === 0}
-                          onClick={() => moverDestaque(index, 'up')}
-                        >
-                          <ArrowUp className="h-3.5 w-3.5" />
+                      <span className="text-xs flex-1 truncate">{modelo.nome_modelo}</span>
+                      <div className="flex items-center gap-0.5">
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" disabled={index === 0} onClick={() => moverDestaque(index, 'up')}>
+                          <ArrowUp className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0"
-                          disabled={index === destaquesIds.length - 1}
-                          onClick={() => moverDestaque(index, 'down')}
-                        >
-                          <ArrowDown className="h-3.5 w-3.5" />
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" disabled={index === destaquesIds.length - 1} onClick={() => moverDestaque(index, 'down')}>
+                          <ArrowDown className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          onClick={() => removerDestaque(id)}
-                        >
-                          <X className="h-3.5 w-3.5" />
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => removerDestaque(id)}>
+                          <X className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
@@ -512,23 +514,22 @@ export default function ConfiguracoesCatalogo() {
               </div>
 
               {/* Lista de todos os modelos para adicionar */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label className="text-sm font-semibold">Adicionar lâminas</Label>
-                <div className="max-h-64 overflow-y-auto space-y-1 border rounded-lg p-2">
+                <div className="max-h-52 overflow-y-auto space-y-0.5 border rounded-lg p-1.5">
                   {todosModelos
                     .filter(m => m.visivel_todas && !destaquesIds.includes(m.id))
                     .map(modelo => (
                       <div
                         key={modelo.id}
-                        className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer transition-colors"
+                        className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/50 cursor-pointer transition-colors"
                         onClick={() => adicionarDestaque(modelo.id)}
                       >
                         {modelo.imagem_modelo && (
-                          <img src={modelo.imagem_modelo} alt="" className="w-8 h-8 rounded object-cover" />
+                          <img src={modelo.imagem_modelo} alt="" className="w-7 h-7 rounded object-cover" />
                         )}
-                        <span className="text-sm flex-1 truncate">{modelo.nome_modelo}</span>
-                        <span className="text-xs text-muted-foreground">{modelo.categorias?.join(', ')}</span>
-                        <Plus className="h-4 w-4 text-accent" />
+                        <span className="text-xs flex-1 truncate">{modelo.nome_modelo}</span>
+                        <Plus className="h-3.5 w-3.5 text-accent" />
                       </div>
                     ))}
                 </div>
@@ -538,11 +539,12 @@ export default function ConfiguracoesCatalogo() {
                 onClick={salvarDestaques}
                 disabled={salvandoDestaques}
                 className="w-full"
+                size="sm"
               >
                 {salvandoDestaques ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</>
                 ) : (
-                  'Salvar ordem dos destaques'
+                  'Salvar destaques'
                 )}
               </Button>
             </CardContent>
@@ -552,21 +554,32 @@ export default function ConfiguracoesCatalogo() {
         {/* Aba Categorias */}
         <TabsContent value="categorias" className="space-y-3 mt-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle className="text-base">Categorias do Catálogo</CardTitle>
-              <CardDescription>
-                Controle quais categorias aparecem na landing page e na visão "Todas".
+              <CardDescription className="text-xs">
+                Visibilidade na landing page, na visão "Todas" e links de compartilhamento.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2">
               {categoriasVisiveis.map((cat) => (
                 <div key={cat.id} className="flex flex-col gap-2 py-2 px-3 rounded-lg border">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{cat.categoria}</span>
-                    <Switch
-                      checked={cat.visivel}
-                      onCheckedChange={() => toggleCategoriaVisivel(cat)}
-                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => copiarLinkCategoria(cat.categoria)}
+                        title="Copiar link da categoria"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                      <Switch
+                        checked={cat.visivel}
+                        onCheckedChange={() => toggleCategoriaVisivel(cat)}
+                      />
+                    </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">Exibir em "Todas"</span>
@@ -581,18 +594,52 @@ export default function ConfiguracoesCatalogo() {
           </Card>
         </TabsContent>
 
+        {/* Aba Pronta Entrega */}
+        <TabsContent value="pronta-entrega" className="space-y-3 mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Produtos à Pronta Entrega</CardTitle>
+              <CardDescription className="text-xs">
+                Marque quais produtos estão disponíveis para entrega imediata. Um selo será exibido no catálogo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1.5 max-h-[60vh] overflow-y-auto">
+                {todosModelos.map((modelo) => (
+                  <div key={modelo.id} className="flex items-center gap-2 p-2 rounded-lg border">
+                    {modelo.imagem_modelo && (
+                      <img src={modelo.imagem_modelo} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate">{modelo.nome_modelo}</p>
+                      <p className="text-[10px] text-muted-foreground">{modelo.categorias?.join(', ')}</p>
+                    </div>
+                    <Switch
+                      checked={modelo.pronta_entrega}
+                      onCheckedChange={() => toggleProntaEntrega(modelo)}
+                    />
+                  </div>
+                ))}
+                {todosModelos.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">Nenhum produto encontrado</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Aba Banners */}
         <TabsContent value="banners" className="space-y-3 mt-4">
           {!bannerFormOpen ? (
             <>
-              <Button onClick={() => setBannerFormOpen(true)} className="w-full">
+              <Button onClick={() => setBannerFormOpen(true)} className="w-full" size="sm">
                 <Plus className="mr-2 h-4 w-4" />
                 Novo Banner
               </Button>
 
               {banners.length === 0 ? (
                 <Card>
-                  <CardContent className="py-8 text-center text-muted-foreground text-sm">
+                  <CardContent className="py-6 text-center text-muted-foreground text-xs">
                     Nenhum banner cadastrado
                   </CardContent>
                 </Card>
@@ -600,22 +647,21 @@ export default function ConfiguracoesCatalogo() {
                 <div className="space-y-2">
                   {banners.map((banner) => (
                     <Card key={banner.id} className={!banner.ativo ? 'opacity-50' : ''}>
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-28 h-16 rounded overflow-hidden bg-muted flex-shrink-0">
+                      <CardContent className="p-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-24 h-14 rounded overflow-hidden bg-muted flex-shrink-0">
                             <img src={banner.imagem_url} alt={banner.titulo || 'Banner'} className="w-full h-full object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{banner.titulo || 'Sem título'}</p>
-                            {banner.subtitulo && <p className="text-xs text-muted-foreground truncate">{banner.subtitulo}</p>}
-                            <span className="text-xs text-muted-foreground">Ordem: {banner.ordem}</span>
+                            <p className="text-xs font-medium truncate">{banner.titulo || 'Sem título'}</p>
+                            <span className="text-[10px] text-muted-foreground">Ordem: {banner.ordem}</span>
                           </div>
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <div className="flex items-center gap-1 flex-shrink-0">
                             <Switch checked={banner.ativo} onCheckedChange={() => toggleBannerAtivo(banner)} />
-                            <Button variant="outline" size="sm" className="h-7 px-2" onClick={() => editarBanner(banner)}>
+                            <Button variant="outline" size="sm" className="h-6 px-1.5" onClick={() => editarBanner(banner)}>
                               <Pencil className="h-3 w-3" />
                             </Button>
-                            <Button variant="destructive" size="sm" className="h-7 px-2" onClick={() => deletarBanner(banner.id)}>
+                            <Button variant="destructive" size="sm" className="h-6 px-1.5" onClick={() => deletarBanner(banner.id)}>
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
@@ -628,42 +674,42 @@ export default function ConfiguracoesCatalogo() {
             </>
           ) : (
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <CardTitle className="text-base">{bannerEditando ? 'Editar Banner' : 'Novo Banner'}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Título (opcional)</Label>
-                    <Input value={bannerTitulo} onChange={(e) => setBannerTitulo(e.target.value)} placeholder="Ex: Promoção de Verão" />
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Título (opcional)</Label>
+                    <Input value={bannerTitulo} onChange={(e) => setBannerTitulo(e.target.value)} placeholder="Ex: Promoção" className="h-8" />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Subtítulo (opcional)</Label>
-                    <Input value={bannerSubtitulo} onChange={(e) => setBannerSubtitulo(e.target.value)} placeholder="Ex: Até 20% OFF" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Link (opcional)</Label>
-                    <Input value={bannerLink} onChange={(e) => setBannerLink(e.target.value)} placeholder="https://..." />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Ordem</Label>
-                    <Input type="number" value={bannerOrdem} onChange={(e) => setBannerOrdem(e.target.value)} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">Subtítulo (opcional)</Label>
+                    <Input value={bannerSubtitulo} onChange={(e) => setBannerSubtitulo(e.target.value)} placeholder="Ex: 20% OFF" className="h-8" />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Imagem do Banner</Label>
-                  <Input type="file" accept="image/*" onChange={(e) => setBannerImagemFile(e.target.files?.[0] || null)} />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Link (opcional)</Label>
+                    <Input value={bannerLink} onChange={(e) => setBannerLink(e.target.value)} placeholder="https://..." className="h-8" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Ordem</Label>
+                    <Input type="number" value={bannerOrdem} onChange={(e) => setBannerOrdem(e.target.value)} className="h-8" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Imagem do Banner</Label>
+                  <Input type="file" accept="image/*" onChange={(e) => setBannerImagemFile(e.target.files?.[0] || null)} className="h-8" />
                   {bannerEditando?.imagem_url && !bannerImagemFile && (
-                    <div className="w-full h-24 rounded overflow-hidden bg-muted">
+                    <div className="w-full h-20 rounded overflow-hidden bg-muted">
                       <img src={bannerEditando.imagem_url} alt="Preview" className="w-full h-full object-cover" />
                     </div>
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={resetBannerForm} className="flex-1">Cancelar</Button>
-                  <Button onClick={handleSalvarBanner} disabled={bannerSalvando} className="flex-1">
+                  <Button variant="outline" onClick={resetBannerForm} className="flex-1" size="sm">Cancelar</Button>
+                  <Button onClick={handleSalvarBanner} disabled={bannerSalvando} className="flex-1" size="sm">
                     {bannerSalvando ? 'Salvando...' : bannerEditando ? 'Atualizar' : 'Criar Banner'}
                   </Button>
                 </div>

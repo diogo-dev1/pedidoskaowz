@@ -1,0 +1,1 @@
+ALTER TABLE public.catalogo_modelos ADD COLUMN pronta_entrega boolean NOT NULL DEFAULT false;
