@@ -4,10 +4,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench, ChevronDown, Shirt, Coffee, Package, Flame, Star, ArrowRight } from 'lucide-react';
+import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench, ChevronDown, Shirt, Coffee, Package, Flame, Star, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
+
+interface Banner {
+  id: string;
+  titulo: string | null;
+  subtitulo: string | null;
+  imagem_url: string;
+  link: string | null;
+  ordem: number;
+  ativo: boolean;
+}
 
 interface Modelo {
   id: string;
@@ -38,6 +48,8 @@ export default function CatalogoPublico() {
   const [loading, setLoading] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
   const [categoriasVisiveis, setCategoriasVisiveis] = useState<CategoriaVisivel[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [bannerAtual, setBannerAtual] = useState(0);
 
   const allCategorias = ['Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
 
@@ -64,6 +76,7 @@ export default function CatalogoPublico() {
   useEffect(() => {
     carregarModelos();
     carregarCategoriasVisiveis();
+    carregarBanners();
     const catParam = searchParams.get('categoria');
     const verTudoParam = searchParams.get('ver');
     
@@ -74,6 +87,24 @@ export default function CatalogoPublico() {
       setMostrarLanding(false);
     }
   }, []);
+
+  // Auto-rotate banners
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      setBannerAtual(prev => (prev + 1) % banners.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [banners.length]);
+
+  const carregarBanners = async () => {
+    const { data } = await supabase
+      .from('banners_catalogo')
+      .select('*')
+      .eq('ativo', true)
+      .order('ordem');
+    if (data) setBanners(data as Banner[]);
+  };
 
   const selecionarCategoria = (categoria: string) => {
     setCategoriaAtiva(categoria);
@@ -193,6 +224,61 @@ export default function CatalogoPublico() {
         </header>
 
         <div className="container mx-auto px-4 pb-16">
+          {/* Banner Carousel */}
+          {banners.length > 0 && (
+            <div className="relative max-w-5xl mx-auto mb-8 rounded-xl overflow-hidden">
+              <div className="relative aspect-[21/9] md:aspect-[3/1]">
+                {banners.map((banner, idx) => (
+                  <div
+                    key={banner.id}
+                    className={`absolute inset-0 transition-opacity duration-700 ${idx === bannerAtual ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                    onClick={() => banner.link && window.open(banner.link, '_blank')}
+                    style={{ cursor: banner.link ? 'pointer' : 'default' }}
+                  >
+                    <img
+                      src={banner.imagem_url}
+                      alt={banner.titulo || 'Banner'}
+                      className="w-full h-full object-cover"
+                    />
+                    {(banner.titulo || banner.subtitulo) && (
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-4 md:p-8">
+                        <div>
+                          {banner.titulo && <h2 className="text-white text-lg md:text-3xl font-black">{banner.titulo}</h2>}
+                          {banner.subtitulo && <p className="text-zinc-300 text-xs md:text-base mt-1">{banner.subtitulo}</p>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {banners.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setBannerAtual(prev => (prev - 1 + banners.length) % banners.length)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white rounded-full p-1.5 transition-colors z-10"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => setBannerAtual(prev => (prev + 1) % banners.length)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white rounded-full p-1.5 transition-colors z-10"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                    {banners.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setBannerAtual(idx)}
+                        className={`w-2 h-2 rounded-full transition-all ${idx === bannerAtual ? 'bg-accent w-6' : 'bg-white/50 hover:bg-white/80'}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Grid de Categorias - Design premium */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 max-w-5xl mx-auto mb-10">
             {categoriasVenda.map((cat, idx) => {

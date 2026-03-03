@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      banners_catalogo: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          imagem_url: string
+          link: string | null
+          ordem: number
+          subtitulo: string | null
+          titulo: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          imagem_url: string
+          link?: string | null
+          ordem?: number
+          subtitulo?: string | null
+          titulo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          imagem_url?: string
+          link?: string | null
+          ordem?: number
+          subtitulo?: string | null
+          titulo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       catalogo_modelos: {
         Row: {
           apresentacao_venda: string | null
