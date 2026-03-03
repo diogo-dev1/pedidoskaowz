@@ -134,6 +134,30 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracoes_catalogo: {
+        Row: {
+          chave: string
+          created_at: string
+          id: string
+          updated_at: string
+          valor: string
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor: string
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor?: string
+        }
+        Relationships: []
+      }
       info_etapas_customizacao: {
         Row: {
           conteudo: string | null

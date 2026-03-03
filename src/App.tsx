@@ -17,6 +17,7 @@ import GerenciarModelos from "./pages/admin/GerenciarModelos";
 import GerenciarConfiguracoes from "./pages/admin/GerenciarConfiguracoes";
 import GerenciarComponentes from "./pages/admin/GerenciarComponentes";
 import GerenciarInformativos from "./pages/admin/GerenciarInformativos";
+import ConfiguracoesCatalogo from "./pages/admin/ConfiguracoesCatalogo";
 import MensagensPadrao from "./pages/MensagensPadrao";
 import Dashboard from "./pages/Dashboard";
 import KanbanBoard from "./pages/KanbanBoard";
@@ -95,6 +96,16 @@ const App = () => (
                 <ProtectedRoute requireAdmin>
                   <Layout>
                     <GerenciarInformativos />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/catalogo"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <ConfiguracoesCatalogo />
                   </Layout>
                 </ProtectedRoute>
               }
