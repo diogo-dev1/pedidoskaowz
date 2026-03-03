@@ -72,6 +72,7 @@ export type Database = {
           id: string
           ordem: number
           visivel: boolean
+          visivel_todas: boolean
         }
         Insert: {
           categoria: string
@@ -79,6 +80,7 @@ export type Database = {
           id?: string
           ordem?: number
           visivel?: boolean
+          visivel_todas?: boolean
         }
         Update: {
           categoria?: string
@@ -86,6 +88,7 @@ export type Database = {
           id?: string
           ordem?: number
           visivel?: boolean
+          visivel_todas?: boolean
         }
         Relationships: []
       }

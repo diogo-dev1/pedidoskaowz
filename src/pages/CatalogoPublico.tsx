@@ -24,6 +24,7 @@ interface Modelo {
 interface CategoriaVisivel {
   categoria: string;
   visivel: boolean;
+  visivel_todas: boolean;
   ordem: number;
 }
 
@@ -124,11 +125,22 @@ export default function CatalogoPublico() {
     }
   };
 
+  // Categorias permitidas na visão "Todas"
+  const categoriasPermitidasTodas = new Set(
+    categoriasVisiveis.filter(c => c.visivel_todas).map(c => c.categoria)
+  );
+
   const modelosFiltrados = modelos.filter((modelo) => {
-    const matchCategoria = !categoriaAtiva || (modelo.categorias && modelo.categorias.includes(categoriaAtiva));
-    const matchBusca = !busca || 
-      modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
-    return matchCategoria && matchBusca;
+    if (categoriaAtiva) {
+      const matchCategoria = modelo.categorias && modelo.categorias.includes(categoriaAtiva);
+      const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
+      return matchCategoria && matchBusca;
+    }
+    // "Todas" - só mostra categorias com visivel_todas = true
+    const temCategoriaPermitida = categoriasVisiveis.length === 0 || 
+      (modelo.categorias && modelo.categorias.some(c => categoriasPermitidasTodas.has(c)));
+    const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
+    return temCategoriaPermitida && matchBusca;
   });
 
   const toggleSelecao = (id: string) => {
