@@ -43,6 +43,55 @@ const PRODUCTS_QUERY = `
   }
 `;
 
+function convertPlainToHtml(text: string): string {
+  const sectionHeaders = [
+    'Itens Inclusos', 'Itens inclusos', 'ITENS INCLUSOS',
+    'Especificações técnicas', 'Especificações Técnicas', 'ESPECIFICAÇÕES TÉCNICAS',
+    'Especificações', 'ESPECIFICAÇÕES',
+    'Diferenciais', 'DIFERENCIAIS',
+    'Descrição do produto', 'Descrição do Produto', 'DESCRIÇÃO DO PRODUTO',
+    'Descrição', 'DESCRIÇÃO',
+    'Características', 'CARACTERÍSTICAS',
+    'Detalhes', 'DETALHES',
+    'Material', 'MATERIAL',
+    'Dimensões', 'DIMENSÕES',
+    'Composição', 'COMPOSIÇÃO',
+  ];
+
+  let html = text;
+
+  // Replace known section headers with <h2>
+  for (const header of sectionHeaders) {
+    // Match header followed by : or at start of line
+    const regex = new RegExp(`^(${header}):?\\s*`, 'gmi');
+    html = html.replace(regex, `</p><h2 class="theme-title">${header}</h2><p>`);
+  }
+
+  // Also match emoji-prefixed headers like "📌 Especificações técnicas:"
+  html = html.replace(/^([📌✔️🔪⚡🔥💎✅🎯📋🛡️])\s*([^:\n]+):?\s*$/gm, '</p><h2 class="theme-title">$2</h2><p>');
+
+  // Convert lines starting with emoji bullets into list items
+  html = html.replace(/^([✔️✅📌🔪⚡•●▪➤➜→])\s*(.+)$/gm, '<li>$2</li>');
+
+  // Wrap consecutive <li> in <ul>
+  html = html.replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>');
+
+  // Convert double line breaks into paragraph breaks
+  html = html.replace(/\n\n+/g, '</p><p>');
+
+  // Convert single line breaks into <br>
+  html = html.replace(/\n/g, '<br>');
+
+  // Wrap in paragraphs
+  html = `<p>${html}</p>`;
+
+  // Clean up empty paragraphs
+  html = html.replace(/<p>\s*<\/p>/g, '');
+  html = html.replace(/<p>\s*<br>\s*<\/p>/g, '');
+
+  return html;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -214,12 +263,13 @@ serve(async (req) => {
       // Default
       if (cats.length === 0) cats.push('EDCs');
 
-      // Use descriptionHtml if available, otherwise wrap plain description in HTML paragraphs
-      const htmlContent = product.descriptionHtml && product.descriptionHtml.trim().length > 0
-        ? product.descriptionHtml
-        : product.description
-          ? product.description.split(/\n\n+/).map((p: string) => `<p>${p.trim()}</p>`).join('')
-          : null;
+      // Use descriptionHtml if available, otherwise convert plain text to structured HTML
+      let htmlContent: string | null = null;
+      if (product.descriptionHtml && product.descriptionHtml.trim().length > 0) {
+        htmlContent = product.descriptionHtml;
+      } else if (product.description && product.description.trim().length > 0) {
+        htmlContent = convertPlainToHtml(product.description);
+      }
 
       const { data: modeloData, error: modeloError } = await supabaseAdmin
         .from('catalogo_modelos')
