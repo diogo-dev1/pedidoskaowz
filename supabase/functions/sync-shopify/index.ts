@@ -17,7 +17,7 @@ const PRODUCTS_QUERY = `
         node {
           id
           title
-          description
+          description(truncateAt: 10000)
           descriptionHtml
           productType
           tags
@@ -214,6 +214,13 @@ serve(async (req) => {
       // Default
       if (cats.length === 0) cats.push('EDCs');
 
+      // Use descriptionHtml if available, otherwise wrap plain description in HTML paragraphs
+      const htmlContent = product.descriptionHtml && product.descriptionHtml.trim().length > 0
+        ? product.descriptionHtml
+        : product.description
+          ? product.description.split(/\n\n+/).map((p: string) => `<p>${p.trim()}</p>`).join('')
+          : null;
+
       const { data: modeloData, error: modeloError } = await supabaseAdmin
         .from('catalogo_modelos')
         .upsert(
@@ -224,7 +231,7 @@ serve(async (req) => {
             categorias: cats,
             imagem_modelo: mainImage,
             apresentacao_venda: product.description || null,
-            descricao_html: product.descriptionHtml || null,
+            descricao_html: htmlContent,
           },
           { onConflict: 'nome_modelo' }
         )
