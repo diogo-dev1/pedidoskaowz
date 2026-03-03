@@ -64,6 +64,7 @@ export type Database = {
           ordem_catalogo: number
           prazo_entrega: string | null
           preco_base: number
+          pronta_entrega: boolean
           updated_at: string
           video_url: string | null
           visivel_catalogo: boolean
@@ -82,6 +83,7 @@ export type Database = {
           ordem_catalogo?: number
           prazo_entrega?: string | null
           preco_base: number
+          pronta_entrega?: boolean
           updated_at?: string
           video_url?: string | null
           visivel_catalogo?: boolean
@@ -100,6 +102,7 @@ export type Database = {
           ordem_catalogo?: number
           prazo_entrega?: string | null
           preco_base?: number
+          pronta_entrega?: boolean
           updated_at?: string
           video_url?: string | null
           visivel_catalogo?: boolean

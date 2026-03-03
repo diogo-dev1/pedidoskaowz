@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench, ChevronDown, Shirt, Coffee, Package, Flame, Star, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench, ChevronDown, Shirt, Coffee, Package, Flame, Star, ArrowRight, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
@@ -31,6 +31,7 @@ interface Modelo {
   visivel_catalogo: boolean;
   visivel_todas: boolean;
   ordem_catalogo: number;
+  pronta_entrega: boolean;
 }
 
 interface CategoriaVisivel {
@@ -57,6 +58,7 @@ export default function CatalogoPublico() {
   const [descontoPix, setDescontoPix] = useState(5);
   const [textoPix, setTextoPix] = useState('no PIX');
   const [textoParcelamento, setTextoParcelamento] = useState('3x sem juros ou até 12x no cartão');
+  const [filtroProntaEntrega, setFiltroProntaEntrega] = useState(false);
 
   const allCategorias = ['Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
 
@@ -87,11 +89,15 @@ export default function CatalogoPublico() {
     carregarConfigPrecos();
     const catParam = searchParams.get('categoria');
     const verTudoParam = searchParams.get('ver');
+    const prontaParam = searchParams.get('pronta_entrega');
     
     if (catParam) {
       setCategoriaAtiva(catParam);
       setMostrarLanding(false);
     } else if (verTudoParam === 'tudo') {
+      setMostrarLanding(false);
+    } else if (prontaParam === 'true') {
+      setFiltroProntaEntrega(true);
       setMostrarLanding(false);
     }
   }, []);
@@ -132,6 +138,7 @@ export default function CatalogoPublico() {
 
   const selecionarCategoria = (categoria: string) => {
     setCategoriaAtiva(categoria);
+    setFiltroProntaEntrega(false);
     setMostrarLanding(false);
     setSearchParams({ categoria });
   };
@@ -139,7 +146,15 @@ export default function CatalogoPublico() {
   const verTudo = () => {
     setMostrarLanding(false);
     setCategoriaAtiva(null);
+    setFiltroProntaEntrega(false);
     setSearchParams({});
+  };
+
+  const verProntaEntrega = () => {
+    setMostrarLanding(false);
+    setCategoriaAtiva(null);
+    setFiltroProntaEntrega(true);
+    setSearchParams({ pronta_entrega: 'true' });
   };
 
   const carregarCategoriasVisiveis = async () => {
@@ -171,7 +186,7 @@ export default function CatalogoPublico() {
       const modelosFiltrados = (data || []).filter(m => 
         m.imagem_modelo || m.video_url || modelosComMidiaCatalogo.has(m.id)
       );
-      setModelos(modelosFiltrados);
+      setModelos(modelosFiltrados as Modelo[]);
     } catch (error) {
       console.error('Erro ao carregar modelos:', error);
       toast.error('Erro ao carregar catálogo');
@@ -186,17 +201,24 @@ export default function CatalogoPublico() {
   );
 
   const modelosFiltrados = modelos.filter((modelo) => {
+    // Filtro pronta entrega
+    if (filtroProntaEntrega && !modelo.pronta_entrega) return false;
+
     if (categoriaAtiva) {
       const matchCategoria = modelo.categorias && modelo.categorias.includes(categoriaAtiva);
       const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
       return matchCategoria && matchBusca;
     }
-    // "Todas" - respects both category-level and product-level visivel_todas
-    const categoriaPermitida = categoriasVisiveis.length === 0 || 
-      (modelo.categorias && modelo.categorias.some(c => categoriasPermitidasTodas.has(c)));
-    const produtoPermitido = modelo.visivel_todas !== false;
+    if (!filtroProntaEntrega) {
+      // "Todas" - respects both category-level and product-level visivel_todas
+      const categoriaPermitida = categoriasVisiveis.length === 0 || 
+        (modelo.categorias && modelo.categorias.some(c => categoriasPermitidasTodas.has(c)));
+      const produtoPermitido = modelo.visivel_todas !== false;
+      const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
+      return categoriaPermitida && produtoPermitido && matchBusca;
+    }
     const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
-    return categoriaPermitida && produtoPermitido && matchBusca;
+    return matchBusca;
   }).sort((a, b) => (a.ordem_catalogo || 999) - (b.ordem_catalogo || 999));
 
   const toggleSelecao = (id: string) => {
@@ -228,7 +250,7 @@ export default function CatalogoPublico() {
     window.open(url, '_blank');
   };
 
-  // Landing Page - Qualificação do Cliente
+  // Landing Page
   if (mostrarLanding) {
     return (
       <div className="min-h-screen bg-zinc-950 overflow-x-hidden">
@@ -304,7 +326,7 @@ export default function CatalogoPublico() {
             </div>
           )}
 
-          {/* Grid de Categorias - Design premium */}
+          {/* Grid de Categorias */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 max-w-5xl mx-auto mb-10">
             {categoriasVenda.map((cat, idx) => {
               const Icon = cat.icon;
@@ -330,14 +352,22 @@ export default function CatalogoPublico() {
             })}
           </div>
 
-          {/* CTA - Ver todo catálogo */}
-          <div className="flex justify-center max-w-sm mx-auto">
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto">
             <Button
               onClick={verTudo}
-              className="w-full bg-accent hover:bg-accent/90 text-white font-bold h-12 text-sm md:text-base rounded-xl shadow-[0_0_30px_rgba(251,146,60,0.3)] hover:shadow-[0_0_40px_rgba(251,146,60,0.5)] transition-all"
+              className="flex-1 bg-accent hover:bg-accent/90 text-white font-bold h-12 text-sm md:text-base rounded-xl shadow-[0_0_30px_rgba(251,146,60,0.3)] hover:shadow-[0_0_40px_rgba(251,146,60,0.5)] transition-all"
             >
               <Star className="h-4 w-4 mr-2" />
               Ver todo o catálogo
+            </Button>
+            <Button
+              onClick={verProntaEntrega}
+              variant="outline"
+              className="flex-1 border-emerald-600/50 text-emerald-400 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 font-bold h-12 text-sm md:text-base rounded-xl transition-all"
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              Pronta Entrega
             </Button>
           </div>
 
@@ -375,6 +405,7 @@ export default function CatalogoPublico() {
                 onClick={() => {
                   setMostrarLanding(true);
                   setCategoriaAtiva(null);
+                  setFiltroProntaEntrega(false);
                   setBusca('');
                   setModelosSelecionados(new Set());
                 }}
@@ -382,7 +413,9 @@ export default function CatalogoPublico() {
               >
                 ← Voltar
               </Button>
-              <h1 className="text-lg md:text-3xl font-bold text-white tracking-tight">CATÁLOGO KAOWZ</h1>
+              <h1 className="text-lg md:text-3xl font-bold text-white tracking-tight">
+                {filtroProntaEntrega ? 'PRONTA ENTREGA' : 'CATÁLOGO KAOWZ'}
+              </h1>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
               <div className="relative flex-1 md:w-80">
@@ -410,22 +443,38 @@ export default function CatalogoPublico() {
                   {categoriaAtiva && (
                     <Badge className="bg-accent text-white text-xs">{categoriaAtiva}</Badge>
                   )}
+                  {filtroProntaEntrega && (
+                    <Badge className="bg-emerald-600 text-white text-xs">Pronta Entrega</Badge>
+                  )}
                 </div>
                 <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
               </CollapsibleTrigger>
               <CollapsibleContent className="px-3 md:px-4 pb-3 md:pb-4">
                 <div className="space-y-1.5 md:space-y-2">
                   <Button
-                    variant={!categoriaAtiva ? "default" : "ghost"}
+                    variant={!categoriaAtiva && !filtroProntaEntrega ? "default" : "ghost"}
                     size="sm"
                     className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 ${
-                      !categoriaAtiva 
+                      !categoriaAtiva && !filtroProntaEntrega
                         ? 'bg-accent text-white hover:bg-accent/90' 
                         : 'text-zinc-300 hover:bg-zinc-700'
                     }`}
-                    onClick={() => setCategoriaAtiva(null)}
+                    onClick={() => { setCategoriaAtiva(null); setFiltroProntaEntrega(false); }}
                   >
                     Todas
+                  </Button>
+                  <Button
+                    variant={filtroProntaEntrega ? "default" : "ghost"}
+                    size="sm"
+                    className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 gap-1.5 ${
+                      filtroProntaEntrega
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
+                        : 'text-emerald-400 hover:bg-zinc-700'
+                    }`}
+                    onClick={() => { setCategoriaAtiva(null); setFiltroProntaEntrega(true); }}
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    Pronta Entrega
                   </Button>
                   {categorias.map((cat) => (
                     <Button
@@ -437,7 +486,7 @@ export default function CatalogoPublico() {
                           ? 'bg-accent text-white hover:bg-accent/90' 
                           : 'text-zinc-300 hover:bg-zinc-700'
                       }`}
-                      onClick={() => setCategoriaAtiva(cat)}
+                      onClick={() => { setCategoriaAtiva(cat); setFiltroProntaEntrega(false); }}
                     >
                       {cat}
                     </Button>
@@ -528,6 +577,14 @@ export default function CatalogoPublico() {
                             >
                               {selecionado && <Check className="h-4 w-4" />}
                             </button>
+
+                            {/* Badge pronta entrega */}
+                            {modelo.pronta_entrega && (
+                              <Badge className="absolute top-3 left-3 bg-emerald-600 text-white border-0 text-[10px] gap-0.5 z-20">
+                                <Zap className="h-3 w-3" />
+                                Pronta Entrega
+                              </Badge>
+                            )}
 
                             {/* Badge de categoria */}
                             {modelo.categorias && modelo.categorias.length > 0 && (

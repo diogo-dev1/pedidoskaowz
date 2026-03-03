@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Modelo {
@@ -18,6 +18,7 @@ interface Modelo {
   garantia: string | null;
   prazo_entrega: string | null;
   aspect_ratio: string;
+  pronta_entrega: boolean;
 }
 
 interface Midia {
@@ -72,7 +73,7 @@ export default function CatalogoDetalhe() {
         .maybeSingle();
 
       if (error) throw error;
-      setModelo(data);
+      setModelo(data as Modelo | null);
     } catch (error) {
       console.error('Erro ao carregar modelo:', error);
       toast.error('Erro ao carregar detalhes');
@@ -100,9 +101,16 @@ export default function CatalogoDetalhe() {
   const enviarWhatsApp = () => {
     if (!modelo) return;
 
-    const mensagem = exibirPrecos
+    const imagemPrincipal = modelo.imagem_modelo || (imagensDisponiveis.length > 0 ? imagensDisponiveis[0] : null);
+
+    let mensagem = exibirPrecos
       ? `Olá! Gostaria de saber mais sobre:\n\n${modelo.nome_modelo}\nR$ ${modelo.preco_base.toFixed(2)}`
       : `Olá! Gostaria de saber mais sobre:\n\n${modelo.nome_modelo}`;
+
+    if (imagemPrincipal) {
+      mensagem += `\n\n${imagemPrincipal}`;
+    }
+
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
@@ -114,14 +122,6 @@ export default function CatalogoDetalhe() {
     ...(modelo?.imagem_modelo ? [modelo.imagem_modelo] : []),
     ...midias.filter(m => !m.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i)).map(m => m.url)
   ];
-
-  const proximaImagem = () => {
-    setImagemAtual((prev) => (prev + 1) % imagensDisponiveis.length);
-  };
-
-  const imagemAnterior = () => {
-    setImagemAtual((prev) => (prev - 1 + imagensDisponiveis.length) % imagensDisponiveis.length);
-  };
 
   if (loading) {
     return (
@@ -210,17 +210,21 @@ export default function CatalogoDetalhe() {
 
           {/* Informações */}
           <div className="space-y-6 min-w-0 overflow-hidden">
-            {/* Nome e categoria */}
+            {/* Nome, categoria e pronta entrega */}
             <div>
-            {modelo.categorias && modelo.categorias.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {modelo.categorias.map((cat: string) => (
-                    <Badge key={cat} className="bg-zinc-800 text-zinc-300 border-zinc-700">
-                      {cat}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+              <div className="flex flex-wrap gap-1 mb-2">
+                {modelo.pronta_entrega && (
+                  <Badge className="bg-emerald-600 text-white border-0 gap-0.5">
+                    <Zap className="h-3 w-3" />
+                    Pronta Entrega
+                  </Badge>
+                )}
+                {modelo.categorias && modelo.categorias.length > 0 && modelo.categorias.map((cat: string) => (
+                  <Badge key={cat} className="bg-zinc-800 text-zinc-300 border-zinc-700">
+                    {cat}
+                  </Badge>
+                ))}
+              </div>
               <h1 className="text-2xl md:text-3xl font-bold text-white break-words">
                 {modelo.nome_modelo}
               </h1>
@@ -290,6 +294,11 @@ export default function CatalogoDetalhe() {
 
             {/* Benefícios */}
             <div className="flex flex-wrap gap-2 text-xs">
+              {modelo.pronta_entrega && (
+                <span className="bg-emerald-900/50 text-emerald-300 px-3 py-1.5 rounded-full">
+                  ⚡ Entrega imediata
+                </span>
+              )}
               <span className="bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-full">
                 ✓ Compra segura
               </span>
