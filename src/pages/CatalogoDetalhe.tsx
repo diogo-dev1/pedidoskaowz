@@ -6,6 +6,31 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, MessageCircle, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
+function convertPlainToHtml(text: string): string {
+  const sectionHeaders = [
+    'Itens Inclusos', 'Itens inclusos',
+    'Especificações técnicas', 'Especificações Técnicas',
+    'Especificações', 'Diferenciais',
+    'Descrição do produto', 'Descrição do Produto',
+    'Descrição', 'Características', 'Detalhes',
+    'Material', 'Dimensões', 'Composição',
+  ];
+  let html = text;
+  for (const header of sectionHeaders) {
+    const regex = new RegExp(`^(${header}):?\\s*`, 'gmi');
+    html = html.replace(regex, `</p><h2 class="theme-title">${header}</h2><p>`);
+  }
+  html = html.replace(/^([📌✔️🔪⚡🔥💎✅🎯📋🛡️])\s*([^:\n]+):?\s*$/gm, '</p><h2 class="theme-title">$2</h2><p>');
+  html = html.replace(/^([✔️✅📌🔪⚡•●▪➤➜→])\s*(.+)$/gm, '<li>$2</li>');
+  html = html.replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>');
+  html = html.replace(/\n\n+/g, '</p><p>');
+  html = html.replace(/\n/g, '<br>');
+  html = `<p>${html}</p>`;
+  html = html.replace(/<p>\s*<\/p>/g, '');
+  html = html.replace(/<p>\s*<br>\s*<\/p>/g, '');
+  return html;
+}
+
 interface Modelo {
   id: string;
   nome_modelo: string;
@@ -262,17 +287,33 @@ export default function CatalogoDetalhe() {
               </div>
             )}
 
-            {/* Descrição texto simples (fallback) */}
-            {!modelo.descricao_html && modelo.apresentacao_venda && (
-              <div className="bg-zinc-800/50 rounded-lg p-4">
-                <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide mb-3">
-                  Sobre o produto
-                </h2>
-                <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-line break-words">
-                  {modelo.apresentacao_venda}
-                </p>
-              </div>
-            )}
+            {/* Descrição texto simples (fallback) - convertida para HTML */}
+            {!modelo.descricao_html && modelo.apresentacao_venda && (() => {
+              const text = modelo.apresentacao_venda!;
+              const hasStructure = /Itens Inclusos|Especificações|Diferenciais|Características|Detalhes|[✔️📌🔪⚡✅]/i.test(text);
+              if (hasStructure) {
+                const html = convertPlainToHtml(text);
+                return (
+                  <div className="bg-zinc-800/50 rounded-xl p-5 md:p-6">
+                    <h2 className="text-lg font-bold text-accent mb-4">Sobre o produto</h2>
+                    <div
+                      className="shopify-description max-w-none text-zinc-300 text-[15px] leading-7 break-words"
+                      dangerouslySetInnerHTML={{ __html: html }}
+                    />
+                  </div>
+                );
+              }
+              return (
+                <div className="bg-zinc-800/50 rounded-lg p-4">
+                  <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide mb-3">
+                    Sobre o produto
+                  </h2>
+                  <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-line break-words">
+                    {text}
+                  </p>
+                </div>
+              );
+            })()}
 
             {/* Dados técnicos */}
             {(modelo.prazo_entrega || modelo.garantia) && (
