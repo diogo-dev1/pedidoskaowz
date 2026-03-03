@@ -251,30 +251,32 @@ export default function CatalogoDetalhe() {
 
             {/* Descrição completa HTML da Shopify */}
             {modelo.descricao_html && (
-              <div className="bg-card rounded-xl border border-border p-5 md:p-6">
+              <div className="bg-zinc-800/50 rounded-xl p-5 md:p-6">
                 <h2 className="text-lg font-bold text-accent mb-4">
                   Descrição completa
                 </h2>
                 <div
-                  className="prose prose-sm max-w-none text-foreground/90 leading-relaxed break-words
-                    [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-accent [&_h1]:mt-6 [&_h1]:mb-3
-                    [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-accent [&_h2]:mt-6 [&_h2]:mb-3
-                    [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:text-accent [&_h3]:mt-5 [&_h3]:mb-2
-                    [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:text-accent [&_h4]:mt-4 [&_h4]:mb-2
-                    [&_p]:mb-3 [&_p]:text-foreground/85 [&_p]:text-base [&_p]:leading-7
-                    [&_ul]:list-none [&_ul]:pl-0 [&_ul]:mb-4 [&_ul]:space-y-2
-                    [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-4 [&_ol]:space-y-2
-                    [&_li]:text-foreground/85 [&_li]:text-base [&_li]:leading-8
-                    [&_strong]:text-foreground [&_strong]:font-semibold
+                  className="max-w-none text-zinc-300 text-[15px] leading-7 break-words
+                    [&_div]:contents
+                    [&_section]:contents
+                    [&_h1]:block [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-accent [&_h1]:mt-6 [&_h1]:mb-3
+                    [&_h2]:block [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-accent [&_h2]:mt-6 [&_h2]:mb-3
+                    [&_h3]:block [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-accent [&_h3]:mt-5 [&_h3]:mb-2
+                    [&_h4]:block [&_h4]:text-base [&_h4]:font-semibold [&_h4]:text-accent [&_h4]:mt-4 [&_h4]:mb-2
+                    [&_p]:block [&_p]:mb-3 [&_p]:text-zinc-300 [&_p]:text-[15px] [&_p]:leading-7
+                    [&_ul]:block [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-4 [&_ul]:space-y-1
+                    [&_ol]:block [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-4 [&_ol]:space-y-1
+                    [&_li]:text-zinc-300 [&_li]:text-[15px] [&_li]:leading-7
+                    [&_strong]:text-white [&_strong]:font-semibold
                     [&_em]:italic
-                    [&_hr]:border-border [&_hr]:my-6
-                    [&_table]:w-full [&_table]:border-collapse [&_table]:mb-4
-                    [&_th]:bg-muted [&_th]:text-foreground [&_th]:p-3 [&_th]:text-left [&_th]:text-sm [&_th]:font-semibold
-                    [&_td]:border-b [&_td]:border-border [&_td]:p-3 [&_td]:text-sm [&_td]:text-foreground/80
-                    [&_tr:hover]:bg-muted/50
+                    [&_hr]:block [&_hr]:border-zinc-700 [&_hr]:my-6
+                    [&_table]:block [&_table]:w-full [&_table]:border-collapse [&_table]:mb-4
+                    [&_th]:bg-zinc-700 [&_th]:text-white [&_th]:p-3 [&_th]:text-left [&_th]:text-sm [&_th]:font-semibold
+                    [&_td]:border-b [&_td]:border-zinc-700 [&_td]:p-3 [&_td]:text-sm [&_td]:text-zinc-300
                     [&_a]:text-accent [&_a]:underline [&_a]:hover:text-accent/80
                     [&_img]:rounded-lg [&_img]:my-3 [&_img]:max-w-full
-                    [&_br]:block [&_br]:mb-1"
+                    [&_br]:block [&_br]:mb-1
+                    [&_.theme-title]:text-xl [&_.theme-title]:font-bold [&_.theme-title]:text-accent [&_.theme-title]:mt-4 [&_.theme-title]:mb-3"
                   dangerouslySetInnerHTML={{ __html: modelo.descricao_html }}
                 />
               </div>
