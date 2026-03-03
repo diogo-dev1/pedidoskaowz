@@ -74,9 +74,9 @@ export default function MontarKit() {
 
   const carregarCategorias = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('categorias_catalogo_visiveis')
-        .select('categoria, icone')
+        .select('categoria, icone') as any)
         .eq('visivel', true)
         .eq('visivel_kit', true)
         .order('ordem');
