@@ -3,10 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, X, Package, Plus, Minus, ArrowLeft, Check } from 'lucide-react';
+import { Search, MessageCircle, X, Package, Plus, Minus, ArrowLeft, Check, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getIconComponent } from '@/lib/icon-utils';
 
 interface Modelo {
   id: string;
@@ -18,6 +19,11 @@ interface Modelo {
   pronta_entrega: boolean;
 }
 
+interface Categoria {
+  categoria: string;
+  icone: string;
+}
+
 interface ItemKit {
   modelo: Modelo;
   quantidade: number;
@@ -26,6 +32,8 @@ interface ItemKit {
 export default function MontarKit() {
   const navigate = useNavigate();
   const [modelos, setModelos] = useState<Modelo[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
   const [loading, setLoading] = useState(true);
   const [kitItens, setKitItens] = useState<Map<string, ItemKit>>(new Map());
@@ -33,6 +41,7 @@ export default function MontarKit() {
 
   useEffect(() => {
     carregarModelos();
+    carregarCategorias();
   }, []);
 
   const carregarModelos = async () => {
@@ -60,6 +69,20 @@ export default function MontarKit() {
       toast.error('Erro ao carregar produtos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const carregarCategorias = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categorias_catalogo_visiveis')
+        .select('categoria, icone')
+        .eq('visivel', true)
+        .order('ordem');
+      if (error) throw error;
+      setCategorias((data || []) as Categoria[]);
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error);
     }
   };
 
@@ -114,9 +137,11 @@ export default function MontarKit() {
     window.open(url, '_blank');
   };
 
-  const modelosFiltrados = modelos.filter(m =>
-    !busca || m.nome_modelo.toLowerCase().includes(busca.toLowerCase())
-  );
+  const modelosFiltrados = modelos.filter(m => {
+    const matchBusca = !busca || m.nome_modelo.toLowerCase().includes(busca.toLowerCase());
+    const matchCategoria = !categoriaSelecionada || (m.categorias && m.categorias.includes(categoriaSelecionada));
+    return matchBusca && matchCategoria;
+  });
 
   const getQuantidade = (modeloId: string) => {
     return kitItens.get(modeloId)?.quantidade || 0;
@@ -171,8 +196,44 @@ export default function MontarKit() {
         </div>
       </header>
 
+      {/* Categorias */}
+      {categorias.length > 0 && (
+        <div className="container mx-auto px-4 pt-4 pb-1">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <button
+              onClick={() => setCategoriaSelecionada(null)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${
+                !categoriaSelecionada
+                  ? 'bg-accent text-white border-accent'
+                  : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-600'
+              }`}
+            >
+              Todas
+            </button>
+            {categorias.map((cat) => {
+              const IconComp = getIconComponent(cat.icone);
+              const ativo = categoriaSelecionada === cat.categoria;
+              return (
+                <button
+                  key={cat.categoria}
+                  onClick={() => setCategoriaSelecionada(ativo ? null : cat.categoria)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${
+                    ativo
+                      ? 'bg-accent text-white border-accent'
+                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-600'
+                  }`}
+                >
+                  {IconComp && <IconComp className="h-3.5 w-3.5" />}
+                  {cat.categoria}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Instrução */}
-      <div className="container mx-auto px-4 pt-4 pb-2">
+      <div className="container mx-auto px-4 pt-2 pb-2">
         <p className="text-zinc-400 text-sm text-center">
           Toque em <span className="text-accent font-semibold">+</span> para adicionar lâminas ao seu kit. Escolha quantas quiser!
         </p>
