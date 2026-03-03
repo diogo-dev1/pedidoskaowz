@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench, ChevronDown } from 'lucide-react';
+import { Search, MessageCircle, Check, Sword, Shield, ChefHat, Trees, Wrench, ChevronDown, Shirt, Coffee, Package, Flame, Star, ArrowRight } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
@@ -43,8 +43,8 @@ export default function CatalogoPublico() {
 
   const iconMap: Record<string, typeof Shield> = {
     'Defesa': Shield, 'EDCs': Sword, 'EDC Mini': Sword, 'Campo': Trees,
-    'Cozinha': ChefHat, 'Churrasco': ChefHat, 'Kits': Wrench,
-    'Utensílios': Wrench, 'Vestuário': Wrench, 'Cafés': ChefHat,
+    'Cozinha': ChefHat, 'Churrasco': Flame, 'Kits': Package,
+    'Utensílios': Wrench, 'Vestuário': Shirt, 'Cafés': Coffee,
   };
 
   const categoriasVisiveisNomes = new Set(
@@ -175,20 +175,26 @@ export default function CatalogoPublico() {
   // Landing Page - Qualificação do Cliente
   if (mostrarLanding) {
     return (
-      <div className="min-h-screen bg-zinc-900 overflow-x-hidden">
-        {/* Header */}
-        <header className="py-8 md:py-12">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="text-2xl md:text-4xl font-bold text-white mb-2 tracking-tight">
-              CATÁLOGO KAOWZ
+      <div className="min-h-screen bg-zinc-950 overflow-x-hidden">
+        {/* Hero Header */}
+        <header className="relative py-10 md:py-16 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-accent/10 via-transparent to-transparent" />
+          <div className="container mx-auto px-4 text-center relative z-10">
+            <div className="inline-block mb-3">
+              <span className="text-accent text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">Cutelaria Artesanal</span>
+            </div>
+            <h1 className="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight leading-tight">
+              CATÁLOGO <span className="text-accent">KAOWZ</span>
             </h1>
-            <p className="text-zinc-400 text-sm md:text-base">Escolha uma categoria</p>
+            <p className="text-zinc-400 text-sm md:text-lg max-w-md mx-auto">
+              Alta performance feita à mão. Escolha sua categoria.
+            </p>
           </div>
         </header>
 
-        <div className="container mx-auto px-4 pb-12">
-          {/* Grid de Categorias */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 max-w-5xl mx-auto mb-8">
+        <div className="container mx-auto px-4 pb-16">
+          {/* Grid de Categorias - Design premium */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 max-w-5xl mx-auto mb-10">
             {categoriasVenda.map((cat, idx) => {
               const Icon = cat.icon;
               return (
@@ -197,40 +203,46 @@ export default function CatalogoPublico() {
                   className="group cursor-pointer"
                   onClick={() => selecionarCategoria(cat.categoria)}
                 >
-                  <div className="bg-zinc-800 border border-zinc-700 hover:border-accent rounded-lg p-4 md:p-5 transition-all text-center">
-                    <Icon className="h-7 w-7 md:h-9 md:w-9 mx-auto mb-2 text-accent" />
-                    <h3 className="text-white font-semibold text-xs md:text-sm">
+                  <div className="relative bg-zinc-900 border border-zinc-800 hover:border-accent rounded-xl p-5 md:p-6 transition-all duration-300 text-center group-hover:bg-zinc-800 group-hover:shadow-[0_0_30px_rgba(251,146,60,0.15)] group-hover:-translate-y-1">
+                    <div className="w-12 h-12 md:w-14 md:h-14 mx-auto mb-3 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                      <Icon className="h-6 w-6 md:h-7 md:w-7 text-accent" />
+                    </div>
+                    <h3 className="text-white font-bold text-xs md:text-sm tracking-wide">
                       {cat.subtitulo}
                     </h3>
+                    <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ArrowRight className="h-4 w-4 text-accent mx-auto" />
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Opções de Ação */}
-          <div className="flex justify-center max-w-md mx-auto">
+          {/* CTA - Ver todo catálogo */}
+          <div className="flex justify-center max-w-sm mx-auto">
             <Button
-              variant="outline"
               onClick={verTudo}
-              className="w-full border-zinc-600 text-zinc-300 hover:bg-accent hover:text-white hover:border-accent"
+              className="w-full bg-accent hover:bg-accent/90 text-white font-bold h-12 text-sm md:text-base rounded-xl shadow-[0_0_30px_rgba(251,146,60,0.3)] hover:shadow-[0_0_40px_rgba(251,146,60,0.5)] transition-all"
             >
+              <Star className="h-4 w-4 mr-2" />
               Ver todo o catálogo
             </Button>
           </div>
 
-          {/* WhatsApp */}
-          <div className="text-center mt-8 pt-8 border-t border-zinc-800">
+          {/* WhatsApp CTA */}
+          <div className="text-center mt-10 pt-8 border-t border-zinc-800/50">
+            <p className="text-zinc-500 text-xs mb-3">Precisa de ajuda para escolher?</p>
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={() => {
                 const url = `https://wa.me/5528999025695?text=${encodeURIComponent('Olá! Gostaria de saber mais sobre as lâminas.')}`;
                 window.open(url, '_blank');
               }}
-              className="text-zinc-400 hover:text-accent"
+              className="border-green-600/50 text-green-400 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all"
             >
               <MessageCircle className="h-4 w-4 mr-2" />
-              Dúvidas? Fale conosco
+              Fale conosco no WhatsApp
             </Button>
           </div>
         </div>
@@ -240,7 +252,7 @@ export default function CatalogoPublico() {
 
   // Catálogo de Produtos
   return (
-    <div className="min-h-screen bg-zinc-900 overflow-x-hidden">
+    <div className="min-h-screen bg-zinc-950 overflow-x-hidden">
       {/* Header */}
       <header className="bg-black border-b border-white/10 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 md:py-4">
@@ -414,27 +426,32 @@ export default function CatalogoPublico() {
                             )}
                           </div>
 
-                          {/* Info do produto */}
-                          <div className="p-2 md:p-4 h-[100px] md:h-[140px] flex flex-col">
+                            {/* Info do produto - mais vendável */}
+                          <div className="p-3 md:p-4 flex flex-col gap-1">
                             <h3
-                              className="font-semibold mb-1 md:mb-2 line-clamp-1 text-xs md:text-base text-white hover:text-accent transition-colors cursor-pointer"
+                              className="font-bold line-clamp-1 text-sm md:text-base text-white hover:text-accent transition-colors cursor-pointer"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               {modelo.nome_modelo}
                             </h3>
-                            <p className="text-lg md:text-2xl font-bold text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
-                              R$ {modelo.preco_base.toFixed(2)}
-                            </p>
-                            <div className="text-[10px] md:text-xs text-zinc-400 mt-0.5 md:mt-1">
-                              em 12x de R$ {(modelo.preco_base / 12).toFixed(2)}
+                            {modelo.apresentacao_venda && (
+                              <p className="text-[10px] md:text-xs text-zinc-400 line-clamp-2">{modelo.apresentacao_venda}</p>
+                            )}
+                            <div className="mt-1">
+                              <p className="text-lg md:text-2xl font-black text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
+                                R$ {modelo.preco_base.toFixed(2)}
+                              </p>
+                              <div className="text-[10px] md:text-xs text-zinc-500 mt-0.5">
+                                ou 12x de <span className="text-zinc-300 font-medium">R$ {(modelo.preco_base / 12).toFixed(2)}</span>
+                              </div>
                             </div>
                             <Button
-                              variant="outline"
                               size="sm"
-                              className="w-full mt-auto border-zinc-600 text-zinc-300 hover:bg-accent hover:text-white hover:border-accent text-[10px] md:text-sm h-7 md:h-9"
+                              className="w-full mt-2 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               Ver detalhes
+                              <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1" />
                             </Button>
                           </div>
                         </div>
