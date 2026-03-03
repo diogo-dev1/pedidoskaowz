@@ -441,8 +441,8 @@ export default function CatalogoPublico() {
                               <p className="text-lg md:text-2xl font-black text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
                                 R$ {modelo.preco_base.toFixed(2)}
                               </p>
-                              <div className="text-[10px] md:text-xs text-zinc-500 mt-0.5">
-                                ou 12x de <span className="text-zinc-300 font-medium">R$ {(modelo.preco_base / 12).toFixed(2)}</span>
+                              <div className="text-[10px] md:text-xs text-zinc-400 mt-0.5">
+                                3x sem juros ou até 12x no cartão
                               </div>
                             </div>
                             <Button
