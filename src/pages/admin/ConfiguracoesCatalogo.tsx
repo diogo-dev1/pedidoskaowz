@@ -257,7 +257,7 @@ export default function ConfiguracoesCatalogo() {
   const toggleVisivelKit = async (cat: CategoriaVisivel) => {
     const { error } = await supabase
       .from('categorias_catalogo_visiveis')
-      .update({ visivel_kit: !cat.visivel_kit })
+      .update({ visivel_kit: !cat.visivel_kit } as any)
       .eq('id', cat.id);
     if (error) { toast.error('Erro ao alterar configuração'); return; }
     setCategoriasVisiveis(prev => prev.map(c => c.id === cat.id ? { ...c, visivel_kit: !c.visivel_kit } : c));
