@@ -35,10 +35,11 @@ interface Midia {
   visivel_catalogo: boolean;
 }
 
-const CATEGORIAS = ['Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
+// Categorias carregadas dinamicamente do banco
 
 export default function GerenciarConfiguracoes() {
   const [configuracoes, setConfiguracoes] = useState<Configuracao[]>([]);
+  const [categoriasDisponiveis, setCategoriasDisponiveis] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState<Configuracao | null>(null);
@@ -67,7 +68,16 @@ export default function GerenciarConfiguracoes() {
 
   useEffect(() => {
     fetchConfiguracoes();
+    fetchCategorias();
   }, []);
+
+  const fetchCategorias = async () => {
+    const { data } = await supabase
+      .from('categorias_catalogo_visiveis')
+      .select('categoria')
+      .order('ordem');
+    if (data) setCategoriasDisponiveis(data.map(c => c.categoria));
+  };
 
 
   const toggleVisivelCatalogo = async (config: Configuracao) => {
@@ -395,7 +405,7 @@ export default function GerenciarConfiguracoes() {
                 <div className="space-y-2">
                   <Label>Categorias</Label>
                   <div className="grid grid-cols-2 gap-1.5">
-                    {CATEGORIAS.map((cat) => {
+                    {categoriasDisponiveis.map((cat) => {
                       const checked = categoriasSelecionadas.includes(cat);
                       return (
                         <label key={cat} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -535,7 +545,7 @@ export default function GerenciarConfiguracoes() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">Todas ({configuracoes.length})</SelectItem>
-            {CATEGORIAS.map(cat => {
+            {categoriasDisponiveis.map(cat => {
               const count = configuracoes.filter(c => c.categoria === cat || ((c as any).categorias && (c as any).categorias.includes(cat))).length;
               return (
                 <SelectItem key={cat} value={cat}>
