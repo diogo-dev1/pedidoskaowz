@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
+import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
@@ -356,6 +356,18 @@ export default function CatalogoPublico() {
             >
               <Zap className="h-4 w-4 mr-2" />
               Pronta Entrega
+            </Button>
+          </div>
+
+          {/* Monte seu Kit */}
+          <div className="flex justify-center max-w-lg mx-auto mt-3">
+            <Button
+              onClick={() => navigate('/catalogo/montar-kit')}
+              variant="outline"
+              className="w-full border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent font-bold h-12 text-sm md:text-base rounded-xl transition-all"
+            >
+              <Package className="h-4 w-4 mr-2" />
+              Monte seu Kit
             </Button>
           </div>
 
