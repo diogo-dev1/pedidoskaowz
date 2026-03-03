@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Video, Search, Upload, Star, Loader2, X, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Video, Search, Upload, Star, Loader2, X, Image as ImageIcon, Eye, EyeOff, Megaphone } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -39,6 +39,16 @@ interface Midia {
   nome_arquivo: string;
   url: string;
   visivel_catalogo: boolean;
+}
+
+interface BannerCatalogo {
+  id: string;
+  titulo: string | null;
+  subtitulo: string | null;
+  imagem_url: string;
+  link: string | null;
+  ordem: number;
+  ativo: boolean;
 }
 
 const CATEGORIAS = ['Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
@@ -74,10 +84,111 @@ export default function GerenciarConfiguracoes() {
   const [categoriasVisiveis, setCategoriasVisiveis] = useState<CategoriaVisivel[]>([]);
   const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
 
+  // Banners
+  const [bannersDialogOpen, setBannersDialogOpen] = useState(false);
+  const [banners, setBanners] = useState<BannerCatalogo[]>([]);
+  const [bannerEditando, setBannerEditando] = useState<BannerCatalogo | null>(null);
+  const [bannerTitulo, setBannerTitulo] = useState('');
+  const [bannerSubtitulo, setBannerSubtitulo] = useState('');
+  const [bannerLink, setBannerLink] = useState('');
+  const [bannerOrdem, setBannerOrdem] = useState('0');
+  const [bannerImagemFile, setBannerImagemFile] = useState<File | null>(null);
+  const [bannerSalvando, setBannerSalvando] = useState(false);
+  const [bannerFormOpen, setBannerFormOpen] = useState(false);
+
   useEffect(() => {
     fetchConfiguracoes();
     fetchCategoriasVisiveis();
+    fetchBanners();
   }, []);
+
+  const fetchBanners = async () => {
+    const { data } = await supabase
+      .from('banners_catalogo')
+      .select('*')
+      .order('ordem');
+    if (data) setBanners(data as BannerCatalogo[]);
+  };
+
+  const handleSalvarBanner = async () => {
+    if (!bannerImagemFile && !bannerEditando) {
+      toast.error('Selecione uma imagem para o banner');
+      return;
+    }
+    setBannerSalvando(true);
+
+    let imagemUrl = bannerEditando?.imagem_url || '';
+
+    if (bannerImagemFile) {
+      const fileExt = bannerImagemFile.name.split('.').pop();
+      const fileName = `banner-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('banners-catalogo')
+        .upload(fileName, bannerImagemFile);
+      if (uploadError) {
+        toast.error('Erro ao enviar imagem');
+        setBannerSalvando(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('banners-catalogo').getPublicUrl(fileName);
+      imagemUrl = urlData.publicUrl;
+    }
+
+    const bannerData = {
+      titulo: bannerTitulo || null,
+      subtitulo: bannerSubtitulo || null,
+      imagem_url: imagemUrl,
+      link: bannerLink || null,
+      ordem: parseInt(bannerOrdem) || 0,
+    };
+
+    if (bannerEditando) {
+      const { error } = await supabase.from('banners_catalogo').update(bannerData).eq('id', bannerEditando.id);
+      if (error) toast.error('Erro ao atualizar banner');
+      else toast.success('Banner atualizado!');
+    } else {
+      const { error } = await supabase.from('banners_catalogo').insert([{ ...bannerData, ativo: true }]);
+      if (error) toast.error('Erro ao criar banner');
+      else toast.success('Banner criado!');
+    }
+
+    resetBannerForm();
+    fetchBanners();
+    setBannerSalvando(false);
+  };
+
+  const deletarBanner = async (id: string) => {
+    if (!confirm('Excluir este banner?')) return;
+    await supabase.from('banners_catalogo').delete().eq('id', id);
+    toast.success('Banner excluído');
+    fetchBanners();
+  };
+
+  const toggleBannerAtivo = async (banner: BannerCatalogo) => {
+    await supabase.from('banners_catalogo').update({ ativo: !banner.ativo }).eq('id', banner.id);
+    setBanners(prev => prev.map(b => b.id === banner.id ? { ...b, ativo: !b.ativo } : b));
+    toast.success(banner.ativo ? 'Banner desativado' : 'Banner ativado');
+  };
+
+  const editarBanner = (banner: BannerCatalogo) => {
+    setBannerEditando(banner);
+    setBannerTitulo(banner.titulo || '');
+    setBannerSubtitulo(banner.subtitulo || '');
+    setBannerLink(banner.link || '');
+    setBannerOrdem(banner.ordem.toString());
+    setBannerImagemFile(null);
+    setBannerFormOpen(true);
+  };
+
+  const resetBannerForm = () => {
+    setBannerEditando(null);
+    setBannerTitulo('');
+    setBannerSubtitulo('');
+    setBannerLink('');
+    setBannerOrdem('0');
+    setBannerImagemFile(null);
+    setBannerFormOpen(false);
+  };
 
   const fetchCategoriasVisiveis = async () => {
     const { data, error } = await supabase
@@ -408,7 +519,11 @@ export default function GerenciarConfiguracoes() {
             Configurações de lâminas do catálogo
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => setBannersDialogOpen(true)}>
+            <Megaphone className="mr-2 h-4 w-4" />
+            Banners
+          </Button>
           <Button variant="outline" onClick={() => setCategoriasDialogOpen(true)}>
             <Eye className="mr-2 h-4 w-4" />
             Categorias
@@ -841,6 +956,93 @@ export default function GerenciarConfiguracoes() {
               </div>
             ))}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Banners */}
+      <Dialog open={bannersDialogOpen} onOpenChange={(open) => { setBannersDialogOpen(open); if (!open) resetBannerForm(); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Banners do Catálogo</DialogTitle>
+            <DialogDescription>
+              Gerencie banners promocionais exibidos no topo do catálogo público.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!bannerFormOpen ? (
+            <div className="space-y-3">
+              <Button onClick={() => setBannerFormOpen(true)} className="w-full">
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Banner
+              </Button>
+
+              {banners.length === 0 ? (
+                <p className="text-center text-muted-foreground text-sm py-4">Nenhum banner cadastrado</p>
+              ) : (
+                <div className="space-y-2">
+                  {banners.map((banner) => (
+                    <div key={banner.id} className={`flex items-center gap-3 p-3 rounded-lg border ${!banner.ativo ? 'opacity-50' : ''}`}>
+                      <div className="w-24 h-14 rounded overflow-hidden bg-muted flex-shrink-0">
+                        <img src={banner.imagem_url} alt={banner.titulo || 'Banner'} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{banner.titulo || 'Sem título'}</p>
+                        {banner.subtitulo && <p className="text-xs text-muted-foreground truncate">{banner.subtitulo}</p>}
+                        <span className="text-xs text-muted-foreground">Ordem: {banner.ordem}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <Switch checked={banner.ativo} onCheckedChange={() => toggleBannerAtivo(banner)} />
+                        <Button variant="outline" size="sm" className="h-7 px-2" onClick={() => editarBanner(banner)}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button variant="destructive" size="sm" className="h-7 px-2" onClick={() => deletarBanner(banner.id)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Título (opcional)</Label>
+                  <Input value={bannerTitulo} onChange={(e) => setBannerTitulo(e.target.value)} placeholder="Ex: Promoção de Verão" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Subtítulo (opcional)</Label>
+                  <Input value={bannerSubtitulo} onChange={(e) => setBannerSubtitulo(e.target.value)} placeholder="Ex: Até 20% OFF" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Link (opcional)</Label>
+                  <Input value={bannerLink} onChange={(e) => setBannerLink(e.target.value)} placeholder="https://..." />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ordem</Label>
+                  <Input type="number" value={bannerOrdem} onChange={(e) => setBannerOrdem(e.target.value)} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Imagem do Banner</Label>
+                <Input type="file" accept="image/*" onChange={(e) => setBannerImagemFile(e.target.files?.[0] || null)} />
+                {bannerEditando?.imagem_url && !bannerImagemFile && (
+                  <div className="w-full h-24 rounded overflow-hidden bg-muted">
+                    <img src={bannerEditando.imagem_url} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={resetBannerForm} className="flex-1">Cancelar</Button>
+                <Button onClick={handleSalvarBanner} disabled={bannerSalvando} className="flex-1">
+                  {bannerSalvando ? 'Salvando...' : bannerEditando ? 'Atualizar' : 'Criar Banner'}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
