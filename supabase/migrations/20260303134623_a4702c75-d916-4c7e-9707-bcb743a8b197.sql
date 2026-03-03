@@ -1,0 +1,1 @@
+ALTER TABLE public.catalogo_modelos DROP CONSTRAINT catalogo_modelos_categoria_check;
