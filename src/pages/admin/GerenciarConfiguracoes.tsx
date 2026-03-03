@@ -30,6 +30,7 @@ interface CategoriaVisivel {
   id: string;
   categoria: string;
   visivel: boolean;
+  visivel_todas: boolean;
   ordem: number;
 }
 
@@ -97,6 +98,19 @@ export default function GerenciarConfiguracoes() {
     }
     setCategoriasVisiveis(prev => prev.map(c => c.id === cat.id ? { ...c, visivel: !c.visivel } : c));
     toast.success(cat.visivel ? `${cat.categoria} oculta do catálogo` : `${cat.categoria} visível no catálogo`);
+  };
+
+  const toggleVisivelTodas = async (cat: CategoriaVisivel) => {
+    const { error } = await supabase
+      .from('categorias_catalogo_visiveis')
+      .update({ visivel_todas: !cat.visivel_todas })
+      .eq('id', cat.id);
+    if (error) {
+      toast.error('Erro ao alterar configuração');
+      return;
+    }
+    setCategoriasVisiveis(prev => prev.map(c => c.id === cat.id ? { ...c, visivel_todas: !c.visivel_todas } : c));
+    toast.success(!cat.visivel_todas ? `${cat.categoria} aparecerá em "Todas"` : `${cat.categoria} removida de "Todas"`);
   };
 
   const toggleVisivelCatalogo = async (config: Configuracao) => {
@@ -809,12 +823,21 @@ export default function GerenciarConfiguracoes() {
           </DialogHeader>
           <div className="space-y-3">
             {categoriasVisiveis.map((cat) => (
-              <div key={cat.id} className="flex items-center justify-between py-2 px-3 rounded-lg border">
-                <span className="text-sm font-medium">{cat.categoria}</span>
-                <Switch
-                  checked={cat.visivel}
-                  onCheckedChange={() => toggleCategoriaVisivel(cat)}
-                />
+              <div key={cat.id} className="flex flex-col gap-2 py-2 px-3 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{cat.categoria}</span>
+                  <Switch
+                    checked={cat.visivel}
+                    onCheckedChange={() => toggleCategoriaVisivel(cat)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Exibir em "Todas"</span>
+                  <Switch
+                    checked={cat.visivel_todas}
+                    onCheckedChange={() => toggleVisivelTodas(cat)}
+                  />
+                </div>
               </div>
             ))}
           </div>
