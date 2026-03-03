@@ -24,6 +24,8 @@ interface Configuracao {
   prazo_entrega: string | null;
   aspect_ratio: string;
   visivel_catalogo: boolean;
+  visivel_todas: boolean;
+  ordem_catalogo: number;
 }
 
 interface CategoriaVisivel {
@@ -741,12 +743,23 @@ export default function GerenciarConfiguracoes() {
                   {config.video_url && <Video className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
                   {!config.visivel_catalogo && <EyeOff className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
                 </h3>
-                <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                   <span className="text-[10px] bg-accent/20 px-1.5 py-0.5 rounded">{config.categoria}</span>
                   <span className="font-semibold text-accent text-xs">R$ {config.preco_base.toFixed(2)}</span>
+                  <span className="text-[10px] text-muted-foreground">Ordem: </span>
+                  <Input
+                    type="number"
+                    value={config.ordem_catalogo}
+                    onChange={async (e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      await supabase.from('catalogo_modelos').update({ ordem_catalogo: val }).eq('id', config.id);
+                      setConfiguracoes(prev => prev.map(c => c.id === config.id ? { ...c, ordem_catalogo: val } : c));
+                    }}
+                    className="h-6 w-14 text-xs px-1"
+                  />
                 </div>
                 {/* Botões inline */}
-                <div className="flex gap-1.5 mt-1.5">
+                <div className="flex gap-1.5 mt-1.5 flex-wrap">
                   <Button
                     variant="outline"
                     size="sm"
@@ -756,6 +769,20 @@ export default function GerenciarConfiguracoes() {
                   >
                     {config.visivel_catalogo ? <Eye className="h-3 w-3 mr-1" /> : <EyeOff className="h-3 w-3 mr-1" />}
                     {config.visivel_catalogo ? 'Visível' : 'Oculto'}
+                  </Button>
+                  <Button
+                    variant={config.visivel_todas ? "outline" : "secondary"}
+                    size="sm"
+                    onClick={async () => {
+                      const newVal = !config.visivel_todas;
+                      await supabase.from('catalogo_modelos').update({ visivel_todas: newVal }).eq('id', config.id);
+                      setConfiguracoes(prev => prev.map(c => c.id === config.id ? { ...c, visivel_todas: newVal } : c));
+                      toast.success(newVal ? 'Aparecerá em "Todas"' : 'Removido de "Todas"');
+                    }}
+                    className="h-7 text-xs px-2"
+                    title={config.visivel_todas ? 'Remover de "Todas"' : 'Exibir em "Todas"'}
+                  >
+                    {config.visivel_todas ? 'Em Todas' : 'Fora de Todas'}
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => abrirMidiaDialog(config)} className="h-7 text-xs px-2">
                     <ImageIcon className="h-3 w-3 mr-1" />
