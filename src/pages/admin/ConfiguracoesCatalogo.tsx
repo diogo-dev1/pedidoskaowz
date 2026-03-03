@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign, Star, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -28,6 +28,16 @@ interface BannerCatalogo {
   ativo: boolean;
 }
 
+interface ModeloCatalogo {
+  id: string;
+  nome_modelo: string;
+  imagem_modelo: string | null;
+  preco_base: number;
+  ordem_catalogo: number;
+  visivel_todas: boolean;
+  categorias: string[] | null;
+}
+
 export default function ConfiguracoesCatalogo() {
   // Categorias
   const [categoriasVisiveis, setCategoriasVisiveis] = useState<CategoriaVisivel[]>([]);
@@ -47,10 +57,16 @@ export default function ConfiguracoesCatalogo() {
   const [exibirPrecos, setExibirPrecos] = useState(true);
   const [loadingPrecos, setLoadingPrecos] = useState(true);
 
+  // Destaques "Todas"
+  const [todosModelos, setTodosModelos] = useState<ModeloCatalogo[]>([]);
+  const [destaquesIds, setDestaquesIds] = useState<string[]>([]);
+  const [salvandoDestaques, setSalvandoDestaques] = useState(false);
+
   useEffect(() => {
     fetchCategoriasVisiveis();
     fetchBanners();
     fetchConfigPrecos();
+    fetchModelosParaDestaques();
   }, []);
 
   // --- Preços ---
@@ -62,6 +78,75 @@ export default function ConfiguracoesCatalogo() {
       .single();
     if (data) setExibirPrecos(data.valor === 'true');
     setLoadingPrecos(false);
+  };
+
+  // --- Destaques ---
+  const fetchModelosParaDestaques = async () => {
+    const { data } = await supabase
+      .from('catalogo_modelos')
+      .select('id, nome_modelo, imagem_modelo, preco_base, ordem_catalogo, visivel_todas, categorias')
+      .eq('visivel_catalogo', true)
+      .order('ordem_catalogo');
+    if (data) {
+      setTodosModelos(data);
+      // Os que já estão com ordem < 999 e visivel_todas são os destaques atuais
+      const atuais = data
+        .filter(m => m.visivel_todas && m.ordem_catalogo < 999)
+        .sort((a, b) => a.ordem_catalogo - b.ordem_catalogo)
+        .slice(0, 10)
+        .map(m => m.id);
+      setDestaquesIds(atuais);
+    }
+  };
+
+  const adicionarDestaque = (id: string) => {
+    if (destaquesIds.length >= 10) {
+      toast.error('Máximo de 10 destaques atingido');
+      return;
+    }
+    if (destaquesIds.includes(id)) return;
+    setDestaquesIds(prev => [...prev, id]);
+  };
+
+  const removerDestaque = (id: string) => {
+    setDestaquesIds(prev => prev.filter(d => d !== id));
+  };
+
+  const moverDestaque = (index: number, direction: 'up' | 'down') => {
+    const newList = [...destaquesIds];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newList.length) return;
+    [newList[index], newList[targetIndex]] = [newList[targetIndex], newList[index]];
+    setDestaquesIds(newList);
+  };
+
+  const salvarDestaques = async () => {
+    setSalvandoDestaques(true);
+    try {
+      // Reset all to ordem 999
+      const { error: resetError } = await supabase
+        .from('catalogo_modelos')
+        .update({ ordem_catalogo: 999 })
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // update all
+
+      if (resetError) throw resetError;
+
+      // Set ordem for selected destaques
+      for (let i = 0; i < destaquesIds.length; i++) {
+        const { error } = await supabase
+          .from('catalogo_modelos')
+          .update({ ordem_catalogo: i + 1, visivel_todas: true })
+          .eq('id', destaquesIds[i]);
+        if (error) throw error;
+      }
+
+      toast.success('Destaques salvos com sucesso!');
+      fetchModelosParaDestaques();
+    } catch (error) {
+      toast.error('Erro ao salvar destaques');
+    } finally {
+      setSalvandoDestaques(false);
+    }
   };
 
   const toggleExibirPrecos = async () => {
@@ -197,10 +282,14 @@ export default function ConfiguracoesCatalogo() {
       </div>
 
       <Tabs defaultValue="geral" className="w-full">
-        <TabsList className="w-full justify-start">
+        <TabsList className="w-full justify-start flex-wrap">
           <TabsTrigger value="geral" className="gap-1.5">
             <DollarSign className="h-3.5 w-3.5" />
             Geral
+          </TabsTrigger>
+          <TabsTrigger value="destaques" className="gap-1.5">
+            <Star className="h-3.5 w-3.5" />
+            Destaques
           </TabsTrigger>
           <TabsTrigger value="categorias" className="gap-1.5">
             <Tags className="h-3.5 w-3.5" />
@@ -239,6 +328,103 @@ export default function ConfiguracoesCatalogo() {
                   disabled={loadingPrecos}
                 />
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Aba Destaques */}
+        <TabsContent value="destaques" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Primeiras 10 Lâminas em "Todas"</CardTitle>
+              <CardDescription>
+                Selecione e ordene as 10 primeiras lâminas que aparecem quando o cliente clica em "Ver todo o catálogo".
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Lista de destaques selecionados */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Selecionadas ({destaquesIds.length}/10)</Label>
+                {destaquesIds.length === 0 && (
+                  <p className="text-xs text-muted-foreground py-4 text-center">Nenhuma lâmina selecionada. Escolha abaixo.</p>
+                )}
+                {destaquesIds.map((id, index) => {
+                  const modelo = todosModelos.find(m => m.id === id);
+                  if (!modelo) return null;
+                  return (
+                    <div key={id} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30">
+                      <span className="text-xs font-bold text-accent w-6 text-center">{index + 1}º</span>
+                      {modelo.imagem_modelo && (
+                        <img src={modelo.imagem_modelo} alt="" className="w-8 h-8 rounded object-cover" />
+                      )}
+                      <span className="text-sm flex-1 truncate">{modelo.nome_modelo}</span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          disabled={index === 0}
+                          onClick={() => moverDestaque(index, 'up')}
+                        >
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          disabled={index === destaquesIds.length - 1}
+                          onClick={() => moverDestaque(index, 'down')}
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                          onClick={() => removerDestaque(id)}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Lista de todos os modelos para adicionar */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Adicionar lâminas</Label>
+                <div className="max-h-64 overflow-y-auto space-y-1 border rounded-lg p-2">
+                  {todosModelos
+                    .filter(m => m.visivel_todas && !destaquesIds.includes(m.id))
+                    .map(modelo => (
+                      <div
+                        key={modelo.id}
+                        className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer transition-colors"
+                        onClick={() => adicionarDestaque(modelo.id)}
+                      >
+                        {modelo.imagem_modelo && (
+                          <img src={modelo.imagem_modelo} alt="" className="w-8 h-8 rounded object-cover" />
+                        )}
+                        <span className="text-sm flex-1 truncate">{modelo.nome_modelo}</span>
+                        <span className="text-xs text-muted-foreground">{modelo.categorias?.join(', ')}</span>
+                        <Plus className="h-4 w-4 text-accent" />
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              <Button
+                onClick={salvarDestaques}
+                disabled={salvandoDestaques}
+                className="w-full"
+              >
+                {salvandoDestaques ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</>
+                ) : (
+                  'Salvar ordem dos destaques'
+                )}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
