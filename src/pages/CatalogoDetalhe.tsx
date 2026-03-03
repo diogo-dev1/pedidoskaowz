@@ -164,42 +164,38 @@ export default function CatalogoDetalhe() {
     );
   }
 
+  const descriptionHtml = modelo.descricao_html
+    || (modelo.apresentacao_venda && /Itens Inclusos|Especificações|Diferenciais|Características|Detalhes|[✔️📌🔪⚡✅]/i.test(modelo.apresentacao_venda)
+      ? convertPlainToHtml(modelo.apresentacao_venda)
+      : null);
+
   return (
     <div className="min-h-screen bg-zinc-900 overflow-x-hidden">
-      {/* Header */}
-      <header className="bg-black sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3">
-          <Button
-            variant="ghost"
-            size="sm"
+      {/* Header minimal */}
+      <header className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800/50">
+        <div className="max-w-5xl mx-auto px-4 py-3">
+          <button
             onClick={() => navigate('/catalogo')}
-            className="text-zinc-400 hover:text-white hover:bg-white/10"
+            className="text-zinc-500 hover:text-white transition-colors text-sm flex items-center gap-1.5"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
+            <ArrowLeft className="h-4 w-4" />
+            Catálogo
+          </button>
         </div>
       </header>
 
-      <div className="w-full max-w-full overflow-hidden px-4 py-6 mx-auto" style={{ maxWidth: '100vw' }}>
-        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
           {/* Mídia */}
-          <div className="space-y-4 min-w-0 overflow-hidden">
+          <div className="space-y-3 min-w-0">
             {videoUrl && (
-              <div className="bg-zinc-800 rounded-lg overflow-hidden aspect-[3/4] max-h-[70vh]">
-                <video
-                  src={videoUrl}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-full object-contain"
-                />
+              <div className="rounded-2xl overflow-hidden aspect-[3/4] max-h-[75vh] bg-zinc-950">
+                <video src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-contain" />
               </div>
             )}
 
             {imagensDisponiveis.length > 0 && (
-              <div className="relative bg-zinc-800 rounded-lg overflow-hidden flex items-center justify-center aspect-[3/4] max-h-[70vh]">
+              <div className="rounded-2xl overflow-hidden aspect-[3/4] max-h-[75vh] bg-zinc-950">
                 <img
                   src={imagensDisponiveis[imagemAtual]}
                   alt={modelo.nome_modelo}
@@ -209,13 +205,13 @@ export default function CatalogoDetalhe() {
             )}
 
             {imagensDisponiveis.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin justify-center">
+              <div className="flex gap-2 overflow-x-auto pb-1 justify-center">
                 {imagensDisponiveis.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setImagemAtual(idx)}
-                    className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden transition-all ${
-                      idx === imagemAtual ? 'ring-2 ring-accent' : 'opacity-50 hover:opacity-100'
+                    className={`flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden transition-all ${
+                      idx === imagemAtual ? 'ring-2 ring-accent ring-offset-2 ring-offset-zinc-900' : 'opacity-40 hover:opacity-80'
                     }`}
                   >
                     <img src={img} alt="" className="w-full h-full object-cover" />
@@ -225,135 +221,74 @@ export default function CatalogoDetalhe() {
             )}
           </div>
 
-          {/* Informações */}
-          <div className="space-y-6 min-w-0">
-            {/* Nome, categoria e pronta entrega */}
-            <div>
-              <div className="flex flex-wrap gap-1 mb-2">
-                {modelo.pronta_entrega && (
-                  <Badge className="bg-emerald-600 text-white border-0 gap-0.5">
-                    <Zap className="h-3 w-3" />
-                    Pronta Entrega
-                  </Badge>
-                )}
-                {modelo.categorias && modelo.categorias.length > 0 && modelo.categorias.map((cat: string) => (
-                  <Badge key={cat} className="bg-zinc-800 text-zinc-300 border-zinc-700">
-                    {cat}
-                  </Badge>
-                ))}
-              </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white break-words">
-                {modelo.nome_modelo}
-              </h1>
+          {/* Info */}
+          <div className="space-y-5 min-w-0">
+            {/* Badges */}
+            <div className="flex flex-wrap items-center gap-2">
+              {modelo.pronta_entrega && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400">
+                  <Zap className="h-3 w-3" />
+                  Pronta Entrega
+                </span>
+              )}
+              {modelo.categorias?.map((cat: string) => (
+                <span key={cat} className="text-xs text-zinc-500">{cat}</span>
+              ))}
             </div>
+
+            {/* Nome */}
+            <h1 className="text-2xl md:text-3xl font-semibold text-white tracking-tight leading-tight break-words">
+              {modelo.nome_modelo}
+            </h1>
 
             {/* Preço */}
             {exibirPrecos && (
-              <div className="bg-zinc-800 rounded-lg p-4">
-                <p className="text-3xl font-bold text-accent mb-1">
+              <div className="space-y-1">
+                <p className="text-2xl font-semibold text-white">
                   R$ {modelo.preco_base.toFixed(2)}
                 </p>
                 {exibirFormasPagamento && (
-                  <p className="text-sm text-zinc-400">
-                    {textoParcelamento} ou{' '}
-                    <span className="text-accent font-semibold">
-                      R$ {(modelo.preco_base * (1 - descontoPix / 100)).toFixed(2)} {textoPix}
-                    </span>
+                  <p className="text-sm text-zinc-500">
+                    {textoParcelamento} · <span className="text-accent">R$ {(modelo.preco_base * (1 - descontoPix / 100)).toFixed(2)} {textoPix}</span>
                   </p>
                 )}
               </div>
             )}
 
-            {/* Botão WhatsApp */}
+            {/* WhatsApp */}
             <Button
               size="lg"
-              className="w-full bg-accent hover:bg-accent/90 text-white"
+              className="w-full bg-accent hover:bg-accent/90 text-white rounded-xl h-12"
               onClick={enviarWhatsApp}
             >
               <MessageCircle className="h-5 w-5 mr-2" />
               Consultar no WhatsApp
             </Button>
 
-            {/* Descrição completa HTML da Shopify */}
-            {modelo.descricao_html && (
-              <div className="bg-zinc-800/50 rounded-xl p-5 md:p-6">
-                <h2 className="text-lg font-bold text-accent mb-4">
-                  Descrição completa
-                </h2>
+            {/* Info rápida */}
+            {(modelo.prazo_entrega || modelo.garantia) && (
+              <div className="flex gap-4 text-xs text-zinc-500 pt-1">
+                {modelo.prazo_entrega && <span>Entrega: {modelo.prazo_entrega}</span>}
+                {modelo.garantia && <span>Garantia: {modelo.garantia}</span>}
+              </div>
+            )}
+
+            {/* Separador */}
+            <div className="border-t border-zinc-800/60" />
+
+            {/* Descrição */}
+            {descriptionHtml ? (
+              <div>
                 <div
-                  className="shopify-description max-w-none text-zinc-300 text-[15px] leading-7 break-words"
-                  dangerouslySetInnerHTML={{ __html: modelo.descricao_html }}
+                  className="shopify-description max-w-none text-zinc-400 text-[14px] leading-7 break-words"
+                  dangerouslySetInnerHTML={{ __html: descriptionHtml }}
                 />
               </div>
-            )}
-
-            {/* Descrição texto simples (fallback) - convertida para HTML */}
-            {!modelo.descricao_html && modelo.apresentacao_venda && (() => {
-              const text = modelo.apresentacao_venda!;
-              const hasStructure = /Itens Inclusos|Especificações|Diferenciais|Características|Detalhes|[✔️📌🔪⚡✅]/i.test(text);
-              if (hasStructure) {
-                const html = convertPlainToHtml(text);
-                return (
-                  <div className="bg-zinc-800/50 rounded-xl p-5 md:p-6">
-                    <h2 className="text-lg font-bold text-accent mb-4">Sobre o produto</h2>
-                    <div
-                      className="shopify-description max-w-none text-zinc-300 text-[15px] leading-7 break-words"
-                      dangerouslySetInnerHTML={{ __html: html }}
-                    />
-                  </div>
-                );
-              }
-              return (
-                <div className="bg-zinc-800/50 rounded-lg p-4">
-                  <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide mb-3">
-                    Sobre o produto
-                  </h2>
-                  <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-line break-words">
-                    {text}
-                  </p>
-                </div>
-              );
-            })()}
-
-            {/* Dados técnicos */}
-            {(modelo.prazo_entrega || modelo.garantia) && (
-              <div className="space-y-2">
-                <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">
-                  Informações
-                </h2>
-                <div className="bg-zinc-800/50 rounded-lg divide-y divide-zinc-700/50">
-                  {modelo.prazo_entrega && (
-                    <div className="flex justify-between p-3 text-sm">
-                      <span className="text-zinc-400">Prazo de entrega</span>
-                      <span className="text-white">{modelo.prazo_entrega}</span>
-                    </div>
-                  )}
-                  {modelo.garantia && (
-                    <div className="flex justify-between p-3 text-sm">
-                      <span className="text-zinc-400">Garantia</span>
-                      <span className="text-white">{modelo.garantia}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Benefícios */}
-            <div className="flex flex-wrap gap-2 text-xs">
-              {modelo.pronta_entrega && (
-                <span className="bg-emerald-900/50 text-emerald-300 px-3 py-1.5 rounded-full">
-                  ⚡ Entrega imediata
-                </span>
-              )}
-              <span className="bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-full">
-                ✓ Compra segura
-              </span>
-              {exibirFormasPagamento && (
-                <span className="bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-full">
-                  ✓ {textoParcelamento.split(' ou')[0] || 'Parcelamento'}
-                </span>
-              )}
-            </div>
+            ) : modelo.apresentacao_venda ? (
+              <p className="text-zinc-400 text-sm leading-relaxed whitespace-pre-line break-words">
+                {modelo.apresentacao_venda}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
