@@ -78,6 +78,7 @@ export default function MontarKit() {
         .from('categorias_catalogo_visiveis')
         .select('categoria, icone')
         .eq('visivel', true)
+        .eq('visivel_kit', true)
         .order('ordem');
       if (error) throw error;
       setCategorias((data || []) as Categoria[]);

@@ -17,6 +17,7 @@ interface CategoriaVisivel {
   categoria: string;
   visivel: boolean;
   visivel_todas: boolean;
+  visivel_kit: boolean;
   ordem: number;
   icone: string;
 }
@@ -251,6 +252,16 @@ export default function ConfiguracoesCatalogo() {
     if (error) { toast.error('Erro ao alterar configuração'); return; }
     setCategoriasVisiveis(prev => prev.map(c => c.id === cat.id ? { ...c, visivel_todas: !c.visivel_todas } : c));
     toast.success(!cat.visivel_todas ? `${cat.categoria} aparecerá em "Todas"` : `${cat.categoria} removida de "Todas"`);
+  };
+
+  const toggleVisivelKit = async (cat: CategoriaVisivel) => {
+    const { error } = await supabase
+      .from('categorias_catalogo_visiveis')
+      .update({ visivel_kit: !cat.visivel_kit })
+      .eq('id', cat.id);
+    if (error) { toast.error('Erro ao alterar configuração'); return; }
+    setCategoriasVisiveis(prev => prev.map(c => c.id === cat.id ? { ...c, visivel_kit: !c.visivel_kit } : c));
+    toast.success(!cat.visivel_kit ? `${cat.categoria} aparecerá no Kit` : `${cat.categoria} removida do Kit`);
   };
 
   const copiarLinkCategoria = (categoria: string) => {
@@ -673,6 +684,13 @@ export default function ConfiguracoesCatalogo() {
                       <Switch
                         checked={cat.visivel_todas}
                         onCheckedChange={() => toggleVisivelTodas(cat)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Exibir no Kit</span>
+                      <Switch
+                        checked={cat.visivel_kit}
+                        onCheckedChange={() => toggleVisivelKit(cat)}
                       />
                     </div>
                   </div>
