@@ -65,6 +65,7 @@ export default function CatalogoPublico() {
   const [filtroProntaEntrega, setFiltroProntaEntrega] = useState(false);
   const [faixaPreco, setFaixaPreco] = useState<[number, number]>([0, 10000]);
   const [precoMaxGlobal, setPrecoMaxGlobal] = useState(10000);
+  const [secaoAberta, setSecaoAberta] = useState<string | null>(null);
   const categorias = categoriasVisiveis.filter(c => c.visivel);
 
   const categoriasVenda = categorias.map(cat => ({
@@ -499,7 +500,7 @@ export default function CatalogoPublico() {
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6 min-w-0">
           {/* Sidebar - Categorias */}
           <aside className="lg:w-64 shrink-0">
-            <Collapsible defaultOpen={false} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-24 shadow-sm">
+            <Collapsible open={secaoAberta === 'categorias'} onOpenChange={(open) => setSecaoAberta(open ? 'categorias' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-24 shadow-sm">
               <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-base md:text-lg">Categorias</span>
@@ -595,7 +596,7 @@ export default function CatalogoPublico() {
 
             {/* Filtro por Valor */}
             {exibirPrecos && (
-              <Collapsible defaultOpen={false} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-44 shadow-sm mt-3">
+              <Collapsible open={secaoAberta === 'preco'} onOpenChange={(open) => setSecaoAberta(open ? 'preco' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-44 shadow-sm mt-3">
                 <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="h-4 w-4 text-accent" />
