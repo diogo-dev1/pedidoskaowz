@@ -76,6 +76,9 @@ export default function CatalogoPublico() {
   const [tamanhosDisponiveis, setTamanhosDisponiveis] = useState<number[]>([]);
   const [laminasDisponiveis, setLaminasDisponiveis] = useState<number[]>([]);
   const [secaoAberta, setSecaoAberta] = useState<string | null>(null);
+  const [filtroPrecoAtivo, setFiltroPrecoAtivo] = useState(true);
+  const [filtroTamanhoAtivo, setFiltroTamanhoAtivo] = useState(true);
+  const [filtroLaminaAtivo, setFiltroLaminaAtivo] = useState(true);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const debounceRefTamanho = useRef<NodeJS.Timeout | null>(null);
   const categorias = categoriasVisiveis.filter(c => c.visivel);
@@ -151,7 +154,7 @@ export default function CatalogoPublico() {
     const { data } = await supabase
       .from('configuracoes_catalogo')
       .select('*')
-      .in('chave', ['exibir_precos', 'exibir_formas_pagamento', 'desconto_pix', 'texto_pix', 'texto_parcelamento']);
+      .in('chave', ['exibir_precos', 'exibir_formas_pagamento', 'desconto_pix', 'texto_pix', 'texto_parcelamento', 'filtro_preco_ativo', 'filtro_tamanho_ativo', 'filtro_lamina_ativo']);
     if (data) {
       data.forEach(d => {
         if (d.chave === 'exibir_precos') setExibirPrecos(d.valor === 'true');
@@ -159,6 +162,9 @@ export default function CatalogoPublico() {
         if (d.chave === 'desconto_pix') setDescontoPix(parseFloat(d.valor) || 5);
         if (d.chave === 'texto_pix') setTextoPix(d.valor);
         if (d.chave === 'texto_parcelamento') setTextoParcelamento(d.valor);
+        if (d.chave === 'filtro_preco_ativo') setFiltroPrecoAtivo(d.valor === 'true');
+        if (d.chave === 'filtro_tamanho_ativo') setFiltroTamanhoAtivo(d.valor === 'true');
+        if (d.chave === 'filtro_lamina_ativo') setFiltroLaminaAtivo(d.valor === 'true');
       });
     }
   };
@@ -274,19 +280,21 @@ export default function CatalogoPublico() {
     // Filtro por faixa de preço
     if (modelo.preco_base < faixaPreco[0] || modelo.preco_base > faixaPreco[1]) return false;
     
-    // Filtro por tamanho (comprimento total) - selecionáveis
-    if (tamanhosSelecionados.length > 0 && modelo.comprimento_total != null) {
+    // Filtro por tamanho (comprimento total) - "até" o maior selecionado
+    if (tamanhosSelecionados.length > 0) {
+      if (modelo.comprimento_total == null) return false;
+      const maxSelecionado = Math.max(...tamanhosSelecionados);
       const rounded = Math.round(modelo.comprimento_total * 10) / 10;
-      if (!tamanhosSelecionados.includes(rounded)) return false;
+      if (rounded > maxSelecionado) return false;
     }
-    if (tamanhosSelecionados.length > 0 && modelo.comprimento_total == null) return false;
     
-    // Filtro por área útil de corte (lâmina) - selecionáveis
-    if (laminasSelecionadas.length > 0 && modelo.area_util_corte != null) {
+    // Filtro por área útil de corte (lâmina) - "até" o maior selecionado
+    if (laminasSelecionadas.length > 0) {
+      if (modelo.area_util_corte == null) return false;
+      const maxSelecionado = Math.max(...laminasSelecionadas);
       const rounded = Math.round(modelo.area_util_corte * 10) / 10;
-      if (!laminasSelecionadas.includes(rounded)) return false;
+      if (rounded > maxSelecionado) return false;
     }
-    if (laminasSelecionadas.length > 0 && modelo.area_util_corte == null) return false;
     
     // Filtro pronta entrega
     if (filtroProntaEntrega && !modelo.pronta_entrega) return false;
@@ -654,7 +662,7 @@ export default function CatalogoPublico() {
             </Collapsible>
 
             {/* Filtro por Valor */}
-            {exibirPrecos && (
+            {exibirPrecos && filtroPrecoAtivo && (
               <Collapsible open={secaoAberta === 'preco'} onOpenChange={(open) => setSecaoAberta(open ? 'preco' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-44 shadow-sm mt-3">
                 <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
@@ -736,7 +744,7 @@ export default function CatalogoPublico() {
             )}
 
             {/* Filtro por Tamanho Total */}
-            {tamanhosDisponiveis.length > 0 && (
+            {filtroTamanhoAtivo && tamanhosDisponiveis.length > 0 && (
               <Collapsible open={secaoAberta === 'tamanho'} onOpenChange={(open) => setSecaoAberta(open ? 'tamanho' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-sm mt-3">
                 <CollapsibleTrigger className="w-full p-3 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
@@ -749,7 +757,8 @@ export default function CatalogoPublico() {
                   <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="px-3 pb-3">
-                  <div className="flex flex-wrap gap-1.5 pt-1">
+                  <p className="text-[10px] text-zinc-500 mb-1.5 pt-1">Exibir lâminas até:</p>
+                  <div className="flex flex-wrap gap-1.5">
                     {tamanhosDisponiveis.map((tam) => {
                       const isSelected = tamanhosSelecionados.includes(tam);
                       return (
@@ -758,7 +767,7 @@ export default function CatalogoPublico() {
                           className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
                             isSelected ? 'bg-accent text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                           }`}
-                          onClick={() => setTamanhosSelecionados(prev => prev.includes(tam) ? prev.filter(t => t !== tam) : [...prev, tam])}
+                          onClick={() => setTamanhosSelecionados(isSelected ? [] : [tam])}
                         >
                           {tam}cm
                         </button>
@@ -775,7 +784,7 @@ export default function CatalogoPublico() {
             )}
 
             {/* Filtro por Fio de Corte */}
-            {laminasDisponiveis.length > 0 && (
+            {filtroLaminaAtivo && laminasDisponiveis.length > 0 && (
               <Collapsible open={secaoAberta === 'lamina'} onOpenChange={(open) => setSecaoAberta(open ? 'lamina' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-sm mt-3">
                 <CollapsibleTrigger className="w-full p-3 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
@@ -788,7 +797,8 @@ export default function CatalogoPublico() {
                   <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="px-3 pb-3">
-                  <div className="flex flex-wrap gap-1.5 pt-1">
+                  <p className="text-[10px] text-zinc-500 mb-1.5 pt-1">Exibir lâminas até:</p>
+                  <div className="flex flex-wrap gap-1.5">
                     {laminasDisponiveis.map((lam) => {
                       const isSelected = laminasSelecionadas.includes(lam);
                       return (
@@ -797,7 +807,7 @@ export default function CatalogoPublico() {
                           className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
                             isSelected ? 'bg-accent text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                           }`}
-                          onClick={() => setLaminasSelecionadas(prev => prev.includes(lam) ? prev.filter(l => l !== lam) : [...prev, lam])}
+                          onClick={() => setLaminasSelecionadas(isSelected ? [] : [lam])}
                         >
                           {lam}cm
                         </button>
