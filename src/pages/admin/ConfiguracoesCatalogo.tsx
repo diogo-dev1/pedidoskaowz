@@ -70,6 +70,11 @@ export default function ConfiguracoesCatalogo() {
   const [loadingPagamento, setLoadingPagamento] = useState(true);
   const [salvandoPagamento, setSalvandoPagamento] = useState(false);
 
+  // Filtros
+  const [filtroPrecoAtivo, setFiltroPrecoAtivo] = useState(true);
+  const [filtroTamanhoAtivo, setFiltroTamanhoAtivo] = useState(true);
+  const [filtroLaminaAtivo, setFiltroLaminaAtivo] = useState(true);
+
   // Destaques "Todas"
   const [todosModelos, setTodosModelos] = useState<ModeloCatalogo[]>([]);
   const [destaquesIds, setDestaquesIds] = useState<string[]>([]);
@@ -109,13 +114,16 @@ export default function ConfiguracoesCatalogo() {
     const { data } = await supabase
       .from('configuracoes_catalogo')
       .select('*')
-      .in('chave', ['exibir_formas_pagamento', 'desconto_pix', 'texto_pix', 'texto_parcelamento']);
+      .in('chave', ['exibir_formas_pagamento', 'desconto_pix', 'texto_pix', 'texto_parcelamento', 'filtro_preco_ativo', 'filtro_tamanho_ativo', 'filtro_lamina_ativo']);
     if (data) {
       data.forEach(d => {
         if (d.chave === 'exibir_formas_pagamento') setExibirFormasPagamento(d.valor === 'true');
         if (d.chave === 'desconto_pix') setDescontoPix(d.valor);
         if (d.chave === 'texto_pix') setTextoPix(d.valor);
         if (d.chave === 'texto_parcelamento') setTextoParcelamento(d.valor);
+        if (d.chave === 'filtro_preco_ativo') setFiltroPrecoAtivo(d.valor === 'true');
+        if (d.chave === 'filtro_tamanho_ativo') setFiltroTamanhoAtivo(d.valor === 'true');
+        if (d.chave === 'filtro_lamina_ativo') setFiltroLaminaAtivo(d.valor === 'true');
       });
     }
     setLoadingPagamento(false);
@@ -543,6 +551,44 @@ export default function ConfiguracoesCatalogo() {
                   </Button>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Filtros do Catálogo</CardTitle>
+              <CardDescription className="text-xs">
+                Ative ou desative filtros individuais na vitrine pública.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm">Filtro de Preço</p>
+                <Switch checked={filtroPrecoAtivo} onCheckedChange={async () => {
+                  const newVal = !filtroPrecoAtivo;
+                  await supabase.from('configuracoes_catalogo').update({ valor: newVal.toString() }).eq('chave', 'filtro_preco_ativo');
+                  setFiltroPrecoAtivo(newVal);
+                  toast.success(newVal ? 'Filtro de preço ativado' : 'Filtro de preço desativado');
+                }} />
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm">Filtro de Comprimento Total</p>
+                <Switch checked={filtroTamanhoAtivo} onCheckedChange={async () => {
+                  const newVal = !filtroTamanhoAtivo;
+                  await supabase.from('configuracoes_catalogo').update({ valor: newVal.toString() }).eq('chave', 'filtro_tamanho_ativo');
+                  setFiltroTamanhoAtivo(newVal);
+                  toast.success(newVal ? 'Filtro de tamanho ativado' : 'Filtro de tamanho desativado');
+                }} />
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm">Filtro de Fio de Corte</p>
+                <Switch checked={filtroLaminaAtivo} onCheckedChange={async () => {
+                  const newVal = !filtroLaminaAtivo;
+                  await supabase.from('configuracoes_catalogo').update({ valor: newVal.toString() }).eq('chave', 'filtro_lamina_ativo');
+                  setFiltroLaminaAtivo(newVal);
+                  toast.success(newVal ? 'Filtro de lâmina ativado' : 'Filtro de lâmina desativado');
+                }} />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
