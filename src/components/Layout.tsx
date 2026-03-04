@@ -21,7 +21,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Conteúdo principal */}
           <main className="flex-1 bg-secondary overflow-x-hidden">
-            {children}
+            <div className="w-full max-w-6xl mx-auto p-4 sm:p-6">
+              {children}
+            </div>
           </main>
         </div>
       </div>
