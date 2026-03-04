@@ -400,29 +400,15 @@ export default function CatalogoPublico() {
                 ))}
               </div>
               {banners.length > 1 && (
-                <>
-                  <button
-                    onClick={() => setBannerAtual(prev => (prev - 1 + banners.length) % banners.length)}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white rounded-full p-1.5 transition-colors z-10"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => setBannerAtual(prev => (prev + 1) % banners.length)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white rounded-full p-1.5 transition-colors z-10"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                    {banners.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setBannerAtual(idx)}
-                        className={`w-2 h-2 rounded-full transition-all ${idx === bannerAtual ? 'bg-accent w-6' : 'bg-white/50 hover:bg-white/80'}`}
-                      />
-                    ))}
-                  </div>
-                </>
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                  {banners.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setBannerAtual(idx)}
+                      className={`w-2 h-2 rounded-full transition-all ${idx === bannerAtual ? 'bg-accent w-6' : 'bg-white/50 hover:bg-white/80'}`}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           )}
