@@ -622,8 +622,12 @@ export default function CatalogoPublico() {
                       min={0}
                       max={precoMaxGlobal}
                       step={50}
+                      minStepsBetweenThumbs={1}
                       value={[faixaPrecoVisual[0], faixaPrecoVisual[1]]}
-                      onValueChange={(v) => handleFaixaPrecoChange([v[0], v[1]])}
+                      onValueChange={(v) => {
+                        const sorted = [...v].sort((a, b) => a - b);
+                        handleFaixaPrecoChange([sorted[0], sorted[1]]);
+                      }}
                       className="w-full [&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:border-2 [&_[role=slider]]:border-accent [&_[role=slider]]:bg-zinc-950 [&_[role=slider]]:shadow-[0_0_8px_hsl(var(--accent)/0.3)] [&_[role=slider]]:transition-shadow [&_[role=slider]]:hover:shadow-[0_0_12px_hsl(var(--accent)/0.5)]"
                     />
 
