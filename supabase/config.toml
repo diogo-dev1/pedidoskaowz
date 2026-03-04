@@ -2,3 +2,6 @@ project_id = "oapxhmkrtpisijtlobcq"
 
 [functions.sync-shopify]
 verify_jwt = false
+
+[functions.parse-specs]
+verify_jwt = false
