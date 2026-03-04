@@ -458,6 +458,16 @@ export default function CatalogoPublico() {
         </div>
       </header>
 
+      {/* Floating tip */}
+      {modelosSelecionados.size === 0 && (
+        <div className="w-full bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800/50">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-center gap-2 text-zinc-400 text-xs">
+            <MessageCircle className="h-3 w-3 text-green-500 shrink-0" />
+            <span>Toque nas lâminas para selecionar e solicitar orçamento via WhatsApp</span>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-4 md:py-6">
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6 min-w-0">
           {/* Sidebar - Categorias */}
