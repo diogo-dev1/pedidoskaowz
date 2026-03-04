@@ -53,9 +53,11 @@ export type Database = {
       catalogo_modelos: {
         Row: {
           apresentacao_venda: string | null
+          area_util_corte: number | null
           aspect_ratio: string
           categoria: string | null
           categorias: string[] | null
+          comprimento_total: number | null
           created_at: string
           descricao_html: string | null
           garantia: string | null
@@ -73,9 +75,11 @@ export type Database = {
         }
         Insert: {
           apresentacao_venda?: string | null
+          area_util_corte?: number | null
           aspect_ratio?: string
           categoria?: string | null
           categorias?: string[] | null
+          comprimento_total?: number | null
           created_at?: string
           descricao_html?: string | null
           garantia?: string | null
@@ -93,9 +97,11 @@ export type Database = {
         }
         Update: {
           apresentacao_venda?: string | null
+          area_util_corte?: number | null
           aspect_ratio?: string
           categoria?: string | null
           categorias?: string[] | null
+          comprimento_total?: number | null
           created_at?: string
           descricao_html?: string | null
           garantia?: string | null
