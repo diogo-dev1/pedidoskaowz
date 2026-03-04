@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -64,9 +64,19 @@ export default function CatalogoPublico() {
   const [textoParcelamento, setTextoParcelamento] = useState('3x sem juros ou até 12x no cartão');
   const [filtroProntaEntrega, setFiltroProntaEntrega] = useState(false);
   const [faixaPreco, setFaixaPreco] = useState<[number, number]>([0, 10000]);
+  const [faixaPrecoVisual, setFaixaPrecoVisual] = useState<[number, number]>([0, 10000]);
   const [precoMaxGlobal, setPrecoMaxGlobal] = useState(10000);
   const [secaoAberta, setSecaoAberta] = useState<string | null>(null);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const categorias = categoriasVisiveis.filter(c => c.visivel);
+
+  const handleFaixaPrecoChange = useCallback((v: number[]) => {
+    setFaixaPrecoVisual(v as [number, number]);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setFaixaPreco(v as [number, number]);
+    }, 200);
+  }, []);
 
   const categoriasVenda = categorias.map(cat => ({
     subtitulo: cat.categoria,
@@ -211,6 +221,7 @@ export default function CatalogoPublico() {
         const maxP = Math.ceil(Math.max(...modelosFiltrados.map(m => m.preco_base)) / 100) * 100;
         setPrecoMaxGlobal(maxP);
         setFaixaPreco([0, maxP]);
+        setFaixaPrecoVisual([0, maxP]);
       }
     } catch (error) {
       console.error('Erro ao carregar modelos:', error);
@@ -606,24 +617,67 @@ export default function CatalogoPublico() {
                 </CollapsibleTrigger>
                 <CollapsibleContent className="px-3 md:px-4 pb-4">
                   <div className="space-y-4 pt-2">
+                    {/* Inputs de valor */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <label className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1 block">Mínimo</label>
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">R$</span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={faixaPrecoVisual[1]}
+                            step={50}
+                            value={faixaPrecoVisual[0]}
+                            onChange={(e) => {
+                              const val = Math.max(0, Math.min(Number(e.target.value), faixaPrecoVisual[1]));
+                              handleFaixaPrecoChange([val, faixaPrecoVisual[1]]);
+                            }}
+                            className="w-full bg-zinc-900 border border-zinc-600 rounded-md pl-8 pr-2 py-1.5 text-sm text-white focus:border-accent focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                      <span className="text-zinc-600 mt-5">—</span>
+                      <div className="flex-1">
+                        <label className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1 block">Máximo</label>
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">R$</span>
+                          <input
+                            type="number"
+                            min={faixaPrecoVisual[0]}
+                            max={precoMaxGlobal}
+                            step={50}
+                            value={faixaPrecoVisual[1]}
+                            onChange={(e) => {
+                              const val = Math.min(precoMaxGlobal, Math.max(Number(e.target.value), faixaPrecoVisual[0]));
+                              handleFaixaPrecoChange([faixaPrecoVisual[0], val]);
+                            }}
+                            className="w-full bg-zinc-900 border border-zinc-600 rounded-md pl-8 pr-2 py-1.5 text-sm text-white focus:border-accent focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <Slider
                       min={0}
                       max={precoMaxGlobal}
                       step={50}
-                      value={faixaPreco}
-                      onValueChange={(v) => setFaixaPreco(v as [number, number])}
-                      className="w-full"
+                      value={faixaPrecoVisual}
+                      onValueChange={handleFaixaPrecoChange}
+                      className="w-full [&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:border-accent [&_[role=slider]]:bg-zinc-900 [&_[role=slider]]:shadow-md"
                     />
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-zinc-400">R$ {faixaPreco[0].toFixed(0)}</span>
-                      <span className="text-zinc-400">R$ {faixaPreco[1].toFixed(0)}</span>
-                    </div>
-                    {(faixaPreco[0] > 0 || faixaPreco[1] < precoMaxGlobal) && (
+                    
+                    {/* Contagem de resultados */}
+                    <p className="text-center text-xs text-zinc-500">
+                      {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'lâmina encontrada' : 'lâminas encontradas'}
+                    </p>
+
+                    {(faixaPrecoVisual[0] > 0 || faixaPrecoVisual[1] < precoMaxGlobal) && (
                       <Button
                         variant="ghost"
                         size="sm"
                         className="w-full text-xs text-zinc-400 hover:text-white"
-                        onClick={() => setFaixaPreco([0, precoMaxGlobal])}
+                        onClick={() => { setFaixaPreco([0, precoMaxGlobal]); setFaixaPrecoVisual([0, precoMaxGlobal]); }}
                       >
                         Limpar filtro
                       </Button>
