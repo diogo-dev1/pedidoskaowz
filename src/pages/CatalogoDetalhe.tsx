@@ -156,7 +156,7 @@ export default function CatalogoDetalhe() {
       <div className="min-h-screen bg-zinc-900 flex items-center justify-center">
         <div className="text-center">
           <p className="text-zinc-400 mb-4">Produto não encontrado</p>
-          <Button onClick={() => navigate('/catalogo')} className="bg-accent hover:bg-accent/90">
+          <Button onClick={() => navigate(-1)} className="bg-accent hover:bg-accent/90">
             Voltar ao catálogo
           </Button>
         </div>
@@ -175,7 +175,7 @@ export default function CatalogoDetalhe() {
       <header className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800/50">
         <div className="max-w-5xl mx-auto px-4 py-3">
           <button
-            onClick={() => navigate('/catalogo')}
+            onClick={() => navigate(-1)}
             className="text-zinc-500 hover:text-white transition-colors text-sm flex items-center gap-1.5"
           >
             <ArrowLeft className="h-4 w-4" />
