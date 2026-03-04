@@ -221,13 +221,15 @@ export default function GerenciarInformativos() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Info className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold text-foreground">Informativos</h1>
+      <div className="min-w-0">
+        <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2">
+          <Info className="h-5 w-5 text-accent" />
+          Informativos
+        </h1>
+        <p className="text-muted-foreground text-xs sm:text-sm">
+          Conteúdo dos modais "Saiba mais" de cada etapa.
+        </p>
       </div>
-      <p className="text-muted-foreground text-sm">
-        Configure o conteúdo exibido nos modais "Saiba mais" de cada etapa de customização.
-      </p>
 
       <div className="grid gap-4">
         {ETAPAS.map((etapa) => {

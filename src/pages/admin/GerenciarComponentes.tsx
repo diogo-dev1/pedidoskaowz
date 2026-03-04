@@ -215,9 +215,9 @@ export default function GerenciarComponentes() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Gerenciar Componentes</h1>
-        <p className="text-muted-foreground">Gerencie as opções de personalização e produtos adicionais</p>
+      <div className="min-w-0">
+        <h1 className="text-lg sm:text-2xl font-bold">Componentes</h1>
+        <p className="text-muted-foreground text-xs sm:text-sm">Opções de personalização e produtos adicionais</p>
       </div>
 
       <Tabs defaultValue="componentes" className="w-full">
@@ -286,51 +286,34 @@ export default function GerenciarComponentes() {
             </Dialog>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {tiposOpcao.map((tipo) => (
-              <div key={tipo}>
-                <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                  {tipo}
-                  <Badge variant="secondary">{groupedComponentes[tipo].length}</Badge>
-                </h2>
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {groupedComponentes[tipo].map((componente) => (
-                    <Card key={componente.id}>
-                      <CardHeader>
-                        <CardTitle className="text-base">{componente.nome_opcao}</CardTitle>
-                        <CardDescription>+ R$ {componente.preco_adicional.toFixed(2)}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditDialog(componente)}
-                          className="flex-1"
-                        >
-                          <Pencil className="mr-2 h-3 w-3" />
-                          Editar
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(componente.id)}
-                          className="flex-1"
-                        >
-                          <Trash2 className="mr-2 h-3 w-3" />
-                          Excluir
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  {groupedComponentes[tipo].length === 0 && (
-                    <Card className="col-span-full">
-                      <CardContent className="py-6 text-center text-muted-foreground">
-                        Nenhum componente deste tipo cadastrado.
-                      </CardContent>
-                    </Card>
-                  )}
+              groupedComponentes[tipo].length > 0 && (
+                <div key={tipo}>
+                  <h2 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    {tipo}
+                    <Badge variant="secondary" className="text-[10px]">{groupedComponentes[tipo].length}</Badge>
+                  </h2>
+                  <div className="space-y-1">
+                    {groupedComponentes[tipo].map((componente) => (
+                      <div key={componente.id} className="flex items-center gap-3 p-2 rounded-lg border bg-card">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{componente.nome_opcao}</p>
+                          <p className="text-xs text-muted-foreground">+ R$ {componente.preco_adicional.toFixed(2)}</p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button variant="outline" size="sm" onClick={() => openEditDialog(componente)} className="h-7 text-xs px-2">
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDelete(componente.id)} className="h-7 text-xs px-2">
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )
             ))}
           </div>
         </TabsContent>
@@ -382,41 +365,27 @@ export default function GerenciarComponentes() {
             </Dialog>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-1">
             {produtosAdicionais.map((produto) => (
-              <Card key={produto.id}>
-                <CardHeader>
-                  <CardTitle className="text-base">{produto.nome_produto}</CardTitle>
-                  <CardDescription>R$ {produto.preco_unitario.toFixed(2)} / un</CardDescription>
-                </CardHeader>
-                <CardContent className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditProduto(produto)}
-                    className="flex-1"
-                  >
-                    <Pencil className="mr-2 h-3 w-3" />
-                    Editar
+              <div key={produto.id} className="flex items-center gap-3 p-2 rounded-lg border bg-card">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{produto.nome_produto}</p>
+                  <p className="text-xs text-muted-foreground">R$ {produto.preco_unitario.toFixed(2)} / un</p>
+                </div>
+                <div className="flex gap-1">
+                  <Button variant="outline" size="sm" onClick={() => openEditProduto(produto)} className="h-7 text-xs px-2">
+                    <Pencil className="h-3 w-3" />
                   </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteProduto(produto.id)}
-                    className="flex-1"
-                  >
-                    <Trash2 className="mr-2 h-3 w-3" />
-                    Excluir
+                  <Button variant="destructive" size="sm" onClick={() => handleDeleteProduto(produto.id)} className="h-7 text-xs px-2">
+                    <Trash2 className="h-3 w-3" />
                   </Button>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
             {produtosAdicionais.length === 0 && (
-              <Card className="col-span-full">
-                <CardContent className="py-6 text-center text-muted-foreground">
-                  Nenhum produto adicional cadastrado.
-                </CardContent>
-              </Card>
+              <div className="py-6 text-center text-muted-foreground text-sm">
+                Nenhum produto adicional cadastrado.
+              </div>
             )}
           </div>
         </TabsContent>

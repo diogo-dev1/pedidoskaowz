@@ -155,10 +155,10 @@ export default function GerenciarModelos() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Modelos Base</h1>
-          <p className="text-muted-foreground">Modelos usados na customização de lâminas (ex: EDC, Jagunço, Adaga)</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-2xl font-bold">Modelos Base</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">Modelos usados na customização de lâminas</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
@@ -246,54 +246,42 @@ export default function GerenciarModelos() {
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {modelos.map((modelo) => (
-          <Card key={modelo.id}>
-            <CardHeader>
-              {modelo.imagem_modelo ? (
-                <div className="w-full h-48 bg-zinc-800 rounded-md mb-4 flex items-center justify-center p-4">
+          <Card key={modelo.id} className="overflow-hidden">
+            <div className="flex items-center gap-3 p-3">
+              <div className="w-14 h-14 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+                {modelo.imagem_modelo ? (
                   <img
                     src={modelo.imagem_modelo}
                     alt={modelo.nome_modelo}
-                    className="max-w-full max-h-full object-contain"
+                    className="w-full h-full object-contain"
                     style={{ filter: 'invert(1)' }}
                   />
-                </div>
-              ) : (
-                <div className="w-full h-48 bg-muted rounded-md mb-4 flex items-center justify-center">
-                  <span className="text-muted-foreground text-sm">Sem SVG</span>
-                </div>
-              )}
-              <CardTitle>{modelo.nome_modelo}</CardTitle>
-              <CardDescription>
-                <div className="flex flex-wrap gap-1 mb-1">
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-muted-foreground text-[10px]">Sem SVG</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm truncate">{modelo.nome_modelo}</h3>
+                <div className="flex flex-wrap gap-1 mt-0.5">
                   {(modelo.categorias && modelo.categorias.length > 0 ? modelo.categorias : modelo.categoria ? [modelo.categoria] : []).map(cat => (
-                    <span key={cat} className="text-xs bg-accent/20 px-2 py-0.5 rounded">{cat}</span>
+                    <span key={cat} className="text-[10px] bg-accent/20 px-1.5 py-0.5 rounded">{cat}</span>
                   ))}
                 </div>
-                R$ {modelo.preco_base.toFixed(2)}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => openEditDialog(modelo)}
-                className="flex-1"
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Editar
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleDelete(modelo.id)}
-                className="flex-1"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Excluir
-              </Button>
-            </CardContent>
+                <p className="text-xs font-semibold text-accent mt-0.5">R$ {modelo.preco_base.toFixed(2)}</p>
+                <div className="flex gap-1.5 mt-1.5">
+                  <Button variant="outline" size="sm" onClick={() => openEditDialog(modelo)} className="h-7 text-xs px-2">
+                    <Pencil className="h-3 w-3 mr-1" /> Editar
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleDelete(modelo.id)} className="h-7 text-xs px-2">
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           </Card>
         ))}
       </div>
