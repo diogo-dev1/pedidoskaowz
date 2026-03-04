@@ -137,8 +137,9 @@ export default function Simulador() {
   const [textoIA, setTextoIA] = useState('');
   const [processandoIA, setProcessandoIA] = useState(false);
 
-  // Collapsibles
+  // Collapsibles - accordion behavior
   const [showExtras, setShowExtras] = useState(false);
+  const [secaoAberta, setSecaoAberta] = useState<string | null>(null);
 
   useEffect(() => {
     carregarDados();
@@ -935,11 +936,15 @@ OBS: ${observacao || '-'}`;
     label: string,
     etapaKey?: string 
   }) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const sectionId = etapaKey || label;
+    const isOpen = secaoAberta === sectionId;
     const selectedOption = options.find(o => o.id === selected);
 
     return (
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Collapsible open={isOpen} onOpenChange={(open) => {
+        setSecaoAberta(open ? sectionId : null);
+        if (open) setShowExtras(false);
+      }}>
         <CollapsibleTrigger asChild>
           <button className="w-full flex items-center justify-between p-2.5 rounded-lg bg-muted hover:bg-muted/80 transition-all">
             <div className="flex items-center gap-2">
@@ -967,7 +972,7 @@ OBS: ${observacao || '-'}`;
                 key={opt.id}
                 onClick={() => {
                   onSelect(opt.id);
-                  setIsOpen(false);
+                  setSecaoAberta(null);
                 }}
                 className={`px-2.5 py-1.5 rounded-md text-xs transition-all ${
                   selected === opt.id
@@ -1181,7 +1186,7 @@ OBS: ${observacao || '-'}`;
             />
 
             {/* Extras colapsável */}
-            <Collapsible open={showExtras} onOpenChange={setShowExtras}>
+            <Collapsible open={showExtras} onOpenChange={(open) => { setShowExtras(open); if (open) setSecaoAberta(null); }}>
               <CollapsibleTrigger asChild>
                 <button className="flex items-center justify-between w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
                   <span className="flex items-center gap-1.5">
