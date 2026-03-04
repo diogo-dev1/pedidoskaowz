@@ -737,105 +737,77 @@ export default function CatalogoPublico() {
 
             {/* Filtro por Tamanho Total */}
             {tamanhosDisponiveis.length > 0 && (
-              <Collapsible open={secaoAberta === 'tamanho'} onOpenChange={(open) => setSecaoAberta(open ? 'tamanho' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-44 shadow-sm mt-3">
-                <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
+              <Collapsible open={secaoAberta === 'tamanho'} onOpenChange={(open) => setSecaoAberta(open ? 'tamanho' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-sm mt-3">
+                <CollapsibleTrigger className="w-full p-3 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
-                    <SlidersHorizontal className="h-4 w-4 text-accent" />
-                    <span className="font-semibold text-base md:text-lg">Tamanho Total (cm)</span>
+                    <SlidersHorizontal className="h-3.5 w-3.5 text-accent" />
+                    <span className="font-semibold text-sm">Comprimento Total</span>
                     {tamanhosSelecionados.length > 0 && (
-                      <Badge className="bg-accent text-white text-xs">{tamanhosSelecionados.length}</Badge>
+                      <Badge className="bg-accent text-white text-[10px] h-4 px-1.5">{tamanhosSelecionados.length}</Badge>
                     )}
                   </div>
-                  <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
+                  <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
-                <CollapsibleContent className="px-3 md:px-4 pb-4">
-                  <div className="space-y-1.5 pt-2 max-h-60 overflow-y-auto">
+                <CollapsibleContent className="px-3 pb-3">
+                  <div className="flex flex-wrap gap-1.5 pt-1">
                     {tamanhosDisponiveis.map((tam) => {
-                      const count = modelos.filter(m => m.comprimento_total != null && Math.round(m.comprimento_total * 10) / 10 === tam).length;
                       const isSelected = tamanhosSelecionados.includes(tam);
                       return (
                         <button
                           key={tam}
-                          className={`w-full flex items-center justify-between text-xs md:text-sm h-8 md:h-9 px-3 rounded-md transition-colors ${
-                            isSelected ? 'bg-accent/20 text-accent' : 'text-zinc-300 hover:bg-zinc-700'
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                            isSelected ? 'bg-accent text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                           }`}
                           onClick={() => setTamanhosSelecionados(prev => prev.includes(tam) ? prev.filter(t => t !== tam) : [...prev, tam])}
                         >
-                          <div className="flex items-center gap-2">
-                            <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
-                              isSelected ? 'bg-accent border-accent' : 'border-zinc-500'
-                            }`}>
-                              {isSelected && <Check className="h-3 w-3 text-white" />}
-                            </div>
-                            {tam} cm
-                          </div>
-                          <span className="text-zinc-500 text-[10px]">({count})</span>
+                          {tam}cm
                         </button>
                       );
                     })}
                   </div>
                   {tamanhosSelecionados.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full text-xs text-zinc-400 hover:text-white mt-2"
-                      onClick={() => setTamanhosSelecionados([])}
-                    >
-                      Limpar filtro
-                    </Button>
+                    <button className="text-[10px] text-zinc-500 hover:text-zinc-300 mt-2 underline" onClick={() => setTamanhosSelecionados([])}>
+                      Limpar
+                    </button>
                   )}
                 </CollapsibleContent>
               </Collapsible>
             )}
 
-            {/* Filtro por Tamanho da Lâmina */}
+            {/* Filtro por Fio de Corte */}
             {laminasDisponiveis.length > 0 && (
-              <Collapsible open={secaoAberta === 'lamina'} onOpenChange={(open) => setSecaoAberta(open ? 'lamina' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-44 shadow-sm mt-3">
-                <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
+              <Collapsible open={secaoAberta === 'lamina'} onOpenChange={(open) => setSecaoAberta(open ? 'lamina' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-sm mt-3">
+                <CollapsibleTrigger className="w-full p-3 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
-                    <SlidersHorizontal className="h-4 w-4 text-accent" />
-                    <span className="font-semibold text-base md:text-lg">Fio de Corte (cm)</span>
+                    <SlidersHorizontal className="h-3.5 w-3.5 text-accent" />
+                    <span className="font-semibold text-sm">Fio de Corte</span>
                     {laminasSelecionadas.length > 0 && (
-                      <Badge className="bg-accent text-white text-xs">{laminasSelecionadas.length}</Badge>
+                      <Badge className="bg-accent text-white text-[10px] h-4 px-1.5">{laminasSelecionadas.length}</Badge>
                     )}
                   </div>
-                  <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
+                  <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
-                <CollapsibleContent className="px-3 md:px-4 pb-4">
-                  <div className="space-y-1.5 pt-2 max-h-60 overflow-y-auto">
+                <CollapsibleContent className="px-3 pb-3">
+                  <div className="flex flex-wrap gap-1.5 pt-1">
                     {laminasDisponiveis.map((lam) => {
-                      const count = modelos.filter(m => m.area_util_corte != null && Math.round(m.area_util_corte * 10) / 10 === lam).length;
                       const isSelected = laminasSelecionadas.includes(lam);
                       return (
                         <button
                           key={lam}
-                          className={`w-full flex items-center justify-between text-xs md:text-sm h-8 md:h-9 px-3 rounded-md transition-colors ${
-                            isSelected ? 'bg-accent/20 text-accent' : 'text-zinc-300 hover:bg-zinc-700'
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                            isSelected ? 'bg-accent text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                           }`}
                           onClick={() => setLaminasSelecionadas(prev => prev.includes(lam) ? prev.filter(l => l !== lam) : [...prev, lam])}
                         >
-                          <div className="flex items-center gap-2">
-                            <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
-                              isSelected ? 'bg-accent border-accent' : 'border-zinc-500'
-                            }`}>
-                              {isSelected && <Check className="h-3 w-3 text-white" />}
-                            </div>
-                            {lam} cm
-                          </div>
-                          <span className="text-zinc-500 text-[10px]">({count})</span>
+                          {lam}cm
                         </button>
                       );
                     })}
                   </div>
                   {laminasSelecionadas.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full text-xs text-zinc-400 hover:text-white mt-2"
-                      onClick={() => setLaminasSelecionadas([])}
-                    >
-                      Limpar filtro
-                    </Button>
+                    <button className="text-[10px] text-zinc-500 hover:text-zinc-300 mt-2 underline" onClick={() => setLaminasSelecionadas([])}>
+                      Limpar
+                    </button>
                   )}
                 </CollapsibleContent>
               </Collapsible>
