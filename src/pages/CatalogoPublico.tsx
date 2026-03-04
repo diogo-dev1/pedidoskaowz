@@ -697,10 +697,16 @@ export default function CatalogoPublico() {
                         <label className="text-[11px] text-zinc-500">Mínimo:</label>
                         <Input
                           type="number"
-                          value={faixaPrecoVisual[0]}
+                          value={faixaPrecoVisual[0] === 0 ? '' : faixaPrecoVisual[0]}
+                          placeholder="0"
                           onChange={(e) => {
-                            const val = Number(e.target.value);
-                            if (val >= 0 && val <= faixaPrecoVisual[1]) {
+                            const raw = e.target.value;
+                            if (raw === '') {
+                              handleFaixaPrecoChange([0, faixaPrecoVisual[1]]);
+                              return;
+                            }
+                            const val = Number(raw);
+                            if (!isNaN(val) && val >= 0 && val <= faixaPrecoVisual[1]) {
                               handleFaixaPrecoChange([val, faixaPrecoVisual[1]]);
                             }
                           }}
@@ -711,10 +717,16 @@ export default function CatalogoPublico() {
                         <label className="text-[11px] text-zinc-500">Máximo:</label>
                         <Input
                           type="number"
-                          value={faixaPrecoVisual[1]}
+                          value={faixaPrecoVisual[1] === 0 ? '' : faixaPrecoVisual[1]}
+                          placeholder="0"
                           onChange={(e) => {
-                            const val = Number(e.target.value);
-                            if (val >= faixaPrecoVisual[0] && val <= precoMaxGlobal) {
+                            const raw = e.target.value;
+                            if (raw === '') {
+                              handleFaixaPrecoChange([faixaPrecoVisual[0], 0]);
+                              return;
+                            }
+                            const val = Number(raw);
+                            if (!isNaN(val) && val >= faixaPrecoVisual[0] && val <= precoMaxGlobal) {
                               handleFaixaPrecoChange([faixaPrecoVisual[0], val]);
                             }
                           }}
