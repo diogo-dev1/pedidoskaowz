@@ -13,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Copy, Download, Upload, X, Loader2, Search, Video, Share2, 
   Eye, EyeOff, Star, FileText, Package, Clock, Shield, 
-  ChevronRight, ImageIcon, Play, Edit2, Save, Info, RefreshCw
+  ChevronRight, ImageIcon, Play, Edit2, Save, Info, RefreshCw, Ruler
 } from 'lucide-react';
 
 interface Modelo {
@@ -27,6 +27,8 @@ interface Modelo {
   video_url: string | null;
   garantia: string | null;
   prazo_entrega: string | null;
+  comprimento_total: number | null;
+  area_util_corte: number | null;
 }
 
 type Categoria = 'Todas' | 'Defesa' | 'EDCs' | 'EDC Mini' | 'Campo' | 'Cozinha' | 'Churrasco' | 'Kits' | 'Utensílios' | 'Vestuário' | 'Cafés';
@@ -55,6 +57,8 @@ export default function AuxilioVendas() {
   const [categoria, setCategoria] = useState('');
   const [garantia, setGarantia] = useState('');
   const [prazoEntrega, setPrazoEntrega] = useState('');
+  const [comprimentoTotal, setComprimentoTotal] = useState('');
+  const [areaUtilCorte, setAreaUtilCorte] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [carregandoMidias, setCarregandoMidias] = useState(false);
   const [uploadandoMidia, setUploadandoMidia] = useState(false);
@@ -133,6 +137,8 @@ export default function AuxilioVendas() {
     setCategoria(modelo.categoria);
     setGarantia(modelo.garantia || '');
     setPrazoEntrega(modelo.prazo_entrega || '');
+    setComprimentoTotal(modelo.comprimento_total?.toString() || '');
+    setAreaUtilCorte(modelo.area_util_corte?.toString() || '');
     setModalOpen(true);
     setEditMode(false);
     carregarMidias(modelo.id);
@@ -152,6 +158,8 @@ export default function AuxilioVendas() {
     setCategoria('');
     setGarantia('');
     setPrazoEntrega('');
+    setComprimentoTotal('');
+    setAreaUtilCorte('');
   };
 
   const salvarAlteracoes = async () => {
@@ -197,6 +205,8 @@ export default function AuxilioVendas() {
         categoria: categoria,
         garantia: garantia || null,
         prazo_entrega: prazoEntrega || null,
+        comprimento_total: comprimentoTotal ? parseFloat(comprimentoTotal) : null,
+        area_util_corte: areaUtilCorte ? parseFloat(areaUtilCorte) : null,
       })
       .eq('id', modeloSelecionado.id);
 
@@ -677,6 +687,44 @@ export default function AuxilioVendas() {
                       </select>
                     ) : (
                       <p className="font-semibold">{categoria}</p>
+                    )}
+                  </Card>
+
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <Ruler className="h-4 w-4" />
+                      <span className="text-xs">Comp. Total (cm)</span>
+                    </div>
+                    {editMode ? (
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={comprimentoTotal}
+                        onChange={(e) => setComprimentoTotal(e.target.value)}
+                        placeholder="Ex: 22.5"
+                        className="h-8"
+                      />
+                    ) : (
+                      <p className="font-semibold">{comprimentoTotal ? `${comprimentoTotal} cm` : '-'}</p>
+                    )}
+                  </Card>
+
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <Ruler className="h-4 w-4" />
+                      <span className="text-xs">Fio de Corte (cm)</span>
+                    </div>
+                    {editMode ? (
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={areaUtilCorte}
+                        onChange={(e) => setAreaUtilCorte(e.target.value)}
+                        placeholder="Ex: 10.5"
+                        className="h-8"
+                      />
+                    ) : (
+                      <p className="font-semibold">{areaUtilCorte ? `${areaUtilCorte} cm` : '-'}</p>
                     )}
                   </Card>
                 </div>
