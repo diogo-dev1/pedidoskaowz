@@ -386,7 +386,7 @@ export default function CatalogoPublico() {
                     <img
                       src={banner.imagem_url}
                       alt={banner.titulo || 'Banner'}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                     {(banner.titulo || banner.subtitulo) && (
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-4 md:p-8">
