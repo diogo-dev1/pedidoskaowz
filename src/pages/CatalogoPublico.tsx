@@ -71,13 +71,13 @@ export default function CatalogoPublico() {
   const [faixaTamanho, setFaixaTamanho] = useState<[number, number]>([0, 100]);
   const [faixaTamanhoVisual, setFaixaTamanhoVisual] = useState<[number, number]>([0, 100]);
   const [tamanhoMaxGlobal, setTamanhoMaxGlobal] = useState(100);
-  const [faixaLamina, setFaixaLamina] = useState<[number, number]>([0, 100]);
-  const [faixaLaminaVisual, setFaixaLaminaVisual] = useState<[number, number]>([0, 100]);
-  const [laminaMaxGlobal, setLaminaMaxGlobal] = useState(100);
+  const [tamanhosSelecionados, setTamanhosSelecionados] = useState<number[]>([]);
+  const [laminasSelecionadas, setLaminasSelecionadas] = useState<number[]>([]);
+  const [tamanhosDisponiveis, setTamanhosDisponiveis] = useState<number[]>([]);
+  const [laminasDisponiveis, setLaminasDisponiveis] = useState<number[]>([]);
   const [secaoAberta, setSecaoAberta] = useState<string | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const debounceRefTamanho = useRef<NodeJS.Timeout | null>(null);
-  const debounceRefLamina = useRef<NodeJS.Timeout | null>(null);
   const categorias = categoriasVisiveis.filter(c => c.visivel);
 
   const handleFaixaPrecoChange = useCallback((v: number[]) => {
@@ -93,14 +93,6 @@ export default function CatalogoPublico() {
     if (debounceRefTamanho.current) clearTimeout(debounceRefTamanho.current);
     debounceRefTamanho.current = setTimeout(() => {
       setFaixaTamanho(v as [number, number]);
-    }, 200);
-  }, []);
-
-  const handleFaixaLaminaChange = useCallback((v: number[]) => {
-    setFaixaLaminaVisual(v as [number, number]);
-    if (debounceRefLamina.current) clearTimeout(debounceRefLamina.current);
-    debounceRefLamina.current = setTimeout(() => {
-      setFaixaLamina(v as [number, number]);
     }, 200);
   }, []);
 
@@ -255,13 +247,14 @@ export default function CatalogoPublico() {
           setTamanhoMaxGlobal(maxT);
           setFaixaTamanho([0, maxT]);
           setFaixaTamanhoVisual([0, maxT]);
+          // Unique sorted values for selectable options
+          const uniqueTamanhos = [...new Set(tamanhos.map(t => Math.round(t * 10) / 10))].sort((a, b) => a - b);
+          setTamanhosDisponiveis(uniqueTamanhos);
         }
         const laminas = modelosFiltrados.filter(m => m.area_util_corte != null).map(m => m.area_util_corte as number);
         if (laminas.length > 0) {
-          const maxL = Math.ceil(Math.max(...laminas));
-          setLaminaMaxGlobal(maxL);
-          setFaixaLamina([0, maxL]);
-          setFaixaLaminaVisual([0, maxL]);
+          const uniqueLaminas = [...new Set(laminas.map(l => Math.round(l * 10) / 10))].sort((a, b) => a - b);
+          setLaminasDisponiveis(uniqueLaminas);
         }
       }
     } catch (error) {
@@ -281,15 +274,19 @@ export default function CatalogoPublico() {
     // Filtro por faixa de preço
     if (modelo.preco_base < faixaPreco[0] || modelo.preco_base > faixaPreco[1]) return false;
     
-    // Filtro por tamanho (comprimento total)
-    if (modelo.comprimento_total != null) {
-      if (modelo.comprimento_total < faixaTamanho[0] || modelo.comprimento_total > faixaTamanho[1]) return false;
+    // Filtro por tamanho (comprimento total) - selecionáveis
+    if (tamanhosSelecionados.length > 0 && modelo.comprimento_total != null) {
+      const rounded = Math.round(modelo.comprimento_total * 10) / 10;
+      if (!tamanhosSelecionados.includes(rounded)) return false;
     }
+    if (tamanhosSelecionados.length > 0 && modelo.comprimento_total == null) return false;
     
-    // Filtro por área útil de corte (lâmina)
-    if (modelo.area_util_corte != null) {
-      if (modelo.area_util_corte < faixaLamina[0] || modelo.area_util_corte > faixaLamina[1]) return false;
+    // Filtro por área útil de corte (lâmina) - selecionáveis
+    if (laminasSelecionadas.length > 0 && modelo.area_util_corte != null) {
+      const rounded = Math.round(modelo.area_util_corte * 10) / 10;
+      if (!laminasSelecionadas.includes(rounded)) return false;
     }
+    if (laminasSelecionadas.length > 0 && modelo.area_util_corte == null) return false;
     
     // Filtro pronta entrega
     if (filtroProntaEntrega && !modelo.pronta_entrega) return false;
@@ -804,81 +801,6 @@ export default function CatalogoPublico() {
                         size="sm"
                         className="w-full text-xs text-zinc-400 hover:text-white"
                         onClick={() => { setFaixaTamanho([0, tamanhoMaxGlobal]); setFaixaTamanhoVisual([0, tamanhoMaxGlobal]); }}
-                      >
-                        Limpar filtro
-                      </Button>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            )}
-
-            {/* Filtro por Lâmina (Fio de Corte) */}
-            {laminaMaxGlobal > 0 && modelos.some(m => m.area_util_corte != null) && (
-              <Collapsible open={secaoAberta === 'lamina'} onOpenChange={(open) => setSecaoAberta(open ? 'lamina' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-44 shadow-sm mt-3">
-                <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
-                  <div className="flex items-center gap-2">
-                    <SlidersHorizontal className="h-4 w-4 text-accent" />
-                    <span className="font-semibold text-base md:text-lg">Fio de Corte (cm)</span>
-                  </div>
-                  <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="px-3 md:px-4 pb-4">
-                  <div className="space-y-4 pt-3">
-                    <div className="[direction:rtl]">
-                      <Slider
-                        min={0}
-                        max={laminaMaxGlobal}
-                        step={1}
-                        minStepsBetweenThumbs={1}
-                        value={[laminaMaxGlobal - faixaLaminaVisual[1], laminaMaxGlobal - faixaLaminaVisual[0]]}
-                        onValueChange={(v) => {
-                          const realMin = laminaMaxGlobal - v[1];
-                          const realMax = laminaMaxGlobal - v[0];
-                          const sorted = [Math.min(realMin, realMax), Math.max(realMin, realMax)];
-                          handleFaixaLaminaChange([sorted[0], sorted[1]]);
-                        }}
-                        className="w-full [direction:ltr] [&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:border-2 [&_[role=slider]]:border-accent [&_[role=slider]]:bg-zinc-950 [&_[role=slider]]:shadow-[0_0_8px_hsl(var(--accent)/0.3)] [&_[role=slider]]:transition-shadow [&_[role=slider]]:hover:shadow-[0_0_12px_hsl(var(--accent)/0.5)]"
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 space-y-1">
-                        <label className="text-[11px] text-zinc-500">Mínimo:</label>
-                        <Input
-                          type="number"
-                          value={faixaLaminaVisual[0]}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            if (val >= 0 && val <= faixaLaminaVisual[1]) {
-                              handleFaixaLaminaChange([val, faixaLaminaVisual[1]]);
-                            }
-                          }}
-                          className="h-9 text-sm bg-zinc-900 border-zinc-700 text-white"
-                        />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <label className="text-[11px] text-zinc-500">Máximo:</label>
-                        <Input
-                          type="number"
-                          value={faixaLaminaVisual[1]}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            if (val >= faixaLaminaVisual[0] && val <= laminaMaxGlobal) {
-                              handleFaixaLaminaChange([faixaLaminaVisual[0], val]);
-                            }
-                          }}
-                          className="h-9 text-sm bg-zinc-900 border-zinc-700 text-white"
-                        />
-                      </div>
-                    </div>
-
-                    {(faixaLaminaVisual[0] > 0 || faixaLaminaVisual[1] < laminaMaxGlobal) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full text-xs text-zinc-400 hover:text-white"
-                        onClick={() => { setFaixaLamina([0, laminaMaxGlobal]); setFaixaLaminaVisual([0, laminaMaxGlobal]); }}
                       >
                         Limpar filtro
                       </Button>
