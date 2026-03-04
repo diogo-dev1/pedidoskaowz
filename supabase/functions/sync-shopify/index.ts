@@ -271,6 +271,28 @@ serve(async (req) => {
         htmlContent = convertPlainToHtml(product.description);
       }
 
+      // Extract specs from description
+      const specText = htmlContent || product.description || '';
+      const specClean = specText.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+      
+      let comprimento_total: number | null = null;
+      let area_util_corte: number | null = null;
+
+      const compMatch = specClean.match(/[Cc]omprimento\s*total[:\s]*(\d+[,.]?\d*)\s*cm/i) 
+        || specClean.match(/(\d+[,.]?\d*)\s*cm\s*tota(?:is|l)/i);
+      if (compMatch) {
+        const v = parseFloat(compMatch[1].replace(',', '.'));
+        if (!isNaN(v) && v > 0 && v < 200) comprimento_total = v;
+      }
+
+      const fioMatch = specClean.match(/[Ff]io\s*de\s*corte\s*[uú]til[:\s]*(\d+[,.]?\d*)\s*cm/i)
+        || specClean.match(/[Ll][aâ]mina[:\s]*(\d+[,.]?\d*)\s*cm/i)
+        || specClean.match(/(\d+[,.]?\d*)\s*cm\s*de\s*l[aâ]mina/i);
+      if (fioMatch) {
+        const v = parseFloat(fioMatch[1].replace(',', '.'));
+        if (!isNaN(v) && v > 0 && v < 200) area_util_corte = v;
+      }
+
       const { data: modeloData, error: modeloError } = await supabaseAdmin
         .from('catalogo_modelos')
         .upsert(
@@ -282,6 +304,8 @@ serve(async (req) => {
             imagem_modelo: mainImage,
             apresentacao_venda: product.description || null,
             descricao_html: htmlContent,
+            comprimento_total,
+            area_util_corte,
           },
           { onConflict: 'nome_modelo' }
         )

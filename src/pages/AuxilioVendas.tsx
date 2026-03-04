@@ -70,9 +70,13 @@ export default function AuxilioVendas() {
     try {
       const { data, error } = await supabase.functions.invoke('sync-shopify');
       if (error) throw error;
+      
+      // After sync, extract specs from descriptions
+      await supabase.functions.invoke('parse-specs');
+      
       toast({
         title: 'Sincronização concluída!',
-        description: `${data.synced} produtos sincronizados${data.errors > 0 ? `, ${data.errors} erros` : ''}.`,
+        description: `${data.synced} produtos sincronizados${data.errors > 0 ? `, ${data.errors} erros` : ''}. Especificações extraídas automaticamente.`,
       });
       carregarModelos();
     } catch (err: any) {
