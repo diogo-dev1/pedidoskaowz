@@ -460,10 +460,18 @@ export default function CatalogoPublico() {
 
       {/* Floating tip */}
       {modelosSelecionados.size === 0 && (
-        <div className="w-full bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800/50">
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-center gap-2 text-zinc-400 text-xs">
-            <MessageCircle className="h-3 w-3 text-green-500 shrink-0" />
-            <span>Toque nas lâminas para selecionar e solicitar orçamento via WhatsApp</span>
+        <div className="w-full bg-gradient-to-r from-green-950/60 via-zinc-900/80 to-green-950/60 backdrop-blur-sm border-b border-green-800/30">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-center gap-2.5 text-xs sm:text-sm">
+            <span className="flex items-center gap-1.5 text-green-400 shrink-0">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              <MessageCircle className="h-3.5 w-3.5" />
+            </span>
+            <span className="text-zinc-300">
+              Selecione as lâminas e peça seu <strong className="text-green-400">orçamento pelo WhatsApp</strong>
+            </span>
           </div>
         </div>
       )}
