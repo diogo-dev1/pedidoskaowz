@@ -616,50 +616,26 @@ export default function CatalogoPublico() {
                   <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="px-3 md:px-4 pb-4">
-                  <div className="space-y-4 pt-2">
-                    {/* Inputs de valor */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <label className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1 block">Mínimo</label>
-                        <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">R$</span>
-                          <input
-                            type="number"
-                            disabled
-                            value={0}
-                            className="w-full bg-zinc-900 border border-zinc-700 rounded-md pl-8 pr-2 py-1.5 text-sm text-zinc-500 cursor-not-allowed"
-                          />
-                        </div>
+                  <div className="space-y-5 pt-3">
+                    {/* Slider com preenchimento da esquerda até o thumb */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-[11px] text-zinc-500">R$ 0</span>
+                        <span className="text-[11px] font-medium text-white">
+                          até <span className="text-accent">R$ {faixaPrecoVisual[1].toLocaleString('pt-BR')}</span>
+                        </span>
                       </div>
-                      <span className="text-zinc-600 mt-5">—</span>
-                      <div className="flex-1">
-                        <label className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1 block">Máximo</label>
-                        <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">R$</span>
-                          <input
-                            type="number"
-                            min={0}
-                            max={precoMaxGlobal}
-                            step={50}
-                            value={faixaPrecoVisual[1]}
-                            onChange={(e) => {
-                              const val = Math.min(precoMaxGlobal, Math.max(0, Number(e.target.value)));
-                              handleFaixaPrecoChange([0, val]);
-                            }}
-                            className="w-full bg-zinc-900 border border-zinc-600 rounded-md pl-8 pr-2 py-1.5 text-sm text-white focus:border-accent focus:outline-none"
-                          />
-                        </div>
+                      <div className="[direction:rtl]">
+                        <Slider
+                          min={0}
+                          max={precoMaxGlobal}
+                          step={50}
+                          value={[precoMaxGlobal - faixaPrecoVisual[1]]}
+                          onValueChange={(v) => handleFaixaPrecoChange([0, precoMaxGlobal - v[0]])}
+                          className="w-full [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border-2 [&_[role=slider]]:border-accent [&_[role=slider]]:bg-zinc-950 [&_[role=slider]]:shadow-[0_0_8px_hsl(var(--accent)/0.3)] [&_[role=slider]]:transition-shadow [&_[role=slider]]:hover:shadow-[0_0_12px_hsl(var(--accent)/0.5)]"
+                        />
                       </div>
                     </div>
-
-                    <Slider
-                      min={0}
-                      max={precoMaxGlobal}
-                      step={50}
-                      value={[faixaPrecoVisual[1]]}
-                      onValueChange={(v) => handleFaixaPrecoChange([0, v[0]])}
-                      className="w-full [&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:border-accent [&_[role=slider]]:bg-zinc-900 [&_[role=slider]]:shadow-md"
-                    />
                     
                     {/* Contagem de resultados */}
                     <p className="text-center text-xs text-zinc-500">
