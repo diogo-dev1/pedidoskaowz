@@ -735,77 +735,108 @@ export default function CatalogoPublico() {
               </Collapsible>
             )}
 
-            {/* Filtro por Tamanho */}
-            {tamanhoMaxGlobal > 0 && modelos.some(m => m.comprimento_total != null) && (
+            {/* Filtro por Tamanho Total */}
+            {tamanhosDisponiveis.length > 0 && (
               <Collapsible open={secaoAberta === 'tamanho'} onOpenChange={(open) => setSecaoAberta(open ? 'tamanho' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-44 shadow-sm mt-3">
                 <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="h-4 w-4 text-accent" />
-                    <span className="font-semibold text-base md:text-lg">Tamanho (cm)</span>
+                    <span className="font-semibold text-base md:text-lg">Tamanho Total (cm)</span>
+                    {tamanhosSelecionados.length > 0 && (
+                      <Badge className="bg-accent text-white text-xs">{tamanhosSelecionados.length}</Badge>
+                    )}
                   </div>
                   <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="px-3 md:px-4 pb-4">
-                  <div className="space-y-4 pt-3">
-                    <div className="[direction:rtl]">
-                      <Slider
-                        min={0}
-                        max={tamanhoMaxGlobal}
-                        step={1}
-                        minStepsBetweenThumbs={1}
-                        value={[tamanhoMaxGlobal - faixaTamanhoVisual[1], tamanhoMaxGlobal - faixaTamanhoVisual[0]]}
-                        onValueChange={(v) => {
-                          const realMin = tamanhoMaxGlobal - v[1];
-                          const realMax = tamanhoMaxGlobal - v[0];
-                          const sorted = [Math.min(realMin, realMax), Math.max(realMin, realMax)];
-                          handleFaixaTamanhoChange([sorted[0], sorted[1]]);
-                        }}
-                        className="w-full [direction:ltr] [&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:border-2 [&_[role=slider]]:border-accent [&_[role=slider]]:bg-zinc-950 [&_[role=slider]]:shadow-[0_0_8px_hsl(var(--accent)/0.3)] [&_[role=slider]]:transition-shadow [&_[role=slider]]:hover:shadow-[0_0_12px_hsl(var(--accent)/0.5)]"
-                      />
-                    </div>
+                  <div className="space-y-1.5 pt-2 max-h-60 overflow-y-auto">
+                    {tamanhosDisponiveis.map((tam) => {
+                      const count = modelos.filter(m => m.comprimento_total != null && Math.round(m.comprimento_total * 10) / 10 === tam).length;
+                      const isSelected = tamanhosSelecionados.includes(tam);
+                      return (
+                        <button
+                          key={tam}
+                          className={`w-full flex items-center justify-between text-xs md:text-sm h-8 md:h-9 px-3 rounded-md transition-colors ${
+                            isSelected ? 'bg-accent/20 text-accent' : 'text-zinc-300 hover:bg-zinc-700'
+                          }`}
+                          onClick={() => setTamanhosSelecionados(prev => prev.includes(tam) ? prev.filter(t => t !== tam) : [...prev, tam])}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                              isSelected ? 'bg-accent border-accent' : 'border-zinc-500'
+                            }`}>
+                              {isSelected && <Check className="h-3 w-3 text-white" />}
+                            </div>
+                            {tam} cm
+                          </div>
+                          <span className="text-zinc-500 text-[10px]">({count})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {tamanhosSelecionados.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs text-zinc-400 hover:text-white mt-2"
+                      onClick={() => setTamanhosSelecionados([])}
+                    >
+                      Limpar filtro
+                    </Button>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
 
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 space-y-1">
-                        <label className="text-[11px] text-zinc-500">Mínimo:</label>
-                        <Input
-                          type="number"
-                          value={faixaTamanhoVisual[0]}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            if (val >= 0 && val <= faixaTamanhoVisual[1]) {
-                              handleFaixaTamanhoChange([val, faixaTamanhoVisual[1]]);
-                            }
-                          }}
-                          className="h-9 text-sm bg-zinc-900 border-zinc-700 text-white"
-                        />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <label className="text-[11px] text-zinc-500">Máximo:</label>
-                        <Input
-                          type="number"
-                          value={faixaTamanhoVisual[1]}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            if (val >= faixaTamanhoVisual[0] && val <= tamanhoMaxGlobal) {
-                              handleFaixaTamanhoChange([faixaTamanhoVisual[0], val]);
-                            }
-                          }}
-                          className="h-9 text-sm bg-zinc-900 border-zinc-700 text-white"
-                        />
-                      </div>
-                    </div>
-
-                    {(faixaTamanhoVisual[0] > 0 || faixaTamanhoVisual[1] < tamanhoMaxGlobal) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full text-xs text-zinc-400 hover:text-white"
-                        onClick={() => { setFaixaTamanho([0, tamanhoMaxGlobal]); setFaixaTamanhoVisual([0, tamanhoMaxGlobal]); }}
-                      >
-                        Limpar filtro
-                      </Button>
+            {/* Filtro por Tamanho da Lâmina */}
+            {laminasDisponiveis.length > 0 && (
+              <Collapsible open={secaoAberta === 'lamina'} onOpenChange={(open) => setSecaoAberta(open ? 'lamina' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-44 shadow-sm mt-3">
+                <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
+                  <div className="flex items-center gap-2">
+                    <SlidersHorizontal className="h-4 w-4 text-accent" />
+                    <span className="font-semibold text-base md:text-lg">Fio de Corte (cm)</span>
+                    {laminasSelecionadas.length > 0 && (
+                      <Badge className="bg-accent text-white text-xs">{laminasSelecionadas.length}</Badge>
                     )}
                   </div>
+                  <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="px-3 md:px-4 pb-4">
+                  <div className="space-y-1.5 pt-2 max-h-60 overflow-y-auto">
+                    {laminasDisponiveis.map((lam) => {
+                      const count = modelos.filter(m => m.area_util_corte != null && Math.round(m.area_util_corte * 10) / 10 === lam).length;
+                      const isSelected = laminasSelecionadas.includes(lam);
+                      return (
+                        <button
+                          key={lam}
+                          className={`w-full flex items-center justify-between text-xs md:text-sm h-8 md:h-9 px-3 rounded-md transition-colors ${
+                            isSelected ? 'bg-accent/20 text-accent' : 'text-zinc-300 hover:bg-zinc-700'
+                          }`}
+                          onClick={() => setLaminasSelecionadas(prev => prev.includes(lam) ? prev.filter(l => l !== lam) : [...prev, lam])}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                              isSelected ? 'bg-accent border-accent' : 'border-zinc-500'
+                            }`}>
+                              {isSelected && <Check className="h-3 w-3 text-white" />}
+                            </div>
+                            {lam} cm
+                          </div>
+                          <span className="text-zinc-500 text-[10px]">({count})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {laminasSelecionadas.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs text-zinc-400 hover:text-white mt-2"
+                      onClick={() => setLaminasSelecionadas([])}
+                    >
+                      Limpar filtro
+                    </Button>
+                  )}
                 </CollapsibleContent>
               </Collapsible>
             )}
