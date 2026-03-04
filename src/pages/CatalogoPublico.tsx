@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal } from 'lucide-react';
+import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -136,14 +136,33 @@ export default function CatalogoPublico() {
 
   const selecionarCategoria = (categoria: string) => {
     setCategoriaAtiva(categoria);
+    setCategoriasMultiplas([]);
     setFiltroProntaEntrega(false);
     setMostrarLanding(false);
     setSearchParams({ categoria });
   };
 
+  const toggleCategoriaFiltro = (categoria: string) => {
+    setCategoriasMultiplas(prev => {
+      const novas = prev.includes(categoria) 
+        ? prev.filter(c => c !== categoria) 
+        : [...prev, categoria];
+      if (novas.length === 0) {
+        setCategoriaAtiva(null);
+        setSearchParams({});
+      } else {
+        setCategoriaAtiva(null);
+        setSearchParams({ categorias: novas.join(',') });
+      }
+      return novas;
+    });
+    setFiltroProntaEntrega(false);
+  };
+
   const verTudo = () => {
     setMostrarLanding(false);
     setCategoriaAtiva(null);
+    setCategoriasMultiplas([]);
     setFiltroProntaEntrega(false);
     setSearchParams({});
   };
@@ -487,6 +506,9 @@ export default function CatalogoPublico() {
                   {categoriaAtiva && (
                     <Badge className="bg-accent text-white text-xs">{categoriaAtiva}</Badge>
                   )}
+                  {categoriasMultiplas.length > 0 && (
+                    <Badge className="bg-accent text-white text-xs">{categoriasMultiplas.length} selecionadas</Badge>
+                  )}
                   {filtroProntaEntrega && (
                     <Badge className="bg-emerald-600 text-white text-xs">Pronta Entrega</Badge>
                   )}
@@ -496,14 +518,14 @@ export default function CatalogoPublico() {
               <CollapsibleContent className="px-3 md:px-4 pb-3 md:pb-4">
                 <div className="space-y-1.5 md:space-y-2">
                   <Button
-                    variant={!categoriaAtiva && !filtroProntaEntrega ? "default" : "ghost"}
+                    variant={!categoriaAtiva && categoriasMultiplas.length === 0 && !filtroProntaEntrega ? "default" : "ghost"}
                     size="sm"
                     className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 ${
-                      !categoriaAtiva && !filtroProntaEntrega
+                      !categoriaAtiva && categoriasMultiplas.length === 0 && !filtroProntaEntrega
                         ? 'bg-accent text-white hover:bg-accent/90' 
                         : 'text-zinc-300 hover:bg-zinc-700'
                     }`}
-                    onClick={() => { setCategoriaAtiva(null); setFiltroProntaEntrega(false); }}
+                    onClick={() => { setCategoriaAtiva(null); setCategoriasMultiplas([]); setFiltroProntaEntrega(false); setSearchParams({}); }}
                   >
                     Todas
                   </Button>
@@ -515,27 +537,59 @@ export default function CatalogoPublico() {
                         ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
                         : 'text-emerald-400 hover:bg-zinc-700'
                     }`}
-                    onClick={() => { setCategoriaAtiva(null); setFiltroProntaEntrega(true); }}
+                    onClick={() => { setCategoriaAtiva(null); setCategoriasMultiplas([]); setFiltroProntaEntrega(true); }}
                   >
                     <Zap className="h-3.5 w-3.5" />
                     Pronta Entrega
                   </Button>
-                  {categorias.map((cat) => (
-                    <Button
-                      key={cat.categoria}
-                      variant={categoriaAtiva === cat.categoria ? "default" : "ghost"}
-                      size="sm"
-                      className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 ${
-                        categoriaAtiva === cat.categoria 
-                          ? 'bg-accent text-white hover:bg-accent/90' 
-                          : 'text-zinc-300 hover:bg-zinc-700'
-                      }`}
-                      onClick={() => { setCategoriaAtiva(cat.categoria); setFiltroProntaEntrega(false); }}
-                    >
-                      {cat.categoria}
-                    </Button>
-                  ))}
+                  
+                  <div className="border-t border-zinc-700 pt-2 mt-2">
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1.5 px-2">Selecione categorias</p>
+                  </div>
+                  {categorias.map((cat) => {
+                    const isActive = categoriaAtiva === cat.categoria || categoriasMultiplas.includes(cat.categoria);
+                    return (
+                      <button
+                        key={cat.categoria}
+                        className={`w-full flex items-center gap-2 text-xs md:text-sm h-8 md:h-10 px-3 rounded-md transition-colors ${
+                          isActive
+                            ? 'bg-accent/20 text-accent' 
+                            : 'text-zinc-300 hover:bg-zinc-700'
+                        }`}
+                        onClick={() => toggleCategoriaFiltro(cat.categoria)}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                          isActive ? 'bg-accent border-accent' : 'border-zinc-500'
+                        }`}>
+                          {isActive && <Check className="h-3 w-3 text-white" />}
+                        </div>
+                        {cat.categoria}
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {/* Tags de categorias selecionadas */}
+                {categoriasMultiplas.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-zinc-700">
+                    {categoriasMultiplas.map(cat => (
+                      <Badge 
+                        key={cat} 
+                        className="bg-accent/20 text-accent border-accent/30 text-[10px] cursor-pointer hover:bg-accent/30 gap-1"
+                        onClick={() => toggleCategoriaFiltro(cat)}
+                      >
+                        {cat}
+                        <X className="h-2.5 w-2.5" />
+                      </Badge>
+                    ))}
+                    <button 
+                      className="text-[10px] text-zinc-500 hover:text-zinc-300 underline"
+                      onClick={() => { setCategoriasMultiplas([]); setSearchParams({}); }}
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                )}
               </CollapsibleContent>
             </Collapsible>
 
