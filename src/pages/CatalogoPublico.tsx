@@ -49,6 +49,7 @@ export default function CatalogoPublico() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
+  const [categoriasMultiplas, setCategoriasMultiplas] = useState<string[]>([]);
   const [busca, setBusca] = useState('');
   const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -81,7 +82,14 @@ export default function CatalogoPublico() {
     const verTudoParam = searchParams.get('ver');
     const prontaParam = searchParams.get('pronta_entrega');
     
-    if (catParam) {
+    const catsParam = searchParams.get('categorias');
+    if (catsParam) {
+      const cats = catsParam.split(',').map(c => decodeURIComponent(c.trim())).filter(Boolean);
+      if (cats.length > 0) {
+        setCategoriasMultiplas(cats);
+        setMostrarLanding(false);
+      }
+    } else if (catParam) {
       setCategoriaAtiva(catParam);
       setMostrarLanding(false);
     } else if (verTudoParam === 'tudo') {
@@ -203,6 +211,12 @@ export default function CatalogoPublico() {
     
     // Filtro pronta entrega
     if (filtroProntaEntrega && !modelo.pronta_entrega) return false;
+
+    if (categoriasMultiplas.length > 0) {
+      const matchCategoria = modelo.categorias && categoriasMultiplas.some(c => modelo.categorias.includes(c));
+      const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
+      return matchCategoria && matchBusca;
+    }
 
     if (categoriaAtiva) {
       const matchCategoria = modelo.categorias && modelo.categorias.includes(categoriaAtiva);

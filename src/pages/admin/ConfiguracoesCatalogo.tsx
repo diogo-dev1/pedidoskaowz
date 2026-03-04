@@ -82,6 +82,9 @@ export default function ConfiguracoesCatalogo() {
   const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
   const [novaCategoriaIcone, setNovaCategoriaIcone] = useState('Sword');
 
+  // Multi-category share
+  const [categoriasParaCompartilhar, setCategoriasParaCompartilhar] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     fetchCategoriasVisiveis();
     fetchBanners();
@@ -268,6 +271,26 @@ export default function ConfiguracoesCatalogo() {
     const url = `${window.location.origin}/catalogo?categoria=${encodeURIComponent(categoria)}`;
     navigator.clipboard.writeText(url);
     toast.success(`Link da categoria "${categoria}" copiado!`);
+  };
+
+  const toggleCategoriaCompartilhar = (categoria: string) => {
+    setCategoriasParaCompartilhar(prev => {
+      const next = new Set(prev);
+      if (next.has(categoria)) next.delete(categoria);
+      else next.add(categoria);
+      return next;
+    });
+  };
+
+  const copiarLinkMultiCategorias = () => {
+    if (categoriasParaCompartilhar.size === 0) {
+      toast.error('Selecione pelo menos uma categoria');
+      return;
+    }
+    const cats = Array.from(categoriasParaCompartilhar).map(c => encodeURIComponent(c)).join(',');
+    const url = `${window.location.origin}/catalogo?categorias=${cats}`;
+    navigator.clipboard.writeText(url);
+    toast.success(`Link com ${categoriasParaCompartilhar.size} categorias copiado!`);
   };
 
   const atualizarIconeCategoria = async (cat: CategoriaVisivel, icone: string) => {
@@ -607,6 +630,53 @@ export default function ConfiguracoesCatalogo() {
         {/* Aba Categorias */}
         <TabsContent value="categorias" className="space-y-3 mt-4">
           {/* Criar nova categoria */}
+          {/* Compartilhar múltiplas categorias */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Share2 className="h-4 w-4" />
+                Compartilhar Categorias
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Selecione as categorias e copie um link que mostra somente elas.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {categoriasVisiveis.filter(c => c.visivel).map((cat) => {
+                  const selecionada = categoriasParaCompartilhar.has(cat.categoria);
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => toggleCategoriaCompartilhar(cat.categoria)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        selecionada
+                          ? 'bg-accent text-white border-accent'
+                          : 'bg-muted/30 text-muted-foreground border-border hover:border-accent/50'
+                      }`}
+                    >
+                      {cat.categoria}
+                    </button>
+                  );
+                })}
+              </div>
+              {categoriasParaCompartilhar.size > 0 && (
+                <p className="text-[10px] text-muted-foreground">
+                  {Array.from(categoriasParaCompartilhar).join(', ')}
+                </p>
+              )}
+              <Button
+                size="sm"
+                onClick={copiarLinkMultiCategorias}
+                disabled={categoriasParaCompartilhar.size === 0}
+                className="w-full gap-2"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copiar link ({categoriasParaCompartilhar.size} {categoriasParaCompartilhar.size === 1 ? 'categoria' : 'categorias'})
+              </Button>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Nova Categoria</CardTitle>
