@@ -616,23 +616,47 @@ export default function CatalogoPublico() {
                   <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="px-3 md:px-4 pb-4">
-                  <div className="space-y-5 pt-3">
-                    {/* Slider com preenchimento da esquerda até o thumb */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-baseline">
-                        <span className="text-[11px] text-zinc-500">R$ 0</span>
-                        <span className="text-[11px] font-medium text-white">
-                          até <span className="text-accent">R$ {faixaPrecoVisual[1].toLocaleString('pt-BR')}</span>
-                        </span>
+                  <div className="space-y-4 pt-3">
+                    {/* Dual-thumb Slider */}
+                    <Slider
+                      min={0}
+                      max={precoMaxGlobal}
+                      step={50}
+                      value={[faixaPrecoVisual[0], faixaPrecoVisual[1]]}
+                      onValueChange={(v) => handleFaixaPrecoChange([v[0], v[1]])}
+                      className="w-full [&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:border-2 [&_[role=slider]]:border-accent [&_[role=slider]]:bg-zinc-950 [&_[role=slider]]:shadow-[0_0_8px_hsl(var(--accent)/0.3)] [&_[role=slider]]:transition-shadow [&_[role=slider]]:hover:shadow-[0_0_12px_hsl(var(--accent)/0.5)]"
+                    />
+
+                    {/* Mínimo / Máximo inputs */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 space-y-1">
+                        <label className="text-[11px] text-zinc-500">Mínimo:</label>
+                        <Input
+                          type="number"
+                          value={faixaPrecoVisual[0]}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            if (val >= 0 && val <= faixaPrecoVisual[1]) {
+                              handleFaixaPrecoChange([val, faixaPrecoVisual[1]]);
+                            }
+                          }}
+                          className="h-9 text-sm bg-zinc-900 border-zinc-700 text-white"
+                        />
                       </div>
-                      <Slider
-                        min={0}
-                        max={precoMaxGlobal}
-                        step={50}
-                        value={[faixaPrecoVisual[1]]}
-                        onValueChange={(v) => handleFaixaPrecoChange([0, v[0]])}
-                        className="w-full [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border-2 [&_[role=slider]]:border-accent [&_[role=slider]]:bg-zinc-950 [&_[role=slider]]:shadow-[0_0_8px_hsl(var(--accent)/0.3)] [&_[role=slider]]:transition-shadow [&_[role=slider]]:hover:shadow-[0_0_12px_hsl(var(--accent)/0.5)]"
-                      />
+                      <div className="flex-1 space-y-1">
+                        <label className="text-[11px] text-zinc-500">Máximo:</label>
+                        <Input
+                          type="number"
+                          value={faixaPrecoVisual[1]}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            if (val >= faixaPrecoVisual[0] && val <= precoMaxGlobal) {
+                              handleFaixaPrecoChange([faixaPrecoVisual[0], val]);
+                            }
+                          }}
+                          className="h-9 text-sm bg-zinc-900 border-zinc-700 text-white"
+                        />
+                      </div>
                     </div>
                     
                     {/* Contagem de resultados */}
