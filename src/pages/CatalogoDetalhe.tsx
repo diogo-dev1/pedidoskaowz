@@ -265,12 +265,24 @@ export default function CatalogoDetalhe() {
               Consultar no WhatsApp
             </Button>
 
-            {/* Info rápida */}
-            {(modelo.prazo_entrega || modelo.garantia) && (
-              <div className="flex gap-4 text-xs text-zinc-500 pt-1">
-                {modelo.prazo_entrega && <span>Entrega: {modelo.prazo_entrega}</span>}
-                {modelo.garantia && <span>Garantia: {modelo.garantia}</span>}
+            {/* Garantia destaque */}
+            {modelo.garantia && /vital[ií]cia/i.test(modelo.garantia) ? (
+              <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5">
+                <span className="text-emerald-400 text-base">🛡️</span>
+                <div>
+                  <p className="text-emerald-400 text-xs font-semibold tracking-wide uppercase">Garantia Vitalícia</p>
+                  <p className="text-zinc-500 text-[11px]">Qualidade que dura para sempre</p>
+                </div>
               </div>
+            ) : modelo.garantia ? (
+              <div className="flex gap-4 text-xs text-zinc-500 pt-1">
+                <span>Garantia: {modelo.garantia}</span>
+              </div>
+            ) : null}
+
+            {/* Prazo entrega */}
+            {modelo.prazo_entrega && (
+              <p className="text-xs text-zinc-500">Entrega: {modelo.prazo_entrega}</p>
             )}
 
             {/* Separador */}
