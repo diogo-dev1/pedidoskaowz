@@ -625,16 +625,14 @@ export default function CatalogoPublico() {
                           até <span className="text-accent">R$ {faixaPrecoVisual[1].toLocaleString('pt-BR')}</span>
                         </span>
                       </div>
-                      <div className="[direction:rtl]">
-                        <Slider
-                          min={0}
-                          max={precoMaxGlobal}
-                          step={50}
-                          value={[precoMaxGlobal - faixaPrecoVisual[1]]}
-                          onValueChange={(v) => handleFaixaPrecoChange([0, precoMaxGlobal - v[0]])}
-                          className="w-full [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border-2 [&_[role=slider]]:border-accent [&_[role=slider]]:bg-zinc-950 [&_[role=slider]]:shadow-[0_0_8px_hsl(var(--accent)/0.3)] [&_[role=slider]]:transition-shadow [&_[role=slider]]:hover:shadow-[0_0_12px_hsl(var(--accent)/0.5)]"
-                        />
-                      </div>
+                      <Slider
+                        min={0}
+                        max={precoMaxGlobal}
+                        step={50}
+                        value={[faixaPrecoVisual[1]]}
+                        onValueChange={(v) => handleFaixaPrecoChange([0, v[0]])}
+                        className="w-full [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border-2 [&_[role=slider]]:border-accent [&_[role=slider]]:bg-zinc-950 [&_[role=slider]]:shadow-[0_0_8px_hsl(var(--accent)/0.3)] [&_[role=slider]]:transition-shadow [&_[role=slider]]:hover:shadow-[0_0_12px_hsl(var(--accent)/0.5)]"
+                      />
                     </div>
                     
                     {/* Contagem de resultados */}
