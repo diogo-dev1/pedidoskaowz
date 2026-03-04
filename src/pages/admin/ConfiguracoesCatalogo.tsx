@@ -90,6 +90,10 @@ export default function ConfiguracoesCatalogo() {
   // Multi-category share
   const [categoriasParaCompartilhar, setCategoriasParaCompartilhar] = useState<Set<string>>(new Set());
 
+  // Edição de nome de categoria
+  const [categoriaEditandoId, setCategoriaEditandoId] = useState<string | null>(null);
+  const [categoriaEditandoNome, setCategoriaEditandoNome] = useState('');
+
   useEffect(() => {
     fetchCategoriasVisiveis();
     fetchBanners();
@@ -336,6 +340,27 @@ export default function ConfiguracoesCatalogo() {
     if (error) { toast.error('Erro ao excluir'); return; }
     setCategoriasVisiveis(prev => prev.filter(c => c.id !== cat.id));
     toast.success('Categoria excluída');
+  };
+
+  const iniciarEdicaoCategoria = (cat: CategoriaVisivel) => {
+    setCategoriaEditandoId(cat.id);
+    setCategoriaEditandoNome(cat.categoria);
+  };
+
+  const salvarNomeCategoria = async (cat: CategoriaVisivel) => {
+    const novoNome = categoriaEditandoNome.trim();
+    if (!novoNome) { toast.error('Nome não pode ser vazio'); return; }
+    if (novoNome === cat.categoria) { setCategoriaEditandoId(null); return; }
+    const existe = categoriasVisiveis.some(c => c.id !== cat.id && c.categoria.toLowerCase() === novoNome.toLowerCase());
+    if (existe) { toast.error('Já existe uma categoria com esse nome'); return; }
+    const { error } = await supabase
+      .from('categorias_catalogo_visiveis')
+      .update({ categoria: novoNome })
+      .eq('id', cat.id);
+    if (error) { toast.error('Erro ao renomear categoria'); return; }
+    setCategoriasVisiveis(prev => prev.map(c => c.id === cat.id ? { ...c, categoria: novoNome } : c));
+    setCategoriaEditandoId(null);
+    toast.success('Categoria renomeada!');
   };
   const toggleProntaEntrega = async (modelo: ModeloCatalogo) => {
     setSalvandoProntaEntrega(true);
@@ -768,7 +793,24 @@ export default function ConfiguracoesCatalogo() {
                           value={cat.icone}
                           onChange={(icone) => atualizarIconeCategoria(cat, icone)}
                         />
-                        <span className="text-sm font-medium">{cat.categoria}</span>
+                        {categoriaEditandoId === cat.id ? (
+                          <Input
+                            value={categoriaEditandoNome}
+                            onChange={e => setCategoriaEditandoNome(e.target.value)}
+                            onBlur={() => salvarNomeCategoria(cat)}
+                            onKeyDown={e => { if (e.key === 'Enter') salvarNomeCategoria(cat); if (e.key === 'Escape') setCategoriaEditandoId(null); }}
+                            className="h-7 text-sm w-32"
+                            autoFocus
+                          />
+                        ) : (
+                          <span
+                            className="text-sm font-medium cursor-pointer hover:underline"
+                            onClick={() => iniciarEdicaoCategoria(cat)}
+                            title="Clique para editar"
+                          >
+                            {cat.categoria}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Button
