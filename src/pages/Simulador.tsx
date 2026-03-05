@@ -131,6 +131,7 @@ export default function Simulador() {
   const [cupom, setCupom] = useState('');
   const [prazo, setPrazo] = useState('');
   const [brindes, setBrindes] = useState('');
+  const [valorPedido, setValorPedido] = useState('');
 
   // Modal IA
   const [modalIAOpen, setModalIAOpen] = useState(false);
@@ -413,6 +414,7 @@ export default function Simulador() {
     setCupom('');
     setPrazo('');
     setBrindes('');
+    setValorPedido('');
     setPedidoFinalizado(false);
     setTextoFormatado('');
   };
@@ -774,7 +776,7 @@ export default function Simulador() {
 12. DATA DE NASCIMENTO: ${dataNascimento}
 13. PEDIDO:
 ${itensPedido}
-14. VALOR: ${valorTotalCalculado.toFixed(2)}
+14. VALOR: ${valorPedido || valorTotalCalculado.toFixed(2)}
 15. FORMA DE PAGAMENTO: ${formaPagamento}
 16. PERSONALIZAÇÃO À LASER: ${personalizacaoTexto}
 17. NOME PROPRIETÁRIO P/ CERTIFICADO: ${nomeCertificado || nomeCompleto}
@@ -885,7 +887,7 @@ OBS: ${observacao || '-'}`;
         prazo,
         laminas: laminasFormatadas,
         produtosAdicionais: produtosFormatados,
-        valorTotal: valorTotalCalculado,
+        valorTotal: valorPedido ? parseFloat(valorPedido.replace(',', '.')) : valorTotalCalculado,
         vendedor: profile?.nome_vendedor || '',
       };
 
@@ -1793,6 +1795,13 @@ OBS: ${observacao || '-'}`;
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="valorPedido" className="text-xs">Valor do Pedido (R$)</Label>
+                  <Input id="valorPedido" value={valorPedido} onChange={(e) => setValorPedido(e.target.value)} placeholder="Ex: 1500,00" className="h-8 text-xs" />
+                </div>
+              </div>
+
               <Collapsible>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
@@ -1944,7 +1953,7 @@ OBS: ${observacao || '-'}`;
                 <div data-pdf-section className="border-t border-border pt-3">
                   <h4 className="font-semibold mb-2">Pagamento</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className="text-muted-foreground">Valor Total:</span> <span className="font-bold">R$ {valorTotalCalculado.toFixed(2)}</span></div>
+                    <div><span className="text-muted-foreground">Valor Total:</span> <span className="font-bold">R$ {valorPedido || valorTotalCalculado.toFixed(2)}</span></div>
                     <div><span className="text-muted-foreground">Forma:</span> {formaPagamento || '-'}</div>
                     <div><span className="text-muted-foreground">Status:</span> <span className={status === 'Pago' ? 'text-green-600 font-medium' : 'text-yellow-600 font-medium'}>{status}</span></div>
                     {prazo && <div><span className="text-muted-foreground">Prazo:</span> {prazo}</div>}
