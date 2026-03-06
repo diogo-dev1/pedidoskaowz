@@ -122,31 +122,32 @@ const MensagensPadrao = () => {
   };
 
   return (
-    <div className="space-y-6 w-full min-w-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-accent">Mensagens Padrão</h1>
-            <p className="text-muted-foreground mt-1">
+    <div className="space-y-4 w-full min-w-0 overflow-hidden">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-accent">Mensagens Padrão</h1>
+            <p className="text-muted-foreground text-sm">
               Salve e copie suas mensagens mais usadas com um clique
             </p>
           </div>
           {!showForm && (
-            <Button onClick={() => setShowForm(true)} className="gap-2">
+            <Button onClick={() => setShowForm(true)} size="sm" className="gap-2 shrink-0">
               <Plus className="w-4 h-4" />
-              Nova Mensagem
+              Nova
             </Button>
           )}
         </div>
 
         {showForm && (
-          <Card className="p-6 border-accent/20">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Nova Mensagem</h2>
+          <Card className="p-4 border-accent/20">
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold">Nova Mensagem</h2>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
+                  className="h-7 w-7"
                   onClick={() => {
                     setShowForm(false);
                     setTitulo("");
@@ -157,22 +158,22 @@ const MensagensPadrao = () => {
                 </Button>
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Título</label>
+                <label className="text-xs font-medium mb-1 block">Título</label>
                 <Input
                   value={titulo}
                   onChange={(e) => setTitulo(e.target.value)}
                   placeholder="Ex: Saudação inicial"
-                  className="bg-background/50"
+                  className="h-8 text-sm"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Conteúdo</label>
+                <label className="text-xs font-medium mb-1 block">Conteúdo</label>
                 <Textarea
                   value={conteudo}
                   onChange={(e) => setConteudo(e.target.value)}
                   placeholder="Digite a mensagem que deseja salvar..."
-                  rows={6}
-                  className="bg-background/50 resize-none"
+                  rows={4}
+                  className="text-sm resize-none"
                 />
               </div>
               <div className="flex gap-2 justify-end">
@@ -196,50 +197,52 @@ const MensagensPadrao = () => {
         )}
 
         {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground text-sm">
             Carregando mensagens...
           </div>
         ) : mensagens.length === 0 ? (
-          <Card className="p-12 text-center border-dashed">
-            <p className="text-muted-foreground mb-4">
+          <Card className="p-8 text-center border-dashed">
+            <p className="text-muted-foreground mb-3 text-sm">
               Você ainda não tem mensagens salvas
             </p>
-            <Button onClick={() => setShowForm(true)} variant="outline" className="gap-2">
+            <Button onClick={() => setShowForm(true)} variant="outline" size="sm" className="gap-2">
               <Plus className="w-4 h-4" />
               Criar primeira mensagem
             </Button>
           </Card>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {mensagens.map((mensagem) => (
               <Card
                 key={mensagem.id}
-                className="p-6 hover:border-accent/40 transition-colors"
+                className="p-3 hover:border-accent/40 transition-colors"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg mb-2">{mensagem.titulo}</h3>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                    <h3 className="font-semibold text-sm mb-1">{mensagem.titulo}</h3>
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words line-clamp-3">
                       {mensagem.conteudo}
                     </p>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex gap-1.5 flex-shrink-0">
                     <Button
                       size="icon"
                       variant="outline"
+                      className="h-7 w-7"
                       onClick={() => handleCopy(mensagem.conteudo, mensagem.titulo)}
                       title="Copiar mensagem"
                     >
-                      <Copy className="w-4 h-4" />
+                      <Copy className="w-3.5 h-3.5" />
                     </Button>
                     <Button
                       size="icon"
                       variant="outline"
+                      className="h-7 w-7"
                       onClick={() => deleteMutation.mutate(mensagem.id)}
                       disabled={deleteMutation.isPending}
                       title="Deletar mensagem"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>
