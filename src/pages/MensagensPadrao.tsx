@@ -122,24 +122,24 @@ const MensagensPadrao = () => {
   };
 
   return (
-    <div className="space-y-6 w-full min-w-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-accent">Mensagens Padrão</h1>
-            <p className="text-muted-foreground mt-1">
+    <div className="space-y-4 w-full min-w-0 overflow-hidden">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-accent">Mensagens Padrão</h1>
+            <p className="text-muted-foreground text-sm">
               Salve e copie suas mensagens mais usadas com um clique
             </p>
           </div>
           {!showForm && (
-            <Button onClick={() => setShowForm(true)} className="gap-2">
+            <Button onClick={() => setShowForm(true)} size="sm" className="gap-2 shrink-0">
               <Plus className="w-4 h-4" />
-              Nova Mensagem
+              Nova
             </Button>
           )}
         </div>
 
         {showForm && (
-          <Card className="p-6 border-accent/20">
+          <Card className="p-4 border-accent/20">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">Nova Mensagem</h2>
