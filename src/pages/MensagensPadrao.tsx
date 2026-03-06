@@ -247,7 +247,6 @@ const MensagensPadrao = () => {
             ))}
           </div>
         )}
-      </div>
     </div>
   );
 };
