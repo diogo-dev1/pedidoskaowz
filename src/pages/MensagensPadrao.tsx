@@ -140,13 +140,14 @@ const MensagensPadrao = () => {
 
         {showForm && (
           <Card className="p-4 border-accent/20">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Nova Mensagem</h2>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold">Nova Mensagem</h2>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
+                  className="h-7 w-7"
                   onClick={() => {
                     setShowForm(false);
                     setTitulo("");
@@ -157,22 +158,22 @@ const MensagensPadrao = () => {
                 </Button>
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Título</label>
+                <label className="text-xs font-medium mb-1 block">Título</label>
                 <Input
                   value={titulo}
                   onChange={(e) => setTitulo(e.target.value)}
                   placeholder="Ex: Saudação inicial"
-                  className="bg-background/50"
+                  className="h-8 text-sm"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Conteúdo</label>
+                <label className="text-xs font-medium mb-1 block">Conteúdo</label>
                 <Textarea
                   value={conteudo}
                   onChange={(e) => setConteudo(e.target.value)}
                   placeholder="Digite a mensagem que deseja salvar..."
-                  rows={6}
-                  className="bg-background/50 resize-none"
+                  rows={4}
+                  className="text-sm resize-none"
                 />
               </div>
               <div className="flex gap-2 justify-end">
