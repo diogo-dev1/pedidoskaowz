@@ -197,50 +197,52 @@ const MensagensPadrao = () => {
         )}
 
         {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground text-sm">
             Carregando mensagens...
           </div>
         ) : mensagens.length === 0 ? (
-          <Card className="p-12 text-center border-dashed">
-            <p className="text-muted-foreground mb-4">
+          <Card className="p-8 text-center border-dashed">
+            <p className="text-muted-foreground mb-3 text-sm">
               Você ainda não tem mensagens salvas
             </p>
-            <Button onClick={() => setShowForm(true)} variant="outline" className="gap-2">
+            <Button onClick={() => setShowForm(true)} variant="outline" size="sm" className="gap-2">
               <Plus className="w-4 h-4" />
               Criar primeira mensagem
             </Button>
           </Card>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {mensagens.map((mensagem) => (
               <Card
                 key={mensagem.id}
-                className="p-6 hover:border-accent/40 transition-colors"
+                className="p-3 hover:border-accent/40 transition-colors"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg mb-2">{mensagem.titulo}</h3>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                    <h3 className="font-semibold text-sm mb-1">{mensagem.titulo}</h3>
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words line-clamp-3">
                       {mensagem.conteudo}
                     </p>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex gap-1.5 flex-shrink-0">
                     <Button
                       size="icon"
                       variant="outline"
+                      className="h-7 w-7"
                       onClick={() => handleCopy(mensagem.conteudo, mensagem.titulo)}
                       title="Copiar mensagem"
                     >
-                      <Copy className="w-4 h-4" />
+                      <Copy className="w-3.5 h-3.5" />
                     </Button>
                     <Button
                       size="icon"
                       variant="outline"
+                      className="h-7 w-7"
                       onClick={() => deleteMutation.mutate(mensagem.id)}
                       disabled={deleteMutation.isPending}
                       title="Deletar mensagem"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>
