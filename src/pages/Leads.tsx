@@ -483,254 +483,37 @@ export default function Leads() {
   }
 
   return (
-    <div className="space-y-3 pb-20 px-3 py-3">
+    <div className="space-y-2 pb-20 px-3 py-3">
       {/* Header */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-lg font-bold tracking-tight">Leads</h1>
-          <p className="text-muted-foreground text-xs">Gerencie seus contatos e oportunidades</p>
-        </div>
-        <div className="flex gap-2">
-          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Settings className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Gerenciar Situações</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                {/* Add/Edit form */}
-                <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Nome da situação"
-                      value={novaSituacaoNome}
-                      onChange={(e) => setNovaSituacaoNome(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Select value={novaSituacaoCor} onValueChange={setNovaSituacaoCor}>
-                      <SelectTrigger className="w-[100px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CORES_DISPONIVEIS.map((c) => (
-                          <SelectItem key={c.value} value={c.value}>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-3 h-3 rounded-full ${c.class.split(" ")[0].replace("/20", "")}`} />
-                              {c.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex gap-2">
-                    {editingSituacao ? (
-                      <>
-                        <Button size="sm" onClick={handleUpdateSituacao} className="flex-1">
-                          Salvar
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={cancelEditSituacao}>
-                          Cancelar
-                        </Button>
-                      </>
-                    ) : (
-                      <Button size="sm" onClick={handleAddSituacao} className="w-full">
-                        <Plus className="h-4 w-4 mr-1" />
-                        Adicionar
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* List */}
-                <div className="space-y-2">
-                  {situacoes.map((s) => (
-                    <div
-                      key={s.id}
-                      className="flex items-center justify-between p-2 bg-muted/20 rounded-md"
-                    >
-                      <Badge variant="outline" className={`${getSituacaoStyle(s.nome)} border`}>
-                        {s.nome}
-                      </Badge>
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={() => startEditSituacao(s)}
-                        >
-                          <Edit className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteSituacao(s.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) resetForm();
-          }}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Novo Lead
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editingLead ? "Editar Lead" : "Novo Lead"}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label>Nome</Label>
-                  <Input
-                    placeholder="Nome do lead (opcional)"
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Referência (telefone ou últimos 3 dígitos) *</Label>
-                  <Input
-                    placeholder="Ex: 695 ou (28) 99902-5695"
-                    value={telefone}
-                    onChange={(e) => setTelefone(e.target.value)}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Situação</Label>
-                    <Select value={situacao} onValueChange={setSituacao}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {situacoes.map((s) => (
-                          <SelectItem key={s.id} value={s.nome}>
-                            {s.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Origem</Label>
-                    <Select value={origem} onValueChange={setOrigem}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ORIGENS.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Observação</Label>
-                  <Textarea
-                    placeholder="Anotações sobre o lead..."
-                    value={observacao}
-                    onChange={(e) => setObservacao(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      resetForm();
-                      setIsDialogOpen(false);
-                    }}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button className="flex-1" onClick={handleSubmit}>
-                    {editingLead ? "Salvar" : "Cadastrar"}
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-bold tracking-tight">Leads</h1>
+        <div className="flex gap-1.5">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsSettingsOpen(true)}>
+            <Settings className="h-4 w-4" />
+          </Button>
+          <Button size="sm" className="h-8 gap-1" onClick={() => setIsDialogOpen(true)}>
+            <Plus className="h-3.5 w-3.5" />
+            Novo
+          </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-2">
-        <Card className="border-border/50">
-          <CardContent className="p-2.5">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary flex-shrink-0" />
-              <div>
-                <p className="text-lg font-bold leading-none">{stats.total}</p>
-                <p className="text-[10px] text-muted-foreground">Total</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50">
-          <CardContent className="p-2.5">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-blue-400 flex-shrink-0" />
-              <div>
-                <p className="text-lg font-bold leading-none">{stats.novos}</p>
-                <p className="text-[10px] text-muted-foreground">Novos</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50">
-          <CardContent className="p-2.5">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-yellow-400 flex-shrink-0" />
-              <div>
-                <p className="text-lg font-bold leading-none">{stats.emContato}</p>
-                <p className="text-[10px] text-muted-foreground">Progresso</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50">
-          <CardContent className="p-2.5">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
-              <div>
-                <p className="text-lg font-bold leading-none">{stats.fechados}</p>
-                <p className="text-[10px] text-muted-foreground">Fechados</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Simple per-situation counters */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+      {/* Situation filter badges + metrics inline */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
+        <Badge
+          variant={filterSituacao === 'todos' ? 'default' : 'outline'}
+          className="text-[10px] px-2 py-0.5 cursor-pointer flex-shrink-0"
+          onClick={() => setFilterSituacao('todos')}
+        >
+          Todos {leads.length}
+        </Badge>
         {metricas.porSituacao.map(s => {
           const corObj = CORES_DISPONIVEIS.find(c => c.value === s.cor);
           return (
             <Badge
               key={s.id}
               variant="outline"
-              className={`${corObj?.class || ''} border text-[10px] px-2 py-0.5 whitespace-nowrap flex-shrink-0 cursor-pointer ${filterSituacao === s.nome ? 'ring-1 ring-accent' : ''}`}
+              className={`${corObj?.class || ''} border text-[10px] px-2 py-0.5 whitespace-nowrap flex-shrink-0 cursor-pointer ${filterSituacao === s.nome ? 'ring-1 ring-primary' : ''}`}
               onClick={() => setFilterSituacao(filterSituacao === s.nome ? 'todos' : s.nome)}
             >
               {s.nome} {s.count}
@@ -739,188 +522,202 @@ export default function Leads() {
         })}
       </div>
 
-      {/* Conversion insight line */}
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Input
+          placeholder="Buscar nome ou referência..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-8 h-8 text-xs"
+        />
+      </div>
+
+      {/* Conversion line */}
       {leads.length > 0 && (
-        <p className="text-[10px] text-muted-foreground px-1">
-          📊 {metricas.total} leads · {metricas.fechados} fechados ({metricas.taxaConversao.toFixed(0)}%) · {metricas.perdidos} perdidos · {metricas.frios} frios
+        <p className="text-[10px] text-muted-foreground">
+          {metricas.fechados} fechados ({metricas.taxaConversao.toFixed(0)}%) · {metricas.perdidos} perdidos · {metricas.frios} frios
         </p>
       )}
 
-      {/* Search and Filters */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Buscar..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 h-8 text-xs"
-          />
-        </div>
-        <div className="flex gap-2">
-          <Select value={filterSituacao} onValueChange={setFilterSituacao}>
-            <SelectTrigger className="w-[120px] h-8 text-xs">
-              <Filter className="h-3.5 w-3.5 mr-1" />
-              <SelectValue placeholder="Situação" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todas</SelectItem>
-              {situacoes.map((s) => (
-                <SelectItem key={s.id} value={s.nome}>
-                  {s.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterOrigem} onValueChange={setFilterOrigem}>
-            <SelectTrigger className="w-[120px] h-8 text-xs">
-              <MapPin className="h-3.5 w-3.5 mr-1" />
-              <SelectValue placeholder="Origem" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todas</SelectItem>
-              {ORIGENS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       {/* Leads List */}
       {filteredLeads.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Users className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground">
-              {leads.length === 0
-                ? "Nenhum lead cadastrado ainda"
-                : "Nenhum lead encontrado com os filtros aplicados"}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="text-center py-12 text-muted-foreground text-sm">
+          {leads.length === 0 ? "Nenhum lead ainda" : "Nenhum resultado"}
+        </div>
       ) : (
-        <div className="grid gap-2">
+        <div className="space-y-1.5">
           {filteredLeads.map((lead) => (
-            <Card
+            <div
               key={lead.id}
-              className="group hover:border-primary/30 transition-all duration-200"
+              className="group flex items-center gap-2 p-2.5 rounded-lg border border-border/50 hover:border-primary/30 transition-colors"
             >
-              <CardContent className="p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0 space-y-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-sm truncate">{lead.nome || "Sem nome"}</h3>
-                      <Badge
-                        variant="outline"
-                        className={`${getSituacaoStyle(lead.situacao)} border text-[10px] px-1.5`}
-                      >
-                        {lead.situacao}
-                      </Badge>
-                      {lead.origem && (
-                        <Badge variant="secondary" className="text-xs">
-                          {getOrigemLabel(lead.origem)}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <a
-                          href={`tel:${lead.telefone}`}
-                          className="flex items-center gap-1.5 hover:text-primary transition-colors"
-                        >
-                          <Phone className="h-3.5 w-3.5" />
-                          {formatPhone(lead.telefone)}
-                        </a>
-                        <button
-                          onClick={() => copyPhone(lead.telefone)}
-                          className="p-1 rounded hover:bg-muted transition-colors"
-                          title="Copiar telefone"
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                      <span className="flex items-center gap-1.5 text-xs">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {new Date(lead.created_at).toLocaleDateString("pt-BR")}
-                      </span>
-                    </div>
-                    
-                    {/* Inline editable observation */}
-                    {editingObsId === lead.id ? (
-                      <Textarea
-                        ref={obsTextareaRef}
-                        value={editingObsValue}
-                        onChange={(e) => setEditingObsValue(e.target.value)}
-                        onBlur={() => handleObsBlur(lead.id)}
-                        placeholder="Adicionar observação..."
-                        className="text-sm bg-muted/50 border-primary/30 min-h-[60px] mt-2"
-                        rows={2}
-                      />
-                    ) : (
-                      <div
-                        onClick={() => handleObsClick(lead)}
-                        className="text-xs text-muted-foreground/80 bg-muted/30 rounded-md p-1.5 cursor-pointer hover:bg-muted/50 transition-colors min-h-[28px]"
-                      >
-                        {lead.observacao || (
-                          <span className="text-muted-foreground/50 italic">
-                            Clique para adicionar observação...
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Select
-                      value={lead.situacao}
-                      onValueChange={(value) => updateLeadSituacao(lead.id, value)}
-                    >
-                      <SelectTrigger className="h-7 w-7 p-0 border-0 bg-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        <div className="w-full h-full flex items-center justify-center">
-                          <TrendingUp className="h-3.5 w-3.5" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {situacoes.map((s) => (
-                          <SelectItem key={s.id} value={s.nome}>
-                            {s.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(lead)}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(lead.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+              {/* Left: info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-medium text-sm truncate">{lead.nome || "Sem nome"}</span>
+                  <Badge
+                    variant="outline"
+                    className={`${getSituacaoStyle(lead.situacao)} border text-[9px] px-1 py-0 leading-tight`}
+                  >
+                    {lead.situacao}
+                  </Badge>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs text-muted-foreground font-mono">{formatPhone(lead.telefone)}</span>
+                  {lead.origem && (
+                    <span className="text-[10px] text-muted-foreground">{getOrigemLabel(lead.origem)}</span>
+                  )}
+                </div>
+                {/* Inline obs */}
+                {editingObsId === lead.id ? (
+                  <Textarea
+                    ref={obsTextareaRef}
+                    value={editingObsValue}
+                    onChange={(e) => setEditingObsValue(e.target.value)}
+                    onBlur={() => handleObsBlur(lead.id)}
+                    placeholder="Observação..."
+                    className="text-xs mt-1 min-h-[40px] bg-muted/30"
+                    rows={1}
+                  />
+                ) : lead.observacao ? (
+                  <p
+                    onClick={() => handleObsClick(lead)}
+                    className="text-[10px] text-muted-foreground/70 mt-0.5 cursor-pointer truncate"
+                  >
+                    {lead.observacao}
+                  </p>
+                ) : (
+                  <p
+                    onClick={() => handleObsClick(lead)}
+                    className="text-[10px] text-muted-foreground/30 mt-0.5 cursor-pointer italic"
+                  >
+                    + obs
+                  </p>
+                )}
+              </div>
+
+              {/* Right: actions */}
+              <div className="flex items-center gap-0.5 flex-shrink-0">
+                <button
+                  onClick={() => copyPhone(lead.telefone)}
+                  className="p-1.5 rounded hover:bg-muted transition-colors"
+                >
+                  <Copy className="h-3 w-3 text-muted-foreground" />
+                </button>
+                <Select
+                  value={lead.situacao}
+                  onValueChange={(value) => updateLeadSituacao(lead.id, value)}
+                >
+                  <SelectTrigger className="h-6 w-6 p-0 border-0 bg-transparent">
+                    <TrendingUp className="h-3 w-3" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {situacoes.map((s) => (
+                      <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="p-1.5 rounded hover:bg-muted transition-colors">
+                      <MoreVertical className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEditDialog(lead)}>
+                      <Edit className="h-3.5 w-3.5 mr-2" /> Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDelete(lead.id)} className="text-destructive focus:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           ))}
         </div>
       )}
+
+      {/* Settings Dialog */}
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Situações</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nova situação"
+                value={novaSituacaoNome}
+                onChange={(e) => setNovaSituacaoNome(e.target.value)}
+                className="flex-1 h-8 text-xs"
+              />
+              <Select value={novaSituacaoCor} onValueChange={setNovaSituacaoCor}>
+                <SelectTrigger className="w-20 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CORES_DISPONIVEIS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      <div className={`w-3 h-3 rounded-full ${c.class.split(" ")[0].replace("/20", "")}`} />
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {editingSituacao ? (
+                <>
+                  <Button size="sm" className="h-8 text-xs" onClick={handleUpdateSituacao}>Ok</Button>
+                  <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={cancelEditSituacao}>✕</Button>
+                </>
+              ) : (
+                <Button size="sm" className="h-8 text-xs" onClick={handleAddSituacao}>+</Button>
+              )}
+            </div>
+            {situacoes.map((s) => (
+              <div key={s.id} className="flex items-center justify-between py-1">
+                <Badge variant="outline" className={`${getSituacaoStyle(s.nome)} border text-[10px]`}>{s.nome}</Badge>
+                <div className="flex gap-0.5">
+                  <button className="p-1 rounded hover:bg-muted" onClick={() => startEditSituacao(s)}><Edit className="h-3 w-3" /></button>
+                  <button className="p-1 rounded hover:bg-muted text-destructive" onClick={() => handleDeleteSituacao(s.id)}><Trash2 className="h-3 w-3" /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* New/Edit Lead Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">{editingLead ? "Editar" : "Novo Lead"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input placeholder="Nome (opcional)" value={nome} onChange={(e) => setNome(e.target.value)} className="h-8 text-xs" />
+            <Input placeholder="Referência — 4 últimos dígitos *" value={telefone} onChange={(e) => setTelefone(e.target.value)} className="h-8 text-xs" maxLength={20} />
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={situacao} onValueChange={setSituacao}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Situação" /></SelectTrigger>
+                <SelectContent>
+                  {situacoes.map((s) => (<SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>))}
+                </SelectContent>
+              </Select>
+              <Select value={origem} onValueChange={setOrigem}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Origem" /></SelectTrigger>
+                <SelectContent>
+                  {ORIGENS.map((o) => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Textarea placeholder="Observação..." value={observacao} onChange={(e) => setObservacao(e.target.value)} rows={2} className="text-xs" />
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1" onClick={() => { resetForm(); setIsDialogOpen(false); }}>Cancelar</Button>
+              <Button size="sm" className="flex-1" onClick={handleSubmit}>{editingLead ? "Salvar" : "Cadastrar"}</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
