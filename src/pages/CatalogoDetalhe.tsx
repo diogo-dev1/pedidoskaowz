@@ -213,13 +213,15 @@ export default function CatalogoDetalhe() {
             )}
 
             {imagensDisponiveis.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1 justify-center">
+              <div className="flex gap-2 py-1 overflow-x-auto justify-center scrollbar-none">
                 {imagensDisponiveis.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setImagemAtual(idx)}
-                    className={`flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden transition-all ${
-                      idx === imagemAtual ? 'ring-2 ring-accent ring-offset-2 ring-offset-zinc-900' : 'opacity-40 hover:opacity-80'
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                      idx === imagemAtual
+                        ? 'border-accent opacity-100'
+                        : 'border-transparent opacity-50 hover:opacity-80'
                     }`}
                   >
                     <img src={img} alt="" className="w-full h-full object-cover" />
