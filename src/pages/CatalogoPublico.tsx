@@ -39,11 +39,13 @@ interface Modelo {
 }
 
 interface CategoriaVisivel {
+  id: string;
   categoria: string;
   visivel: boolean;
   visivel_todas: boolean;
   ordem: number;
   icone: string;
+  categoria_pai_id: string | null;
 }
 
 export default function CatalogoPublico() {

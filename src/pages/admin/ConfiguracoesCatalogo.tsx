@@ -20,6 +20,7 @@ interface CategoriaVisivel {
   visivel_kit: boolean;
   ordem: number;
   icone: string;
+  categoria_pai_id: string | null;
 }
 
 interface BannerCatalogo {
