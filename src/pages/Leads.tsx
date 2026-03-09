@@ -31,20 +31,12 @@ import { toast } from "sonner";
 import {
   Plus,
   Search,
-  Filter,
   MoreVertical,
-  Phone,
-  Calendar,
-  MapPin,
   Edit,
   Trash2,
-  Users,
   TrendingUp,
-  Clock,
-  CheckCircle,
   Copy,
   Settings,
-  X,
 } from "lucide-react";
 
 interface Lead {
