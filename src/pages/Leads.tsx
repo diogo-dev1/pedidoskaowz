@@ -442,25 +442,6 @@ export default function Leads() {
     return matchesSearch && matchesSituacao && matchesOrigem;
   });
 
-  // Filtrar leads por período
-  const getLeadsPorPeriodo = (periodo: PeriodoFiltro) => {
-    if (periodo === 'todos') return leads;
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    let startDate: Date;
-    if (periodo === 'hoje') {
-      startDate = startOfDay;
-    } else if (periodo === 'semana') {
-      startDate = new Date(startOfDay);
-      startDate.setDate(startDate.getDate() - startDate.getDay());
-    } else {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    }
-    return leads.filter(l => new Date(l.created_at) >= startDate);
-  };
-
-  const leadsPeriodo = getLeadsPorPeriodo(periodoFiltro);
-
   const stats = {
     total: leads.length,
     novos: leads.filter((l) => situacoes.find(s => s.nome === l.situacao)?.ordem === 0).length,
@@ -474,29 +455,18 @@ export default function Leads() {
     }).length,
   };
 
-  // Métricas detalhadas
+  // Métricas simples
   const metricas = (() => {
-    const total = leadsPeriodo.length;
+    const total = leads.length;
     const porSituacao = situacoes.map(s => ({
       ...s,
-      count: leadsPeriodo.filter(l => l.situacao === s.nome).length,
+      count: leads.filter(l => l.situacao === s.nome).length,
     }));
     const fechados = porSituacao.filter(s => s.cor === 'green').reduce((sum, s) => sum + s.count, 0);
     const perdidos = porSituacao.filter(s => s.cor === 'red').reduce((sum, s) => sum + s.count, 0);
     const frios = porSituacao.filter(s => s.ordem === 0).reduce((sum, s) => sum + s.count, 0);
-    const aproveitados = total - perdidos - frios;
     const taxaConversao = total > 0 ? (fechados / total) * 100 : 0;
-    const taxaPerda = total > 0 ? (perdidos / total) * 100 : 0;
-    const taxaAproveitamento = total > 0 ? (aproveitados / total) * 100 : 0;
-
-    // Leads por origem
-    const porOrigem: Record<string, number> = {};
-    leadsPeriodo.forEach(l => {
-      const key = l.origem || 'sem_origem';
-      porOrigem[key] = (porOrigem[key] || 0) + 1;
-    });
-
-    return { total, porSituacao, fechados, perdidos, frios, aproveitados, taxaConversao, taxaPerda, taxaAproveitamento, porOrigem };
+    return { total, porSituacao, fechados, perdidos, frios, taxaConversao };
   })();
 
   const formatPhone = (phone: string) => {
