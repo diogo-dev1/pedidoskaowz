@@ -138,10 +138,18 @@ export default function CatalogoDetalhe() {
 
   const videoUrl = modelo?.video_url;
 
-  const imagensDisponiveis = useMemo(() => [
-    ...(modelo?.imagem_modelo ? [modelo.imagem_modelo] : []),
-    ...midias.filter(m => !m.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i)).map(m => m.url)
-  ], [modelo, midias]);
+  const imagensDisponiveis = useMemo(() => {
+    const urls: string[] = [];
+    const seen = new Set<string>();
+    const add = (url: string) => {
+      if (!seen.has(url)) { seen.add(url); urls.push(url); }
+    };
+    if (modelo?.imagem_modelo) add(modelo.imagem_modelo);
+    midias
+      .filter(m => !m.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i))
+      .forEach(m => add(m.url));
+    return urls;
+  }, [modelo, midias]);
 
   if (loading) {
     return (
