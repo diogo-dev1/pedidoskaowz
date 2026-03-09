@@ -45,7 +45,13 @@ import {
   Copy,
   Settings,
   X,
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
+  Snowflake,
+  Target,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface Lead {
   id: string;
