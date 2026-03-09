@@ -644,9 +644,9 @@ export default function Leads() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Telefone *</Label>
+                  <Label>Referência (telefone ou últimos 3 dígitos) *</Label>
                   <Input
-                    placeholder="(00) 00000-0000"
+                    placeholder="Ex: 695 ou (28) 99902-5695"
                     value={telefone}
                     onChange={(e) => setTelefone(e.target.value)}
                   />
