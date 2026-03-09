@@ -510,6 +510,7 @@ export default function Leads() {
   })();
 
   const formatPhone = (phone: string) => {
+    if (phone.length <= 4) return phone;
     return phone.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
   };
 
