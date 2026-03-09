@@ -302,13 +302,29 @@ export default function CatalogoPublico() {
     if (filtroProntaEntrega && !modelo.pronta_entrega) return false;
 
     if (categoriasMultiplas.length > 0) {
-      const matchCategoria = modelo.categorias && categoriasMultiplas.some(c => modelo.categorias.includes(c));
+      // Expand each selected category to include its child categories
+      const categoriasExpandidas = new Set<string>();
+      categoriasMultiplas.forEach(c => {
+        categoriasExpandidas.add(c);
+        // Find children of this category
+        const catObj = categoriasVisiveis.find(cv => cv.categoria === c);
+        if (catObj) {
+          categoriasVisiveis.filter(cv => cv.categoria_pai_id === catObj.id).forEach(child => categoriasExpandidas.add(child.categoria));
+        }
+      });
+      const matchCategoria = modelo.categorias && Array.from(categoriasExpandidas).some(c => modelo.categorias.includes(c));
       const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
       return matchCategoria && matchBusca;
     }
 
     if (categoriaAtiva) {
-      const matchCategoria = modelo.categorias && modelo.categorias.includes(categoriaAtiva);
+      // Expand to include child categories
+      const categoriasExpandidas = new Set<string>([categoriaAtiva]);
+      const catObj = categoriasVisiveis.find(cv => cv.categoria === categoriaAtiva);
+      if (catObj) {
+        categoriasVisiveis.filter(cv => cv.categoria_pai_id === catObj.id).forEach(child => categoriasExpandidas.add(child.categoria));
+      }
+      const matchCategoria = modelo.categorias && Array.from(categoriasExpandidas).some(c => modelo.categorias.includes(c));
       const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
       return matchCategoria && matchBusca;
     }
