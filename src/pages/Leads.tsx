@@ -99,11 +99,15 @@ const ORIGENS = [
   { value: "outro", label: "Outro" },
 ];
 
+type PeriodoFiltro = 'hoje' | 'semana' | 'mes' | 'todos';
+
 export default function Leads() {
   const { user } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [situacoes, setSituacoes] = useState<Situacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showMetrics, setShowMetrics] = useState(false);
+  const [periodoFiltro, setPeriodoFiltro] = useState<PeriodoFiltro>('todos');
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSituacao, setFilterSituacao] = useState<string>("todos");
   const [filterOrigem, setFilterOrigem] = useState<string>("todos");
