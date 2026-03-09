@@ -20,6 +20,7 @@ interface CategoriaVisivel {
   visivel_kit: boolean;
   ordem: number;
   icone: string;
+  categoria_pai_id: string | null;
 }
 
 interface BannerCatalogo {
@@ -850,6 +851,31 @@ export default function ConfiguracoesCatalogo() {
                         checked={cat.visivel_kit}
                         onCheckedChange={() => toggleVisivelKit(cat)}
                       />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Subcategoria de</span>
+                      <select
+                        value={cat.categoria_pai_id || ''}
+                        onChange={async (e) => {
+                          const newPaiId = e.target.value || null;
+                          const { error } = await supabase
+                            .from('categorias_catalogo_visiveis')
+                            .update({ categoria_pai_id: newPaiId } as any)
+                            .eq('id', cat.id);
+                          if (error) { toast.error('Erro ao alterar'); return; }
+                          setCategoriasVisiveis(prev => prev.map(c => c.id === cat.id ? { ...c, categoria_pai_id: newPaiId } : c));
+                          const paiNome = newPaiId ? categoriasVisiveis.find(c => c.id === newPaiId)?.categoria : null;
+                          toast.success(paiNome ? `${cat.categoria} agora é subcategoria de ${paiNome}` : `${cat.categoria} não é mais subcategoria`);
+                        }}
+                        className="h-7 text-xs bg-muted/30 border border-border rounded px-2"
+                      >
+                        <option value="">Nenhuma (raiz)</option>
+                        {categoriasVisiveis
+                          .filter(c => c.id !== cat.id && c.categoria_pai_id !== cat.id)
+                          .map(c => (
+                            <option key={c.id} value={c.id}>{c.categoria}</option>
+                          ))}
+                      </select>
                     </div>
                   </div>
                 );
