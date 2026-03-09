@@ -122,6 +122,7 @@ export type Database = {
       categorias_catalogo_visiveis: {
         Row: {
           categoria: string
+          categoria_pai_id: string | null
           created_at: string
           icone: string
           id: string
@@ -132,6 +133,7 @@ export type Database = {
         }
         Insert: {
           categoria: string
+          categoria_pai_id?: string | null
           created_at?: string
           icone?: string
           id?: string
@@ -142,6 +144,7 @@ export type Database = {
         }
         Update: {
           categoria?: string
+          categoria_pai_id?: string | null
           created_at?: string
           icone?: string
           id?: string
@@ -150,7 +153,15 @@ export type Database = {
           visivel_kit?: boolean
           visivel_todas?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categorias_catalogo_visiveis_categoria_pai_id_fkey"
+            columns: ["categoria_pai_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_catalogo_visiveis"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       configuracoes_catalogo: {
         Row: {
