@@ -219,8 +219,8 @@ export default function Leads() {
   };
 
   const handleSubmit = async () => {
-    if (!telefone.trim() || telefone.trim().length < 3) {
-      toast.error("Informe pelo menos 3 dígitos para referência");
+    if (!telefone.trim() || telefone.trim().length < 4) {
+      toast.error("Informe pelo menos 4 dígitos para referência");
       return;
     }
 
