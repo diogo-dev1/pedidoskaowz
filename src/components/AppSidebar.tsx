@@ -1,5 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Calculator, Settings, LogOut, User, MessageSquare, BookOpen, ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign, Users, Store } from 'lucide-react';
+import { Calculator, Settings, LogOut, User, MessageSquare, BookOpen, ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign, Users, Store, FileText } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
   Sidebar,
