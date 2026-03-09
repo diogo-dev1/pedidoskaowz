@@ -761,6 +761,157 @@ export default function Leads() {
         </Card>
       </div>
 
+      {/* Metrics Toggle */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full text-xs gap-2"
+        onClick={() => setShowMetrics(!showMetrics)}
+      >
+        <BarChart3 className="h-3.5 w-3.5" />
+        Relatório de Leads
+        {showMetrics ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+      </Button>
+
+      {showMetrics && (
+        <Card className="border-primary/20 bg-card">
+          <CardContent className="p-4 space-y-4">
+            {/* Period filter */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-medium text-muted-foreground">Período:</span>
+              {([
+                { value: 'hoje' as PeriodoFiltro, label: 'Hoje' },
+                { value: 'semana' as PeriodoFiltro, label: 'Semana' },
+                { value: 'mes' as PeriodoFiltro, label: 'Mês' },
+                { value: 'todos' as PeriodoFiltro, label: 'Todos' },
+              ]).map(p => (
+                <Button
+                  key={p.value}
+                  variant={periodoFiltro === p.value ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 text-xs px-3"
+                  onClick={() => setPeriodoFiltro(p.value)}
+                >
+                  {p.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Visão geral */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-muted/30 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold">{metricas.total}</p>
+                <p className="text-[10px] text-muted-foreground">Total no período</p>
+              </div>
+              <div className="bg-green-500/10 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-green-400">{metricas.fechados}</p>
+                <p className="text-[10px] text-muted-foreground">Fechados</p>
+              </div>
+              <div className="bg-red-500/10 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-red-400">{metricas.perdidos}</p>
+                <p className="text-[10px] text-muted-foreground">Perdidos</p>
+              </div>
+              <div className="bg-blue-500/10 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-blue-400">{metricas.frios}</p>
+                <p className="text-[10px] text-muted-foreground">Frios (sem contato)</p>
+              </div>
+            </div>
+
+            {/* Taxas */}
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="flex items-center gap-1">
+                    <Target className="h-3 w-3 text-green-400" /> Taxa de Conversão
+                  </span>
+                  <span className="font-bold">{metricas.taxaConversao.toFixed(1)}%</span>
+                </div>
+                <Progress value={metricas.taxaConversao} className="h-2" />
+              </div>
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3 text-blue-400" /> Aproveitamento
+                  </span>
+                  <span className="font-bold">{metricas.taxaAproveitamento.toFixed(1)}%</span>
+                </div>
+                <Progress value={metricas.taxaAproveitamento} className="h-2" />
+              </div>
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="flex items-center gap-1">
+                    <Snowflake className="h-3 w-3 text-red-400" /> Taxa de Perda
+                  </span>
+                  <span className="font-bold">{metricas.taxaPerda.toFixed(1)}%</span>
+                </div>
+                <Progress value={metricas.taxaPerda} className="h-2" />
+              </div>
+            </div>
+
+            {/* Por situação */}
+            <div>
+              <h3 className="text-xs font-semibold mb-2 text-muted-foreground">Por Situação</h3>
+              <div className="space-y-1.5">
+                {metricas.porSituacao.map(s => {
+                  const pct = metricas.total > 0 ? (s.count / metricas.total) * 100 : 0;
+                  const corObj = CORES_DISPONIVEIS.find(c => c.value === s.cor);
+                  return (
+                    <div key={s.id} className="flex items-center gap-2 text-xs">
+                      <Badge variant="outline" className={`${corObj?.class || ''} border text-[10px] px-1.5 min-w-[80px] justify-center`}>
+                        {s.nome}
+                      </Badge>
+                      <div className="flex-1 bg-muted/30 rounded-full h-2 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${corObj?.class.split(' ')[0].replace('/20', '') || 'bg-muted'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="font-mono font-bold w-8 text-right">{s.count}</span>
+                      <span className="text-muted-foreground w-12 text-right">({pct.toFixed(0)}%)</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Por origem */}
+            <div>
+              <h3 className="text-xs font-semibold mb-2 text-muted-foreground">Por Origem</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {Object.entries(metricas.porOrigem)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([key, count]) => {
+                    const label = key === 'sem_origem' ? 'Sem origem' : (ORIGENS.find(o => o.value === key)?.label || key);
+                    return (
+                      <div key={key} className="flex items-center justify-between bg-muted/20 rounded-md px-2.5 py-1.5">
+                        <span className="text-xs truncate">{label}</span>
+                        <span className="text-xs font-bold ml-2">{count}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* Insight */}
+            {metricas.total > 0 && (
+              <div className="bg-muted/20 rounded-lg p-3 text-xs text-muted-foreground">
+                <p>
+                  📊 De <strong>{metricas.total}</strong> leads no período, 
+                  <strong className="text-green-400"> {metricas.fechados}</strong> foram fechados e 
+                  <strong className="text-red-400"> {metricas.perdidos}</strong> perdidos.
+                  {metricas.frios > 0 && (
+                    <> Ainda há <strong className="text-blue-400">{metricas.frios}</strong> leads frios aguardando primeiro contato.</>
+                  )}
+                  {metricas.taxaConversao > 0 && (
+                    <> Taxa de conversão: <strong>{metricas.taxaConversao.toFixed(1)}%</strong>.</>
+                  )}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Search and Filters */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <div className="relative flex-1">
