@@ -29,6 +29,7 @@ export function AppSidebar() {
     { title: 'Tarefas', url: '/tarefas', icon: CheckSquare },
     { title: 'Leads', url: '/leads', icon: Users },
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
+    { title: 'Orçamento', url: '/orcamento', icon: FileText },
   ];
 
   const adminItems = (profile?.cargo === 'admin' || profile?.cargo === 'vendedor') ? [

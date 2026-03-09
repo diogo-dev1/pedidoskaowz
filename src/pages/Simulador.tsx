@@ -1760,20 +1760,21 @@ OBS: ${observacao || '-'}`;
                   <Input id="nomeCertificado" value={nomeCertificado || nomeCompleto} onChange={(e) => setNomeCertificado(e.target.value)} placeholder="Nome do certificado" className="h-8 text-xs" />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="formaPagamento" className="text-xs">Pagamento *</Label>
-                  <Select value={formaPagamento} onValueChange={setFormaPagamento}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PIX">PIX</SelectItem>
-                      <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
-                      <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
-                      <SelectItem value="Boleto">Boleto</SelectItem>
-                      <SelectItem value="Transferência">Transferência</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                   <Label htmlFor="formaPagamento" className="text-xs">Pagamento *</Label>
+                   <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+                     <SelectTrigger className="h-8 text-xs">
+                       <SelectValue placeholder="Selecione" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="PIX">PIX</SelectItem>
+                       <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
+                       <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
+                       <SelectItem value="Boleto">Boleto</SelectItem>
+                       <SelectItem value="Transferência">Transferência</SelectItem>
+                       <SelectItem value="Pix + Cartão">Pix + Cartão</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">

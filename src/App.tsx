@@ -192,6 +192,16 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/orcamento"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Orcamento />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
