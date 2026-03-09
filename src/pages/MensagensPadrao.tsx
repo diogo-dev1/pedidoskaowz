@@ -220,7 +220,7 @@ const MensagensPadrao = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-sm mb-1">{mensagem.titulo}</h3>
-                    <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words line-clamp-3">
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words">
                       {mensagem.conteudo}
                     </p>
                   </div>
