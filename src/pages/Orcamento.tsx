@@ -5,15 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, Copy, Gift, Package, ChevronDown, ChevronUp, FileText, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Copy, Gift, FileText, RotateCcw, Search } from 'lucide-react';
 
-interface ModeloDB {
+interface ConfiguracaoDB {
   id: string;
   nome_modelo: string;
   preco_base: number;
-  categoria: string | null;
+  categorias: string[] | null;
 }
 
 interface ProdutoAdicionalDB {
@@ -22,54 +21,50 @@ interface ProdutoAdicionalDB {
   preco_unitario: number;
 }
 
-interface OpcaoComponenteDB {
-  id: string;
-  nome_opcao: string;
-  tipo_opcao: string;
-  preco_adicional: number;
-}
-
 interface ItemOrcamento {
   id: string;
   descricao: string;
   valor: number;
   brinde: boolean;
   quantidade: number;
-  tipo: 'modelo' | 'produto' | 'manual';
-}
-
-interface BlocoOrcamento {
-  id: string;
-  nome: string; // ex: "Kit", ou vazio para bloco avulso
-  itens: ItemOrcamento[];
+  tipo: 'config' | 'produto' | 'manual';
   incluirCertificado: boolean;
   incluirBainha: boolean;
   tipoBainha: string;
   incluirClipes: boolean;
-  valorCustom: string; // valor total custom do bloco (vazio = soma automática)
+  complemento: string; // texto extra após o nome (ex: "+ passador de couro")
+}
+
+function criarItem(overrides: Partial<ItemOrcamento> & Pick<ItemOrcamento, 'descricao' | 'valor' | 'tipo'>): ItemOrcamento {
+  return {
+    id: crypto.randomUUID(),
+    brinde: false,
+    quantidade: 1,
+    incluirCertificado: overrides.tipo === 'config',
+    incluirBainha: overrides.tipo === 'config',
+    tipoBainha: 'Kydex',
+    incluirClipes: overrides.tipo === 'config',
+    complemento: '',
+    ...overrides,
+  };
 }
 
 export default function Orcamento() {
-  const [modelos, setModelos] = useState<ModeloDB[]>([]);
+  const [configuracoes, setConfiguracoes] = useState<ConfiguracaoDB[]>([]);
   const [produtos, setProdutos] = useState<ProdutoAdicionalDB[]>([]);
-  const [componentes, setComponentes] = useState<OpcaoComponenteDB[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [blocos, setBlocos] = useState<BlocoOrcamento[]>([]);
+  const [itens, setItens] = useState<ItemOrcamento[]>([]);
   const [parcelas, setParcelas] = useState('10');
   const [semJuros, setSemJuros] = useState(true);
   const [textoInicio, setTextoInicio] = useState('Seriam então :');
 
-  // Adição rápida
-  const [blocoAlvo, setBlocoAlvo] = useState<string>('');
-  const [modoAdicao, setModoAdicao] = useState<'modelo' | 'produto' | 'manual'>('modelo');
-  const [modeloSelecionado, setModeloSelecionado] = useState('');
-  const [acoSelecionado, setAcoSelecionado] = useState('');
-  const [empunhaduraSelecionada, setEmpunhaduraSelecionada] = useState('');
-  const [produtoSelecionado, setProdutoSelecionado] = useState('');
-  const [qtdProduto, setQtdProduto] = useState('1');
+  // Busca
+  const [busca, setBusca] = useState('');
+  const [buscaProduto, setBuscaProduto] = useState('');
   const [descricaoManual, setDescricaoManual] = useState('');
   const [valorManual, setValorManual] = useState('');
+  const [tab, setTab] = useState<'config' | 'produto' | 'manual'>('config');
 
   useEffect(() => {
     carregarDados();
@@ -77,14 +72,12 @@ export default function Orcamento() {
 
   const carregarDados = async () => {
     try {
-      const [modelosRes, produtosRes, componentesRes] = await Promise.all([
-        supabase.from('modelos').select('*').order('nome_modelo'),
+      const [configRes, produtosRes] = await Promise.all([
+        (supabase.from('catalogo_modelos').select('id, nome_modelo, preco_base, categorias') as any).order('nome_modelo'),
         supabase.from('produtos_adicionais').select('*').order('nome_produto'),
-        supabase.from('opcoes_componentes').select('*').order('tipo_opcao'),
       ]);
-      if (modelosRes.data) setModelos(modelosRes.data);
+      if (configRes.data) setConfiguracoes(configRes.data);
       if (produtosRes.data) setProdutos(produtosRes.data);
-      if (componentesRes.data) setComponentes(componentesRes.data);
     } catch {
       toast.error('Erro ao carregar dados');
     } finally {
@@ -92,163 +85,103 @@ export default function Orcamento() {
     }
   };
 
-  const acos = componentes.filter(c => c.tipo_opcao === 'Aço');
-  const empunhaduras = componentes.filter(c => c.tipo_opcao === 'Empunhadura');
+  const configsFiltradas = useMemo(() => {
+    if (!busca.trim()) return configuracoes;
+    const termo = busca.toLowerCase();
+    return configuracoes.filter(c =>
+      c.nome_modelo.toLowerCase().includes(termo) ||
+      c.categorias?.some(cat => cat.toLowerCase().includes(termo))
+    );
+  }, [configuracoes, busca]);
 
-  const criarBloco = (nome: string = '') => {
-    const novo: BlocoOrcamento = {
-      id: crypto.randomUUID(),
-      nome,
-      itens: [],
-      incluirCertificado: true,
-      incluirBainha: true,
-      tipoBainha: 'Kydex',
-      incluirClipes: true,
-      valorCustom: '',
-    };
-    setBlocos(prev => [...prev, novo]);
-    setBlocoAlvo(novo.id);
-    return novo.id;
+  const produtosFiltrados = useMemo(() => {
+    if (!buscaProduto.trim()) return produtos;
+    const termo = buscaProduto.toLowerCase();
+    return produtos.filter(p => p.nome_produto.toLowerCase().includes(termo));
+  }, [produtos, buscaProduto]);
+
+  const adicionarConfig = (config: ConfiguracaoDB) => {
+    setItens(prev => [...prev, criarItem({
+      descricao: config.nome_modelo,
+      valor: config.preco_base,
+      tipo: 'config',
+    })]);
+    toast.success('Adicionado');
   };
 
-  const adicionarItem = () => {
-    let alvo = blocoAlvo;
-    if (!alvo || !blocos.find(b => b.id === alvo)) {
-      alvo = criarBloco('');
-    }
+  const adicionarProduto = (prod: ProdutoAdicionalDB) => {
+    setItens(prev => [...prev, criarItem({
+      descricao: prod.nome_produto,
+      valor: prod.preco_unitario,
+      tipo: 'produto',
+      incluirCertificado: false,
+      incluirBainha: false,
+      incluirClipes: false,
+    })]);
+    toast.success('Adicionado');
+  };
 
-    let novoItem: ItemOrcamento | null = null;
-
-    if (modoAdicao === 'modelo') {
-      const modelo = modelos.find(m => m.id === modeloSelecionado);
-      if (!modelo) { toast.error('Selecione um modelo'); return; }
-      const aco = acoSelecionado && acoSelecionado !== 'none' ? componentes.find(c => c.id === acoSelecionado) : null;
-      const emp = empunhaduraSelecionada && empunhaduraSelecionada !== 'none' ? componentes.find(c => c.id === empunhaduraSelecionada) : null;
-
-      let desc = modelo.nome_modelo;
-      let valor = modelo.preco_base;
-      if (aco) { desc += ` ${aco.nome_opcao}`; valor += aco.preco_adicional; }
-      if (emp) { desc += ` empunhadura em ${emp.nome_opcao}`; valor += emp.preco_adicional; }
-
-      novoItem = { id: crypto.randomUUID(), descricao: desc, valor, brinde: false, quantidade: 1, tipo: 'modelo' };
-    } else if (modoAdicao === 'produto') {
-      const prod = produtos.find(p => p.id === produtoSelecionado);
-      if (!prod) { toast.error('Selecione um produto'); return; }
-      const qtd = parseInt(qtdProduto) || 1;
-      novoItem = { id: crypto.randomUUID(), descricao: prod.nome_produto, valor: prod.preco_unitario * qtd, brinde: false, quantidade: qtd, tipo: 'produto' };
-    } else {
-      if (!descricaoManual.trim()) { toast.error('Preencha a descrição'); return; }
-      novoItem = {
-        id: crypto.randomUUID(),
-        descricao: descricaoManual.trim(),
-        valor: parseFloat(valorManual.replace(',', '.')) || 0,
-        brinde: false,
-        quantidade: 1,
-        tipo: 'manual',
-      };
-    }
-
-    if (!novoItem) return;
-
-    setBlocos(prev => prev.map(b =>
-      b.id === alvo ? { ...b, itens: [...b.itens, novoItem!] } : b
-    ));
-
-    setModeloSelecionado('');
-    setAcoSelecionado('');
-    setEmpunhaduraSelecionada('');
-    setProdutoSelecionado('');
-    setQtdProduto('1');
+  const adicionarManual = () => {
+    if (!descricaoManual.trim()) { toast.error('Preencha a descrição'); return; }
+    setItens(prev => [...prev, criarItem({
+      descricao: descricaoManual.trim(),
+      valor: parseFloat(valorManual.replace(',', '.')) || 0,
+      tipo: 'manual',
+      incluirCertificado: false,
+      incluirBainha: false,
+      incluirClipes: false,
+    })]);
     setDescricaoManual('');
     setValorManual('');
-    toast.success('Item adicionado');
+    toast.success('Adicionado');
   };
 
-  const removerItem = (blocoId: string, itemId: string) => {
-    setBlocos(prev => prev.map(b =>
-      b.id === blocoId ? { ...b, itens: b.itens.filter(i => i.id !== itemId) } : b
-    ));
-  };
+  const removerItem = (id: string) => setItens(prev => prev.filter(i => i.id !== id));
 
-  const toggleBrinde = (blocoId: string, itemId: string) => {
-    setBlocos(prev => prev.map(b =>
-      b.id === blocoId ? {
-        ...b, itens: b.itens.map(i =>
-          i.id === itemId ? { ...i, brinde: !i.brinde } : i
-        )
-      } : b
-    ));
-  };
-
-  const removerBloco = (blocoId: string) => {
-    setBlocos(prev => prev.filter(b => b.id !== blocoId));
-    if (blocoAlvo === blocoId) setBlocoAlvo('');
-  };
-
-  const atualizarBloco = (blocoId: string, campo: Partial<BlocoOrcamento>) => {
-    setBlocos(prev => prev.map(b => b.id === blocoId ? { ...b, ...campo } : b));
-  };
-
-  const calcularTotalBloco = (bloco: BlocoOrcamento) => {
-    if (bloco.valorCustom) return parseFloat(bloco.valorCustom.replace(',', '.')) || 0;
-    return bloco.itens.reduce((sum, i) => sum + (i.brinde ? 0 : i.valor), 0);
+  const atualizarItem = (id: string, campo: Partial<ItemOrcamento>) => {
+    setItens(prev => prev.map(i => i.id === id ? { ...i, ...campo } : i));
   };
 
   const totalGeral = useMemo(() => {
-    return blocos.reduce((sum, b) => sum + calcularTotalBloco(b), 0);
-  }, [blocos]);
+    return itens.reduce((sum, i) => sum + (i.brinde ? 0 : i.valor * i.quantidade), 0);
+  }, [itens]);
 
   const valorParcela = useMemo(() => {
     const n = parseInt(parcelas) || 1;
     return totalGeral / n;
   }, [totalGeral, parcelas]);
 
-  // Gerar texto no formato exato do exemplo
   const gerarTexto = () => {
     let texto = textoInicio ? `${textoInicio}\n\n` : '';
 
-    blocos.forEach((bloco, idx) => {
-      if (bloco.itens.length === 0) return;
+    itens.forEach(item => {
+      const qtdPrefix = item.quantidade > 1 ? `${item.quantidade} ` : '';
+      const compl = item.complemento ? ` ${item.complemento}` : '';
 
-      const modelosBloco = bloco.itens.filter(i => i.tipo === 'modelo');
-      const outrosItens = bloco.itens.filter(i => i.tipo !== 'modelo');
-
-      // Linha principal: nome do bloco + modelos concatenados com " + "
-      if (bloco.nome || modelosBloco.length > 0) {
-        let linha = bloco.nome ? `${bloco.nome}  ` : '';
-        linha += modelosBloco.map(m => `● ${m.descricao}`).join(' + ');
-        texto += `${linha}\n\n`;
+      // Descrição principal
+      if (item.brinde) {
+        texto += `● ${qtdPrefix}${item.descricao}${compl} (~${(item.valor * item.quantidade).toFixed(2).replace('.', ',')}~) Brinde \n\n`;
+      } else {
+        texto += `● ${qtdPrefix}${item.descricao}${compl} \n\n`;
       }
 
-      // Outros itens (produtos, manuais) em linhas separadas
-      outrosItens.forEach(item => {
-        const qtdPrefix = item.quantidade > 1 ? `${item.quantidade} ` : '';
-        if (item.brinde) {
-          texto += `● ${qtdPrefix}${item.descricao} (~${item.valor.toFixed(2).replace('.', ',')}~) Brinde \n\n`;
-        } else {
-          const complemento = item.valor > 0 && item.tipo === 'manual' ? '' : '';
-          texto += `● ${qtdPrefix}${item.descricao}${complemento} \n\n`;
-        }
-      });
-
-      // Bainha + Clipes
-      if (bloco.incluirBainha) {
-        texto += `● Bainhas em ${bloco.tipoBainha}  ${bloco.incluirClipes ? '+ Clipes em aço inox ' : ''}\n\n`;
+      // Inclusões (bainha, certificado)
+      if (item.incluirBainha) {
+        texto += `● Bainhas em ${item.tipoBainha}  ${item.incluirClipes ? '+ Clipes em aço inox ' : ''}\n\n`;
       }
-
-      // Certificado
-      if (bloco.incluirCertificado) {
+      if (item.incluirCertificado) {
         texto += `● Certificado de Autenticidade e garantia vitalícia \n\n`;
       }
 
-      // Valor do bloco
-      const totalBloco = calcularTotalBloco(bloco);
-      texto += `- ${totalBloco.toFixed(2).replace('.', ',')}\n\n`;
+      // Valor
+      if (!item.brinde) {
+        texto += `- ${(item.valor * item.quantidade).toFixed(2).replace('.', ',')}\n\n`;
+      }
 
-      if (idx < blocos.length - 1) texto += '\n';
+      texto += '\n';
     });
 
-    // Total geral
+    // Total
     const n = parseInt(parcelas) || 1;
     texto += `Total: ${totalGeral.toFixed(2).replace('.', ',')}`;
     if (n > 1) {
@@ -261,13 +194,6 @@ export default function Orcamento() {
   const copiarOrcamento = () => {
     navigator.clipboard.writeText(gerarTexto());
     toast.success('Orçamento copiado!');
-  };
-
-  const limparTudo = () => {
-    setBlocos([]);
-    setBlocoAlvo('');
-    setParcelas('10');
-    setSemJuros(true);
   };
 
   if (loading) {
@@ -283,13 +209,11 @@ export default function Orcamento() {
           Orçamento
         </h1>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={limparTudo} className="text-xs gap-1">
-            <RotateCcw className="h-3 w-3" />
-            Limpar
+          <Button size="sm" variant="outline" onClick={() => { setItens([]); setParcelas('10'); setSemJuros(true); }} className="text-xs gap-1">
+            <RotateCcw className="h-3 w-3" /> Limpar
           </Button>
           <Button size="sm" onClick={copiarOrcamento} className="text-xs gap-1 bg-accent hover:bg-accent/90">
-            <Copy className="h-3.5 w-3.5" />
-            Copiar Texto
+            <Copy className="h-3.5 w-3.5" /> Copiar Texto
           </Button>
         </div>
       </div>
@@ -302,189 +226,155 @@ export default function Orcamento() {
         className="h-8 text-xs"
       />
 
-      {/* Adicionar bloco */}
-      <div className="flex gap-2">
-        <Input
-          placeholder='Nome do bloco (ex: "Kit", ou vazio)'
-          className="h-9 text-sm flex-1"
-          onKeyDown={e => {
-            if (e.key === 'Enter') {
-              const input = e.currentTarget;
-              criarBloco(input.value);
-              input.value = '';
-              toast.success('Bloco criado');
-            }
-          }}
-        />
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-9 text-xs gap-1"
-          onClick={() => {
-            criarBloco('');
-            toast.success('Bloco criado');
-          }}
-        >
-          <Package className="h-3.5 w-3.5" />
-          + Bloco
-        </Button>
-      </div>
-
-      {/* Blocos */}
-      {blocos.map((bloco) => (
-        <div key={bloco.id} className={`border rounded-lg overflow-hidden ${blocoAlvo === bloco.id ? 'border-accent' : 'border-border'}`}>
-          {/* Header do bloco */}
-          <div
-            className={`flex items-center gap-2 p-2 cursor-pointer ${blocoAlvo === bloco.id ? 'bg-accent/10' : 'bg-muted/30'}`}
-            onClick={() => setBlocoAlvo(bloco.id)}
-          >
-            <Package className="h-4 w-4 text-accent shrink-0" />
-            <Input
-              value={bloco.nome}
-              onChange={e => atualizarBloco(bloco.id, { nome: e.target.value })}
-              placeholder="Nome (Kit, etc.)"
-              className="h-7 text-xs border-none bg-transparent p-0 focus-visible:ring-0 flex-1"
-              onClick={e => e.stopPropagation()}
-            />
-            <span className="text-xs font-semibold text-accent whitespace-nowrap">
-              {calcularTotalBloco(bloco).toFixed(2).replace('.', ',')}
-            </span>
-            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive shrink-0" onClick={e => { e.stopPropagation(); removerBloco(bloco.id); }}>
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
-
-          {/* Itens do bloco */}
-          <div className="p-2 space-y-1">
-            {bloco.itens.map(item => (
-              <div key={item.id} className="flex items-center gap-1 p-1.5 rounded bg-muted/40 group text-xs">
-                <span className={`flex-1 ${item.brinde ? 'line-through text-muted-foreground' : ''}`}>
-                  {item.quantidade > 1 && `${item.quantidade}x `}{item.descricao}
-                  {item.valor > 0 && <span className="text-muted-foreground ml-1">({item.valor.toFixed(2).replace('.', ',')})</span>}
-                </span>
-                {item.brinde && (
-                  <Badge variant="secondary" className="text-[9px] px-1 py-0 gap-0.5">
-                    <Gift className="h-2.5 w-2.5" /> Brinde
-                  </Badge>
-                )}
-                <Button size="sm" variant="ghost" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100" onClick={() => toggleBrinde(bloco.id, item.id)}>
-                  <Gift className="h-3 w-3" />
-                </Button>
-                <Button size="sm" variant="ghost" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => removerItem(bloco.id, item.id)}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-
-            {bloco.itens.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-2">Selecione este bloco e adicione itens abaixo</p>
-            )}
-          </div>
-
-          {/* Opções do bloco */}
-          <div className="flex flex-wrap items-center gap-3 px-2 pb-2 text-xs">
-            <div className="flex items-center gap-1">
-              <Checkbox id={`cert-${bloco.id}`} checked={bloco.incluirCertificado} onCheckedChange={c => atualizarBloco(bloco.id, { incluirCertificado: c === true })} className="h-3 w-3" />
-              <Label htmlFor={`cert-${bloco.id}`} className="text-[10px] cursor-pointer">Certificado</Label>
-            </div>
-            <div className="flex items-center gap-1">
-              <Checkbox id={`bai-${bloco.id}`} checked={bloco.incluirBainha} onCheckedChange={c => atualizarBloco(bloco.id, { incluirBainha: c === true })} className="h-3 w-3" />
-              <Label htmlFor={`bai-${bloco.id}`} className="text-[10px] cursor-pointer">Bainha</Label>
-            </div>
-            {bloco.incluirBainha && (
-              <Input value={bloco.tipoBainha} onChange={e => atualizarBloco(bloco.id, { tipoBainha: e.target.value })} className="h-6 text-[10px] w-16 px-1" />
-            )}
-            <div className="flex items-center gap-1">
-              <Checkbox id={`clip-${bloco.id}`} checked={bloco.incluirClipes} onCheckedChange={c => atualizarBloco(bloco.id, { incluirClipes: c === true })} className="h-3 w-3" />
-              <Label htmlFor={`clip-${bloco.id}`} className="text-[10px] cursor-pointer">Clipes</Label>
-            </div>
-            <div className="flex items-center gap-1 ml-auto">
-              <Label className="text-[10px]">Valor:</Label>
-              <Input
-                value={bloco.valorCustom}
-                onChange={e => atualizarBloco(bloco.id, { valorCustom: e.target.value })}
-                placeholder="auto"
-                className="h-6 text-[10px] w-20 px-1"
-              />
-            </div>
-          </div>
+      {/* Tabs de adição */}
+      <div className="border border-border rounded-lg overflow-hidden bg-card">
+        <div className="flex border-b border-border">
+          {(['config', 'produto', 'manual'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`flex-1 py-2 text-xs font-medium transition-colors ${tab === t ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              {t === 'config' ? 'Configurações' : t === 'produto' ? 'Produtos' : 'Manual'}
+            </button>
+          ))}
         </div>
-      ))}
 
-      {/* Painel de adição */}
-      {blocos.length > 0 && (
-        <div className="border border-border rounded-lg p-3 space-y-2 bg-card">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Label className="text-xs font-semibold shrink-0">Adicionar ao:</Label>
-            <Select value={blocoAlvo} onValueChange={setBlocoAlvo}>
-              <SelectTrigger className="h-7 text-xs w-40"><SelectValue placeholder="Selecione bloco" /></SelectTrigger>
-              <SelectContent>
-                {blocos.map(b => (
-                  <SelectItem key={b.id} value={b.id}>{b.nome || `Bloco ${blocos.indexOf(b) + 1}`}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex gap-1 ml-auto">
-              {(['modelo', 'produto', 'manual'] as const).map(modo => (
-                <Button key={modo} size="sm" variant={modoAdicao === modo ? 'default' : 'outline'} className="text-[10px] h-7 px-2" onClick={() => setModoAdicao(modo)}>
-                  {modo === 'modelo' ? 'Modelo' : modo === 'produto' ? 'Produto' : 'Manual'}
-                </Button>
+        <div className="p-2 max-h-52 overflow-y-auto">
+          {tab === 'config' && (
+            <div className="space-y-1">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  value={busca}
+                  onChange={e => setBusca(e.target.value)}
+                  placeholder="Buscar configuração..."
+                  className="h-8 text-xs pl-7"
+                />
+              </div>
+              {configsFiltradas.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => adicionarConfig(c)}
+                  className="w-full flex items-center justify-between p-2 rounded hover:bg-accent/10 transition-colors text-left"
+                >
+                  <span className="text-xs font-medium truncate flex-1">{c.nome_modelo}</span>
+                  <span className="text-xs text-accent font-semibold ml-2 shrink-0">
+                    R$ {c.preco_base.toFixed(2).replace('.', ',')}
+                  </span>
+                </button>
               ))}
-            </div>
-          </div>
-
-          {modoAdicao === 'modelo' && (
-            <div className="grid grid-cols-3 gap-2">
-              <Select value={modeloSelecionado} onValueChange={setModeloSelecionado}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Modelo" /></SelectTrigger>
-                <SelectContent>
-                  {modelos.map(m => (
-                    <SelectItem key={m.id} value={m.id}>{m.nome_modelo}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={acoSelecionado} onValueChange={setAcoSelecionado}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Aço (opc.)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {acos.map(a => <SelectItem key={a.id} value={a.id}>{a.nome_opcao}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={empunhaduraSelecionada} onValueChange={setEmpunhaduraSelecionada}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Empunh. (opc.)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  {empunhaduras.map(e => <SelectItem key={e.id} value={e.id}>{e.nome_opcao}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {configsFiltradas.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-3">Nenhuma configuração encontrada</p>
+              )}
             </div>
           )}
 
-          {modoAdicao === 'produto' && (
-            <div className="flex gap-2">
-              <Select value={produtoSelecionado} onValueChange={setProdutoSelecionado}>
-                <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
-                <SelectContent>
-                  {produtos.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.nome_produto} - R${p.preco_unitario.toFixed(2)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input type="number" min="1" value={qtdProduto} onChange={e => setQtdProduto(e.target.value)} className="h-8 text-xs w-16" placeholder="Qtd" />
+          {tab === 'produto' && (
+            <div className="space-y-1">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  value={buscaProduto}
+                  onChange={e => setBuscaProduto(e.target.value)}
+                  placeholder="Buscar produto..."
+                  className="h-8 text-xs pl-7"
+                />
+              </div>
+              {produtosFiltrados.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => adicionarProduto(p)}
+                  className="w-full flex items-center justify-between p-2 rounded hover:bg-accent/10 transition-colors text-left"
+                >
+                  <span className="text-xs font-medium truncate flex-1">{p.nome_produto}</span>
+                  <span className="text-xs text-accent font-semibold ml-2 shrink-0">
+                    R$ {p.preco_unitario.toFixed(2).replace('.', ',')}
+                  </span>
+                </button>
+              ))}
+              {produtosFiltrados.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-3">Nenhum produto encontrado</p>
+              )}
             </div>
           )}
 
-          {modoAdicao === 'manual' && (
+          {tab === 'manual' && (
             <div className="flex gap-2">
               <Input placeholder="Descrição" value={descricaoManual} onChange={e => setDescricaoManual(e.target.value)} className="h-8 text-xs flex-1" />
               <Input placeholder="Valor" value={valorManual} onChange={e => setValorManual(e.target.value)} className="h-8 text-xs w-24" />
+              <Button size="sm" onClick={adicionarManual} className="h-8 text-xs gap-1 bg-accent hover:bg-accent/90">
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
             </div>
           )}
+        </div>
+      </div>
 
-          <Button size="sm" onClick={adicionarItem} className="w-full h-8 text-xs gap-1 bg-accent hover:bg-accent/90">
-            <Plus className="h-3.5 w-3.5" />
-            Adicionar Item
-          </Button>
+      {/* Itens adicionados */}
+      {itens.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-xs font-semibold text-muted-foreground">Itens do orçamento</Label>
+          {itens.map(item => (
+            <div key={item.id} className="border border-border rounded-lg p-2.5 space-y-1.5 bg-card">
+              {/* Linha principal */}
+              <div className="flex items-center gap-1.5 group">
+                <Input
+                  type="number"
+                  min="1"
+                  value={item.quantidade}
+                  onChange={e => atualizarItem(item.id, { quantidade: parseInt(e.target.value) || 1 })}
+                  className="h-7 text-xs w-12 text-center px-1"
+                />
+                <span className={`flex-1 text-xs font-medium ${item.brinde ? 'line-through text-muted-foreground' : ''}`}>
+                  {item.descricao}
+                </span>
+                <Input
+                  value={item.valor.toString()}
+                  onChange={e => atualizarItem(item.id, { valor: parseFloat(e.target.value.replace(',', '.')) || 0 })}
+                  className="h-7 text-xs w-20 text-right px-1"
+                />
+                {item.brinde && (
+                  <Badge variant="secondary" className="text-[9px] px-1 py-0 gap-0.5 shrink-0">
+                    <Gift className="h-2.5 w-2.5" /> Brinde
+                  </Badge>
+                )}
+                <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => atualizarItem(item.id, { brinde: !item.brinde })}>
+                  <Gift className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive" onClick={() => removerItem(item.id)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+
+              {/* Complemento */}
+              <Input
+                value={item.complemento}
+                onChange={e => atualizarItem(item.id, { complemento: e.target.value })}
+                placeholder="Complemento (ex: + passador de couro)"
+                className="h-6 text-[10px] border-dashed"
+              />
+
+              {/* Inclusões */}
+              <div className="flex flex-wrap items-center gap-3 text-xs">
+                <div className="flex items-center gap-1">
+                  <Checkbox id={`cert-${item.id}`} checked={item.incluirCertificado} onCheckedChange={c => atualizarItem(item.id, { incluirCertificado: c === true })} className="h-3 w-3" />
+                  <Label htmlFor={`cert-${item.id}`} className="text-[10px] cursor-pointer">Certificado</Label>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Checkbox id={`bai-${item.id}`} checked={item.incluirBainha} onCheckedChange={c => atualizarItem(item.id, { incluirBainha: c === true })} className="h-3 w-3" />
+                  <Label htmlFor={`bai-${item.id}`} className="text-[10px] cursor-pointer">Bainha</Label>
+                </div>
+                {item.incluirBainha && (
+                  <Input value={item.tipoBainha} onChange={e => atualizarItem(item.id, { tipoBainha: e.target.value })} className="h-5 text-[10px] w-16 px-1" />
+                )}
+                <div className="flex items-center gap-1">
+                  <Checkbox id={`clip-${item.id}`} checked={item.incluirClipes} onCheckedChange={c => atualizarItem(item.id, { incluirClipes: c === true })} className="h-3 w-3" />
+                  <Label htmlFor={`clip-${item.id}`} className="text-[10px] cursor-pointer">Clipes</Label>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -510,8 +400,8 @@ export default function Orcamento() {
         </div>
       </div>
 
-      {/* Preview sempre visível */}
-      {blocos.some(b => b.itens.length > 0) && (
+      {/* Preview */}
+      {itens.length > 0 && (
         <div className="border border-border rounded-lg overflow-hidden">
           <div className="flex items-center justify-between p-2 bg-muted/30">
             <span className="text-xs font-medium text-muted-foreground">Pré-visualização</span>
