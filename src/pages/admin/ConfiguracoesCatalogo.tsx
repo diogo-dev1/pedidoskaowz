@@ -849,6 +849,8 @@ export default function ConfiguracoesCatalogo() {
               </Button>
             </CardContent>
           </Card>
+
+          <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Nova Categoria</CardTitle>
             </CardHeader>
