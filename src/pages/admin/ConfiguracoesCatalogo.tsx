@@ -770,7 +770,85 @@ export default function ConfiguracoesCatalogo() {
             </CardContent>
           </Card>
 
+          {/* Compartilhar lâminas específicas */}
           <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Share2 className="h-4 w-4" />
+                Compartilhar Lâminas Específicas
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Selecione lâminas individualmente e gere um link exclusivo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Input
+                placeholder="Buscar lâmina..."
+                value={buscaProdutoCompartilhar}
+                onChange={e => setBuscaProdutoCompartilhar(e.target.value)}
+                className="h-8 text-sm"
+              />
+              
+              {produtosParaCompartilhar.size > 0 && (
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold">Selecionadas ({produtosParaCompartilhar.size})</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Array.from(produtosParaCompartilhar).map(id => {
+                      const modelo = todosModelos.find(m => m.id === id);
+                      if (!modelo) return null;
+                      return (
+                        <Badge
+                          key={id}
+                          className="bg-accent/20 text-accent border-accent/30 text-[10px] cursor-pointer hover:bg-accent/30 gap-1"
+                          onClick={() => toggleProdutoCompartilhar(id)}
+                        >
+                          {modelo.nome_modelo}
+                          <X className="h-2.5 w-2.5" />
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="max-h-48 overflow-y-auto space-y-0.5 border rounded-lg p-1.5">
+                {todosModelos
+                  .filter(m => !buscaProdutoCompartilhar || m.nome_modelo.toLowerCase().includes(buscaProdutoCompartilhar.toLowerCase()))
+                  .map(modelo => {
+                    const selecionado = produtosParaCompartilhar.has(modelo.id);
+                    return (
+                      <div
+                        key={modelo.id}
+                        className={`flex items-center gap-2 p-1.5 rounded cursor-pointer transition-colors ${
+                          selecionado ? 'bg-accent/10' : 'hover:bg-muted/50'
+                        }`}
+                        onClick={() => toggleProdutoCompartilhar(modelo.id)}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                          selecionado ? 'bg-accent border-accent' : 'border-border'
+                        }`}>
+                          {selecionado && <Check className="h-3 w-3 text-white" />}
+                        </div>
+                        {modelo.imagem_modelo && (
+                          <img src={modelo.imagem_modelo} alt="" className="w-7 h-7 rounded object-cover" />
+                        )}
+                        <span className="text-xs flex-1 truncate">{modelo.nome_modelo}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              <Button
+                size="sm"
+                onClick={copiarLinkProdutos}
+                disabled={produtosParaCompartilhar.size === 0}
+                className="w-full gap-2"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copiar link ({produtosParaCompartilhar.size} {produtosParaCompartilhar.size === 1 ? 'lâmina' : 'lâminas'})
+              </Button>
+            </CardContent>
+          </Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Nova Categoria</CardTitle>
             </CardHeader>
