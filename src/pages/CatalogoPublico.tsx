@@ -287,6 +287,12 @@ export default function CatalogoPublico() {
   );
 
   const modelosFiltrados = modelos.filter((modelo) => {
+    // Filtro por produtos compartilhados (link direto)
+    if (produtosCompartilhados.length > 0) {
+      const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
+      return produtosCompartilhados.includes(modelo.id) && matchBusca;
+    }
+
     // Filtro por faixa de preço
     if (modelo.preco_base < faixaPreco[0] || modelo.preco_base > faixaPreco[1]) return false;
     
