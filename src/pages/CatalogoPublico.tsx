@@ -116,8 +116,15 @@ export default function CatalogoPublico() {
     const verTudoParam = searchParams.get('ver');
     const prontaParam = searchParams.get('pronta_entrega');
     
+    const produtosParam = searchParams.get('produtos');
     const catsParam = searchParams.get('categorias');
-    if (catsParam) {
+    if (produtosParam) {
+      const ids = produtosParam.split(',').map(id => id.trim()).filter(Boolean);
+      if (ids.length > 0) {
+        setProdutosCompartilhados(ids);
+        setMostrarLanding(false);
+      }
+    } else if (catsParam) {
       const cats = catsParam.split(',').map(c => decodeURIComponent(c.trim())).filter(Boolean);
       if (cats.length > 0) {
         setCategoriasMultiplas(cats);
