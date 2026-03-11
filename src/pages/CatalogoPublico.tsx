@@ -910,10 +910,10 @@ export default function CatalogoPublico() {
                               className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all z-20 ${
                                 selecionado
                                   ? 'bg-accent text-white shadow-[0_0_20px_rgba(251,146,60,0.5)]'
-                                  : 'bg-black/60 hover:bg-black border border-white/20 text-white'
+                                  : 'bg-black/80 hover:bg-accent/80 border-2 border-white/50 hover:border-accent text-white/70 hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)]'
                               }`}
                             >
-                              {selecionado && <Check className="h-4 w-4" />}
+                              {selecionado ? <Check className="h-4 w-4" /> : <MessageCircle className="h-3.5 w-3.5" />}
                             </button>
 
                             {/* Badge pronta entrega */}
