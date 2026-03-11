@@ -905,7 +905,9 @@ export default function CatalogoPublico() {
                       <div
                         key={modelo.id}
                         className={`group relative overflow-hidden rounded-lg transition-all ${
-                          selecionado ? 'ring-2 ring-accent' : ''
+                          selecionado
+                            ? 'ring-2 ring-accent ring-offset-2 ring-offset-zinc-950 shadow-[0_0_0_1px_hsl(var(--accent)/0.55)]'
+                            : ''
                         }`}
                       >
                         {/* Diagonal accent strip */}
