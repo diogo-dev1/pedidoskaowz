@@ -88,8 +88,9 @@ export default function ConfiguracoesCatalogo() {
   const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
   const [novaCategoriaIcone, setNovaCategoriaIcone] = useState('Sword');
 
-  // Multi-category share
   const [categoriasParaCompartilhar, setCategoriasParaCompartilhar] = useState<Set<string>>(new Set());
+  const [produtosParaCompartilhar, setProdutosParaCompartilhar] = useState<Set<string>>(new Set());
+  const [buscaProdutoCompartilhar, setBuscaProdutoCompartilhar] = useState('');
 
   // Edição de nome de categoria
   const [categoriaEditandoId, setCategoriaEditandoId] = useState<string | null>(null);
