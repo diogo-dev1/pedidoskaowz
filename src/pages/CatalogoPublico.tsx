@@ -78,11 +78,12 @@ export default function CatalogoPublico() {
   const [tamanhosDisponiveis, setTamanhosDisponiveis] = useState<number[]>([]);
   const [laminasDisponiveis, setLaminasDisponiveis] = useState<number[]>([]);
   const [secaoAberta, setSecaoAberta] = useState<string | null>(null);
+  const [produtosCompartilhados, setProdutosCompartilhados] = useState<string[]>([]);
   const [filtroPrecoAtivo, setFiltroPrecoAtivo] = useState(true);
   const [filtroTamanhoAtivo, setFiltroTamanhoAtivo] = useState(true);
   const [filtroLaminaAtivo, setFiltroLaminaAtivo] = useState(true);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const debounceRefTamanho = useRef<NodeJS.Timeout | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounceRefTamanho = useRef<ReturnType<typeof setTimeout> | null>(null);
   const categorias = categoriasVisiveis.filter(c => c.visivel);
 
   const handleFaixaPrecoChange = useCallback((v: number[]) => {
@@ -116,8 +117,15 @@ export default function CatalogoPublico() {
     const verTudoParam = searchParams.get('ver');
     const prontaParam = searchParams.get('pronta_entrega');
     
+    const produtosParam = searchParams.get('produtos');
     const catsParam = searchParams.get('categorias');
-    if (catsParam) {
+    if (produtosParam) {
+      const ids = produtosParam.split(',').map(id => id.trim()).filter(Boolean);
+      if (ids.length > 0) {
+        setProdutosCompartilhados(ids);
+        setMostrarLanding(false);
+      }
+    } else if (catsParam) {
       const cats = catsParam.split(',').map(c => decodeURIComponent(c.trim())).filter(Boolean);
       if (cats.length > 0) {
         setCategoriasMultiplas(cats);
@@ -279,6 +287,12 @@ export default function CatalogoPublico() {
   );
 
   const modelosFiltrados = modelos.filter((modelo) => {
+    // Filtro por produtos compartilhados (link direto)
+    if (produtosCompartilhados.length > 0) {
+      const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
+      return produtosCompartilhados.includes(modelo.id) && matchBusca;
+    }
+
     // Filtro por faixa de preço
     if (modelo.preco_base < faixaPreco[0] || modelo.preco_base > faixaPreco[1]) return false;
     
@@ -519,12 +533,11 @@ export default function CatalogoPublico() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
+              onClick={() => {
                   setMostrarLanding(true);
                   setCategoriaAtiva(null);
                   setFiltroProntaEntrega(false);
                   setBusca('');
-                  setModelosSelecionados(new Set());
                 }}
                 className="text-white hover:bg-white/10 text-xs md:text-sm"
               >
@@ -911,10 +924,10 @@ export default function CatalogoPublico() {
                               className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all z-20 ${
                                 selecionado
                                   ? 'bg-accent text-white shadow-[0_0_20px_rgba(251,146,60,0.5)]'
-                                  : 'bg-black/60 hover:bg-black border border-white/20 text-white'
+                                  : 'bg-black/80 hover:bg-accent/80 border-2 border-white/50 hover:border-accent text-white/70 hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)]'
                               }`}
                             >
-                              {selecionado && <Check className="h-4 w-4" />}
+                              {selecionado ? <Check className="h-4 w-4" /> : <MessageCircle className="h-3.5 w-3.5" />}
                             </button>
 
                             {/* Badge pronta entrega */}

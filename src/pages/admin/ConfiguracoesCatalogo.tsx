@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { IconPicker } from '@/components/IconPicker';
@@ -88,8 +89,9 @@ export default function ConfiguracoesCatalogo() {
   const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
   const [novaCategoriaIcone, setNovaCategoriaIcone] = useState('Sword');
 
-  // Multi-category share
   const [categoriasParaCompartilhar, setCategoriasParaCompartilhar] = useState<Set<string>>(new Set());
+  const [produtosParaCompartilhar, setProdutosParaCompartilhar] = useState<Set<string>>(new Set());
+  const [buscaProdutoCompartilhar, setBuscaProdutoCompartilhar] = useState('');
 
   // Edição de nome de categoria
   const [categoriaEditandoId, setCategoriaEditandoId] = useState<string | null>(null);
@@ -304,6 +306,26 @@ export default function ConfiguracoesCatalogo() {
     const url = `${window.location.origin}/catalogo?categorias=${cats}`;
     navigator.clipboard.writeText(url);
     toast.success(`Link com ${categoriasParaCompartilhar.size} categorias copiado!`);
+  };
+
+  const toggleProdutoCompartilhar = (id: string) => {
+    setProdutosParaCompartilhar(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const copiarLinkProdutos = () => {
+    if (produtosParaCompartilhar.size === 0) {
+      toast.error('Selecione pelo menos uma lâmina');
+      return;
+    }
+    const ids = Array.from(produtosParaCompartilhar).join(',');
+    const url = `${window.location.origin}/catalogo?produtos=${ids}`;
+    navigator.clipboard.writeText(url);
+    toast.success(`Link com ${produtosParaCompartilhar.size} lâminas copiado!`);
   };
 
   const atualizarIconeCategoria = async (cat: CategoriaVisivel, icone: string) => {
@@ -745,6 +767,86 @@ export default function ConfiguracoesCatalogo() {
               >
                 <Copy className="h-3.5 w-3.5" />
                 Copiar link ({categoriasParaCompartilhar.size} {categoriasParaCompartilhar.size === 1 ? 'categoria' : 'categorias'})
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Compartilhar lâminas específicas */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Share2 className="h-4 w-4" />
+                Compartilhar Lâminas Específicas
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Selecione lâminas individualmente e gere um link exclusivo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Input
+                placeholder="Buscar lâmina..."
+                value={buscaProdutoCompartilhar}
+                onChange={e => setBuscaProdutoCompartilhar(e.target.value)}
+                className="h-8 text-sm"
+              />
+              
+              {produtosParaCompartilhar.size > 0 && (
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold">Selecionadas ({produtosParaCompartilhar.size})</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Array.from(produtosParaCompartilhar).map(id => {
+                      const modelo = todosModelos.find(m => m.id === id);
+                      if (!modelo) return null;
+                      return (
+                        <Badge
+                          key={id}
+                          className="bg-accent/20 text-accent border-accent/30 text-[10px] cursor-pointer hover:bg-accent/30 gap-1"
+                          onClick={() => toggleProdutoCompartilhar(id)}
+                        >
+                          {modelo.nome_modelo}
+                          <X className="h-2.5 w-2.5" />
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="max-h-48 overflow-y-auto space-y-0.5 border rounded-lg p-1.5">
+                {todosModelos
+                  .filter(m => !buscaProdutoCompartilhar || m.nome_modelo.toLowerCase().includes(buscaProdutoCompartilhar.toLowerCase()))
+                  .map(modelo => {
+                    const selecionado = produtosParaCompartilhar.has(modelo.id);
+                    return (
+                      <div
+                        key={modelo.id}
+                        className={`flex items-center gap-2 p-1.5 rounded cursor-pointer transition-colors ${
+                          selecionado ? 'bg-accent/10' : 'hover:bg-muted/50'
+                        }`}
+                        onClick={() => toggleProdutoCompartilhar(modelo.id)}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                          selecionado ? 'bg-accent border-accent' : 'border-border'
+                        }`}>
+                          {selecionado && <Check className="h-3 w-3 text-white" />}
+                        </div>
+                        {modelo.imagem_modelo && (
+                          <img src={modelo.imagem_modelo} alt="" className="w-7 h-7 rounded object-cover" />
+                        )}
+                        <span className="text-xs flex-1 truncate">{modelo.nome_modelo}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              <Button
+                size="sm"
+                onClick={copiarLinkProdutos}
+                disabled={produtosParaCompartilhar.size === 0}
+                className="w-full gap-2"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copiar link ({produtosParaCompartilhar.size} {produtosParaCompartilhar.size === 1 ? 'lâmina' : 'lâminas'})
               </Button>
             </CardContent>
           </Card>
