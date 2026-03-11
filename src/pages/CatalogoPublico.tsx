@@ -519,12 +519,11 @@ export default function CatalogoPublico() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
+              onClick={() => {
                   setMostrarLanding(true);
                   setCategoriaAtiva(null);
                   setFiltroProntaEntrega(false);
                   setBusca('');
-                  setModelosSelecionados(new Set());
                 }}
                 className="text-white hover:bg-white/10 text-xs md:text-sm"
               >
