@@ -48,6 +48,8 @@ interface CategoriaVisivel {
   categoria_pai_id: string | null;
 }
 
+const SELECAO_STORAGE_KEY = 'catalogo_modelos_selecionados';
+
 export default function CatalogoPublico() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -55,7 +57,19 @@ export default function CatalogoPublico() {
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const [categoriasMultiplas, setCategoriasMultiplas] = useState<string[]>([]);
   const [busca, setBusca] = useState('');
-  const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(new Set());
+  const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+
+    const selecaoSalva = sessionStorage.getItem(SELECAO_STORAGE_KEY);
+    if (!selecaoSalva) return new Set();
+
+    try {
+      const ids = JSON.parse(selecaoSalva);
+      return Array.isArray(ids) ? new Set(ids) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
   const [categoriasVisiveis, setCategoriasVisiveis] = useState<CategoriaVisivel[]>([]);
