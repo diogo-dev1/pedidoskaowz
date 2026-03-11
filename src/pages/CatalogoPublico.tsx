@@ -156,6 +156,17 @@ export default function CatalogoPublico() {
     }
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (modelosSelecionados.size === 0) {
+      sessionStorage.removeItem(SELECAO_STORAGE_KEY);
+      return;
+    }
+
+    sessionStorage.setItem(SELECAO_STORAGE_KEY, JSON.stringify(Array.from(modelosSelecionados)));
+  }, [modelosSelecionados]);
+
   // Auto-rotate banners
   useEffect(() => {
     if (banners.length <= 1) return;
