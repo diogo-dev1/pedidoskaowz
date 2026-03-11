@@ -78,6 +78,7 @@ export default function CatalogoPublico() {
   const [tamanhosDisponiveis, setTamanhosDisponiveis] = useState<number[]>([]);
   const [laminasDisponiveis, setLaminasDisponiveis] = useState<number[]>([]);
   const [secaoAberta, setSecaoAberta] = useState<string | null>(null);
+  const [produtosCompartilhados, setProdutosCompartilhados] = useState<string[]>([]);
   const [filtroPrecoAtivo, setFiltroPrecoAtivo] = useState(true);
   const [filtroTamanhoAtivo, setFiltroTamanhoAtivo] = useState(true);
   const [filtroLaminaAtivo, setFiltroLaminaAtivo] = useState(true);
