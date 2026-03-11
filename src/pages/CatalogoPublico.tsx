@@ -948,13 +948,13 @@ export default function CatalogoPublico() {
                                 e.stopPropagation();
                                 toggleSelecao(modelo.id);
                               }}
-                               className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all z-20 ${
+                               className={`absolute top-3 right-3 w-7 h-7 rounded-full transition-all z-20 ${
                                  selecionado
-                                   ? 'bg-accent text-accent-foreground border-2 border-accent/80 shadow-[0_0_0_2px_hsl(var(--accent)/0.25),0_8px_20px_hsl(var(--accent)/0.45)]'
-                                   : 'bg-zinc-950/95 hover:bg-accent border-2 border-accent/70 hover:border-accent text-accent hover:text-accent-foreground shadow-[0_0_0_1px_hsl(var(--accent)/0.25),0_4px_12px_hsl(var(--background)/0.6)]'
+                                   ? 'bg-emerald-500 border-[3px] border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.6)]'
+                                   : 'bg-transparent border-[3px] border-emerald-500/80 hover:border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
                                }`}
                              >
-                               {selecionado ? <Check className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
+                               {selecionado && <Check className="h-3.5 w-3.5 text-white mx-auto" />}
                             </button>
 
                             {/* Badge pronta entrega */}
