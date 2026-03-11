@@ -82,8 +82,8 @@ export default function CatalogoPublico() {
   const [filtroPrecoAtivo, setFiltroPrecoAtivo] = useState(true);
   const [filtroTamanhoAtivo, setFiltroTamanhoAtivo] = useState(true);
   const [filtroLaminaAtivo, setFiltroLaminaAtivo] = useState(true);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const debounceRefTamanho = useRef<NodeJS.Timeout | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounceRefTamanho = useRef<ReturnType<typeof setTimeout> | null>(null);
   const categorias = categoriasVisiveis.filter(c => c.visivel);
 
   const handleFaixaPrecoChange = useCallback((v: number[]) => {
