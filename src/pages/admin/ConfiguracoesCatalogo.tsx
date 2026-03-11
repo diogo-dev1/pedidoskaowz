@@ -307,6 +307,26 @@ export default function ConfiguracoesCatalogo() {
     toast.success(`Link com ${categoriasParaCompartilhar.size} categorias copiado!`);
   };
 
+  const toggleProdutoCompartilhar = (id: string) => {
+    setProdutosParaCompartilhar(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const copiarLinkProdutos = () => {
+    if (produtosParaCompartilhar.size === 0) {
+      toast.error('Selecione pelo menos uma lâmina');
+      return;
+    }
+    const ids = Array.from(produtosParaCompartilhar).join(',');
+    const url = `${window.location.origin}/catalogo?produtos=${ids}`;
+    navigator.clipboard.writeText(url);
+    toast.success(`Link com ${produtosParaCompartilhar.size} lâminas copiado!`);
+  };
+
   const atualizarIconeCategoria = async (cat: CategoriaVisivel, icone: string) => {
     const { error } = await supabase
       .from('categorias_catalogo_visiveis')
