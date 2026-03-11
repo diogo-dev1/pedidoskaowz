@@ -48,6 +48,8 @@ interface CategoriaVisivel {
   categoria_pai_id: string | null;
 }
 
+const SELECAO_STORAGE_KEY = 'catalogo_modelos_selecionados';
+
 export default function CatalogoPublico() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -55,7 +57,19 @@ export default function CatalogoPublico() {
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const [categoriasMultiplas, setCategoriasMultiplas] = useState<string[]>([]);
   const [busca, setBusca] = useState('');
-  const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(new Set());
+  const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+
+    const selecaoSalva = sessionStorage.getItem(SELECAO_STORAGE_KEY);
+    if (!selecaoSalva) return new Set();
+
+    try {
+      const ids = JSON.parse(selecaoSalva);
+      return Array.isArray(ids) ? new Set(ids) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
   const [categoriasVisiveis, setCategoriasVisiveis] = useState<CategoriaVisivel[]>([]);
@@ -141,6 +155,17 @@ export default function CatalogoPublico() {
       setMostrarLanding(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (modelosSelecionados.size === 0) {
+      sessionStorage.removeItem(SELECAO_STORAGE_KEY);
+      return;
+    }
+
+    sessionStorage.setItem(SELECAO_STORAGE_KEY, JSON.stringify(Array.from(modelosSelecionados)));
+  }, [modelosSelecionados]);
 
   // Auto-rotate banners
   useEffect(() => {
@@ -880,7 +905,9 @@ export default function CatalogoPublico() {
                       <div
                         key={modelo.id}
                         className={`group relative overflow-hidden rounded-lg transition-all ${
-                          selecionado ? 'ring-2 ring-accent' : ''
+                          selecionado
+                            ? 'ring-2 ring-accent ring-offset-2 ring-offset-zinc-950 shadow-[0_0_0_1px_hsl(var(--accent)/0.55)]'
+                            : ''
                         }`}
                       >
                         {/* Diagonal accent strip */}
@@ -921,13 +948,13 @@ export default function CatalogoPublico() {
                                 e.stopPropagation();
                                 toggleSelecao(modelo.id);
                               }}
-                              className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all z-20 ${
-                                selecionado
-                                  ? 'bg-accent text-white shadow-[0_0_20px_rgba(251,146,60,0.5)]'
-                                  : 'bg-black/80 hover:bg-accent/80 border-2 border-white/50 hover:border-accent text-white/70 hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)]'
-                              }`}
-                            >
-                              {selecionado ? <Check className="h-4 w-4" /> : <MessageCircle className="h-3.5 w-3.5" />}
+                               className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all z-20 ${
+                                 selecionado
+                                   ? 'bg-accent text-accent-foreground border-2 border-accent/80 shadow-[0_0_0_2px_hsl(var(--accent)/0.25),0_8px_20px_hsl(var(--accent)/0.45)]'
+                                   : 'bg-zinc-950/95 hover:bg-accent border-2 border-accent/70 hover:border-accent text-accent hover:text-accent-foreground shadow-[0_0_0_1px_hsl(var(--accent)/0.25),0_4px_12px_hsl(var(--background)/0.6)]'
+                               }`}
+                             >
+                               {selecionado ? <Check className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
                             </button>
 
                             {/* Badge pronta entrega */}
