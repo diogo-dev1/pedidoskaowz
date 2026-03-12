@@ -25,6 +25,7 @@ import KanbanBoard from "./pages/KanbanBoard";
 import ListaValores from "./pages/ListaValores";
 import Leads from "./pages/Leads";
 import Orcamento from "./pages/Orcamento";
+import Midia from "./pages/Midia";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
