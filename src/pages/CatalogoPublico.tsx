@@ -623,8 +623,8 @@ export default function CatalogoPublico() {
         </div>
       )}
 
-      <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-4 md:py-6">
-        <div className="flex flex-col lg:flex-row gap-4 md:gap-6 min-w-0">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-3 md:py-6">
+        <div className="flex flex-col lg:flex-row gap-2 md:gap-6 min-w-0">
           {/* Sidebar - Categorias */}
           <aside className="lg:w-64 shrink-0">
             <Collapsible open={secaoAberta === 'categorias'} onOpenChange={(open) => setSecaoAberta(open ? 'categorias' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-24 shadow-sm">
@@ -894,7 +894,7 @@ export default function CatalogoPublico() {
           {/* Grid de Produtos */}
           <main className="flex-1 min-w-0">
             {loading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 md:gap-4">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 animate-pulse">
                     <div className="aspect-[3/4] bg-zinc-700 rounded-lg mb-2" />
@@ -916,7 +916,7 @@ export default function CatalogoPublico() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 md:gap-4">
                   {modelosFiltrados.map((modelo) => {
                     const selecionado = modelosSelecionados.has(modelo.id);
                     return (
@@ -992,7 +992,7 @@ export default function CatalogoPublico() {
                           </div>
 
                             {/* Info do produto */}
-                          <div className="p-3 md:p-4 flex flex-col flex-1 gap-1">
+                          <div className="p-2 md:p-4 flex flex-col flex-1 gap-0.5">
                             <h3
                               className="font-bold line-clamp-1 text-sm md:text-base text-white hover:text-accent transition-colors cursor-pointer"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
@@ -1023,7 +1023,7 @@ export default function CatalogoPublico() {
                             </div>
                             <Button
                               size="sm"
-                              className="w-full mt-2 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]"
+                              className="w-full mt-1.5 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               Ver detalhes
