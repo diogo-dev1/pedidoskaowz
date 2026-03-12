@@ -894,7 +894,7 @@ export default function CatalogoPublico() {
           {/* Grid de Produtos */}
           <main className="flex-1 min-w-0">
             {loading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 animate-pulse">
                     <div className="aspect-[3/4] bg-zinc-700 rounded-lg mb-2" />
