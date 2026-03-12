@@ -234,8 +234,6 @@ export default function ConfiguracoesCatalogo() {
     }
   };
 
-  const toggleExibirPrecos = async () => {
-
   // --- Destaques por Categoria ---
   const carregarDestaquesCategoria = async (categoriaId: string) => {
     const { data } = await supabase
@@ -280,13 +278,11 @@ export default function ConfiguracoesCatalogo() {
     if (!categoriaSelecionadaDestaques) return;
     setSalvandoDestaquesCategoria(true);
     try {
-      // Delete existing entries for this category
       await supabase
         .from('ordem_categoria_modelos')
         .delete()
         .eq('categoria_id', categoriaSelecionadaDestaques);
 
-      // Insert new order
       if (destaquesCategoriaIds.length > 0) {
         const inserts = destaquesCategoriaIds.map((modeloId, i) => ({
           categoria_id: categoriaSelecionadaDestaques,
