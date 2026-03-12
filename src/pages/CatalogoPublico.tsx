@@ -623,8 +623,8 @@ export default function CatalogoPublico() {
         </div>
       )}
 
-      <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-3 md:py-6">
-        <div className="flex flex-col lg:flex-row gap-3 md:gap-6 min-w-0">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-3 md:py-6">
+        <div className="flex flex-col lg:flex-row gap-2 md:gap-6 min-w-0">
           {/* Sidebar - Categorias */}
           <aside className="lg:w-64 shrink-0">
             <Collapsible open={secaoAberta === 'categorias'} onOpenChange={(open) => setSecaoAberta(open ? 'categorias' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-24 shadow-sm">
