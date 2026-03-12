@@ -157,6 +157,13 @@ export default function CatalogoPublico() {
     }
   }, []);
 
+  // Load per-category order when categoriasVisiveis and categoriaAtiva are ready
+  useEffect(() => {
+    if (categoriaAtiva && categoriasVisiveis.length > 0) {
+      carregarOrdemCategoria(categoriaAtiva);
+    }
+  }, [categoriasVisiveis]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
