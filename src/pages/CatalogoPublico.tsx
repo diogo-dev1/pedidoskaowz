@@ -992,7 +992,7 @@ export default function CatalogoPublico() {
                           </div>
 
                             {/* Info do produto */}
-                          <div className="p-3 md:p-4 flex flex-col flex-1 gap-1">
+                          <div className="p-2 md:p-4 flex flex-col flex-1 gap-0.5">
                             <h3
                               className="font-bold line-clamp-1 text-sm md:text-base text-white hover:text-accent transition-colors cursor-pointer"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
