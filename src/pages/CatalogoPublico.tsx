@@ -396,7 +396,15 @@ export default function CatalogoPublico() {
     }
     const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
     return matchBusca;
-  }).sort((a, b) => (a.ordem_catalogo || 999) - (b.ordem_catalogo || 999));
+  }).sort((a, b) => {
+    // If viewing a specific category with custom order, use it
+    if ((categoriaAtiva || categoriasMultiplas.length === 1) && Object.keys(ordemCategoria).length > 0) {
+      const ordemA = ordemCategoria[a.id] ?? 999;
+      const ordemB = ordemCategoria[b.id] ?? 999;
+      return ordemA - ordemB;
+    }
+    return (a.ordem_catalogo || 999) - (b.ordem_catalogo || 999);
+  });
 
   const toggleSelecao = (id: string) => {
     const novaSelecao = new Set(modelosSelecionados);
