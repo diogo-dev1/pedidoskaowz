@@ -82,6 +82,11 @@ export default function ConfiguracoesCatalogo() {
   const [destaquesIds, setDestaquesIds] = useState<string[]>([]);
   const [salvandoDestaques, setSalvandoDestaques] = useState(false);
 
+  // Destaques por Categoria
+  const [categoriaSelecionadaDestaques, setCategoriaSelecionadaDestaques] = useState<string | null>(null);
+  const [destaquesCategoriaIds, setDestaquesCategoriaIds] = useState<string[]>([]);
+  const [salvandoDestaquesCategoria, setSalvandoDestaquesCategoria] = useState(false);
+
   // Pronta Entrega
   const [salvandoProntaEntrega, setSalvandoProntaEntrega] = useState(false);
 
