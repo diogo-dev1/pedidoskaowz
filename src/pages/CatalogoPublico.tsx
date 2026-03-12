@@ -96,6 +96,7 @@ export default function CatalogoPublico() {
   const [filtroPrecoAtivo, setFiltroPrecoAtivo] = useState(true);
   const [filtroTamanhoAtivo, setFiltroTamanhoAtivo] = useState(true);
   const [filtroLaminaAtivo, setFiltroLaminaAtivo] = useState(true);
+  const [ordemCategoria, setOrdemCategoria] = useState<Record<string, number>>({});
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const debounceRefTamanho = useRef<ReturnType<typeof setTimeout> | null>(null);
   const categorias = categoriasVisiveis.filter(c => c.visivel);
@@ -156,6 +157,13 @@ export default function CatalogoPublico() {
     }
   }, []);
 
+  // Load per-category order when categoriasVisiveis and categoriaAtiva are ready
+  useEffect(() => {
+    if (categoriaAtiva && categoriasVisiveis.length > 0) {
+      carregarOrdemCategoria(categoriaAtiva);
+    }
+  }, [categoriasVisiveis]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -204,12 +212,30 @@ export default function CatalogoPublico() {
     }
   };
 
+  const carregarOrdemCategoria = async (categoria: string) => {
+    const catObj = categoriasVisiveis.find(c => c.categoria === categoria);
+    if (!catObj) { setOrdemCategoria({}); return; }
+    const { data } = await supabase
+      .from('ordem_categoria_modelos')
+      .select('modelo_id, ordem')
+      .eq('categoria_id', catObj.id)
+      .order('ordem');
+    if (data && data.length > 0) {
+      const map: Record<string, number> = {};
+      data.forEach(d => { map[d.modelo_id] = d.ordem; });
+      setOrdemCategoria(map);
+    } else {
+      setOrdemCategoria({});
+    }
+  };
+
   const selecionarCategoria = (categoria: string) => {
     setCategoriaAtiva(categoria);
     setCategoriasMultiplas([]);
     setFiltroProntaEntrega(false);
     setMostrarLanding(false);
     setSearchParams({ categoria });
+    carregarOrdemCategoria(categoria);
   };
 
   const toggleCategoriaFiltro = (categoria: string) => {
@@ -234,6 +260,7 @@ export default function CatalogoPublico() {
     setCategoriaAtiva(null);
     setCategoriasMultiplas([]);
     setFiltroProntaEntrega(false);
+    setOrdemCategoria({});
     setSearchParams({});
   };
 
@@ -377,7 +404,15 @@ export default function CatalogoPublico() {
     }
     const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
     return matchBusca;
-  }).sort((a, b) => (a.ordem_catalogo || 999) - (b.ordem_catalogo || 999));
+  }).sort((a, b) => {
+    // If viewing a specific category with custom order, use it
+    if ((categoriaAtiva || categoriasMultiplas.length === 1) && Object.keys(ordemCategoria).length > 0) {
+      const ordemA = ordemCategoria[a.id] ?? 999;
+      const ordemB = ordemCategoria[b.id] ?? 999;
+      return ordemA - ordemB;
+    }
+    return (a.ordem_catalogo || 999) - (b.ordem_catalogo || 999);
+  });
 
   const toggleSelecao = (id: string) => {
     const novaSelecao = new Set(modelosSelecionados);

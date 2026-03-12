@@ -82,6 +82,11 @@ export default function ConfiguracoesCatalogo() {
   const [destaquesIds, setDestaquesIds] = useState<string[]>([]);
   const [salvandoDestaques, setSalvandoDestaques] = useState(false);
 
+  // Destaques por Categoria
+  const [categoriaSelecionadaDestaques, setCategoriaSelecionadaDestaques] = useState<string | null>(null);
+  const [destaquesCategoriaIds, setDestaquesCategoriaIds] = useState<string[]>([]);
+  const [salvandoDestaquesCategoria, setSalvandoDestaquesCategoria] = useState(false);
+
   // Pronta Entrega
   const [salvandoProntaEntrega, setSalvandoProntaEntrega] = useState(false);
 
@@ -228,6 +233,82 @@ export default function ConfiguracoesCatalogo() {
       setSalvandoDestaques(false);
     }
   };
+
+  // --- Destaques por Categoria ---
+  const carregarDestaquesCategoria = async (categoriaId: string) => {
+    const { data } = await supabase
+      .from('ordem_categoria_modelos')
+      .select('modelo_id, ordem')
+      .eq('categoria_id', categoriaId)
+      .order('ordem');
+    if (data) {
+      setDestaquesCategoriaIds(data.map(d => d.modelo_id));
+    } else {
+      setDestaquesCategoriaIds([]);
+    }
+  };
+
+  const selecionarCategoriaDestaques = (catId: string) => {
+    setCategoriaSelecionadaDestaques(catId);
+    carregarDestaquesCategoria(catId);
+  };
+
+  const adicionarDestaqueCategoria = (id: string) => {
+    if (destaquesCategoriaIds.length >= 10) {
+      toast.error('Máximo de 10 destaques por categoria');
+      return;
+    }
+    if (destaquesCategoriaIds.includes(id)) return;
+    setDestaquesCategoriaIds(prev => [...prev, id]);
+  };
+
+  const removerDestaqueCategoria = (id: string) => {
+    setDestaquesCategoriaIds(prev => prev.filter(d => d !== id));
+  };
+
+  const moverDestaqueCategoria = (index: number, direction: 'up' | 'down') => {
+    const newList = [...destaquesCategoriaIds];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newList.length) return;
+    [newList[index], newList[targetIndex]] = [newList[targetIndex], newList[index]];
+    setDestaquesCategoriaIds(newList);
+  };
+
+  const salvarDestaquesCategoria = async () => {
+    if (!categoriaSelecionadaDestaques) return;
+    setSalvandoDestaquesCategoria(true);
+    try {
+      await supabase
+        .from('ordem_categoria_modelos')
+        .delete()
+        .eq('categoria_id', categoriaSelecionadaDestaques);
+
+      if (destaquesCategoriaIds.length > 0) {
+        const inserts = destaquesCategoriaIds.map((modeloId, i) => ({
+          categoria_id: categoriaSelecionadaDestaques,
+          modelo_id: modeloId,
+          ordem: i + 1,
+        }));
+        const { error } = await supabase
+          .from('ordem_categoria_modelos')
+          .insert(inserts);
+        if (error) throw error;
+      }
+
+      toast.success('Ordem da categoria salva!');
+    } catch (error) {
+      toast.error('Erro ao salvar ordem da categoria');
+    } finally {
+      setSalvandoDestaquesCategoria(false);
+    }
+  };
+
+  const modelosDaCategoria = categoriaSelecionadaDestaques
+    ? todosModelos.filter(m => {
+        const cat = categoriasVisiveis.find(c => c.id === categoriaSelecionadaDestaques);
+        return cat && m.categorias?.includes(cat.categoria);
+      })
+    : [];
 
   const toggleExibirPrecos = async () => {
     const newVal = !exibirPrecos;
@@ -717,6 +798,110 @@ export default function ConfiguracoesCatalogo() {
                   'Salvar destaques'
                 )}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Destaques por Categoria */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Primeiras 10 por Categoria</CardTitle>
+              <CardDescription className="text-xs">
+                Selecione uma categoria e ordene as 10 primeiras lâminas que aparecem nela.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Seletor de categoria */}
+              <div className="flex flex-wrap gap-1.5">
+                {categoriasVisiveis.filter(c => c.visivel).map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => selecionarCategoriaDestaques(cat.id)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      categoriaSelecionadaDestaques === cat.id
+                        ? 'bg-accent text-white border-accent'
+                        : 'bg-muted/30 text-muted-foreground border-border hover:border-accent/50'
+                    }`}
+                  >
+                    {cat.categoria}
+                  </button>
+                ))}
+              </div>
+
+              {categoriaSelecionadaDestaques ? (
+                <>
+                  {/* Lista de destaques selecionados */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-semibold">Selecionadas ({destaquesCategoriaIds.length}/10)</Label>
+                    {destaquesCategoriaIds.length === 0 && (
+                      <p className="text-xs text-muted-foreground py-4 text-center">Nenhuma lâmina selecionada. Os produtos aparecerão na ordem padrão.</p>
+                    )}
+                    {destaquesCategoriaIds.map((id, index) => {
+                      const modelo = todosModelos.find(m => m.id === id);
+                      if (!modelo) return null;
+                      return (
+                        <div key={id} className="flex items-center gap-2 p-1.5 rounded-lg border bg-muted/30">
+                          <span className="text-xs font-bold text-accent w-5 text-center">{index + 1}º</span>
+                          {modelo.imagem_modelo && (
+                            <img src={modelo.imagem_modelo} alt="" className="w-7 h-7 rounded object-cover" />
+                          )}
+                          <span className="text-xs flex-1 truncate">{modelo.nome_modelo}</span>
+                          <div className="flex items-center gap-0.5">
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" disabled={index === 0} onClick={() => moverDestaqueCategoria(index, 'up')}>
+                              <ArrowUp className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" disabled={index === destaquesCategoriaIds.length - 1} onClick={() => moverDestaqueCategoria(index, 'down')}>
+                              <ArrowDown className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => removerDestaqueCategoria(id)}>
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Lista de modelos da categoria para adicionar */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-semibold">Adicionar lâminas</Label>
+                    <div className="max-h-52 overflow-y-auto space-y-0.5 border rounded-lg p-1.5">
+                      {modelosDaCategoria
+                        .filter(m => !destaquesCategoriaIds.includes(m.id))
+                        .map(modelo => (
+                          <div
+                            key={modelo.id}
+                            className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/50 cursor-pointer transition-colors"
+                            onClick={() => adicionarDestaqueCategoria(modelo.id)}
+                          >
+                            {modelo.imagem_modelo && (
+                              <img src={modelo.imagem_modelo} alt="" className="w-7 h-7 rounded object-cover" />
+                            )}
+                            <span className="text-xs flex-1 truncate">{modelo.nome_modelo}</span>
+                            <Plus className="h-3.5 w-3.5 text-accent" />
+                          </div>
+                        ))}
+                      {modelosDaCategoria.filter(m => !destaquesCategoriaIds.includes(m.id)).length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-3">Todas as lâminas desta categoria já foram adicionadas</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={salvarDestaquesCategoria}
+                    disabled={salvandoDestaquesCategoria}
+                    className="w-full"
+                    size="sm"
+                  >
+                    {salvandoDestaquesCategoria ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</>
+                    ) : (
+                      'Salvar ordem da categoria'
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-4">Selecione uma categoria acima para configurar a ordem</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

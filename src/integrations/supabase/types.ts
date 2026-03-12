@@ -524,6 +524,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ordem_categoria_modelos: {
+        Row: {
+          categoria_id: string
+          created_at: string
+          id: string
+          modelo_id: string
+          ordem: number
+        }
+        Insert: {
+          categoria_id: string
+          created_at?: string
+          id?: string
+          modelo_id: string
+          ordem?: number
+        }
+        Update: {
+          categoria_id?: string
+          created_at?: string
+          id?: string
+          modelo_id?: string
+          ordem?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordem_categoria_modelos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_catalogo_visiveis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordem_categoria_modelos_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_modelos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos_adicionais: {
         Row: {
           created_at: string
