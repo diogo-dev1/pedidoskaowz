@@ -1023,7 +1023,7 @@ export default function CatalogoPublico() {
                             </div>
                             <Button
                               size="sm"
-                              className="w-full mt-2 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]"
+                              className="w-full mt-1.5 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]"
                               onClick={() => navigate(`/catalogo/${modelo.id}`)}
                             >
                               Ver detalhes
