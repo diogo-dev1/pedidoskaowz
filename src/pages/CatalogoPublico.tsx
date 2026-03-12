@@ -205,12 +205,30 @@ export default function CatalogoPublico() {
     }
   };
 
+  const carregarOrdemCategoria = async (categoria: string) => {
+    const catObj = categoriasVisiveis.find(c => c.categoria === categoria);
+    if (!catObj) { setOrdemCategoria({}); return; }
+    const { data } = await supabase
+      .from('ordem_categoria_modelos')
+      .select('modelo_id, ordem')
+      .eq('categoria_id', catObj.id)
+      .order('ordem');
+    if (data && data.length > 0) {
+      const map: Record<string, number> = {};
+      data.forEach(d => { map[d.modelo_id] = d.ordem; });
+      setOrdemCategoria(map);
+    } else {
+      setOrdemCategoria({});
+    }
+  };
+
   const selecionarCategoria = (categoria: string) => {
     setCategoriaAtiva(categoria);
     setCategoriasMultiplas([]);
     setFiltroProntaEntrega(false);
     setMostrarLanding(false);
     setSearchParams({ categoria });
+    carregarOrdemCategoria(categoria);
   };
 
   const toggleCategoriaFiltro = (categoria: string) => {
