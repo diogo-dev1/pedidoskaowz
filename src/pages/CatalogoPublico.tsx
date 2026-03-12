@@ -639,6 +639,16 @@ export default function CatalogoPublico() {
         </div>
       </header>
 
+      {/* Banner Garantia Vitalícia - Sempre visível no catálogo */}
+      <div className="w-full bg-gradient-to-r from-emerald-950/30 via-zinc-900/50 to-emerald-950/30 border-b border-emerald-800/20">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-center gap-2">
+          <span className="text-emerald-400 text-sm">🛡️</span>
+          <span className="text-zinc-400 text-xs">
+            Todas as lâminas possuem <span className="text-emerald-400 font-semibold">Garantia Vitalícia</span> de qualidade e afiação
+          </span>
+        </div>
+      </div>
+
       {/* Floating tip */}
       {modelosSelecionados.size === 0 && (
         <div className="w-full bg-gradient-to-r from-green-950/60 via-zinc-900/80 to-green-950/60 backdrop-blur-sm border-b border-green-800/30">
