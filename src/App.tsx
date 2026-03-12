@@ -203,6 +203,16 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/midia"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Midia />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

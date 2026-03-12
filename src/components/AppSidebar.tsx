@@ -30,6 +30,7 @@ export function AppSidebar() {
     { title: 'Leads', url: '/leads', icon: Users },
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Orçamento', url: '/orcamento', icon: FileText },
+    { title: 'Mídia', url: '/midia', icon: Image },
   ];
 
   const adminItems = (profile?.cargo === 'admin' || profile?.cargo === 'vendedor') ? [
