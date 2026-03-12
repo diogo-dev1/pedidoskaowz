@@ -260,6 +260,7 @@ export default function CatalogoPublico() {
     setCategoriaAtiva(null);
     setCategoriasMultiplas([]);
     setFiltroProntaEntrega(false);
+    setOrdemCategoria({});
     setSearchParams({});
   };
 
