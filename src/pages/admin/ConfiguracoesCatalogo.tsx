@@ -235,6 +235,86 @@ export default function ConfiguracoesCatalogo() {
   };
 
   const toggleExibirPrecos = async () => {
+
+  // --- Destaques por Categoria ---
+  const carregarDestaquesCategoria = async (categoriaId: string) => {
+    const { data } = await supabase
+      .from('ordem_categoria_modelos')
+      .select('modelo_id, ordem')
+      .eq('categoria_id', categoriaId)
+      .order('ordem');
+    if (data) {
+      setDestaquesCategoriaIds(data.map(d => d.modelo_id));
+    } else {
+      setDestaquesCategoriaIds([]);
+    }
+  };
+
+  const selecionarCategoriaDestaques = (catId: string) => {
+    setCategoriaSelecionadaDestaques(catId);
+    carregarDestaquesCategoria(catId);
+  };
+
+  const adicionarDestaqueCategoria = (id: string) => {
+    if (destaquesCategoriaIds.length >= 10) {
+      toast.error('Máximo de 10 destaques por categoria');
+      return;
+    }
+    if (destaquesCategoriaIds.includes(id)) return;
+    setDestaquesCategoriaIds(prev => [...prev, id]);
+  };
+
+  const removerDestaqueCategoria = (id: string) => {
+    setDestaquesCategoriaIds(prev => prev.filter(d => d !== id));
+  };
+
+  const moverDestaqueCategoria = (index: number, direction: 'up' | 'down') => {
+    const newList = [...destaquesCategoriaIds];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newList.length) return;
+    [newList[index], newList[targetIndex]] = [newList[targetIndex], newList[index]];
+    setDestaquesCategoriaIds(newList);
+  };
+
+  const salvarDestaquesCategoria = async () => {
+    if (!categoriaSelecionadaDestaques) return;
+    setSalvandoDestaquesCategoria(true);
+    try {
+      // Delete existing entries for this category
+      await supabase
+        .from('ordem_categoria_modelos')
+        .delete()
+        .eq('categoria_id', categoriaSelecionadaDestaques);
+
+      // Insert new order
+      if (destaquesCategoriaIds.length > 0) {
+        const inserts = destaquesCategoriaIds.map((modeloId, i) => ({
+          categoria_id: categoriaSelecionadaDestaques,
+          modelo_id: modeloId,
+          ordem: i + 1,
+        }));
+        const { error } = await supabase
+          .from('ordem_categoria_modelos')
+          .insert(inserts);
+        if (error) throw error;
+      }
+
+      toast.success('Ordem da categoria salva!');
+    } catch (error) {
+      toast.error('Erro ao salvar ordem da categoria');
+    } finally {
+      setSalvandoDestaquesCategoria(false);
+    }
+  };
+
+  const modelosDaCategoria = categoriaSelecionadaDestaques
+    ? todosModelos.filter(m => {
+        const cat = categoriasVisiveis.find(c => c.id === categoriaSelecionadaDestaques);
+        return cat && m.categorias?.includes(cat.categoria);
+      })
+    : [];
+
+  const toggleExibirPrecos = async () => {
     const newVal = !exibirPrecos;
     const { error } = await supabase
       .from('configuracoes_catalogo')
