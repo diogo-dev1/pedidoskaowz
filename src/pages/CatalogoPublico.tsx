@@ -430,7 +430,7 @@ export default function CatalogoPublico() {
             <div className="mt-6 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-4 py-2">
               <span className="text-emerald-400 text-lg">🛡️</span>
               <span className="text-emerald-400 text-xs md:text-sm font-medium tracking-wide">
-                TODAS as lâminas possuem <span className="font-bold text-emerald-300">Garantia Vitalícia</span> de qualidade e afiação
+                Garantia Vitalícia de qualidade e manutenção de afiação em todas as nossas lâminas
               </span>
             </div>
           </div>
