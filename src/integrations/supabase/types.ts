@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      albuns_midia: {
+        Row: {
+          capa_url: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          capa_url?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          capa_url?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       banners_catalogo: {
         Row: {
           ativo: boolean
@@ -186,6 +219,44 @@ export type Database = {
           valor?: string
         }
         Relationships: []
+      }
+      imagens_album: {
+        Row: {
+          album_id: string
+          created_at: string
+          id: string
+          legenda: string | null
+          nome_arquivo: string
+          ordem: number
+          url: string
+        }
+        Insert: {
+          album_id: string
+          created_at?: string
+          id?: string
+          legenda?: string | null
+          nome_arquivo: string
+          ordem?: number
+          url: string
+        }
+        Update: {
+          album_id?: string
+          created_at?: string
+          id?: string
+          legenda?: string | null
+          nome_arquivo?: string
+          ordem?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imagens_album_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albuns_midia"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       info_etapas_customizacao: {
         Row: {
