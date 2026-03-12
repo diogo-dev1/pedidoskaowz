@@ -916,7 +916,7 @@ export default function CatalogoPublico() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
                   {modelosFiltrados.map((modelo) => {
                     const selecionado = modelosSelecionados.has(modelo.id);
                     return (
