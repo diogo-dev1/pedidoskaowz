@@ -505,94 +505,261 @@ export default function Simulador() {
   };
 
   const exportarPedidoComoPDF = async () => {
-    if (!pedidoExportRef.current) return;
-    
     try {
-      // Dimensões A4 em mm
-      const A4_WIDTH_MM = 210;
-      const A4_HEIGHT_MM = 297;
-      const MARGIN_MM = 10;
-      const CONTENT_WIDTH_MM = A4_WIDTH_MM - (MARGIN_MM * 2);
-      const SECTION_GAP_MM = 3;
-
-      // Buscar seções do pedido para captura individual
-      const sections = Array.from(
-        pedidoExportRef.current.querySelectorAll('[data-pdf-section]')
-      ) as HTMLElement[];
-
-      // Se não houver seções marcadas, capturar tudo de uma vez
-      if (sections.length === 0) {
-        const canvas = await html2canvas(pedidoExportRef.current, {
-          backgroundColor: '#ffffff',
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          imageTimeout: 0,
-        });
-        
-        const imgData = canvas.toDataURL('image/png', 1.0);
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4',
-        });
-        
-        const imgWidth = CONTENT_WIDTH_MM;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', MARGIN_MM, MARGIN_MM, imgWidth, Math.min(imgHeight, A4_HEIGHT_MM - MARGIN_MM * 2));
-        pdf.save(`pedido-${nomeCompleto || 'cliente'}-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
-        toast.success('PDF do pedido exportado!');
-        return;
-      }
-
-      // Capturar cada seção individualmente
-      const sectionData: { canvas: HTMLCanvasElement; heightMM: number }[] = [];
-
-      for (const section of sections) {
-        const canvas = await html2canvas(section, {
-          backgroundColor: '#ffffff',
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          imageTimeout: 0,
-          onclone: (clonedDoc, element) => {
-            // Garantir que imagens mantenham proporção
-            const images = element.querySelectorAll('img');
-            images.forEach((img) => {
-              img.style.objectFit = 'contain';
-            });
-          }
-        });
-
-        // Calcular altura em mm
-        const widthPx = canvas.width / 2;
-        const heightPx = canvas.height / 2;
-        const scaleFactor = CONTENT_WIDTH_MM / widthPx;
-        const heightMM = heightPx * scaleFactor;
-
-        sectionData.push({ canvas, heightMM });
-      }
-
-      // Criar PDF com quebras de página inteligentes
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      let currentY = MARGIN_MM;
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 15;
+      const contentWidth = pageWidth - margin * 2;
+      let y = margin;
 
-      for (const { canvas, heightMM } of sectionData) {
-        const remainingSpace = A4_HEIGHT_MM - MARGIN_MM - currentY;
-
-        // Se seção não couber na página atual, adicionar nova página
-        if (heightMM > remainingSpace && currentY > MARGIN_MM) {
+      const checkPage = (needed: number) => {
+        if (y + needed > pageHeight - margin) {
           pdf.addPage();
-          currentY = MARGIN_MM;
+          y = margin;
+        }
+      };
+
+      const drawLine = (yPos: number) => {
+        pdf.setDrawColor(200, 200, 200);
+        pdf.setLineWidth(0.3);
+        pdf.line(margin, yPos, pageWidth - margin, yPos);
+      };
+
+      // === CABEÇALHO DA EMPRESA ===
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('KAOWZ FACAS', pageWidth / 2, y, { align: 'center' });
+      y += 6;
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text('CNPJ: 44.188.566/0001-64', pageWidth / 2, y, { align: 'center' });
+      y += 8;
+      drawLine(y);
+      y += 6;
+
+      // === TÍTULO DO DOCUMENTO ===
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('CONFIRMAÇÃO DE PEDIDO', pageWidth / 2, y, { align: 'center' });
+      y += 6;
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      const dataHoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+      pdf.text(`Data: ${dataHoje}`, pageWidth / 2, y, { align: 'center' });
+      y += 8;
+      drawLine(y);
+      y += 6;
+
+      // === DADOS DO CLIENTE ===
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('DADOS DO CLIENTE', margin, y);
+      y += 6;
+
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+
+      const addField = (label: string, value: string, xOffset = margin) => {
+        checkPage(5);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`${label}: `, xOffset, y);
+        const labelWidth = pdf.getTextWidth(`${label}: `);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(value || '-', xOffset + labelWidth, y);
+      };
+
+      const addFieldRow = (label1: string, val1: string, label2: string, val2: string) => {
+        checkPage(5);
+        addField(label1, val1, margin);
+        addField(label2, val2, pageWidth / 2);
+        y += 5;
+      };
+
+      if (clienteAntigo) {
+        addField('Cliente', nomeCompleto);
+        y += 5;
+      } else {
+        addFieldRow('Nome', nomeCompleto, 'CPF', cpf || '-');
+        addFieldRow('Email', email || '-', 'Celular', celular || '-');
+        if (endereco) {
+          addField('Endereço', `${endereco}, ${numero} - ${bairro}, ${cidade}/${estado}${complemento ? ` (${complemento})` : ''}`);
+          y += 5;
+        }
+        if (cep) { addFieldRow('CEP', cep, 'Nascimento', dataNascimento || '-'); }
+      }
+
+      y += 2;
+      drawLine(y);
+      y += 6;
+
+      // === LÂMINAS DO PEDIDO ===
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('ITENS DO PEDIDO', margin, y);
+      y += 6;
+
+      const todasLaminas = [...laminasCustomizadas, ...(modeloSelecionado && modeloAtual ? [{
+        id: 'current',
+        modelo: modeloAtual,
+        aco: acoAtual,
+        acabamento: acabamentoAtual,
+        bruteForge,
+        empunhadura: empunhaduraAtual,
+        dragonScale,
+        bainha: bainhaAtual,
+        corBainha,
+        espacador: espacadorAtualCalc,
+        laser,
+        textoLaser,
+        localGravacao,
+        embalagem,
+        embalagemGravacao,
+        embalagemTextoGravacao,
+        observacoesLamina,
+        subtotal: calcularSubtotal(),
+        quantidade: 1,
+        corBainhaPersonalizada: '',
+      }] as LaminaCustomizada[] : [])];
+
+      todasLaminas.forEach((lamina, index) => {
+        checkPage(35);
+
+        // Item header
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 0, 0);
+        const qtd = (lamina as any).quantidade > 1 ? ` (x${(lamina as any).quantidade})` : '';
+        pdf.text(`${index + 1}. ${lamina.modelo?.nome_modelo || 'Modelo'}${qtd}`, margin, y);
+        y += 5;
+
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(60, 60, 60);
+
+        const specs = [
+          ['Aço', lamina.aco?.nome_opcao || '-'],
+          ['Acabamento', `${lamina.acabamento?.nome_opcao || '-'}${(lamina as any).bruteForge ? ' + Brute Forge' : ''}`],
+          ['Empunhadura', `${lamina.empunhadura?.nome_opcao || '-'}${lamina.dragonScale ? ' + Dragon Scale' : ''}`],
+          ['Bainha', `${lamina.bainha?.nome_opcao || '-'} ${lamina.corBainha || ''}`],
+        ];
+
+        if ((lamina as any).espacador) specs.push(['Espaçador', (lamina as any).espacador.nome_opcao]);
+        if (lamina.embalagem) specs.push(['Embalagem', lamina.embalagem]);
+        if (lamina.laser) specs.push(['Gravação Laser', `${lamina.textoLaser}${lamina.localGravacao?.length ? ` (${lamina.localGravacao.join(', ')})` : ''}`]);
+        if ((lamina as any).observacoesLamina) specs.push(['Observações', (lamina as any).observacoesLamina]);
+
+        // Two-column specs
+        for (let i = 0; i < specs.length; i += 2) {
+          checkPage(5);
+          const [l1, v1] = specs[i];
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`${l1}: `, margin + 4, y);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(v1, margin + 4 + pdf.getTextWidth(`${l1}: `), y);
+
+          if (i + 1 < specs.length) {
+            const [l2, v2] = specs[i + 1];
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(`${l2}: `, pageWidth / 2, y);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text(v2, pageWidth / 2 + pdf.getTextWidth(`${l2}: `), y);
+          }
+          y += 4.5;
         }
 
-        const imgData = canvas.toDataURL('image/png', 1.0);
-        pdf.addImage(imgData, 'PNG', MARGIN_MM, currentY, CONTENT_WIDTH_MM, heightMM);
-        currentY += heightMM + SECTION_GAP_MM;
+        y += 3;
+        if (index < todasLaminas.length - 1) {
+          pdf.setDrawColor(230, 230, 230);
+          pdf.setLineWidth(0.2);
+          pdf.line(margin + 4, y - 1, pageWidth - margin, y - 1);
+        }
+      });
+
+      // === PRODUTOS ADICIONAIS ===
+      const produtosComQuantidade = produtosAdicionais.filter(p => (quantidadesProdutos[p.id] || 0) > 0);
+      if (produtosComQuantidade.length > 0) {
+        checkPage(15);
+        drawLine(y);
+        y += 6;
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 0, 0);
+        pdf.text('PRODUTOS ADICIONAIS', margin, y);
+        y += 5;
+
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(60, 60, 60);
+        produtosComQuantidade.forEach(produto => {
+          checkPage(5);
+          pdf.text(`• ${produto.nome_produto} x${quantidadesProdutos[produto.id]}`, margin + 4, y);
+          y += 4.5;
+        });
+        if (observacoesProdutos) {
+          checkPage(5);
+          pdf.setFont('helvetica', 'italic');
+          pdf.text(`Obs: ${observacoesProdutos}`, margin + 4, y);
+          y += 4.5;
+        }
       }
+
+      // === PAGAMENTO ===
+      checkPage(25);
+      y += 2;
+      drawLine(y);
+      y += 6;
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('PAGAMENTO', margin, y);
+      y += 6;
+
+      pdf.setFontSize(9);
+      addFieldRow('Valor Total', `R$ ${valorPedido || valorTotalCalculado.toFixed(2)}`, 'Forma', formaPagamento || '-');
+      addFieldRow('Status', status, 'Prazo', prazo || '-');
+      if (cupom) { addField('Cupom', cupom); y += 5; }
+
+      // === CERTIFICADO ===
+      checkPage(10);
+      y += 2;
+      drawLine(y);
+      y += 6;
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(60, 60, 60);
+      addField('Certificado', nomeCertificado || nomeCompleto);
+      y += 5;
+
+      // === OBSERVAÇÕES ===
+      if (observacao) {
+        checkPage(10);
+        const obsLines = pdf.splitTextToSize(`Observações: ${observacao}`, contentWidth - 4);
+        pdf.setFont('helvetica', 'italic');
+        obsLines.forEach((line: string) => {
+          checkPage(5);
+          pdf.text(line, margin, y);
+          y += 4.5;
+        });
+      }
+
+      // === RODAPÉ ===
+      checkPage(15);
+      y += 4;
+      drawLine(y);
+      y += 6;
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(130, 130, 130);
+      pdf.text(`Vendedor: ${profile?.nome_vendedor || '-'}`, margin, y);
+      pdf.text(`Emitido em: ${new Date().toLocaleString('pt-BR')}`, pageWidth - margin, y, { align: 'right' });
+      y += 5;
+      pdf.setFontSize(7);
+      pdf.text('Kaowz Facas — Garantia Vitalícia de qualidade e manutenção de afiação em todas as nossas lâminas', pageWidth / 2, y, { align: 'center' });
 
       pdf.save(`pedido-${nomeCompleto || 'cliente'}-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
       toast.success('PDF do pedido exportado!');
