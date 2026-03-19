@@ -134,7 +134,7 @@ export default function MontarKit({ isRevendedor = false }: { isRevendedor?: boo
       .join('\n');
 
     const mensagem = isRevendedor
-      ? `Olá! Sou revendedor e gostaria de montar um combo com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`
+      ? `Olá! Sou revendedor e gostaria de montar um kit com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`
       : `Olá! Gostaria de montar um kit com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
@@ -168,7 +168,7 @@ export default function MontarKit({ isRevendedor = false }: { isRevendedor?: boo
               </Button>
               <h1 className="text-lg md:text-2xl font-bold text-white tracking-tight">
                 <Package className="h-5 w-5 inline mr-2 text-accent" />
-                {isRevendedor ? 'Monte seu Combo' : 'Monte seu Kit'}
+                {isRevendedor ? 'Monte um Kit' : 'Monte seu Kit'}
               </h1>
             </div>
             {/* Botão carrinho flutuante no header */}
@@ -396,7 +396,7 @@ export default function MontarKit({ isRevendedor = false }: { isRevendedor?: boo
                 <div className="p-8 text-center">
                   <Package className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
                   <p className="text-zinc-500 text-sm">Seu kit está vazio</p>
-                  <p className="text-zinc-600 text-xs mt-1">Adicione lâminas para montar seu combo</p>
+                  <p className="text-zinc-600 text-xs mt-1">Adicione lâminas para montar seu kit</p>
                 </div>
               ) : (
                 <div className="p-4 space-y-3">

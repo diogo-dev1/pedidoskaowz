@@ -129,7 +129,7 @@ export default function CatalogoRevendedor() {
       })
       .filter(Boolean)
       .join('\n');
-    const mensagem = `Olá! Sou revendedor e gostaria de montar um combo com as seguintes lâminas:\n\n${modelosTexto}`;
+    const mensagem = `Olá! Sou revendedor e gostaria de montar um kit com as seguintes lâminas:\n\n${modelosTexto}`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
@@ -514,7 +514,7 @@ export default function CatalogoRevendedor() {
               className="w-full border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent font-bold h-12 text-sm md:text-base rounded-xl transition-all"
             >
               <Package className="h-4 w-4 mr-2" />
-              Monte seu Combo
+              Monte um Kit
             </Button>
           </div>
 
@@ -599,7 +599,7 @@ export default function CatalogoRevendedor() {
               <MessageCircle className="h-3.5 w-3.5" />
             </span>
             <span className="text-zinc-300">
-              Selecione as lâminas e monte seu <strong className="text-green-400">combo para revenda</strong>
+              Selecione as lâminas e monte um <strong className="text-green-400">kit para revenda</strong>
             </span>
           </div>
         </div>
@@ -971,7 +971,7 @@ export default function CatalogoRevendedor() {
             className="rounded-full bg-accent hover:bg-accent/90 text-white font-semibold shadow-[0_0_40px_rgba(251,146,60,0.5)] hover:scale-105 transition-all"
           >
             <MessageCircle className="h-5 w-5 mr-2" />
-            Montar Combo ({modelosSelecionados.size})
+            Montar Kit ({modelosSelecionados.size})
           </Button>
         </div>
       )}
