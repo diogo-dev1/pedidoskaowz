@@ -79,6 +79,7 @@ export default function ConfiguracoesCatalogoRevendedor() {
   const [mensagemPadrao, setMensagemPadrao] = useState('Confira nosso catálogo exclusivo para revendedores!');
   const [salvandoMensagem, setSalvandoMensagem] = useState(false);
 
+  useEffect(() => {
     fetchCategoriasVisiveis();
     fetchConfigRevendedor();
     fetchModelosParaDestaques();
@@ -89,7 +90,7 @@ export default function ConfiguracoesCatalogoRevendedor() {
     const { data } = await supabase
       .from('config_revendedor' as any)
       .select('*')
-      .in('chave', ['exibir_precos', 'exibir_formas_pagamento', 'desconto_pix', 'texto_pix', 'texto_parcelamento', 'filtro_preco_ativo', 'filtro_tamanho_ativo', 'filtro_lamina_ativo', 'margem_global']);
+      .in('chave', ['exibir_precos', 'exibir_formas_pagamento', 'desconto_pix', 'texto_pix', 'texto_parcelamento', 'filtro_preco_ativo', 'filtro_tamanho_ativo', 'filtro_lamina_ativo', 'margem_global', 'mensagem_padrao_revendedor']);
     if (data) {
       (data as any[]).forEach((d: any) => {
         if (d.chave === 'exibir_precos') setExibirPrecos(d.valor === 'true');
