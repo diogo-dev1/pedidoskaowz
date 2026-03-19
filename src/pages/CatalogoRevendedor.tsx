@@ -70,6 +70,7 @@ export default function CatalogoRevendedor() {
       return Array.isArray(ids) ? new Set(ids) : new Set();
     } catch { return new Set(); }
   });
+  const [loading, setLoading] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
   const [categoriasVisiveis, setCategoriasVisiveis] = useState<CategoriaVisivel[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
