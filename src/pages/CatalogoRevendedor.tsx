@@ -514,7 +514,7 @@ export default function CatalogoRevendedor() {
               className="w-full border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent font-bold h-12 text-sm md:text-base rounded-xl transition-all"
             >
               <Package className="h-4 w-4 mr-2" />
-              Monte seu Combo
+              Monte um Kit
             </Button>
           </div>
 
