@@ -133,7 +133,9 @@ export default function MontarKit({ isRevendedor = false }: { isRevendedor?: boo
       .map(item => `• ${item.modelo.nome_modelo}${item.quantidade > 1 ? ` (x${item.quantidade})` : ''}`)
       .join('\n');
 
-    const mensagem = `Olá! Gostaria de montar um kit com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`;
+    const mensagem = isRevendedor
+      ? `Olá! Sou revendedor e gostaria de montar um combo com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`
+      : `Olá! Gostaria de montar um kit com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
