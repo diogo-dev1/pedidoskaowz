@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MessageCircle, Zap } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Zap, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 function convertPlainToHtml(text: string): string {
