@@ -40,6 +40,7 @@ export function AppSidebar() {
     { title: 'Componentes', url: '/admin/componentes', icon: Settings },
     { title: 'Informativos', url: '/admin/informativos', icon: Info },
     { title: 'Config. Catálogo', url: '/admin/catalogo', icon: Store },
+    { title: 'Config. Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
   ] : [];
 
   return (
