@@ -298,12 +298,12 @@ export default function CatalogoRevendedor() {
 
   const getPrecoRevenda = (precoVenda: number, modeloId: string) => {
     const margem = getMargemModelo(modeloId);
-    return precoVenda / (1 + margem / 100);
+    return precoVenda * (1 - margem / 100);
   };
 
   const getLucro = (precoVenda: number, modeloId: string) => {
-    const precoRevenda = getPrecoRevenda(precoVenda, modeloId);
-    return precoVenda - precoRevenda;
+    const margem = getMargemModelo(modeloId);
+    return precoVenda * (margem / 100);
   };
 
   const modelosFiltrados = modelos.filter((modelo) => {
