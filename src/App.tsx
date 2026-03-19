@@ -26,6 +26,8 @@ import ListaValores from "./pages/ListaValores";
 import Leads from "./pages/Leads";
 import Orcamento from "./pages/Orcamento";
 import Midia from "./pages/Midia";
+import CatalogoRevendedor from "./pages/CatalogoRevendedor";
+import ConfiguracoesCatalogoRevendedor from "./pages/admin/ConfiguracoesCatalogoRevendedor";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
@@ -209,6 +211,26 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Midia />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/catalogo-revendedor"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CatalogoRevendedor />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/catalogo-revendedor"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <ConfiguracoesCatalogoRevendedor />
                   </Layout>
                 </ProtectedRoute>
               }

@@ -196,6 +196,30 @@ export type Database = {
           },
         ]
       }
+      config_revendedor: {
+        Row: {
+          chave: string
+          created_at: string
+          id: string
+          updated_at: string
+          valor: string
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor: string
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor?: string
+        }
+        Relationships: []
+      }
       configuracoes_catalogo: {
         Row: {
           chave: string
@@ -332,6 +356,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      margem_revendedor_produto: {
+        Row: {
+          created_at: string
+          id: string
+          margem_percentual: number
+          modelo_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          margem_percentual: number
+          modelo_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          margem_percentual?: number
+          modelo_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "margem_revendedor_produto_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: true
+            referencedRelation: "catalogo_modelos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mensagens_padrao: {
         Row: {
@@ -556,6 +612,45 @@ export type Database = {
           },
           {
             foreignKeyName: "ordem_categoria_modelos_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_modelos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordem_categoria_revendedor: {
+        Row: {
+          categoria_id: string
+          created_at: string
+          id: string
+          modelo_id: string
+          ordem: number
+        }
+        Insert: {
+          categoria_id: string
+          created_at?: string
+          id?: string
+          modelo_id: string
+          ordem?: number
+        }
+        Update: {
+          categoria_id?: string
+          created_at?: string
+          id?: string
+          modelo_id?: string
+          ordem?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordem_categoria_revendedor_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_catalogo_visiveis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordem_categoria_revendedor_modelo_id_fkey"
             columns: ["modelo_id"]
             isOneToOne: false
             referencedRelation: "catalogo_modelos"

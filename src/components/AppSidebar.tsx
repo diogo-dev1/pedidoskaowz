@@ -1,5 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Calculator, Settings, LogOut, User, MessageSquare, BookOpen, ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign, Users, Store, FileText, Image } from 'lucide-react';
+import { Calculator, Settings, LogOut, User, MessageSquare, BookOpen, ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign, Users, Store, FileText, Image, TrendingUp } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
   Sidebar,
@@ -31,6 +31,7 @@ export function AppSidebar() {
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Orçamento', url: '/orcamento', icon: FileText },
     { title: 'Mídia', url: '/midia', icon: Image },
+    { title: 'Catálogo Revendedor', url: '/catalogo-revendedor', icon: TrendingUp },
   ];
 
   const adminItems = (profile?.cargo === 'admin' || profile?.cargo === 'vendedor') ? [
@@ -39,6 +40,7 @@ export function AppSidebar() {
     { title: 'Componentes', url: '/admin/componentes', icon: Settings },
     { title: 'Informativos', url: '/admin/informativos', icon: Info },
     { title: 'Config. Catálogo', url: '/admin/catalogo', icon: Store },
+    { title: 'Config. Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
   ] : [];
 
   return (
