@@ -518,6 +518,7 @@ export default function CatalogoRevendedor() {
             </Button>
           </div>
 
+          <div className="text-center mt-10 pt-8 border-t border-zinc-800/50">
             <p className="text-zinc-500 text-xs mb-3">Precisa de ajuda para escolher?</p>
             <Button
               variant="outline"
