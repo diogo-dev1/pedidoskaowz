@@ -380,7 +380,7 @@ export default function ConfiguracoesCatalogoRevendedor() {
                 </Button>
               </div>
               <div className="bg-muted/30 rounded-lg p-3 text-xs text-muted-foreground">
-                <p><strong>Exemplo:</strong> Com margem de {margemGlobal || 30}%, uma lâmina vendida por R$ 1.000 terá custo revendedor de R$ {(1000 / (1 + (parseFloat(margemGlobal) || 30) / 100)).toFixed(2)} e lucro de R$ {(1000 - 1000 / (1 + (parseFloat(margemGlobal) || 30) / 100)).toFixed(2)}</p>
+                <p><strong>Exemplo:</strong> Com margem de {margemGlobal || 30}%, uma lâmina vendida por R$ 1.000 terá custo revendedor de R$ {(1000 * (1 - (parseFloat(margemGlobal) || 30) / 100)).toFixed(2)} e lucro de R$ {(1000 * ((parseFloat(margemGlobal) || 30) / 100)).toFixed(2)}</p>
               </div>
             </CardContent>
           </Card>
