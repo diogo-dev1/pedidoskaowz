@@ -798,7 +798,7 @@ export default function CatalogoRevendedor() {
                           <div className="p-2 md:p-4 flex flex-col flex-1 gap-1">
                             <h3
                             className="font-bold line-clamp-1 text-sm md:text-base text-white hover:text-accent transition-colors cursor-pointer"
-                            onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                            onClick={() => navigate(`/catalogo-revendedor/${modelo.id}`)}>
                             
                               {modelo.nome_modelo}
                             </h3>
