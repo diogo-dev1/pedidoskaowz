@@ -53,7 +53,11 @@ interface Midia {
   url: string;
 }
 
-export default function CatalogoDetalhe() {
+interface CatalogoDetalheProps {
+  isRevendedor?: boolean;
+}
+
+export default function CatalogoDetalhe({ isRevendedor = false }: CatalogoDetalheProps) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [modelo, setModelo] = useState<Modelo | null>(null);
@@ -65,6 +69,8 @@ export default function CatalogoDetalhe() {
   const [descontoPix, setDescontoPix] = useState(5);
   const [textoPix, setTextoPix] = useState('no PIX');
   const [textoParcelamento, setTextoParcelamento] = useState('3x sem juros ou até 12x no cartão');
+  const [margemGlobal, setMargemGlobal] = useState(30);
+  const [margemProduto, setMargemProduto] = useState<number | null>(null);
 
   useEffect(() => {
     if (id) {
