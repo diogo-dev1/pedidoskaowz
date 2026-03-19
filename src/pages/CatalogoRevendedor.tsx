@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X, TrendingUp } from 'lucide-react';
+
+const SELECAO_REVENDEDOR_KEY = 'catalogo_revendedor_selecionados';
 import { Slider } from '@/components/ui/slider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -59,6 +61,15 @@ export default function CatalogoRevendedor() {
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const [categoriasMultiplas, setCategoriasMultiplas] = useState<string[]>([]);
   const [busca, setBusca] = useState('');
+  const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    const saved = sessionStorage.getItem(SELECAO_REVENDEDOR_KEY);
+    if (!saved) return new Set();
+    try {
+      const ids = JSON.parse(saved);
+      return Array.isArray(ids) ? new Set(ids) : new Set();
+    } catch { return new Set(); }
+  });
   const [loading, setLoading] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
   const [categoriasVisiveis, setCategoriasVisiveis] = useState<CategoriaVisivel[]>([]);
@@ -86,6 +97,42 @@ export default function CatalogoRevendedor() {
   const [margensProduto, setMargensProduto] = useState<Record<string, number>>({});
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Persist selection to sessionStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (modelosSelecionados.size === 0) {
+      sessionStorage.removeItem(SELECAO_REVENDEDOR_KEY);
+      return;
+    }
+    sessionStorage.setItem(SELECAO_REVENDEDOR_KEY, JSON.stringify(Array.from(modelosSelecionados)));
+  }, [modelosSelecionados]);
+
+  const toggleSelecao = (id: string) => {
+    const novaSelecao = new Set(modelosSelecionados);
+    if (novaSelecao.has(id)) {
+      novaSelecao.delete(id);
+    } else {
+      novaSelecao.add(id);
+    }
+    setModelosSelecionados(novaSelecao);
+  };
+
+  const enviarWhatsAppCombo = () => {
+    if (modelosSelecionados.size === 0) {
+      toast.error('Selecione pelo menos uma lâmina');
+      return;
+    }
+    const modelosTexto = Array.from(modelosSelecionados)
+      .map(id => {
+        const modelo = modelos.find(m => m.id === id);
+        return modelo ? `${modelo.nome_modelo}` : '';
+      })
+      .filter(Boolean)
+      .join('\n');
+    const mensagem = `Olá! Sou revendedor e gostaria de montar um combo com as seguintes lâminas:\n\n${modelosTexto}`;
+    const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, '_blank');
+  };
   const handleFaixaPrecoChange = useCallback((v: number[]) => {
     setFaixaPrecoVisual(v as [number, number]);
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -459,6 +506,18 @@ export default function CatalogoRevendedor() {
             </Button>
           </div>
 
+          {/* Monte seu Combo */}
+          <div className="flex justify-center max-w-lg mx-auto mt-3">
+            <Button
+              onClick={() => navigate('/catalogo-revendedor/montar-kit')}
+              variant="outline"
+              className="w-full border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent font-bold h-12 text-sm md:text-base rounded-xl transition-all"
+            >
+              <Package className="h-4 w-4 mr-2" />
+              Monte seu Combo
+            </Button>
+          </div>
+
           <div className="text-center mt-10 pt-8 border-t border-zinc-800/50">
             <p className="text-zinc-500 text-xs mb-3">Precisa de ajuda para escolher?</p>
             <Button
@@ -527,6 +586,24 @@ export default function CatalogoRevendedor() {
           </span>
         </div>
       </div>
+
+      {/* Floating tip */}
+      {modelosSelecionados.size === 0 && (
+        <div className="w-full bg-gradient-to-r from-green-950/60 via-zinc-900/80 to-green-950/60 backdrop-blur-sm border-b border-green-800/30">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-center gap-2.5 text-xs sm:text-sm">
+            <span className="flex items-center gap-1.5 text-green-400 shrink-0">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              <MessageCircle className="h-3.5 w-3.5" />
+            </span>
+            <span className="text-zinc-300">
+              Selecione as lâminas e monte seu <strong className="text-green-400">combo para revenda</strong>
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-3 md:py-6">
         <div className="flex flex-col lg:flex-row gap-2 md:gap-6 min-w-0">
@@ -750,6 +827,11 @@ export default function CatalogoRevendedor() {
                   <p className="text-sm text-zinc-400">
                     Mostrando {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'produto' : 'produtos'}
                   </p>
+                  {modelosSelecionados.size > 0 && (
+                    <Badge className="bg-accent text-white">
+                      {modelosSelecionados.size} selecionada(s)
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 md:gap-4">
@@ -757,11 +839,16 @@ export default function CatalogoRevendedor() {
                   const margem = getMargemModelo(modelo.id);
                   const precoRevenda = getPrecoRevenda(modelo.preco_base, modelo.id);
                   const lucro = getLucro(modelo.preco_base, modelo.id);
+                  const selecionado = modelosSelecionados.has(modelo.id);
 
                   return (
                     <div
                       key={modelo.id}
-                      className="group relative overflow-hidden rounded-lg">
+                      className={`group relative overflow-hidden rounded-lg transition-all ${
+                        selecionado
+                          ? 'ring-2 ring-accent ring-offset-2 ring-offset-zinc-950 shadow-[0_0_0_1px_hsl(var(--accent)/0.55)]'
+                          : ''
+                      }`}>
                       
                         <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/50 to-accent z-10"></div>
                         
@@ -769,7 +856,7 @@ export default function CatalogoRevendedor() {
                           <div className="relative">
                             <div
                             className="bg-zinc-700 overflow-hidden cursor-pointer aspect-[3/4]"
-                            onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                            onClick={() => navigate(`/catalogo-revendedor/${modelo.id}`)}>
                             
                               {modelo.video_url ?
                             <video src={modelo.video_url} className="w-full h-full object-cover bg-zinc-800" muted loop autoPlay playsInline /> :
@@ -779,6 +866,21 @@ export default function CatalogoRevendedor() {
                             <div className="w-full h-full flex items-center justify-center text-zinc-500">Sem imagem</div>
                             }
                             </div>
+
+                            {/* Checkbox de seleção */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSelecao(modelo.id);
+                              }}
+                              className={`absolute top-3 right-3 w-7 h-7 rounded-full transition-all z-20 ${
+                                selecionado
+                                  ? 'bg-emerald-500 border-[3px] border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.6)]'
+                                  : 'bg-transparent border-[3px] border-emerald-500/80 hover:border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
+                              }`}
+                            >
+                              {selecionado && <Check className="h-3.5 w-3.5 text-white mx-auto" />}
+                            </button>
 
                             {modelo.pronta_entrega &&
                           <Badge className="absolute top-3 left-3 bg-emerald-600 text-white border-0 text-[10px] gap-0.5 z-20">
@@ -798,7 +900,7 @@ export default function CatalogoRevendedor() {
                           <div className="p-2 md:p-4 flex flex-col flex-1 gap-1">
                             <h3
                             className="font-bold line-clamp-1 text-sm md:text-base text-white hover:text-accent transition-colors cursor-pointer"
-                            onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                            onClick={() => navigate(`/catalogo-revendedor/${modelo.id}`)}>
                             
                               {modelo.nome_modelo}
                             </h3>
@@ -838,7 +940,7 @@ export default function CatalogoRevendedor() {
                               </div>
                             </div>
 
-                            <Button size="sm" className="w-full mt-1.5 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]" onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                            <Button size="sm" className="w-full mt-1.5 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]" onClick={() => navigate(`/catalogo-revendedor/${modelo.id}`)}>
                             
                               Ver detalhes
                               <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1" />
@@ -859,6 +961,21 @@ export default function CatalogoRevendedor() {
           </main>
         </div>
       </div>
+
+      {/* Botão WhatsApp Flutuante */}
+      {modelosSelecionados.size > 0 && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button
+            size="lg"
+            onClick={enviarWhatsAppCombo}
+            className="rounded-full bg-accent hover:bg-accent/90 text-white font-semibold shadow-[0_0_40px_rgba(251,146,60,0.5)] hover:scale-105 transition-all"
+          >
+            <MessageCircle className="h-5 w-5 mr-2" />
+            Montar Combo ({modelosSelecionados.size})
+          </Button>
+        </div>
+      )}
+
     </div>);
 
 }

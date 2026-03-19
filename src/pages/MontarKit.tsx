@@ -29,7 +29,7 @@ interface ItemKit {
   quantidade: number;
 }
 
-export default function MontarKit() {
+export default function MontarKit({ isRevendedor = false }: { isRevendedor?: boolean }) {
   const navigate = useNavigate();
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -133,7 +133,9 @@ export default function MontarKit() {
       .map(item => `• ${item.modelo.nome_modelo}${item.quantidade > 1 ? ` (x${item.quantidade})` : ''}`)
       .join('\n');
 
-    const mensagem = `Olá! Gostaria de montar um kit com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`;
+    const mensagem = isRevendedor
+      ? `Olá! Sou revendedor e gostaria de montar um combo com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`
+      : `Olá! Gostaria de montar um kit com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
@@ -158,7 +160,7 @@ export default function MontarKit() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/catalogo')}
+                onClick={() => navigate(isRevendedor ? '/catalogo-revendedor' : '/catalogo')}
                 className="text-white hover:bg-white/10 text-xs"
               >
                 <ArrowLeft className="h-4 w-4 mr-1" />
@@ -166,7 +168,7 @@ export default function MontarKit() {
               </Button>
               <h1 className="text-lg md:text-2xl font-bold text-white tracking-tight">
                 <Package className="h-5 w-5 inline mr-2 text-accent" />
-                Monte seu Kit
+                {isRevendedor ? 'Monte seu Combo' : 'Monte seu Kit'}
               </h1>
             </div>
             {/* Botão carrinho flutuante no header */}
