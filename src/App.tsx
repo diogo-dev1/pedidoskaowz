@@ -219,9 +219,15 @@ const App = () => (
               path="/catalogo-revendedor"
               element={
                 <ProtectedRoute>
-                  <Layout>
-                    <CatalogoRevendedor />
-                  </Layout>
+                  <CatalogoRevendedor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/catalogo-revendedor/:id"
+              element={
+                <ProtectedRoute>
+                  <CatalogoDetalhe isRevendedor />
                 </ProtectedRoute>
               }
             />

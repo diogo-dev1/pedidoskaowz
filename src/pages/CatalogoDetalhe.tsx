@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MessageCircle, Zap } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Zap, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 function convertPlainToHtml(text: string): string {
@@ -53,7 +53,11 @@ interface Midia {
   url: string;
 }
 
-export default function CatalogoDetalhe() {
+interface CatalogoDetalheProps {
+  isRevendedor?: boolean;
+}
+
+export default function CatalogoDetalhe({ isRevendedor = false }: CatalogoDetalheProps) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [modelo, setModelo] = useState<Modelo | null>(null);
@@ -65,12 +69,19 @@ export default function CatalogoDetalhe() {
   const [descontoPix, setDescontoPix] = useState(5);
   const [textoPix, setTextoPix] = useState('no PIX');
   const [textoParcelamento, setTextoParcelamento] = useState('3x sem juros ou até 12x no cartão');
+  const [margemGlobal, setMargemGlobal] = useState(30);
+  const [margemProduto, setMargemProduto] = useState<number | null>(null);
 
   useEffect(() => {
     if (id) {
       carregarModelo();
       carregarMidias();
-      carregarConfigs();
+      if (isRevendedor) {
+        carregarConfigRevendedor();
+        carregarMargemProduto();
+      } else {
+        carregarConfigs();
+      }
     }
   }, [id]);
 
@@ -87,6 +98,29 @@ export default function CatalogoDetalhe() {
         if (d.chave === 'texto_pix') setTextoPix(d.valor);
         if (d.chave === 'texto_parcelamento') setTextoParcelamento(d.valor);
       });
+    }
+  };
+
+  const carregarConfigRevendedor = async () => {
+    const { data } = await supabase
+      .from('config_revendedor' as any)
+      .select('*')
+      .in('chave', ['margem_global']);
+    if (data) {
+      (data as any[]).forEach((d: any) => {
+        if (d.chave === 'margem_global') setMargemGlobal(parseFloat(d.valor) || 30);
+      });
+    }
+  };
+
+  const carregarMargemProduto = async () => {
+    const { data } = await supabase
+      .from('margem_revendedor_produto' as any)
+      .select('margem_percentual')
+      .eq('modelo_id', id)
+      .maybeSingle();
+    if (data) {
+      setMargemProduto(Number((data as any).margem_percentual));
     }
   };
 
@@ -183,11 +217,11 @@ export default function CatalogoDetalhe() {
       <header className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800/50">
         <div className="max-w-5xl mx-auto px-4 py-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(isRevendedor ? '/catalogo-revendedor' : -1 as any)}
             className="text-zinc-500 hover:text-white transition-colors text-sm flex items-center gap-1.5"
           >
             <ArrowLeft className="h-4 w-4" />
-            Catálogo
+            {isRevendedor ? 'Catálogo Revendedor' : 'Catálogo'}
           </button>
         </div>
       </header>
@@ -252,7 +286,38 @@ export default function CatalogoDetalhe() {
             </h1>
 
             {/* Preço */}
-            {exibirPrecos && (
+            {isRevendedor && modelo ? (() => {
+              const margem = margemProduto ?? margemGlobal;
+              const precoRevenda = modelo.preco_base * (1 - margem / 100);
+              const lucro = modelo.preco_base * (margem / 100);
+              return (
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Preço de Venda</p>
+                    <p className="text-2xl font-black text-accent">
+                      R$ {modelo.preco_base.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Custo Revendedor</p>
+                    <p className="text-lg font-bold text-zinc-200">
+                      R$ {precoRevenda.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5">
+                    <p className="text-[10px] text-emerald-400/70 uppercase tracking-wider">Lucro</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-lg font-black text-emerald-400">
+                        R$ {lucro.toFixed(2)}
+                      </p>
+                      <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs font-bold">
+                        {margem.toFixed(0)}%
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              );
+            })() : exibirPrecos && (
               <div className="space-y-1">
                 <p className="text-2xl font-semibold text-white">
                   R$ {modelo.preco_base.toFixed(2)}
@@ -266,14 +331,16 @@ export default function CatalogoDetalhe() {
             )}
 
             {/* WhatsApp */}
-            <Button
-              size="lg"
-              className="w-full bg-accent hover:bg-accent/90 text-white rounded-xl h-12"
-              onClick={enviarWhatsApp}
-            >
-              <MessageCircle className="h-5 w-5 mr-2" />
-              Consultar no WhatsApp
-            </Button>
+            {!isRevendedor && (
+              <Button
+                size="lg"
+                className="w-full bg-accent hover:bg-accent/90 text-white rounded-xl h-12"
+                onClick={enviarWhatsApp}
+              >
+                <MessageCircle className="h-5 w-5 mr-2" />
+                Consultar no WhatsApp
+              </Button>
+            )}
 
             {/* Garantia destaque */}
             {modelo.garantia && /vital[ií]cia/i.test(modelo.garantia) ? (

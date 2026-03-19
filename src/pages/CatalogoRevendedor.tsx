@@ -769,7 +769,7 @@ export default function CatalogoRevendedor() {
                           <div className="relative">
                             <div
                             className="bg-zinc-700 overflow-hidden cursor-pointer aspect-[3/4]"
-                            onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                            onClick={() => navigate(`/catalogo-revendedor/${modelo.id}`)}>
                             
                               {modelo.video_url ?
                             <video src={modelo.video_url} className="w-full h-full object-cover bg-zinc-800" muted loop autoPlay playsInline /> :
@@ -798,7 +798,7 @@ export default function CatalogoRevendedor() {
                           <div className="p-2 md:p-4 flex flex-col flex-1 gap-1">
                             <h3
                             className="font-bold line-clamp-1 text-sm md:text-base text-white hover:text-accent transition-colors cursor-pointer"
-                            onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                            onClick={() => navigate(`/catalogo-revendedor/${modelo.id}`)}>
                             
                               {modelo.nome_modelo}
                             </h3>
@@ -837,7 +837,7 @@ export default function CatalogoRevendedor() {
                             </div>
 
                             <Button size="sm" className="w-full mt-1.5 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]"
-                          onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                          onClick={() => navigate(`/catalogo-revendedor/${modelo.id}`)}>
                             
                               Ver detalhes
                               <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1" />
