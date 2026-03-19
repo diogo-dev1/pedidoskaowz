@@ -971,7 +971,7 @@ export default function CatalogoRevendedor() {
             className="rounded-full bg-accent hover:bg-accent/90 text-white font-semibold shadow-[0_0_40px_rgba(251,146,60,0.5)] hover:scale-105 transition-all"
           >
             <MessageCircle className="h-5 w-5 mr-2" />
-            Montar Combo ({modelosSelecionados.size})
+            Montar Kit ({modelosSelecionados.size})
           </Button>
         </div>
       )}

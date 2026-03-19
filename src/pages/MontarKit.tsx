@@ -396,7 +396,7 @@ export default function MontarKit({ isRevendedor = false }: { isRevendedor?: boo
                 <div className="p-8 text-center">
                   <Package className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
                   <p className="text-zinc-500 text-sm">Seu kit está vazio</p>
-                  <p className="text-zinc-600 text-xs mt-1">Adicione lâminas para montar seu combo</p>
+                  <p className="text-zinc-600 text-xs mt-1">Adicione lâminas para montar seu kit</p>
                 </div>
               ) : (
                 <div className="p-4 space-y-3">
