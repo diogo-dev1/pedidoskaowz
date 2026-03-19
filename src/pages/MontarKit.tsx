@@ -29,7 +29,7 @@ interface ItemKit {
   quantidade: number;
 }
 
-export default function MontarKit() {
+export default function MontarKit({ isRevendedor = false }: { isRevendedor?: boolean }) {
   const navigate = useNavigate();
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
