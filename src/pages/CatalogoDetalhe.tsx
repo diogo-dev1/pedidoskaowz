@@ -76,7 +76,12 @@ export default function CatalogoDetalhe({ isRevendedor = false }: CatalogoDetalh
     if (id) {
       carregarModelo();
       carregarMidias();
-      carregarConfigs();
+      if (isRevendedor) {
+        carregarConfigRevendedor();
+        carregarMargemProduto();
+      } else {
+        carregarConfigs();
+      }
     }
   }, [id]);
 
