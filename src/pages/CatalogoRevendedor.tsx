@@ -506,7 +506,18 @@ export default function CatalogoRevendedor() {
             </Button>
           </div>
 
-          <div className="text-center mt-10 pt-8 border-t border-zinc-800/50">
+          {/* Monte seu Combo */}
+          <div className="flex justify-center max-w-lg mx-auto mt-3">
+            <Button
+              onClick={() => navigate('/catalogo-revendedor/montar-kit')}
+              variant="outline"
+              className="w-full border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent font-bold h-12 text-sm md:text-base rounded-xl transition-all"
+            >
+              <Package className="h-4 w-4 mr-2" />
+              Monte seu Combo
+            </Button>
+          </div>
+
             <p className="text-zinc-500 text-xs mb-3">Precisa de ajuda para escolher?</p>
             <Button
               variant="outline"
