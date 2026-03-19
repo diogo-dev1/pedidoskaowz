@@ -693,8 +693,166 @@ export default function ConfiguracoesCatalogoRevendedor() {
           </Card>
         </TabsContent>
 
-        {/* Aba Categorias - read-only view */}
+        {/* Aba Categorias - compartilhamento */}
         <TabsContent value="categorias" className="space-y-3 mt-4">
+          {/* Mensagem padrão com link */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Copy className="h-4 w-4" />
+                Mensagem Padrão
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Mensagem com o link do catálogo revendedor para enviar aos seus revendedores.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <textarea
+                value={mensagemPadrao}
+                onChange={e => setMensagemPadrao(e.target.value)}
+                className="w-full h-20 rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Digite a mensagem..."
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Link: {window.location.origin}/catalogo-revendedor
+              </p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={copiarMensagemPadrao} className="flex-1 gap-2">
+                  <Copy className="h-3.5 w-3.5" />
+                  Copiar mensagem + link
+                </Button>
+                <Button size="sm" onClick={salvarMensagemPadrao} disabled={salvandoMensagem} className="gap-2">
+                  {salvandoMensagem ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Salvar'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Compartilhar múltiplas categorias */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Share2 className="h-4 w-4" />
+                Compartilhar Categorias
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Selecione categorias e gere um link de compartilhamento do catálogo revendedor.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {categoriasVisiveis.filter(c => c.visivel).map((cat) => {
+                  const selecionada = categoriasParaCompartilhar.has(cat.categoria);
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => toggleCategoriaCompartilhar(cat.categoria)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        selecionada
+                          ? 'bg-accent text-accent-foreground border-accent'
+                          : 'bg-muted/30 text-muted-foreground border-border hover:border-accent/50'
+                      }`}
+                    >
+                      {cat.categoria}
+                    </button>
+                  );
+                })}
+              </div>
+              {categoriasParaCompartilhar.size > 0 && (
+                <p className="text-[10px] text-muted-foreground">
+                  {Array.from(categoriasParaCompartilhar).join(', ')}
+                </p>
+              )}
+              <Button
+                size="sm"
+                onClick={copiarLinkMultiCategorias}
+                disabled={categoriasParaCompartilhar.size === 0}
+                className="w-full gap-2"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copiar link ({categoriasParaCompartilhar.size} {categoriasParaCompartilhar.size === 1 ? 'categoria' : 'categorias'})
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Compartilhar lâminas específicas */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Share2 className="h-4 w-4" />
+                Compartilhar Lâminas Específicas
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Selecione lâminas individualmente e gere um link exclusivo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Input
+                placeholder="Buscar lâmina..."
+                value={buscaProdutoCompartilhar}
+                onChange={e => setBuscaProdutoCompartilhar(e.target.value)}
+                className="h-8 text-sm"
+              />
+              {produtosParaCompartilhar.size > 0 && (
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold">Selecionadas ({produtosParaCompartilhar.size})</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Array.from(produtosParaCompartilhar).map(id => {
+                      const modelo = todosModelos.find(m => m.id === id);
+                      if (!modelo) return null;
+                      return (
+                        <Badge
+                          key={id}
+                          className="bg-accent/20 text-accent border-accent/30 text-[10px] cursor-pointer hover:bg-accent/30 gap-1"
+                          onClick={() => toggleProdutoCompartilhar(id)}
+                        >
+                          {modelo.nome_modelo}
+                          <X className="h-2.5 w-2.5" />
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              <div className="max-h-48 overflow-y-auto space-y-0.5 border rounded-lg p-1.5">
+                {todosModelos
+                  .filter(m => !buscaProdutoCompartilhar || m.nome_modelo.toLowerCase().includes(buscaProdutoCompartilhar.toLowerCase()))
+                  .map(modelo => {
+                    const selecionado = produtosParaCompartilhar.has(modelo.id);
+                    return (
+                      <div
+                        key={modelo.id}
+                        className={`flex items-center gap-2 p-1.5 rounded cursor-pointer transition-colors ${
+                          selecionado ? 'bg-accent/10' : 'hover:bg-muted/50'
+                        }`}
+                        onClick={() => toggleProdutoCompartilhar(modelo.id)}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                          selecionado ? 'bg-accent border-accent' : 'border-border'
+                        }`}>
+                          {selecionado && <Check className="h-3 w-3 text-accent-foreground" />}
+                        </div>
+                        {modelo.imagem_modelo && (
+                          <img src={modelo.imagem_modelo} alt="" className="w-7 h-7 rounded object-cover" />
+                        )}
+                        <span className="text-xs flex-1 truncate">{modelo.nome_modelo}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+              <Button
+                size="sm"
+                onClick={copiarLinkProdutos}
+                disabled={produtosParaCompartilhar.size === 0}
+                className="w-full gap-2"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copiar link ({produtosParaCompartilhar.size} {produtosParaCompartilhar.size === 1 ? 'lâmina' : 'lâminas'})
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Lista de categorias */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Categorias do Catálogo</CardTitle>
@@ -709,6 +867,10 @@ export default function ConfiguracoesCatalogoRevendedor() {
                   <div key={cat.id} className="flex items-center gap-3 py-2 px-3 rounded-lg border">
                     <CatIcon className="h-4 w-4 text-accent shrink-0" />
                     <span className="text-sm font-medium flex-1">{cat.categoria}</span>
+                    <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs" onClick={() => copiarLinkCategoria(cat.categoria)}>
+                      <Copy className="h-3 w-3" />
+                      Link
+                    </Button>
                     <Badge variant={cat.visivel ? 'default' : 'secondary'} className="text-[10px]">
                       {cat.visivel ? 'Visível' : 'Oculta'}
                     </Badge>
