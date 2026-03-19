@@ -72,7 +72,13 @@ export default function ConfiguracoesCatalogoRevendedor() {
   const [margensProduto, setMargensProduto] = useState<Record<string, string>>({});
   const [buscaMargem, setBuscaMargem] = useState('');
 
-  useEffect(() => {
+  // Compartilhamento
+  const [categoriasParaCompartilhar, setCategoriasParaCompartilhar] = useState<Set<string>>(new Set());
+  const [produtosParaCompartilhar, setProdutosParaCompartilhar] = useState<Set<string>>(new Set());
+  const [buscaProdutoCompartilhar, setBuscaProdutoCompartilhar] = useState('');
+  const [mensagemPadrao, setMensagemPadrao] = useState('Confira nosso catálogo exclusivo para revendedores!');
+  const [salvandoMensagem, setSalvandoMensagem] = useState(false);
+
     fetchCategoriasVisiveis();
     fetchConfigRevendedor();
     fetchModelosParaDestaques();
