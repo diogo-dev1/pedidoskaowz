@@ -97,7 +97,43 @@ export default function CatalogoRevendedor() {
   const [margensProduto, setMargensProduto] = useState<Record<string, number>>({});
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleFaixaPrecoChange = useCallback((v: number[]) => {
+  // Persist selection to sessionStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (modelosSelecionados.size === 0) {
+      sessionStorage.removeItem(SELECAO_REVENDEDOR_KEY);
+      return;
+    }
+    sessionStorage.setItem(SELECAO_REVENDEDOR_KEY, JSON.stringify(Array.from(modelosSelecionados)));
+  }, [modelosSelecionados]);
+
+  const toggleSelecao = (id: string) => {
+    const novaSelecao = new Set(modelosSelecionados);
+    if (novaSelecao.has(id)) {
+      novaSelecao.delete(id);
+    } else {
+      novaSelecao.add(id);
+    }
+    setModelosSelecionados(novaSelecao);
+  };
+
+  const enviarWhatsAppCombo = () => {
+    if (modelosSelecionados.size === 0) {
+      toast.error('Selecione pelo menos uma lâmina');
+      return;
+    }
+    const modelosTexto = Array.from(modelosSelecionados)
+      .map(id => {
+        const modelo = modelos.find(m => m.id === id);
+        return modelo ? `${modelo.nome_modelo}` : '';
+      })
+      .filter(Boolean)
+      .join('\n');
+    const mensagem = `Olá! Sou revendedor e gostaria de montar um combo com as seguintes lâminas:\n\n${modelosTexto}`;
+    const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, '_blank');
+  };
+
     setFaixaPrecoVisual(v as [number, number]);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
