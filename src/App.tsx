@@ -220,6 +220,10 @@ const App = () => (
               element={<CatalogoRevendedor />}
             />
             <Route
+              path="/catalogo-revendedor/montar-kit"
+              element={<MontarKit isRevendedor />}
+            />
+            <Route
               path="/catalogo-revendedor/:id"
               element={<CatalogoDetalhe isRevendedor />}
             />
