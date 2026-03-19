@@ -587,7 +587,24 @@ export default function CatalogoRevendedor() {
         </div>
       </div>
 
-      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-3 md:py-6">
+      {/* Floating tip */}
+      {modelosSelecionados.size === 0 && (
+        <div className="w-full bg-gradient-to-r from-green-950/60 via-zinc-900/80 to-green-950/60 backdrop-blur-sm border-b border-green-800/30">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-center gap-2.5 text-xs sm:text-sm">
+            <span className="flex items-center gap-1.5 text-green-400 shrink-0">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              <MessageCircle className="h-3.5 w-3.5" />
+            </span>
+            <span className="text-zinc-300">
+              Selecione as lâminas e monte seu <strong className="text-green-400">combo para revenda</strong>
+            </span>
+          </div>
+        </div>
+      )}
+
         <div className="flex flex-col lg:flex-row gap-2 md:gap-6 min-w-0">
           {/* Sidebar */}
           <aside className="lg:w-64 shrink-0">
