@@ -217,19 +217,11 @@ const App = () => (
             />
             <Route
               path="/catalogo-revendedor"
-              element={
-                <ProtectedRoute>
-                  <CatalogoRevendedor />
-                </ProtectedRoute>
-              }
+              element={<CatalogoRevendedor />}
             />
             <Route
               path="/catalogo-revendedor/:id"
-              element={
-                <ProtectedRoute>
-                  <CatalogoDetalhe isRevendedor />
-                </ProtectedRoute>
-              }
+              element={<CatalogoDetalhe isRevendedor />}
             />
             <Route
               path="/admin/catalogo-revendedor"
