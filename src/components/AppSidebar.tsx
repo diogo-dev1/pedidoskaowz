@@ -31,6 +31,7 @@ export function AppSidebar() {
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Orçamento', url: '/orcamento', icon: FileText },
     { title: 'Mídia', url: '/midia', icon: Image },
+    { title: 'Catálogo Revendedor', url: '/catalogo-revendedor', icon: TrendingUp },
   ];
 
   const adminItems = (profile?.cargo === 'admin' || profile?.cargo === 'vendedor') ? [
