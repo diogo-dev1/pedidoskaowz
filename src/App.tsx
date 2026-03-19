@@ -215,6 +215,26 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/catalogo-revendedor"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CatalogoRevendedor />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/catalogo-revendedor"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <ConfiguracoesCatalogoRevendedor />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
