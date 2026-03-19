@@ -168,7 +168,7 @@ export default function MontarKit({ isRevendedor = false }: { isRevendedor?: boo
               </Button>
               <h1 className="text-lg md:text-2xl font-bold text-white tracking-tight">
                 <Package className="h-5 w-5 inline mr-2 text-accent" />
-                {isRevendedor ? 'Monte seu Combo' : 'Monte seu Kit'}
+                {isRevendedor ? 'Monte um Kit' : 'Monte seu Kit'}
               </h1>
             </div>
             {/* Botão carrinho flutuante no header */}
