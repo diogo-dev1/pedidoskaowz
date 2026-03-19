@@ -330,6 +330,18 @@ export default function CatalogoDetalhe({ isRevendedor = false }: CatalogoDetalh
               </div>
             )}
 
+            {/* WhatsApp */}
+            {!isRevendedor && (
+              <Button
+                size="lg"
+                className="w-full bg-accent hover:bg-accent/90 text-white rounded-xl h-12"
+                onClick={enviarWhatsApp}
+              >
+                <MessageCircle className="h-5 w-5 mr-2" />
+                Consultar no WhatsApp
+              </Button>
+            )}
+
             {/* Garantia destaque */}
             {modelo.garantia && /vital[ií]cia/i.test(modelo.garantia) ? (
               <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5">
