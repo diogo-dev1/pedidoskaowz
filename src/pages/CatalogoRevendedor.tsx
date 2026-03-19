@@ -839,11 +839,16 @@ export default function CatalogoRevendedor() {
                   const margem = getMargemModelo(modelo.id);
                   const precoRevenda = getPrecoRevenda(modelo.preco_base, modelo.id);
                   const lucro = getLucro(modelo.preco_base, modelo.id);
+                  const selecionado = modelosSelecionados.has(modelo.id);
 
                   return (
                     <div
                       key={modelo.id}
-                      className="group relative overflow-hidden rounded-lg">
+                      className={`group relative overflow-hidden rounded-lg transition-all ${
+                        selecionado
+                          ? 'ring-2 ring-accent ring-offset-2 ring-offset-zinc-950 shadow-[0_0_0_1px_hsl(var(--accent)/0.55)]'
+                          : ''
+                      }`}>
                       
                         <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/50 to-accent z-10"></div>
                         
@@ -851,7 +856,7 @@ export default function CatalogoRevendedor() {
                           <div className="relative">
                             <div
                             className="bg-zinc-700 overflow-hidden cursor-pointer aspect-[3/4]"
-                            onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                            onClick={() => navigate(`/catalogo-revendedor/${modelo.id}`)}>
                             
                               {modelo.video_url ?
                             <video src={modelo.video_url} className="w-full h-full object-cover bg-zinc-800" muted loop autoPlay playsInline /> :
@@ -861,6 +866,21 @@ export default function CatalogoRevendedor() {
                             <div className="w-full h-full flex items-center justify-center text-zinc-500">Sem imagem</div>
                             }
                             </div>
+
+                            {/* Checkbox de seleção */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSelecao(modelo.id);
+                              }}
+                              className={`absolute top-3 right-3 w-7 h-7 rounded-full transition-all z-20 ${
+                                selecionado
+                                  ? 'bg-emerald-500 border-[3px] border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.6)]'
+                                  : 'bg-transparent border-[3px] border-emerald-500/80 hover:border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
+                              }`}
+                            >
+                              {selecionado && <Check className="h-3.5 w-3.5 text-white mx-auto" />}
+                            </button>
 
                             {modelo.pronta_entrega &&
                           <Badge className="absolute top-3 left-3 bg-emerald-600 text-white border-0 text-[10px] gap-0.5 z-20">
