@@ -599,7 +599,7 @@ export default function CatalogoRevendedor() {
               <MessageCircle className="h-3.5 w-3.5" />
             </span>
             <span className="text-zinc-300">
-              Selecione as lâminas e monte seu <strong className="text-green-400">combo para revenda</strong>
+              Selecione as lâminas e monte um <strong className="text-green-400">kit para revenda</strong>
             </span>
           </div>
         </div>
