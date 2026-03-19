@@ -101,6 +101,29 @@ export default function CatalogoDetalhe({ isRevendedor = false }: CatalogoDetalh
     }
   };
 
+  const carregarConfigRevendedor = async () => {
+    const { data } = await supabase
+      .from('config_revendedor' as any)
+      .select('*')
+      .in('chave', ['margem_global']);
+    if (data) {
+      (data as any[]).forEach((d: any) => {
+        if (d.chave === 'margem_global') setMargemGlobal(parseFloat(d.valor) || 30);
+      });
+    }
+  };
+
+  const carregarMargemProduto = async () => {
+    const { data } = await supabase
+      .from('margem_revendedor_produto' as any)
+      .select('margem_percentual')
+      .eq('modelo_id', id)
+      .maybeSingle();
+    if (data) {
+      setMargemProduto(Number((data as any).margem_percentual));
+    }
+  };
+
   const carregarModelo = async () => {
     try {
       const { data, error } = await (supabase
