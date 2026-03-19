@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X, TrendingUp } from 'lucide-react';
+
+const SELECAO_REVENDEDOR_KEY = 'catalogo_revendedor_selecionados';
 import { Slider } from '@/components/ui/slider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
