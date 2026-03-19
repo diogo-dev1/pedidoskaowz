@@ -129,7 +129,7 @@ export default function CatalogoRevendedor() {
       })
       .filter(Boolean)
       .join('\n');
-    const mensagem = `Olá! Sou revendedor e gostaria de montar um combo com as seguintes lâminas:\n\n${modelosTexto}`;
+    const mensagem = `Olá! Sou revendedor e gostaria de montar um kit com as seguintes lâminas:\n\n${modelosTexto}`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
