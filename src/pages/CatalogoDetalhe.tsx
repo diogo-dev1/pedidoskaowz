@@ -217,11 +217,11 @@ export default function CatalogoDetalhe({ isRevendedor = false }: CatalogoDetalh
       <header className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800/50">
         <div className="max-w-5xl mx-auto px-4 py-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(isRevendedor ? '/catalogo-revendedor' : -1 as any)}
             className="text-zinc-500 hover:text-white transition-colors text-sm flex items-center gap-1.5"
           >
             <ArrowLeft className="h-4 w-4" />
-            Catálogo
+            {isRevendedor ? 'Catálogo Revendedor' : 'Catálogo'}
           </button>
         </div>
       </header>
