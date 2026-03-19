@@ -133,7 +133,7 @@ export default function CatalogoRevendedor() {
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
-
+  const handleFaixaPrecoChange = useCallback((v: number[]) => {
     setFaixaPrecoVisual(v as [number, number]);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
