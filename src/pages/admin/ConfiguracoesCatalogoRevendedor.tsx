@@ -95,6 +95,7 @@ export default function ConfiguracoesCatalogoRevendedor() {
         if (d.chave === 'filtro_tamanho_ativo') setFiltroTamanhoAtivo(d.valor === 'true');
         if (d.chave === 'filtro_lamina_ativo') setFiltroLaminaAtivo(d.valor === 'true');
         if (d.chave === 'margem_global') setMargemGlobal(d.valor);
+        if (d.chave === 'mensagem_padrao_revendedor') setMensagemPadrao(d.valor);
       });
     }
     setLoadingPrecos(false);
