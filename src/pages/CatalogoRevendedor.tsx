@@ -961,6 +961,21 @@ export default function CatalogoRevendedor() {
           </main>
         </div>
       </div>
+
+      {/* Botão WhatsApp Flutuante */}
+      {modelosSelecionados.size > 0 && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button
+            size="lg"
+            onClick={enviarWhatsAppCombo}
+            className="rounded-full bg-accent hover:bg-accent/90 text-white font-semibold shadow-[0_0_40px_rgba(251,146,60,0.5)] hover:scale-105 transition-all"
+          >
+            <MessageCircle className="h-5 w-5 mr-2" />
+            Montar Combo ({modelosSelecionados.size})
+          </Button>
+        </div>
+      )}
+
     </div>);
 
 }
