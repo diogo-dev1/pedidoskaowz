@@ -158,6 +158,80 @@ export default function ConfiguracoesCatalogoRevendedor() {
     toast.success('Margem individual salva!');
   };
 
+  const copiarLinkCategoria = (categoria: string) => {
+    const url = `${window.location.origin}/catalogo-revendedor?categoria=${encodeURIComponent(categoria)}`;
+    navigator.clipboard.writeText(url);
+    toast.success(`Link da categoria "${categoria}" copiado!`);
+  };
+
+  const toggleCategoriaCompartilhar = (categoria: string) => {
+    setCategoriasParaCompartilhar(prev => {
+      const next = new Set(prev);
+      if (next.has(categoria)) next.delete(categoria);
+      else next.add(categoria);
+      return next;
+    });
+  };
+
+  const copiarLinkMultiCategorias = () => {
+    if (categoriasParaCompartilhar.size === 0) {
+      toast.error('Selecione pelo menos uma categoria');
+      return;
+    }
+    const cats = Array.from(categoriasParaCompartilhar).map(c => encodeURIComponent(c)).join(',');
+    const url = `${window.location.origin}/catalogo-revendedor?categorias=${cats}`;
+    navigator.clipboard.writeText(url);
+    toast.success(`Link com ${categoriasParaCompartilhar.size} categorias copiado!`);
+  };
+
+  const toggleProdutoCompartilhar = (id: string) => {
+    setProdutosParaCompartilhar(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const copiarLinkProdutos = () => {
+    if (produtosParaCompartilhar.size === 0) {
+      toast.error('Selecione pelo menos uma lâmina');
+      return;
+    }
+    const ids = Array.from(produtosParaCompartilhar).join(',');
+    const url = `${window.location.origin}/catalogo-revendedor?produtos=${ids}`;
+    navigator.clipboard.writeText(url);
+    toast.success(`Link com ${produtosParaCompartilhar.size} lâminas copiado!`);
+  };
+
+  const copiarMensagemPadrao = () => {
+    const url = `${window.location.origin}/catalogo-revendedor`;
+    const texto = `${mensagemPadrao}\n\n${url}`;
+    navigator.clipboard.writeText(texto);
+    toast.success('Mensagem copiada!');
+  };
+
+  const salvarMensagemPadrao = async () => {
+    setSalvandoMensagem(true);
+    try {
+      const { data: existing } = await supabase
+        .from('config_revendedor' as any)
+        .select('id')
+        .eq('chave', 'mensagem_padrao_revendedor')
+        .maybeSingle();
+      if (existing) {
+        await supabase.from('config_revendedor' as any).update({ valor: mensagemPadrao } as any).eq('chave', 'mensagem_padrao_revendedor');
+      } else {
+        await supabase.from('config_revendedor' as any).insert({ chave: 'mensagem_padrao_revendedor', valor: mensagemPadrao } as any);
+      }
+      toast.success('Mensagem salva!');
+    } catch {
+      toast.error('Erro ao salvar');
+    } finally {
+      setSalvandoMensagem(false);
+    }
+  };
+
   const updateConfig = async (chave: string, valor: string) => {
     await supabase.from('config_revendedor' as any).update({ valor } as any).eq('chave', chave);
   };
