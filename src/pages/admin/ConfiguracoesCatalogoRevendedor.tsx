@@ -408,8 +408,8 @@ export default function ConfiguracoesCatalogoRevendedor() {
                   .map(modelo => {
                     const margemIndividual = margensProduto[modelo.id] || '';
                     const margemEfetiva = margemIndividual ? parseFloat(margemIndividual) : parseFloat(margemGlobal) || 30;
-                    const precoRevenda = modelo.preco_base / (1 + margemEfetiva / 100);
-                    const lucro = modelo.preco_base - precoRevenda;
+                    const precoRevenda = modelo.preco_base * (1 - margemEfetiva / 100);
+                    const lucro = modelo.preco_base * (margemEfetiva / 100);
                     
                     return (
                       <div key={modelo.id} className="flex items-center gap-2 p-2 rounded-lg border">
