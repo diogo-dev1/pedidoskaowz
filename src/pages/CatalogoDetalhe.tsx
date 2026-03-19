@@ -286,7 +286,38 @@ export default function CatalogoDetalhe({ isRevendedor = false }: CatalogoDetalh
             </h1>
 
             {/* Preço */}
-            {exibirPrecos && (
+            {isRevendedor && modelo ? (() => {
+              const margem = margemProduto ?? margemGlobal;
+              const precoRevenda = modelo.preco_base * (1 - margem / 100);
+              const lucro = modelo.preco_base * (margem / 100);
+              return (
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Preço de Venda</p>
+                    <p className="text-2xl font-black text-accent">
+                      R$ {modelo.preco_base.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Custo Revendedor</p>
+                    <p className="text-lg font-bold text-zinc-200">
+                      R$ {precoRevenda.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5">
+                    <p className="text-[10px] text-emerald-400/70 uppercase tracking-wider">Lucro</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-lg font-black text-emerald-400">
+                        R$ {lucro.toFixed(2)}
+                      </p>
+                      <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs font-bold">
+                        {margem.toFixed(0)}%
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              );
+            })() : exibirPrecos && (
               <div className="space-y-1">
                 <p className="text-2xl font-semibold text-white">
                   R$ {modelo.preco_base.toFixed(2)}
@@ -298,16 +329,6 @@ export default function CatalogoDetalhe({ isRevendedor = false }: CatalogoDetalh
                 )}
               </div>
             )}
-
-            {/* WhatsApp */}
-            <Button
-              size="lg"
-              className="w-full bg-accent hover:bg-accent/90 text-white rounded-xl h-12"
-              onClick={enviarWhatsApp}
-            >
-              <MessageCircle className="h-5 w-5 mr-2" />
-              Consultar no WhatsApp
-            </Button>
 
             {/* Garantia destaque */}
             {modelo.garantia && /vital[ií]cia/i.test(modelo.garantia) ? (
