@@ -827,6 +827,11 @@ export default function CatalogoRevendedor() {
                   <p className="text-sm text-zinc-400">
                     Mostrando {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'produto' : 'produtos'}
                   </p>
+                  {modelosSelecionados.size > 0 && (
+                    <Badge className="bg-accent text-white">
+                      {modelosSelecionados.size} selecionada(s)
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 md:gap-4">
