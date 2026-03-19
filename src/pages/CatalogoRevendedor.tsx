@@ -605,6 +605,7 @@ export default function CatalogoRevendedor() {
         </div>
       )}
 
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-3 md:py-6">
         <div className="flex flex-col lg:flex-row gap-2 md:gap-6 min-w-0">
           {/* Sidebar */}
           <aside className="lg:w-64 shrink-0">
