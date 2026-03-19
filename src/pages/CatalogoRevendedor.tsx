@@ -61,7 +61,15 @@ export default function CatalogoRevendedor() {
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const [categoriasMultiplas, setCategoriasMultiplas] = useState<string[]>([]);
   const [busca, setBusca] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    const saved = sessionStorage.getItem(SELECAO_REVENDEDOR_KEY);
+    if (!saved) return new Set();
+    try {
+      const ids = JSON.parse(saved);
+      return Array.isArray(ids) ? new Set(ids) : new Set();
+    } catch { return new Set(); }
+  });
   const [mostrarLanding, setMostrarLanding] = useState(true);
   const [categoriasVisiveis, setCategoriasVisiveis] = useState<CategoriaVisivel[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
