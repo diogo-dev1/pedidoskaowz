@@ -814,7 +814,9 @@ export default function CatalogoRevendedor() {
 
                               {/* Preço de Revenda (branco/cinza) */}
                               <div>
-                                <p className="text-[9px] md:text-[10px] text-zinc-500 uppercase tracking-wider">Seu custo</p>
+                                <p className="text-[9px] md:text-[10px] text-zinc-500 uppercase tracking-wider">CUSTO
+
+                              </p>
                                 <p className="text-sm md:text-base font-bold text-zinc-200 truncate">
                                   R$ {precoRevenda.toFixed(2)}
                                 </p>
@@ -834,10 +836,8 @@ export default function CatalogoRevendedor() {
                               </div>
                             </div>
 
-                            <Button
-                            size="sm"
-                            className="w-full mt-1.5 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]"
-                            onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                            <Button size="sm" className="w-full mt-1.5 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]"
+                          onClick={() => navigate(`/catalogo/${modelo.id}`)}>
                             
                               Ver detalhes
                               <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1" />
