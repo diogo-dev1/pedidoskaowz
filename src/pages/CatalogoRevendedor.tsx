@@ -94,12 +94,12 @@ export default function CatalogoRevendedor() {
     }, 200);
   }, []);
 
-  const categorias = categoriasVisiveis.filter(c => c.visivel);
+  const categorias = categoriasVisiveis.filter((c) => c.visivel);
 
-  const categoriasVenda = categorias.map(cat => ({
+  const categoriasVenda = categorias.map((cat) => ({
     subtitulo: cat.categoria,
     categoria: cat.categoria,
-    icon: getIconComponent(cat.icone),
+    icon: getIconComponent(cat.icone)
   }));
 
   useEffect(() => {
@@ -131,25 +131,25 @@ export default function CatalogoRevendedor() {
   useEffect(() => {
     if (banners.length <= 1) return;
     const interval = setInterval(() => {
-      setBannerAtual(prev => (prev + 1) % banners.length);
+      setBannerAtual((prev) => (prev + 1) % banners.length);
     }, 5000);
     return () => clearInterval(interval);
   }, [banners.length]);
 
   const carregarBanners = async () => {
-    const { data } = await supabase
-      .from('banners_catalogo')
-      .select('*')
-      .eq('ativo', true)
-      .order('ordem');
+    const { data } = await supabase.
+    from('banners_catalogo').
+    select('*').
+    eq('ativo', true).
+    order('ordem');
     if (data) setBanners(data as Banner[]);
   };
 
   const carregarConfigRevendedor = async () => {
-    const { data } = await supabase
-      .from('config_revendedor' as any)
-      .select('*')
-      .in('chave', ['exibir_precos', 'exibir_formas_pagamento', 'desconto_pix', 'texto_pix', 'texto_parcelamento', 'filtro_preco_ativo', 'filtro_tamanho_ativo', 'filtro_lamina_ativo', 'margem_global']);
+    const { data } = await supabase.
+    from('config_revendedor' as any).
+    select('*').
+    in('chave', ['exibir_precos', 'exibir_formas_pagamento', 'desconto_pix', 'texto_pix', 'texto_parcelamento', 'filtro_preco_ativo', 'filtro_tamanho_ativo', 'filtro_lamina_ativo', 'margem_global']);
     if (data) {
       (data as any[]).forEach((d: any) => {
         if (d.chave === 'exibir_precos') setExibirPrecos(d.valor === 'true');
@@ -166,27 +166,27 @@ export default function CatalogoRevendedor() {
   };
 
   const carregarMargensProduto = async () => {
-    const { data } = await supabase
-      .from('margem_revendedor_produto' as any)
-      .select('modelo_id, margem_percentual');
+    const { data } = await supabase.
+    from('margem_revendedor_produto' as any).
+    select('modelo_id, margem_percentual');
     if (data) {
       const map: Record<string, number> = {};
-      (data as any[]).forEach((d: any) => { map[d.modelo_id] = Number(d.margem_percentual); });
+      (data as any[]).forEach((d: any) => {map[d.modelo_id] = Number(d.margem_percentual);});
       setMargensProduto(map);
     }
   };
 
   const carregarOrdemCategoria = async (categoria: string) => {
-    const catObj = categoriasVisiveis.find(c => c.categoria === categoria);
-    if (!catObj) { setOrdemCategoria({}); return; }
-    const { data } = await supabase
-      .from('ordem_categoria_revendedor' as any)
-      .select('modelo_id, ordem')
-      .eq('categoria_id', catObj.id)
-      .order('ordem');
+    const catObj = categoriasVisiveis.find((c) => c.categoria === categoria);
+    if (!catObj) {setOrdemCategoria({});return;}
+    const { data } = await supabase.
+    from('ordem_categoria_revendedor' as any).
+    select('modelo_id, ordem').
+    eq('categoria_id', catObj.id).
+    order('ordem');
     if (data && (data as any[]).length > 0) {
       const map: Record<string, number> = {};
-      (data as any[]).forEach((d: any) => { map[d.modelo_id] = d.ordem; });
+      (data as any[]).forEach((d: any) => {map[d.modelo_id] = d.ordem;});
       setOrdemCategoria(map);
     } else {
       setOrdemCategoria({});
@@ -203,10 +203,10 @@ export default function CatalogoRevendedor() {
   };
 
   const toggleCategoriaFiltro = (categoria: string) => {
-    setCategoriasMultiplas(prev => {
-      const novas = prev.includes(categoria) 
-        ? prev.filter(c => c !== categoria) 
-        : [...prev, categoria];
+    setCategoriasMultiplas((prev) => {
+      const novas = prev.includes(categoria) ?
+      prev.filter((c) => c !== categoria) :
+      [...prev, categoria];
       if (novas.length === 0) {
         setCategoriaAtiva(null);
         setSearchParams({});
@@ -236,47 +236,47 @@ export default function CatalogoRevendedor() {
   };
 
   const carregarCategoriasVisiveis = async () => {
-    const { data } = await supabase
-      .from('categorias_catalogo_visiveis')
-      .select('*')
-      .order('ordem');
+    const { data } = await supabase.
+    from('categorias_catalogo_visiveis').
+    select('*').
+    order('ordem');
     if (data) setCategoriasVisiveis(data);
   };
 
   const carregarModelos = async () => {
     try {
-      const { data: midiasData } = await supabase
-        .from('midias_catalogo')
-        .select('modelo_id');
-      const modelosComMidiaCatalogo = new Set((midiasData || []).map(m => m.modelo_id));
+      const { data: midiasData } = await supabase.
+      from('midias_catalogo').
+      select('modelo_id');
+      const modelosComMidiaCatalogo = new Set((midiasData || []).map((m) => m.modelo_id));
 
-      const { data, error } = await supabase
-        .from('catalogo_modelos')
-        .select('*')
-        .eq('visivel_catalogo', true)
-        .order('nome_modelo');
+      const { data, error } = await supabase.
+      from('catalogo_modelos').
+      select('*').
+      eq('visivel_catalogo', true).
+      order('nome_modelo');
 
       if (error) throw error;
-      
-      const modelosFiltrados = (data || []).filter(m => 
-        m.imagem_modelo || m.video_url || modelosComMidiaCatalogo.has(m.id)
+
+      const modelosFiltrados = (data || []).filter((m) =>
+      m.imagem_modelo || m.video_url || modelosComMidiaCatalogo.has(m.id)
       );
       setModelos(modelosFiltrados as Modelo[]);
-      
+
       if (modelosFiltrados.length > 0) {
-        const maxP = Math.ceil(Math.max(...modelosFiltrados.map(m => m.preco_base)) / 100) * 100;
+        const maxP = Math.ceil(Math.max(...modelosFiltrados.map((m) => m.preco_base)) / 100) * 100;
         setPrecoMaxGlobal(maxP);
         setFaixaPreco([0, maxP]);
         setFaixaPrecoVisual([0, maxP]);
-        
-        const tamanhos = modelosFiltrados.filter(m => m.comprimento_total != null).map(m => m.comprimento_total as number);
+
+        const tamanhos = modelosFiltrados.filter((m) => m.comprimento_total != null).map((m) => m.comprimento_total as number);
         if (tamanhos.length > 0) {
-          const uniqueTamanhos = [...new Set(tamanhos.map(t => Math.round(t * 10) / 10))].sort((a, b) => a - b);
+          const uniqueTamanhos = [...new Set(tamanhos.map((t) => Math.round(t * 10) / 10))].sort((a, b) => a - b);
           setTamanhosDisponiveis(uniqueTamanhos);
         }
-        const laminas = modelosFiltrados.filter(m => m.area_util_corte != null).map(m => m.area_util_corte as number);
+        const laminas = modelosFiltrados.filter((m) => m.area_util_corte != null).map((m) => m.area_util_corte as number);
         if (laminas.length > 0) {
-          const uniqueLaminas = [...new Set(laminas.map(l => Math.round(l * 10) / 10))].sort((a, b) => a - b);
+          const uniqueLaminas = [...new Set(laminas.map((l) => Math.round(l * 10) / 10))].sort((a, b) => a - b);
           setLaminasDisponiveis(uniqueLaminas);
         }
       }
@@ -289,7 +289,7 @@ export default function CatalogoRevendedor() {
   };
 
   const categoriasPermitidasTodas = new Set(
-    categoriasVisiveis.filter(c => c.visivel_todas).map(c => c.categoria)
+    categoriasVisiveis.filter((c) => c.visivel_todas).map((c) => c.categoria)
   );
 
   const getMargemModelo = (modeloId: string) => {
@@ -308,50 +308,50 @@ export default function CatalogoRevendedor() {
 
   const modelosFiltrados = modelos.filter((modelo) => {
     if (modelo.preco_base < faixaPreco[0] || modelo.preco_base > faixaPreco[1]) return false;
-    
+
     if (tamanhosSelecionados.length > 0) {
       if (modelo.comprimento_total == null) return false;
       const maxSelecionado = Math.max(...tamanhosSelecionados);
       const rounded = Math.round(modelo.comprimento_total * 10) / 10;
       if (rounded > maxSelecionado) return false;
     }
-    
+
     if (laminasSelecionadas.length > 0) {
       if (modelo.area_util_corte == null) return false;
       const maxSelecionado = Math.max(...laminasSelecionadas);
       const rounded = Math.round(modelo.area_util_corte * 10) / 10;
       if (rounded > maxSelecionado) return false;
     }
-    
+
     if (filtroProntaEntrega && !modelo.pronta_entrega) return false;
 
     if (categoriasMultiplas.length > 0) {
       const categoriasExpandidas = new Set<string>();
-      categoriasMultiplas.forEach(c => {
+      categoriasMultiplas.forEach((c) => {
         categoriasExpandidas.add(c);
-        const catObj = categoriasVisiveis.find(cv => cv.categoria === c);
+        const catObj = categoriasVisiveis.find((cv) => cv.categoria === c);
         if (catObj) {
-          categoriasVisiveis.filter(cv => cv.categoria_pai_id === catObj.id).forEach(child => categoriasExpandidas.add(child.categoria));
+          categoriasVisiveis.filter((cv) => cv.categoria_pai_id === catObj.id).forEach((child) => categoriasExpandidas.add(child.categoria));
         }
       });
-      const matchCategoria = modelo.categorias && Array.from(categoriasExpandidas).some(c => modelo.categorias.includes(c));
+      const matchCategoria = modelo.categorias && Array.from(categoriasExpandidas).some((c) => modelo.categorias.includes(c));
       const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
       return matchCategoria && matchBusca;
     }
 
     if (categoriaAtiva) {
       const categoriasExpandidas = new Set<string>([categoriaAtiva]);
-      const catObj = categoriasVisiveis.find(cv => cv.categoria === categoriaAtiva);
+      const catObj = categoriasVisiveis.find((cv) => cv.categoria === categoriaAtiva);
       if (catObj) {
-        categoriasVisiveis.filter(cv => cv.categoria_pai_id === catObj.id).forEach(child => categoriasExpandidas.add(child.categoria));
+        categoriasVisiveis.filter((cv) => cv.categoria_pai_id === catObj.id).forEach((child) => categoriasExpandidas.add(child.categoria));
       }
-      const matchCategoria = modelo.categorias && Array.from(categoriasExpandidas).some(c => modelo.categorias.includes(c));
+      const matchCategoria = modelo.categorias && Array.from(categoriasExpandidas).some((c) => modelo.categorias.includes(c));
       const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
       return matchCategoria && matchBusca;
     }
     if (!filtroProntaEntrega) {
-      const categoriaPermitida = categoriasVisiveis.length === 0 || 
-        (modelo.categorias && modelo.categorias.some(c => categoriasPermitidasTodas.has(c)));
+      const categoriaPermitida = categoriasVisiveis.length === 0 ||
+      modelo.categorias && modelo.categorias.some((c) => categoriasPermitidasTodas.has(c));
       const produtoPermitido = modelo.visivel_todas !== false;
       const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
       return categoriaPermitida && produtoPermitido && matchBusca;
@@ -375,7 +375,7 @@ export default function CatalogoRevendedor() {
           <div className="absolute inset-0 bg-gradient-to-b from-accent/10 via-transparent to-transparent" />
           <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 text-center relative z-10">
             <div className="inline-block mb-3">
-              <span className="text-accent text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">Cutelaria Artesanal</span>
+              <span className="text-accent text-xs md:text-sm font-semibold tracking-[0.3em] uppercase"></span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight leading-tight">
               CATÁLOGO <span className="text-accent">REVENDEDOR</span>
@@ -384,43 +384,43 @@ export default function CatalogoRevendedor() {
               Preços exclusivos para revendedores. Confira sua margem de lucro.
             </p>
 
-            <div className="mt-6 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-4 py-2">
-              <TrendingUp className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-400 text-xs md:text-sm font-medium tracking-wide">
-                Margem de lucro garantida em todos os produtos
-              </span>
-            </div>
+            
+
+
+
+
+            
           </div>
         </header>
 
         <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 pb-16">
-          {banners.length > 0 && (
-            <div className="relative max-w-5xl mx-auto mb-8 rounded-xl overflow-hidden">
+          {banners.length > 0 &&
+          <div className="relative max-w-5xl mx-auto mb-8 rounded-xl overflow-hidden">
               <div className="relative aspect-[21/9] md:aspect-[3/1]">
-                {banners.map((banner, idx) => (
-                  <div
-                    key={banner.id}
-                    className={`absolute inset-0 transition-opacity duration-700 ${idx === bannerAtual ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                    onClick={() => banner.link && window.open(banner.link, '_blank')}
-                    style={{ cursor: banner.link ? 'pointer' : 'default' }}
-                  >
+                {banners.map((banner, idx) =>
+              <div
+                key={banner.id}
+                className={`absolute inset-0 transition-opacity duration-700 ${idx === bannerAtual ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                onClick={() => banner.link && window.open(banner.link, '_blank')}
+                style={{ cursor: banner.link ? 'pointer' : 'default' }}>
+                
                     <img src={banner.imagem_url} alt={banner.titulo || 'Banner'} className="w-full h-full object-contain" />
                   </div>
-                ))}
-              </div>
-              {banners.length > 1 && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                  {banners.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setBannerAtual(idx)}
-                      className={`w-2 h-2 rounded-full transition-all ${idx === bannerAtual ? 'bg-accent w-6' : 'bg-white/50 hover:bg-white/80'}`}
-                    />
-                  ))}
-                </div>
               )}
+              </div>
+              {banners.length > 1 &&
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                  {banners.map((_, idx) =>
+              <button
+                key={idx}
+                onClick={() => setBannerAtual(idx)}
+                className={`w-2 h-2 rounded-full transition-all ${idx === bannerAtual ? 'bg-accent w-6' : 'bg-white/50 hover:bg-white/80'}`} />
+
+              )}
+                </div>
+            }
             </div>
-          )}
+          }
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 max-w-5xl mx-auto mb-10">
             {categoriasVenda.map((cat, idx) => {
@@ -436,24 +436,24 @@ export default function CatalogoRevendedor() {
                       <ArrowRight className="h-4 w-4 text-accent mx-auto" />
                     </div>
                   </div>
-                </div>
-              );
+                </div>);
+
             })}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto">
             <Button
               onClick={verTudo}
-              className="flex-1 bg-accent hover:bg-accent/90 text-white font-bold h-12 text-sm md:text-base rounded-xl shadow-[0_0_30px_rgba(251,146,60,0.3)] hover:shadow-[0_0_40px_rgba(251,146,60,0.5)] transition-all"
-            >
+              className="flex-1 bg-accent hover:bg-accent/90 text-white font-bold h-12 text-sm md:text-base rounded-xl shadow-[0_0_30px_rgba(251,146,60,0.3)] hover:shadow-[0_0_40px_rgba(251,146,60,0.5)] transition-all">
+              
               <Star className="h-4 w-4 mr-2" />
               Ver todo o catálogo
             </Button>
             <Button
               onClick={verProntaEntrega}
               variant="outline"
-              className="flex-1 border-emerald-600/50 text-emerald-400 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 font-bold h-12 text-sm md:text-base rounded-xl transition-all"
-            >
+              className="flex-1 border-emerald-600/50 text-emerald-400 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 font-bold h-12 text-sm md:text-base rounded-xl transition-all">
+              
               <Zap className="h-4 w-4 mr-2" />
               Pronta Entrega
             </Button>
@@ -467,15 +467,15 @@ export default function CatalogoRevendedor() {
                 const url = `https://wa.me/5528999025695?text=${encodeURIComponent('Olá! Sou revendedor e gostaria de saber mais.')}`;
                 window.open(url, '_blank');
               }}
-              className="border-green-600/50 text-green-400 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all"
-            >
+              className="border-green-600/50 text-green-400 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all">
+              
               <MessageCircle className="h-4 w-4 mr-2" />
               Fale conosco no WhatsApp
             </Button>
           </div>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   // Catálogo de Produtos
@@ -495,8 +495,8 @@ export default function CatalogoRevendedor() {
                   setFiltroProntaEntrega(false);
                   setBusca('');
                 }}
-                className="text-white hover:bg-white/10 text-xs md:text-sm"
-              >
+                className="text-white hover:bg-white/10 text-xs md:text-sm">
+                
                 ← Voltar
               </Button>
               <h1 className="text-lg md:text-3xl font-bold text-white tracking-tight">
@@ -510,8 +510,8 @@ export default function CatalogoRevendedor() {
                   placeholder="Buscar lâminas..."
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  className="pl-9 md:pl-10 text-sm md:text-base bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-accent h-9 md:h-10"
-                />
+                  className="pl-9 md:pl-10 text-sm md:text-base bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-accent h-9 md:h-10" />
+                
               </div>
             </div>
           </div>
@@ -548,24 +548,24 @@ export default function CatalogoRevendedor() {
                     variant={!categoriaAtiva && categoriasMultiplas.length === 0 && !filtroProntaEntrega ? "default" : "ghost"}
                     size="sm"
                     className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 ${
-                      !categoriaAtiva && categoriasMultiplas.length === 0 && !filtroProntaEntrega
-                        ? 'bg-accent text-white hover:bg-accent/90' 
-                        : 'text-zinc-300 hover:bg-zinc-700'
-                    }`}
-                    onClick={() => { setCategoriaAtiva(null); setCategoriasMultiplas([]); setFiltroProntaEntrega(false); setSearchParams({}); }}
-                  >
+                    !categoriaAtiva && categoriasMultiplas.length === 0 && !filtroProntaEntrega ?
+                    'bg-accent text-white hover:bg-accent/90' :
+                    'text-zinc-300 hover:bg-zinc-700'}`
+                    }
+                    onClick={() => {setCategoriaAtiva(null);setCategoriasMultiplas([]);setFiltroProntaEntrega(false);setSearchParams({});}}>
+                    
                     Todas
                   </Button>
                   <Button
                     variant={filtroProntaEntrega ? "default" : "ghost"}
                     size="sm"
                     className={`w-full justify-start text-xs md:text-sm h-8 md:h-10 gap-1.5 ${
-                      filtroProntaEntrega
-                        ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
-                        : 'text-emerald-400 hover:bg-zinc-700'
-                    }`}
-                    onClick={() => { setCategoriaAtiva(null); setCategoriasMultiplas([]); setFiltroProntaEntrega(true); }}
-                  >
+                    filtroProntaEntrega ?
+                    'bg-emerald-600 text-white hover:bg-emerald-700' :
+                    'text-emerald-400 hover:bg-zinc-700'}`
+                    }
+                    onClick={() => {setCategoriaAtiva(null);setCategoriasMultiplas([]);setFiltroProntaEntrega(true);}}>
+                    
                     <Zap className="h-3.5 w-3.5" />
                     Pronta Entrega
                   </Button>
@@ -579,39 +579,39 @@ export default function CatalogoRevendedor() {
                       <button
                         key={cat.categoria}
                         className={`w-full flex items-center gap-2 text-xs md:text-sm h-8 md:h-10 px-3 rounded-md transition-colors ${
-                          isActive ? 'bg-accent/20 text-accent' : 'text-zinc-300 hover:bg-zinc-700'
-                        }`}
-                        onClick={() => toggleCategoriaFiltro(cat.categoria)}
-                      >
+                        isActive ? 'bg-accent/20 text-accent' : 'text-zinc-300 hover:bg-zinc-700'}`
+                        }
+                        onClick={() => toggleCategoriaFiltro(cat.categoria)}>
+                        
                         <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
-                          isActive ? 'bg-accent border-accent' : 'border-zinc-500'
-                        }`}>
+                        isActive ? 'bg-accent border-accent' : 'border-zinc-500'}`
+                        }>
                           {isActive && <Check className="h-3 w-3 text-white" />}
                         </div>
                         {cat.categoria}
-                      </button>
-                    );
+                      </button>);
+
                   })}
                 </div>
 
-                {categoriasMultiplas.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-zinc-700">
-                    {categoriasMultiplas.map(cat => (
-                      <Badge key={cat} className="bg-accent/20 text-accent border-accent/30 text-[10px] cursor-pointer hover:bg-accent/30 gap-1" onClick={() => toggleCategoriaFiltro(cat)}>
+                {categoriasMultiplas.length > 0 &&
+                <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-zinc-700">
+                    {categoriasMultiplas.map((cat) =>
+                  <Badge key={cat} className="bg-accent/20 text-accent border-accent/30 text-[10px] cursor-pointer hover:bg-accent/30 gap-1" onClick={() => toggleCategoriaFiltro(cat)}>
                         {cat}<X className="h-2.5 w-2.5" />
                       </Badge>
-                    ))}
-                    <button className="text-[10px] text-zinc-500 hover:text-zinc-300 underline" onClick={() => { setCategoriasMultiplas([]); setSearchParams({}); }}>
+                  )}
+                    <button className="text-[10px] text-zinc-500 hover:text-zinc-300 underline" onClick={() => {setCategoriasMultiplas([]);setSearchParams({});}}>
                       Limpar
                     </button>
                   </div>
-                )}
+                }
               </CollapsibleContent>
             </Collapsible>
 
             {/* Filtro por Valor */}
-            {exibirPrecos && filtroPrecoAtivo && (
-              <Collapsible open={secaoAberta === 'preco'} onOpenChange={(open) => setSecaoAberta(open ? 'preco' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-44 shadow-sm mt-3">
+            {exibirPrecos && filtroPrecoAtivo &&
+            <Collapsible open={secaoAberta === 'preco'} onOpenChange={(open) => setSecaoAberta(open ? 'preco' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-44 shadow-sm mt-3">
                 <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="h-4 w-4 text-accent" />
@@ -622,58 +622,58 @@ export default function CatalogoRevendedor() {
                 <CollapsibleContent className="px-3 md:px-4 pb-4">
                   <div className="space-y-4 pt-3">
                     <Slider
-                      min={0}
-                      max={precoMaxGlobal}
-                      step={50}
-                      minStepsBetweenThumbs={1}
-                      value={[faixaPrecoVisual[0], faixaPrecoVisual[1]]}
-                      onValueChange={(v) => handleFaixaPrecoChange([v[0], v[1]])}
-                      className="w-full [&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:border-2 [&_[role=slider]]:border-accent [&_[role=slider]]:bg-zinc-950"
-                    />
+                    min={0}
+                    max={precoMaxGlobal}
+                    step={50}
+                    minStepsBetweenThumbs={1}
+                    value={[faixaPrecoVisual[0], faixaPrecoVisual[1]]}
+                    onValueChange={(v) => handleFaixaPrecoChange([v[0], v[1]])}
+                    className="w-full [&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:border-2 [&_[role=slider]]:border-accent [&_[role=slider]]:bg-zinc-950" />
+                  
                     <div className="flex items-center gap-3">
                       <div className="flex-1 space-y-1">
                         <label className="text-[11px] text-zinc-500">Mínimo:</label>
                         <Input
-                          type="number"
-                          value={faixaPrecoVisual[0] === 0 ? '' : faixaPrecoVisual[0]}
-                          placeholder="0"
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            if (!isNaN(val) && val >= 0 && val <= faixaPrecoVisual[1]) handleFaixaPrecoChange([val, faixaPrecoVisual[1]]);
-                          }}
-                          className="h-9 text-sm bg-zinc-900 border-zinc-700 text-white"
-                        />
+                        type="number"
+                        value={faixaPrecoVisual[0] === 0 ? '' : faixaPrecoVisual[0]}
+                        placeholder="0"
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if (!isNaN(val) && val >= 0 && val <= faixaPrecoVisual[1]) handleFaixaPrecoChange([val, faixaPrecoVisual[1]]);
+                        }}
+                        className="h-9 text-sm bg-zinc-900 border-zinc-700 text-white" />
+                      
                       </div>
                       <div className="flex-1 space-y-1">
                         <label className="text-[11px] text-zinc-500">Máximo:</label>
                         <Input
-                          type="number"
-                          value={faixaPrecoVisual[1] === 0 ? '' : faixaPrecoVisual[1]}
-                          placeholder="0"
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            if (!isNaN(val) && val >= faixaPrecoVisual[0] && val <= precoMaxGlobal) handleFaixaPrecoChange([faixaPrecoVisual[0], val]);
-                          }}
-                          className="h-9 text-sm bg-zinc-900 border-zinc-700 text-white"
-                        />
+                        type="number"
+                        value={faixaPrecoVisual[1] === 0 ? '' : faixaPrecoVisual[1]}
+                        placeholder="0"
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if (!isNaN(val) && val >= faixaPrecoVisual[0] && val <= precoMaxGlobal) handleFaixaPrecoChange([faixaPrecoVisual[0], val]);
+                        }}
+                        className="h-9 text-sm bg-zinc-900 border-zinc-700 text-white" />
+                      
                       </div>
                     </div>
                     <p className="text-center text-xs text-zinc-500">
                       {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'lâmina encontrada' : 'lâminas encontradas'}
                     </p>
-                    {(faixaPrecoVisual[0] > 0 || faixaPrecoVisual[1] < precoMaxGlobal) && (
-                      <Button variant="ghost" size="sm" className="w-full text-xs text-zinc-400 hover:text-white" onClick={() => { setFaixaPreco([0, precoMaxGlobal]); setFaixaPrecoVisual([0, precoMaxGlobal]); }}>
+                    {(faixaPrecoVisual[0] > 0 || faixaPrecoVisual[1] < precoMaxGlobal) &&
+                  <Button variant="ghost" size="sm" className="w-full text-xs text-zinc-400 hover:text-white" onClick={() => {setFaixaPreco([0, precoMaxGlobal]);setFaixaPrecoVisual([0, precoMaxGlobal]);}}>
                         Limpar filtro
                       </Button>
-                    )}
+                  }
                   </div>
                 </CollapsibleContent>
               </Collapsible>
-            )}
+            }
 
             {/* Filtro por Tamanho */}
-            {filtroTamanhoAtivo && tamanhosDisponiveis.length > 0 && (
-              <Collapsible open={secaoAberta === 'tamanho'} onOpenChange={(open) => setSecaoAberta(open ? 'tamanho' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-sm mt-3">
+            {filtroTamanhoAtivo && tamanhosDisponiveis.length > 0 &&
+            <Collapsible open={secaoAberta === 'tamanho'} onOpenChange={(open) => setSecaoAberta(open ? 'tamanho' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-sm mt-3">
                 <CollapsibleTrigger className="w-full p-3 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="h-3.5 w-3.5 text-accent" />
@@ -686,24 +686,24 @@ export default function CatalogoRevendedor() {
                   <p className="text-[10px] text-zinc-500 mb-1.5 pt-1">Exibir lâminas até:</p>
                   <div className="flex flex-wrap gap-1.5">
                     {tamanhosDisponiveis.map((tam) => {
-                      const isSelected = tamanhosSelecionados.includes(tam);
-                      return (
-                        <button key={tam} className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${isSelected ? 'bg-accent text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'}`} onClick={() => setTamanhosSelecionados(isSelected ? [] : [tam])}>
+                    const isSelected = tamanhosSelecionados.includes(tam);
+                    return (
+                      <button key={tam} className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${isSelected ? 'bg-accent text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'}`} onClick={() => setTamanhosSelecionados(isSelected ? [] : [tam])}>
                           {tam}cm
-                        </button>
-                      );
-                    })}
+                        </button>);
+
+                  })}
                   </div>
-                  {tamanhosSelecionados.length > 0 && (
-                    <button className="text-[10px] text-zinc-500 hover:text-zinc-300 mt-2 underline" onClick={() => setTamanhosSelecionados([])}>Limpar</button>
-                  )}
+                  {tamanhosSelecionados.length > 0 &&
+                <button className="text-[10px] text-zinc-500 hover:text-zinc-300 mt-2 underline" onClick={() => setTamanhosSelecionados([])}>Limpar</button>
+                }
                 </CollapsibleContent>
               </Collapsible>
-            )}
+            }
 
             {/* Filtro por Fio de Corte */}
-            {filtroLaminaAtivo && laminasDisponiveis.length > 0 && (
-              <Collapsible open={secaoAberta === 'lamina'} onOpenChange={(open) => setSecaoAberta(open ? 'lamina' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-sm mt-3">
+            {filtroLaminaAtivo && laminasDisponiveis.length > 0 &&
+            <Collapsible open={secaoAberta === 'lamina'} onOpenChange={(open) => setSecaoAberta(open ? 'lamina' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-sm mt-3">
                 <CollapsibleTrigger className="w-full p-3 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="h-3.5 w-3.5 text-accent" />
@@ -716,36 +716,36 @@ export default function CatalogoRevendedor() {
                   <p className="text-[10px] text-zinc-500 mb-1.5 pt-1">Exibir lâminas até:</p>
                   <div className="flex flex-wrap gap-1.5">
                     {laminasDisponiveis.map((lam) => {
-                      const isSelected = laminasSelecionadas.includes(lam);
-                      return (
-                        <button key={lam} className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${isSelected ? 'bg-accent text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'}`} onClick={() => setLaminasSelecionadas(isSelected ? [] : [lam])}>
+                    const isSelected = laminasSelecionadas.includes(lam);
+                    return (
+                      <button key={lam} className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${isSelected ? 'bg-accent text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'}`} onClick={() => setLaminasSelecionadas(isSelected ? [] : [lam])}>
                           {lam}cm
-                        </button>
-                      );
-                    })}
+                        </button>);
+
+                  })}
                   </div>
-                  {laminasSelecionadas.length > 0 && (
-                    <button className="text-[10px] text-zinc-500 hover:text-zinc-300 mt-2 underline" onClick={() => setLaminasSelecionadas([])}>Limpar</button>
-                  )}
+                  {laminasSelecionadas.length > 0 &&
+                <button className="text-[10px] text-zinc-500 hover:text-zinc-300 mt-2 underline" onClick={() => setLaminasSelecionadas([])}>Limpar</button>
+                }
                 </CollapsibleContent>
               </Collapsible>
-            )}
+            }
           </aside>
 
           {/* Grid de Produtos */}
           <main className="flex-1 min-w-0">
-            {loading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 md:gap-4">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 animate-pulse">
+            {loading ?
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 md:gap-4">
+                {[...Array(6)].map((_, i) =>
+              <div key={i} className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 animate-pulse">
                     <div className="aspect-[3/4] bg-zinc-700 rounded-lg mb-2" />
                     <div className="h-3 bg-zinc-700 rounded mb-1.5" />
                     <div className="h-5 bg-zinc-700 rounded w-1/2" />
                   </div>
-                ))}
-              </div>
-            ) : (
-              <>
+              )}
+              </div> :
+
+            <>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-zinc-400">
                     Mostrando {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'produto' : 'produtos'}
@@ -754,52 +754,52 @@ export default function CatalogoRevendedor() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 md:gap-4">
                   {modelosFiltrados.map((modelo) => {
-                    const margem = getMargemModelo(modelo.id);
-                    const precoRevenda = getPrecoRevenda(modelo.preco_base, modelo.id);
-                    const lucro = getLucro(modelo.preco_base, modelo.id);
+                  const margem = getMargemModelo(modelo.id);
+                  const precoRevenda = getPrecoRevenda(modelo.preco_base, modelo.id);
+                  const lucro = getLucro(modelo.preco_base, modelo.id);
 
-                    return (
-                      <div
-                        key={modelo.id}
-                        className="group relative overflow-hidden rounded-lg"
-                      >
+                  return (
+                    <div
+                      key={modelo.id}
+                      className="group relative overflow-hidden rounded-lg">
+                      
                         <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/50 to-accent z-10"></div>
                         
                         <div className="bg-zinc-800 border border-zinc-700 hover:border-accent hover:shadow-lg transition-all rounded-lg overflow-hidden h-full flex flex-col">
                           <div className="relative">
                             <div
-                              className="bg-zinc-700 overflow-hidden cursor-pointer aspect-[3/4]"
-                              onClick={() => navigate(`/catalogo/${modelo.id}`)}
-                            >
-                              {modelo.video_url ? (
-                                <video src={modelo.video_url} className="w-full h-full object-cover bg-zinc-800" muted loop autoPlay playsInline />
-                              ) : modelo.imagem_modelo ? (
-                                <img src={modelo.imagem_modelo} alt={modelo.nome_modelo} className="w-full h-full object-cover bg-zinc-800 group-hover:scale-110 transition-transform duration-500" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-zinc-500">Sem imagem</div>
-                              )}
+                            className="bg-zinc-700 overflow-hidden cursor-pointer aspect-[3/4]"
+                            onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                            
+                              {modelo.video_url ?
+                            <video src={modelo.video_url} className="w-full h-full object-cover bg-zinc-800" muted loop autoPlay playsInline /> :
+                            modelo.imagem_modelo ?
+                            <img src={modelo.imagem_modelo} alt={modelo.nome_modelo} className="w-full h-full object-cover bg-zinc-800 group-hover:scale-110 transition-transform duration-500" /> :
+
+                            <div className="w-full h-full flex items-center justify-center text-zinc-500">Sem imagem</div>
+                            }
                             </div>
 
-                            {modelo.pronta_entrega && (
-                              <Badge className="absolute top-3 left-3 bg-emerald-600 text-white border-0 text-[10px] gap-0.5 z-20">
+                            {modelo.pronta_entrega &&
+                          <Badge className="absolute top-3 left-3 bg-emerald-600 text-white border-0 text-[10px] gap-0.5 z-20">
                                 <Zap className="h-3 w-3" />
                                 Pronta Entrega
                               </Badge>
-                            )}
+                          }
 
-                            {modelo.categorias && modelo.categorias.length > 0 && (
-                              <Badge className="absolute bottom-3 left-3 bg-accent text-white border-0">
+                            {modelo.categorias && modelo.categorias.length > 0 &&
+                          <Badge className="absolute bottom-3 left-3 bg-accent text-white border-0">
                                 {modelo.categorias[0]}
                               </Badge>
-                            )}
+                          }
                           </div>
 
                           {/* Info do produto - Card Revendedor */}
                           <div className="p-2 md:p-4 flex flex-col flex-1 gap-1">
                             <h3
-                              className="font-bold line-clamp-1 text-sm md:text-base text-white hover:text-accent transition-colors cursor-pointer"
-                              onClick={() => navigate(`/catalogo/${modelo.id}`)}
-                            >
+                            className="font-bold line-clamp-1 text-sm md:text-base text-white hover:text-accent transition-colors cursor-pointer"
+                            onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                            
                               {modelo.nome_modelo}
                             </h3>
                             
@@ -835,30 +835,30 @@ export default function CatalogoRevendedor() {
                             </div>
 
                             <Button
-                              size="sm"
-                              className="w-full mt-1.5 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]"
-                              onClick={() => navigate(`/catalogo/${modelo.id}`)}
-                            >
+                            size="sm"
+                            className="w-full mt-1.5 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]"
+                            onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                            
                               Ver detalhes
                               <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1" />
                             </Button>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      </div>);
+
+                })}
                 </div>
 
-                {modelosFiltrados.length === 0 && (
-                  <div className="text-center py-12">
+                {modelosFiltrados.length === 0 &&
+              <div className="text-center py-12">
                     <p className="text-zinc-400">Nenhuma lâmina encontrada</p>
                   </div>
-                )}
+              }
               </>
-            )}
+            }
           </main>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
