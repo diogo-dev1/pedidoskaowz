@@ -769,7 +769,7 @@ export default function CatalogoRevendedor() {
                           <div className="relative">
                             <div
                             className="bg-zinc-700 overflow-hidden cursor-pointer aspect-[3/4]"
-                            onClick={() => navigate(`/catalogo/${modelo.id}`)}>
+                            onClick={() => navigate(`/catalogo-revendedor/${modelo.id}`)}>
                             
                               {modelo.video_url ?
                             <video src={modelo.video_url} className="w-full h-full object-cover bg-zinc-800" muted loop autoPlay playsInline /> :
