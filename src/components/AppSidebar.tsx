@@ -42,6 +42,7 @@ export function AppSidebar() {
     { title: 'Informativos', url: '/admin/informativos', icon: Info },
     { title: 'Config. Catálogo', url: '/admin/catalogo', icon: Store },
     { title: 'Config. Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
+    { title: 'Config. Preview', url: '/admin/preview', icon: Eye },
   ] : [];
 
   return (

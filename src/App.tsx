@@ -240,6 +240,16 @@ const App = () => (
               }
             />
             <Route
+              path="/admin/preview"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <ConfiguracoesPreview />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/preview"
               element={
                 <ProtectedRoute>
