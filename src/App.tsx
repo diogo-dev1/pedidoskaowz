@@ -238,6 +238,16 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/preview"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PreviewPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

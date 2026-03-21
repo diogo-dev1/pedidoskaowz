@@ -32,6 +32,7 @@ export function AppSidebar() {
     { title: 'Orçamento', url: '/orcamento', icon: FileText },
     { title: 'Mídia', url: '/midia', icon: Image },
     { title: 'Catálogo Revendedor', url: '/catalogo-revendedor', icon: TrendingUp },
+    { title: 'Preview', url: '/preview', icon: Eye },
   ];
 
   const adminItems = (profile?.cargo === 'admin' || profile?.cargo === 'vendedor') ? [
