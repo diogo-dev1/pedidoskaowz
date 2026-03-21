@@ -658,6 +658,98 @@ export type Database = {
           },
         ]
       }
+      preview_config: {
+        Row: {
+          created_at: string
+          dorso_color: string
+          dorso_font_family: string
+          dorso_font_size: number
+          dorso_letter_spacing: number
+          dorso_rotation: number
+          dorso_x: number
+          dorso_y: number
+          id: string
+          imagem_preview: string | null
+          lateral_color: string
+          lateral_font_family: string
+          lateral_font_size: number
+          lateral_letter_spacing: number
+          lateral_rotation: number
+          lateral_x: number
+          lateral_y: number
+          logo_height: number
+          logo_width: number
+          logo_x: number
+          logo_y: number
+          modelo_id: string
+          updated_at: string
+          viewbox_height: number
+          viewbox_width: number
+        }
+        Insert: {
+          created_at?: string
+          dorso_color?: string
+          dorso_font_family?: string
+          dorso_font_size?: number
+          dorso_letter_spacing?: number
+          dorso_rotation?: number
+          dorso_x?: number
+          dorso_y?: number
+          id?: string
+          imagem_preview?: string | null
+          lateral_color?: string
+          lateral_font_family?: string
+          lateral_font_size?: number
+          lateral_letter_spacing?: number
+          lateral_rotation?: number
+          lateral_x?: number
+          lateral_y?: number
+          logo_height?: number
+          logo_width?: number
+          logo_x?: number
+          logo_y?: number
+          modelo_id: string
+          updated_at?: string
+          viewbox_height?: number
+          viewbox_width?: number
+        }
+        Update: {
+          created_at?: string
+          dorso_color?: string
+          dorso_font_family?: string
+          dorso_font_size?: number
+          dorso_letter_spacing?: number
+          dorso_rotation?: number
+          dorso_x?: number
+          dorso_y?: number
+          id?: string
+          imagem_preview?: string | null
+          lateral_color?: string
+          lateral_font_family?: string
+          lateral_font_size?: number
+          lateral_letter_spacing?: number
+          lateral_rotation?: number
+          lateral_x?: number
+          lateral_y?: number
+          logo_height?: number
+          logo_width?: number
+          logo_x?: number
+          logo_y?: number
+          modelo_id?: string
+          updated_at?: string
+          viewbox_height?: number
+          viewbox_width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preview_config_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: true
+            referencedRelation: "modelos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos_adicionais: {
         Row: {
           created_at: string
