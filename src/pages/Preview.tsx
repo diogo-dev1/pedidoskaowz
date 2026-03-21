@@ -186,75 +186,67 @@ export default function Preview() {
             <img
               src={svgUrl}
               alt={modelo?.nome_modelo || 'Faca'}
-              className="w-full h-auto"
+              className="w-full h-auto block"
               crossOrigin="anonymous"
             />
 
-            {/* Lateral text overlay */}
-            {lateralAtivo && textoLateral && (
-              <div
-                className="absolute pointer-events-none"
-                style={{
-                  top: '38%',
-                  left: '8%',
-                  transform: 'rotate(-3deg)',
-                  fontSize: 'clamp(10px, 1.4vw, 16px)',
-                  fontFamily: 'serif',
-                  color: '#1a1a1a',
-                  letterSpacing: '0.08em',
-                  textShadow: '0 0 1px rgba(0,0,0,0.3)',
-                  whiteSpace: 'nowrap',
-                  maxWidth: '40%',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {textoLateral}
-              </div>
-            )}
+            {/* SVG overlay — same viewBox as the knife for pixel-perfect positioning */}
+            <svg
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              viewBox="0 0 25000 10000"
+              preserveAspectRatio="xMidYMid meet"
+              style={{ padding: 'inherit' }}
+            >
+              {/* Lateral — flat side of the blade */}
+              {lateralAtivo && textoLateral && (
+                <text
+                  x="4500"
+                  y="5200"
+                  fill="#1a1a1a"
+                  fontSize="420"
+                  fontFamily="serif"
+                  letterSpacing="3"
+                  transform="rotate(-2, 4500, 5200)"
+                >
+                  {textoLateral}
+                </text>
+              )}
 
-            {/* Dorso text overlay */}
-            {dorsoAtivo && textoDorso && (
-              <div
-                className="absolute pointer-events-none"
-                style={{
-                  top: '28%',
-                  left: '50%',
-                  transform: 'translateX(-50%) rotate(-2deg)',
-                  fontSize: 'clamp(8px, 1.1vw, 13px)',
-                  fontFamily: 'monospace',
-                  color: '#2a2a2a',
-                  letterSpacing: '0.12em',
-                  textShadow: '0 0 1px rgba(0,0,0,0.2)',
-                  whiteSpace: 'nowrap',
-                  maxWidth: '45%',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {textoDorso}
-              </div>
-            )}
+              {/* Dorso — spine (top edge) of the blade */}
+              {dorsoAtivo && textoDorso && (
+                <text
+                  x="5000"
+                  y="3600"
+                  fill="#2a2a2a"
+                  fontSize="280"
+                  fontFamily="monospace"
+                  letterSpacing="5"
+                  transform="rotate(-1.5, 5000, 3600)"
+                >
+                  {textoDorso}
+                </text>
+              )}
 
-            {/* Logo indicator */}
-            {logoAtivo && (
-              <div
-                className="absolute pointer-events-none flex items-center justify-center"
-                style={{
-                  top: '45%',
-                  right: '12%',
-                  width: 'clamp(30px, 4vw, 50px)',
-                  height: 'clamp(30px, 4vw, 50px)',
-                  border: '2px dashed #666',
-                  borderRadius: '6px',
-                  fontSize: 'clamp(6px, 0.8vw, 9px)',
-                  color: '#666',
-                  textAlign: 'center',
-                }}
-              >
-                LOGO
-              </div>
-            )}
+              {/* Logo — ricasso area where the maker's mark goes */}
+              {logoAtivo && (
+                <g transform="translate(14150, 3460)">
+                  <rect
+                    x="0" y="0" width="500" height="500"
+                    fill="none" stroke="#666" strokeWidth="20"
+                    strokeDasharray="40 20" rx="30"
+                  />
+                  <text
+                    x="250" y="280"
+                    fill="#666" fontSize="160"
+                    fontFamily="sans-serif"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                  >
+                    LOGO
+                  </text>
+                </g>
+              )}
+            </svg>
           </div>
 
           {/* Price summary */}
