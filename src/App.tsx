@@ -26,6 +26,7 @@ import ListaValores from "./pages/ListaValores";
 import Leads from "./pages/Leads";
 import Orcamento from "./pages/Orcamento";
 import Midia from "./pages/Midia";
+import PreviewPage from "./pages/Preview";
 import CatalogoRevendedor from "./pages/CatalogoRevendedor";
 import ConfiguracoesCatalogoRevendedor from "./pages/admin/ConfiguracoesCatalogoRevendedor";
 import Install from "./pages/Install";
@@ -233,6 +234,16 @@ const App = () => (
                 <ProtectedRoute requireAdmin>
                   <Layout>
                     <ConfiguracoesCatalogoRevendedor />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/preview"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PreviewPage />
                   </Layout>
                 </ProtectedRoute>
               }
