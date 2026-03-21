@@ -382,7 +382,7 @@ export default function Preview() {
             <Button
               onClick={enviarWhatsApp}
               variant="outline"
-              className="h-12 text-base gap-2 border-green-600 text-green-700 hover:bg-green-50"
+              className="h-12 text-base gap-2 border-primary/60 text-primary hover:bg-accent"
             >
               <MessageCircle className="h-5 w-5" />
               Enviar para aprovação
