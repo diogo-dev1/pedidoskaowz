@@ -88,7 +88,7 @@ export default function BlingIntegration() {
   const loadProdutos = async () => {
     setDataLoading(true);
     try {
-      const data = await fetchBlingData('produtos', { limite: '100' });
+      const data = await fetchBlingData('produtos', {}, true);
       setProdutos(data?.data || []);
     } catch (err: any) {
       toast.error('Erro ao carregar produtos: ' + err.message);
