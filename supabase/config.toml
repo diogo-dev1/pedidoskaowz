@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.parse-specs]
 verify_jwt = false
+
+[functions.bling-auth]
+verify_jwt = false
+
+[functions.bling-api]
+verify_jwt = false
