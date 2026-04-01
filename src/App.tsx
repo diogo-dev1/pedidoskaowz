@@ -150,6 +150,16 @@ const App = () => (
               }
             />
             <Route
+              path="/clientes"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Clientes />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/mensagens"
               element={
                 <ProtectedRoute>

@@ -24,6 +24,7 @@ export function AppSidebar() {
   const mainItems = [
     { title: 'Simulador', url: '/', icon: Calculator },
     { title: 'Catálogo', url: '/catalogo', icon: ShoppingBag },
+    { title: 'Clientes', url: '/clientes', icon: Users },
     { title: 'Auxílio de Vendas', url: '/auxilio-vendas', icon: BookOpen },
     { title: 'Mensagens Padrão', url: '/mensagens', icon: MessageSquare },
     { title: 'Tarefas', url: '/tarefas', icon: CheckSquare },
