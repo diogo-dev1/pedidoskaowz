@@ -129,6 +129,23 @@ export default function BlingIntegration() {
     setDataLoading(false);
   };
 
+  const handleContatoClick = async (contato: any) => {
+    setSelectedContato(contato);
+    setContatoLoading(true);
+    setContatoPedidos([]);
+    try {
+      const data = await fetchBlingData('pedidos/vendas', { limite: '100', idContato: String(contato.id) });
+      setContatoPedidos(data?.data || []);
+    } catch {
+      toast.error('Erro ao carregar pedidos do contato');
+    }
+    setContatoLoading(false);
+  };
+
+  const totalGastoContato = useMemo(() => {
+    return contatoPedidos.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
+  }, [contatoPedidos]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
