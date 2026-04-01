@@ -260,6 +260,16 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/bling"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <BlingIntegration />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
