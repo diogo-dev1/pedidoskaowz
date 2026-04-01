@@ -121,7 +121,7 @@ export default function BlingIntegration() {
   const loadNfes = async () => {
     setDataLoading(true);
     try {
-      const data = await fetchBlingData('nfe', { limite: '100' });
+      const data = await fetchBlingData('nfe', {}, true);
       setNfes(data?.data || []);
     } catch (err: any) {
       toast.error('Erro ao carregar notas fiscais: ' + err.message);
