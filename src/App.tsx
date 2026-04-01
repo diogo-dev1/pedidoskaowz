@@ -30,6 +30,7 @@ import PreviewPage from "./pages/Preview";
 import CatalogoRevendedor from "./pages/CatalogoRevendedor";
 import ConfiguracoesCatalogoRevendedor from "./pages/admin/ConfiguracoesCatalogoRevendedor";
 import ConfiguracoesPreview from "./pages/admin/ConfiguracoesPreview";
+import BlingIntegration from "./pages/BlingIntegration";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
