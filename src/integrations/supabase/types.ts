@@ -83,6 +83,126 @@ export type Database = {
         }
         Relationships: []
       }
+      bling_contatos: {
+        Row: {
+          bling_id: number
+          celular: string | null
+          created_at: string
+          dados_completos: Json | null
+          email: string | null
+          endereco: Json | null
+          fantasia: string | null
+          id: string
+          nome: string | null
+          numero_documento: string | null
+          telefone: string | null
+          tipo: string | null
+          updated_at: string
+        }
+        Insert: {
+          bling_id: number
+          celular?: string | null
+          created_at?: string
+          dados_completos?: Json | null
+          email?: string | null
+          endereco?: Json | null
+          fantasia?: string | null
+          id?: string
+          nome?: string | null
+          numero_documento?: string | null
+          telefone?: string | null
+          tipo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bling_id?: number
+          celular?: string | null
+          created_at?: string
+          dados_completos?: Json | null
+          email?: string | null
+          endereco?: Json | null
+          fantasia?: string | null
+          id?: string
+          nome?: string | null
+          numero_documento?: string | null
+          telefone?: string | null
+          tipo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bling_pedidos: {
+        Row: {
+          bling_id: number
+          contato_bling_id: number | null
+          created_at: string
+          dados_completos: Json | null
+          data: string | null
+          id: string
+          itens: Json | null
+          numero: string | null
+          situacao: string | null
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          bling_id: number
+          contato_bling_id?: number | null
+          created_at?: string
+          dados_completos?: Json | null
+          data?: string | null
+          id?: string
+          itens?: Json | null
+          numero?: string | null
+          situacao?: string | null
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          bling_id?: number
+          contato_bling_id?: number | null
+          created_at?: string
+          dados_completos?: Json | null
+          data?: string | null
+          id?: string
+          itens?: Json | null
+          numero?: string | null
+          situacao?: string | null
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bling_sync_log: {
+        Row: {
+          erro: string | null
+          finished_at: string | null
+          id: string
+          started_at: string
+          status: string
+          tipo: string
+          total_registros: number | null
+        }
+        Insert: {
+          erro?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          tipo: string
+          total_registros?: number | null
+        }
+        Update: {
+          erro?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          tipo?: string
+          total_registros?: number | null
+        }
+        Relationships: []
+      }
       bling_tokens: {
         Row: {
           access_token: string
