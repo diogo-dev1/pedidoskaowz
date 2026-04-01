@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Simulador from "./pages/Simulador";
 import Lote from "./pages/Lote";
 import AuxilioVendas from "./pages/AuxilioVendas";
+import Clientes from "./pages/Clientes";
 import CatalogoPublico from "./pages/CatalogoPublico";
 import CatalogoDetalhe from "./pages/CatalogoDetalhe";
 import MontarKit from "./pages/MontarKit";
