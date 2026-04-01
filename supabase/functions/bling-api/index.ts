@@ -56,6 +56,16 @@ async function getValidToken(supabase: any) {
   return token.access_token;
 }
 
+async function fetchWithRetry(url: string, options: RequestInit, retries = 3, delay = 1000): Promise<Response> {
+  const response = await fetch(url, options);
+  if (response.status === 429 && retries > 0) {
+    console.warn(`Rate limit hit. Retrying in ${delay}ms... (${retries} retries left)`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+    return fetchWithRetry(url, options, retries - 1, delay * 2);
+  }
+  return response;
+}
+
 async function fetchAllPages(accessToken: string, endpoint: string, params: Record<string, string>) {
   const allData: any[] = [];
   let page = 1;
@@ -71,7 +81,7 @@ async function fetchAllPages(accessToken: string, endpoint: string, params: Reco
     url.searchParams.set('pagina', String(page));
     url.searchParams.set('limite', String(limite));
 
-    const response = await fetch(url.toString(), {
+    const response = await fetchWithRetry(url.toString(), {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
@@ -86,12 +96,13 @@ async function fetchAllPages(accessToken: string, endpoint: string, params: Reco
     const items = result?.data || [];
     allData.push(...items);
 
-    // If we got fewer than the limit, we've reached the last page
     if (items.length < limite) break;
     
     page++;
-    // Safety limit to avoid infinite loops
     if (page > 50) break;
+
+    // Delay between pages to respect rate limit (3 req/s)
+    await new Promise(resolve => setTimeout(resolve, 400));
   }
 
   return allData;
