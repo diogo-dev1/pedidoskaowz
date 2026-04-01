@@ -1,1075 +1,588 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Copy, Download, Upload, X, Loader2, Search, Video, Share2, 
-  Eye, EyeOff, Star, FileText, Package, Clock, Shield, 
-  ChevronRight, ImageIcon, Play, Edit2, Save, Info, RefreshCw, Ruler
+import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
+import {
+  Users, Search, Loader2, RefreshCw, ShoppingCart, DollarSign,
+  TrendingUp, TrendingDown, Clock, AlertTriangle, UserCheck,
+  Target, Filter, ArrowUpDown, Calendar, ChevronRight, Phone,
+  Mail, BarChart3, Zap, UserX, Repeat
 } from 'lucide-react';
 
-interface Modelo {
-  id: string;
-  nome_modelo: string;
-  preco_base: number;
-  imagem_modelo: string | null;
-  apresentacao_venda: string | null;
-  categoria: string;
-  categorias: string[];
-  video_url: string | null;
-  garantia: string | null;
-  prazo_entrega: string | null;
-  comprimento_total: number | null;
-  area_util_corte: number | null;
+interface ClienteEnriquecido {
+  id: number;
+  nome: string;
+  email: string;
+  telefone: string;
+  celular: string;
+  tipo: string;
+  fantasia: string;
+  numeroDocumento: string;
+  endereco: any;
+  totalPedidos: number;
+  totalGasto: number;
+  ultimaCompra: Date | null;
+  pedidos: any[];
+  diasSemCompra: number;
+  ticketMedio: number;
 }
 
-type Categoria = 'Todas' | 'Defesa' | 'EDCs' | 'EDC Mini' | 'Campo' | 'Cozinha' | 'Churrasco' | 'Kits' | 'Utensílios' | 'Vestuário' | 'Cafés';
-
-interface Midia {
-  id: string;
-  nome_arquivo: string;
-  url: string;
-  visivel_catalogo: boolean;
-}
+type FiltroTipo = 'todos' | 'alto_valor' | 'recorrentes' | 'inativos' | 'novos' | 'risco';
+type OrdenacaoTipo = 'nome' | 'total_gasto' | 'ultima_compra' | 'total_pedidos';
 
 export default function AuxilioVendas() {
-  const [modelos, setModelos] = useState<Modelo[]>([]);
-  const [categoriaAtiva, setCategoriaAtiva] = useState<Categoria>('Todas');
-  const [buscaTexto, setBuscaTexto] = useState('');
-  const [modeloSelecionado, setModeloSelecionado] = useState<Modelo | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [preco, setPreco] = useState('');
-  const [apresentacao, setApresentacao] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [midias, setMidias] = useState<Midia[]>([]);
-  const [nomeModelo, setNomeModelo] = useState('');
-  const [imagemModelo, setImagemModelo] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [garantia, setGarantia] = useState('');
-  const [prazoEntrega, setPrazoEntrega] = useState('');
-  const [comprimentoTotal, setComprimentoTotal] = useState('');
-  const [areaUtilCorte, setAreaUtilCorte] = useState('');
-  const [salvando, setSalvando] = useState(false);
-  const [carregandoMidias, setCarregandoMidias] = useState(false);
-  const [uploadandoMidia, setUploadandoMidia] = useState(false);
-  const [sincronizando, setSincronizando] = useState(false);
-  const { toast } = useToast();
+  const [contatos, setContatos] = useState<any[]>([]);
+  const [pedidosPorContato, setPedidosPorContato] = useState<Record<string, any[]>>({});
+  const [loading, setLoading] = useState(false);
+  const [loadingPedidos, setLoadingPedidos] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [filtroAtivo, setFiltroAtivo] = useState<FiltroTipo>('todos');
+  const [ordenacao, setOrdenacao] = useState<OrdenacaoTipo>('total_gasto');
+  const [selectedCliente, setSelectedCliente] = useState<ClienteEnriquecido | null>(null);
+  const [connected, setConnected] = useState(false);
+  const [checkingConnection, setCheckingConnection] = useState(true);
+  const [diasInatividadeLimite, setDiasInatividadeLimite] = useState(90);
 
   useEffect(() => {
-    carregarModelos();
+    checkConnection();
   }, []);
 
-  const sincronizarShopify = async () => {
-    setSincronizando(true);
+  const checkConnection = async () => {
+    const { data } = await supabase.from('bling_tokens').select('expires_at').order('created_at', { ascending: false }).limit(1);
+    if (data?.length) {
+      const expiresAt = new Date(data[0].expires_at);
+      const isConnected = expiresAt > new Date();
+      setConnected(isConnected);
+      if (isConnected) loadAllData();
+    }
+    setCheckingConnection(false);
+  };
+
+  const fetchBlingData = async (endpoint: string, params: Record<string, string> = {}) => {
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const res = await fetch(`https://${projectId}.supabase.co/functions/v1/bling-api`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint, params }),
+    });
+    return res.json();
+  };
+
+  const loadAllData = async () => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('sync-shopify');
-      if (error) throw error;
-      
-      // After sync, extract specs from descriptions
-      await supabase.functions.invoke('parse-specs');
-      
-      toast({
-        title: 'Sincronização concluída!',
-        description: `${data.synced} produtos sincronizados${data.errors > 0 ? `, ${data.errors} erros` : ''}. Especificações extraídas automaticamente.`,
-      });
-      carregarModelos();
+      const contatosData = await fetchBlingData('contatos', { limite: '100' });
+      const contatosList = contatosData?.data || [];
+      setContatos(contatosList);
+
+      setLoadingPedidos(true);
+      const pedidosData = await fetchBlingData('pedidos/vendas', { limite: '100' });
+      const pedidosList = pedidosData?.data || [];
+
+      const pedidosMap: Record<string, any[]> = {};
+      for (const pedido of pedidosList) {
+        const contatoId = String(pedido.contato?.id || '');
+        if (contatoId) {
+          if (!pedidosMap[contatoId]) pedidosMap[contatoId] = [];
+          pedidosMap[contatoId].push(pedido);
+        }
+      }
+      setPedidosPorContato(pedidosMap);
+      setLoadingPedidos(false);
     } catch (err: any) {
-      toast({ title: 'Erro na sincronização', description: err.message, variant: 'destructive' });
-    } finally {
-      setSincronizando(false);
+      toast.error('Erro ao carregar dados: ' + err.message);
     }
+    setLoading(false);
   };
 
-  const carregarModelos = async () => {
-    const { data, error } = await supabase
-      .from('catalogo_modelos')
-      .select('*')
-      .order('nome_modelo');
+  const clientesEnriquecidos: ClienteEnriquecido[] = useMemo(() => {
+    return contatos.map((c) => {
+      const pedidos = pedidosPorContato[String(c.id)] || [];
+      const totalGasto = pedidos.reduce((sum: number, p: any) => sum + (Number(p.total) || 0), 0);
+      const datas = pedidos.map((p: any) => p.data ? new Date(p.data) : null).filter(Boolean) as Date[];
+      const ultimaCompra = datas.length > 0 ? new Date(Math.max(...datas.map(d => d.getTime()))) : null;
+      const diasSemCompra = ultimaCompra ? Math.floor((Date.now() - ultimaCompra.getTime()) / (1000 * 60 * 60 * 24)) : 9999;
+      const ticketMedio = pedidos.length > 0 ? totalGasto / pedidos.length : 0;
 
-    if (error) {
-      toast({
-        title: 'Erro ao carregar modelos',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setModelos(data || []);
-  };
-
-  const carregarMidias = async (modeloId: string) => {
-    setCarregandoMidias(true);
-    
-    const { data, error } = await supabase
-      .from('midias_catalogo')
-      .select('*')
-      .eq('modelo_id', modeloId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Erro ao carregar mídias:', error);
-      setMidias([]);
-    } else {
-      setMidias(data || []);
-    }
-    
-    setCarregandoMidias(false);
-  };
-
-  const abrirModal = (modelo: Modelo) => {
-    setModeloSelecionado(modelo);
-    setPreco(modelo.preco_base.toString());
-    setApresentacao(modelo.apresentacao_venda || '');
-    setVideoUrl(modelo.video_url || '');
-    setNomeModelo(modelo.nome_modelo);
-    setImagemModelo(modelo.imagem_modelo || '');
-    setCategoria(modelo.categoria);
-    setGarantia(modelo.garantia || '');
-    setPrazoEntrega(modelo.prazo_entrega || '');
-    setComprimentoTotal(modelo.comprimento_total?.toString() || '');
-    setAreaUtilCorte(modelo.area_util_corte?.toString() || '');
-    setModalOpen(true);
-    setEditMode(false);
-    carregarMidias(modelo.id);
-  };
-
-  const fecharModal = () => {
-    setModalOpen(false);
-    setModeloSelecionado(null);
-    setEditMode(false);
-    setPreco('');
-    setApresentacao('');
-    setVideoUrl('');
-    setVideoFile(null);
-    setMidias([]);
-    setNomeModelo('');
-    setImagemModelo('');
-    setCategoria('');
-    setGarantia('');
-    setPrazoEntrega('');
-    setComprimentoTotal('');
-    setAreaUtilCorte('');
-  };
-
-  const salvarAlteracoes = async () => {
-    if (!modeloSelecionado) return;
-
-    setSalvando(true);
-    
-    let finalVideoUrl = videoUrl || null;
-    
-    if (videoFile) {
-      const fileExt = videoFile.name.split('.').pop();
-      const fileName = `videos/${modeloSelecionado.id}-${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('catalogo-midias')
-        .upload(fileName, videoFile);
-      
-      if (uploadError) {
-        toast({
-          title: 'Erro ao fazer upload do vídeo',
-          description: uploadError.message,
-          variant: 'destructive',
-        });
-        setSalvando(false);
-        return;
-      }
-      
-      const { data: urlData } = supabase.storage
-        .from('catalogo-midias')
-        .getPublicUrl(fileName);
-      
-      finalVideoUrl = urlData.publicUrl;
-    }
-    
-    const { error } = await supabase
-      .from('catalogo_modelos')
-      .update({
-        nome_modelo: nomeModelo,
-        preco_base: parseFloat(preco),
-        apresentacao_venda: apresentacao,
-        video_url: finalVideoUrl,
-        imagem_modelo: imagemModelo || null,
-        categoria: categoria,
-        garantia: garantia || null,
-        prazo_entrega: prazoEntrega || null,
-        comprimento_total: comprimentoTotal ? parseFloat(comprimentoTotal) : null,
-        area_util_corte: areaUtilCorte ? parseFloat(areaUtilCorte) : null,
-      })
-      .eq('id', modeloSelecionado.id);
-
-    setSalvando(false);
-
-    if (error) {
-      toast({
-        title: 'Erro ao salvar',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    toast({
-      title: 'Salvo com sucesso!',
-      description: 'As alterações foram salvas.',
+      return {
+        id: c.id,
+        nome: c.nome || 'Sem nome',
+        email: c.email || '',
+        telefone: c.telefone || '',
+        celular: c.celular || '',
+        tipo: c.tipo || '',
+        fantasia: c.fantasia || '',
+        numeroDocumento: c.numeroDocumento || '',
+        endereco: c.endereco || {},
+        totalPedidos: pedidos.length,
+        totalGasto,
+        ultimaCompra,
+        pedidos,
+        diasSemCompra,
+        ticketMedio,
+      };
     });
+  }, [contatos, pedidosPorContato]);
 
-    setEditMode(false);
-    carregarModelos();
-  };
+  const filteredClientes = useMemo(() => {
+    let list = [...clientesEnriquecidos];
 
-  const copiarApresentacao = () => {
-    navigator.clipboard.writeText(apresentacao);
-    toast({
-      title: 'Copiado!',
-      description: 'Texto copiado para a área de transferência.',
-    });
-  };
-
-  const handleUploadMidia = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!modeloSelecionado || !e.target.files?.length) return;
-
-    const file = e.target.files[0];
-    const fileName = `${modeloSelecionado.id}/${Date.now()}-${file.name}`;
-
-    setUploadandoMidia(true);
-    
-    try {
-      const { error: uploadError } = await supabase.storage
-        .from('catalogo-midias')
-        .upload(fileName, file);
-
-      if (uploadError) {
-        toast({
-          title: 'Erro ao fazer upload',
-          description: uploadError.message,
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('catalogo-midias')
-        .getPublicUrl(fileName);
-
-      const { error: dbError } = await supabase
-        .from('midias_catalogo')
-        .insert({
-          modelo_id: modeloSelecionado.id,
-          nome_arquivo: fileName,
-          url: urlData.publicUrl,
-          visivel_catalogo: true
-        });
-
-      if (dbError) {
-        console.error('Erro ao salvar metadados:', dbError);
-      }
-
-      toast({
-        title: 'Upload realizado!',
-        description: 'Mídia adicionada com sucesso.',
-      });
-
-      carregarMidias(modeloSelecionado.id);
-    } catch (err) {
-      console.error('Upload error:', err);
-      toast({
-        title: 'Erro ao fazer upload',
-        description: 'Ocorreu um erro inesperado.',
-        variant: 'destructive',
-      });
-    } finally {
-      setUploadandoMidia(false);
-      e.target.value = '';
-    }
-  };
-
-  const toggleVisibilidade = async (midia: Midia) => {
-    const { error } = await supabase
-      .from('midias_catalogo')
-      .update({ visivel_catalogo: !midia.visivel_catalogo })
-      .eq('id', midia.id);
-
-    if (error) {
-      toast({
-        title: 'Erro ao atualizar',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return;
+    // Text search
+    if (searchText) {
+      const term = searchText.toLowerCase();
+      list = list.filter(c =>
+        c.nome.toLowerCase().includes(term) ||
+        c.email.toLowerCase().includes(term) ||
+        c.telefone.includes(term) ||
+        c.fantasia.toLowerCase().includes(term)
+      );
     }
 
-    setMidias(prev => 
-      prev.map(m => m.id === midia.id ? { ...m, visivel_catalogo: !m.visivel_catalogo } : m)
+    // Filter
+    switch (filtroAtivo) {
+      case 'alto_valor':
+        list = list.filter(c => c.totalGasto > 0).sort((a, b) => b.totalGasto - a.totalGasto);
+        break;
+      case 'recorrentes':
+        list = list.filter(c => c.totalPedidos >= 2);
+        break;
+      case 'inativos':
+        list = list.filter(c => c.totalPedidos > 0 && c.diasSemCompra >= diasInatividadeLimite);
+        break;
+      case 'novos':
+        list = list.filter(c => c.totalPedidos <= 1);
+        break;
+      case 'risco':
+        list = list.filter(c => c.totalPedidos >= 2 && c.diasSemCompra >= 60);
+        break;
+    }
+
+    // Sort
+    switch (ordenacao) {
+      case 'total_gasto':
+        list.sort((a, b) => b.totalGasto - a.totalGasto);
+        break;
+      case 'ultima_compra':
+        list.sort((a, b) => (b.ultimaCompra?.getTime() || 0) - (a.ultimaCompra?.getTime() || 0));
+        break;
+      case 'total_pedidos':
+        list.sort((a, b) => b.totalPedidos - a.totalPedidos);
+        break;
+      case 'nome':
+        list.sort((a, b) => a.nome.localeCompare(b.nome));
+        break;
+    }
+
+    return list;
+  }, [clientesEnriquecidos, searchText, filtroAtivo, ordenacao, diasInatividadeLimite]);
+
+  // KPIs
+  const kpis = useMemo(() => {
+    const comPedidos = clientesEnriquecidos.filter(c => c.totalPedidos > 0);
+    const recorrentes = clientesEnriquecidos.filter(c => c.totalPedidos >= 2);
+    const inativos = clientesEnriquecidos.filter(c => c.totalPedidos > 0 && c.diasSemCompra >= diasInatividadeLimite);
+    const totalReceita = comPedidos.reduce((s, c) => s + c.totalGasto, 0);
+    const ticketMedioGeral = comPedidos.length > 0 ? totalReceita / comPedidos.reduce((s, c) => s + c.totalPedidos, 0) : 0;
+
+    return {
+      totalClientes: contatos.length,
+      clientesAtivos: comPedidos.length - inativos.length,
+      recorrentes: recorrentes.length,
+      inativos: inativos.length,
+      totalReceita,
+      ticketMedioGeral,
+    };
+  }, [clientesEnriquecidos, contatos.length, diasInatividadeLimite]);
+
+  const getStatusBadge = (cliente: ClienteEnriquecido) => {
+    if (cliente.totalPedidos === 0) return <Badge variant="secondary" className="text-xs">Novo</Badge>;
+    if (cliente.diasSemCompra >= diasInatividadeLimite) return <Badge variant="destructive" className="text-xs">Inativo</Badge>;
+    if (cliente.totalPedidos >= 2 && cliente.diasSemCompra >= 60) return <Badge className="bg-amber-500 text-white text-xs">Risco</Badge>;
+    if (cliente.totalPedidos >= 3) return <Badge className="bg-green-600 text-white text-xs">Fiel</Badge>;
+    return <Badge variant="outline" className="text-xs">Ativo</Badge>;
+  };
+
+  const getDicaRepescagem = (cliente: ClienteEnriquecido): string => {
+    if (cliente.diasSemCompra >= 180) return '⚠️ Cliente muito ausente. Ofereça desconto exclusivo ou novidade.';
+    if (cliente.diasSemCompra >= 90) return '💡 Período longo sem compra. Envie mensagem personalizada.';
+    if (cliente.diasSemCompra >= 60 && cliente.totalPedidos >= 2) return '🔄 Cliente recorrente esfriando. Hora de reativar com novidades.';
+    if (cliente.totalPedidos === 1) return '🎯 Primeira compra! Fidelizar com acompanhamento pós-venda.';
+    if (cliente.totalPedidos >= 3) return '⭐ Cliente fiel. Mantenha relacionamento e ofereça lançamentos.';
+    return '📋 Acompanhe o cliente para identificar oportunidades.';
+  };
+
+  const filtros: { key: FiltroTipo; label: string; icon: React.ReactNode; desc: string }[] = [
+    { key: 'todos', label: 'Todos', icon: <Users className="h-4 w-4" />, desc: 'Todos os clientes' },
+    { key: 'alto_valor', label: 'Alto Valor', icon: <DollarSign className="h-4 w-4" />, desc: 'Maior gasto total' },
+    { key: 'recorrentes', label: 'Recorrentes', icon: <Repeat className="h-4 w-4" />, desc: '2+ pedidos' },
+    { key: 'inativos', label: 'Inativos', icon: <UserX className="h-4 w-4" />, desc: `Sem compra há ${diasInatividadeLimite}+ dias` },
+    { key: 'novos', label: 'Novos', icon: <Zap className="h-4 w-4" />, desc: '0-1 pedidos' },
+    { key: 'risco', label: 'Em Risco', icon: <AlertTriangle className="h-4 w-4" />, desc: 'Recorrentes esfriando' },
+  ];
+
+  if (checkingConnection) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
     );
+  }
 
-    toast({
-      title: midia.visivel_catalogo ? 'Mídia ocultada' : 'Mídia visível',
-      description: midia.visivel_catalogo 
-        ? 'Esta mídia não será exibida no catálogo público.'
-        : 'Esta mídia será exibida no catálogo público.',
-    });
-  };
-
-  const definirComoCapa = async (midia: Midia) => {
-    if (!modeloSelecionado) return;
-
-    const isVideo = midia.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i);
-    
-    const updateData: Record<string, string | null> = {};
-    
-    if (isVideo) {
-      updateData.video_url = midia.url;
-      updateData.imagem_modelo = null;
-      setVideoUrl(midia.url);
-      setImagemModelo('');
-    } else {
-      updateData.imagem_modelo = midia.url;
-      updateData.video_url = null;
-      setImagemModelo(midia.url);
-      setVideoUrl('');
-    }
-
-    const { error } = await supabase
-      .from('catalogo_modelos')
-      .update(updateData)
-      .eq('id', modeloSelecionado.id);
-
-    if (error) {
-      toast({
-        title: 'Erro ao definir capa',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    toast({
-      title: 'Capa definida!',
-      description: isVideo 
-        ? 'Este vídeo será exibido no card de apresentação.'
-        : 'Esta imagem será exibida no card de apresentação.',
-    });
-
-    carregarModelos();
-  };
-
-  const downloadMidia = async (url: string, nome: string) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = nome.split('/').pop() || nome;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-      toast({
-        title: 'Download iniciado!',
-        description: 'A mídia está sendo baixada.',
-      });
-    } catch (err) {
-      console.error('Erro no download:', err);
-      window.open(url, '_blank');
-    }
-  };
-
-  const downloadTodasMidias = async () => {
-    if (midias.length === 0) return;
-    
-    toast({
-      title: 'Iniciando downloads...',
-      description: `Baixando ${midias.length} arquivo(s).`,
-    });
-
-    for (const midia of midias) {
-      await downloadMidia(midia.url, midia.nome_arquivo);
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-  };
-
-  const copiarLinkMidia = async (url: string) => {
-    await navigator.clipboard.writeText(url);
-    toast({
-      title: 'Link copiado!',
-      description: 'Link da mídia copiado para a área de transferência.',
-    });
-  };
-
-  const compartilharMidia = async (url: string, nome: string) => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: nome,
-          url: url
-        });
-      } catch (err) {
-        copiarLinkMidia(url);
-      }
-    } else {
-      copiarLinkMidia(url);
-    }
-  };
-
-  const deletarMidia = async (midia: Midia) => {
-    const { error: storageError } = await supabase.storage
-      .from('catalogo-midias')
-      .remove([midia.nome_arquivo]);
-
-    if (storageError) {
-      console.error('Erro ao deletar do storage:', storageError);
-    }
-
-    const { error: dbError } = await supabase
-      .from('midias_catalogo')
-      .delete()
-      .eq('id', midia.id);
-
-    if (dbError) {
-      toast({
-        title: 'Erro ao deletar',
-        description: dbError.message,
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    toast({
-      title: 'Mídia deletada',
-      description: 'A mídia foi removida com sucesso.',
-    });
-
-    setMidias(prev => prev.filter(m => m.id !== midia.id));
-  };
-
-  const categorias: Categoria[] = ['Todas', 'Defesa', 'EDCs', 'EDC Mini', 'Campo', 'Cozinha', 'Churrasco', 'Kits', 'Utensílios', 'Vestuário', 'Cafés'];
-
-  const modelosFiltrados = modelos
-    .filter(m => categoriaAtiva === 'Todas' || (m.categorias && m.categorias.includes(categoriaAtiva)))
-    .filter(m => m.nome_modelo.toLowerCase().includes(buscaTexto.toLowerCase()));
-
-  const midiasImagens = midias.filter(m => !m.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i));
-  const midiasVideos = midias.filter(m => m.nome_arquivo.match(/\.(mp4|webm|mov|avi)$/i));
+  if (!connected) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="text-center max-w-md mx-auto space-y-4">
+          <Target className="h-16 w-16 text-muted-foreground mx-auto" />
+          <h1 className="text-2xl font-bold">Auxílio de Vendas</h1>
+          <p className="text-muted-foreground">
+            Conecte sua conta do Bling para utilizar as ferramentas de análise e repescagem de clientes.
+          </p>
+          <Button variant="outline" onClick={() => window.location.href = '/bling'}>
+            Ir para Integração Bling
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-4 px-3 md:py-6 md:px-4">
-      <div className="mb-4 md:mb-6 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">Material de Apoio</h1>
-          <p className="text-muted-foreground mt-0.5 text-xs sm:text-sm">Informações e mídias para vendas</p>
+    <div className="container mx-auto py-4 px-3 md:py-6 md:px-4 max-w-6xl">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Target className="h-6 w-6 text-primary" />
+            Auxílio de Vendas
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Análise de clientes e estratégias de repescagem
+          </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={sincronizarShopify}
-          disabled={sincronizando}
-          className="flex-shrink-0"
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${sincronizando ? 'animate-spin' : ''}`} />
-          {sincronizando ? 'Sincronizando...' : 'Sync Shopify'}
+        <Button variant="outline" size="sm" onClick={loadAllData} disabled={loading} className="self-start">
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Atualizar Dados
         </Button>
       </div>
-      
-      {/* Campo de Busca */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Buscar lâminas..."
-          value={buscaTexto}
-          onChange={(e) => setBuscaTexto(e.target.value)}
-          className="pl-10"
-        />
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <Card className="bg-card">
+          <CardContent className="p-3 text-center">
+            <Users className="h-5 w-5 text-primary mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">Total</p>
+            <p className="text-lg font-bold">{loading ? '...' : kpis.totalClientes}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card">
+          <CardContent className="p-3 text-center">
+            <UserCheck className="h-5 w-5 text-green-600 mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">Ativos</p>
+            <p className="text-lg font-bold">{loading ? '...' : kpis.clientesAtivos}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card">
+          <CardContent className="p-3 text-center">
+            <Repeat className="h-5 w-5 text-blue-600 mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">Recorrentes</p>
+            <p className="text-lg font-bold">{loading ? '...' : kpis.recorrentes}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card">
+          <CardContent className="p-3 text-center">
+            <UserX className="h-5 w-5 text-red-500 mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">Inativos</p>
+            <p className="text-lg font-bold">{loading ? '...' : kpis.inativos}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card">
+          <CardContent className="p-3 text-center">
+            <DollarSign className="h-5 w-5 text-emerald-600 mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">Receita Total</p>
+            <p className="text-sm font-bold truncate">{loading ? '...' : `R$ ${kpis.totalReceita.toFixed(0)}`}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card">
+          <CardContent className="p-3 text-center">
+            <BarChart3 className="h-5 w-5 text-purple-600 mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">Ticket Médio</p>
+            <p className="text-sm font-bold truncate">{loading ? '...' : `R$ ${kpis.ticketMedioGeral.toFixed(0)}`}</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Botões de Filtro */}
-      <ScrollArea className="w-full whitespace-nowrap pb-2">
-        <div className="flex gap-2 mb-6">
-          {categorias.map((cat) => (
-            <Button
-              key={cat}
-              variant={categoriaAtiva === cat ? 'default' : 'outline'}
-              onClick={() => setCategoriaAtiva(cat)}
-              size="sm"
-              className="flex-shrink-0"
-            >
-              {cat}
-            </Button>
-          ))}
+      {/* Filters */}
+      <div className="space-y-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar cliente por nome, email, telefone..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={ordenacao} onValueChange={(v) => setOrdenacao(v as OrdenacaoTipo)}>
+            <SelectTrigger className="w-full sm:w-48">
+              <ArrowUpDown className="h-4 w-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="total_gasto">Maior Gasto</SelectItem>
+              <SelectItem value="ultima_compra">Última Compra</SelectItem>
+              <SelectItem value="total_pedidos">Mais Pedidos</SelectItem>
+              <SelectItem value="nome">Nome A-Z</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </ScrollArea>
-      
-      {/* Lista de Modelos */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {modelosFiltrados.map((modelo) => (
-          <Card
-            key={modelo.id}
-            className="cursor-pointer hover:shadow-lg transition-all group"
-            onClick={() => abrirModal(modelo)}
-          >
-            <div className="flex items-center gap-4 p-4">
-              {/* Thumbnail */}
-              <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
-                {modelo.imagem_modelo ? (
-                  <img
-                    src={modelo.imagem_modelo}
-                    alt={modelo.nome_modelo}
-                    className="w-full h-full object-cover"
-                  />
-                ) : modelo.video_url ? (
-                  <div className="w-full h-full flex items-center justify-center bg-accent/10">
-                    <Play className="h-8 w-8 text-accent" />
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Package className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-card-foreground truncate">
-                  {modelo.nome_modelo}
-                </h3>
-                <p className="text-accent font-bold text-lg">
-                  R$ {modelo.preco_base.toFixed(2)}
-                </p>
-                <div className="flex items-center gap-2 mt-1">
-                  {modelo.categorias && modelo.categorias.map((cat: string) => (
-                    <Badge key={cat} variant="secondary" className="text-xs">
-                      {cat}
-                    </Badge>
-                  ))}
-                  {modelo.video_url && (
-                    <Badge variant="outline" className="text-xs">
-                      <Video className="h-3 w-3 mr-1" />
-                      Vídeo
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              {/* Arrow */}
-              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {modelosFiltrados.length === 0 && (
-        <div className="text-center py-12">
-          <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">Nenhuma lâmina encontrada</p>
-        </div>
-      )}
-
-      {/* Modal de Detalhes */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-xl">{modeloSelecionado?.nome_modelo}</DialogTitle>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge>{categoria}</Badge>
-                  <span className="text-accent font-bold">R$ {parseFloat(preco || '0').toFixed(2)}</span>
-                </div>
-              </div>
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="flex gap-2 pb-2">
+            {filtros.map((f) => (
               <Button
-                variant={editMode ? 'default' : 'outline'}
+                key={f.key}
+                variant={filtroAtivo === f.key ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setEditMode(!editMode)}
+                onClick={() => setFiltroAtivo(f.key)}
+                className="gap-1.5 shrink-0"
               >
-                {editMode ? <Save className="h-4 w-4 mr-2" /> : <Edit2 className="h-4 w-4 mr-2" />}
-                {editMode ? 'Editando' : 'Editar'}
+                {f.icon}
+                {f.label}
               </Button>
-            </div>
-          </DialogHeader>
+            ))}
+          </div>
+        </ScrollArea>
 
-          <Tabs defaultValue="info" className="flex-1 overflow-hidden flex flex-col">
-            <TabsList className="mx-6 mt-4 grid w-auto grid-cols-2">
-              <TabsTrigger value="info" className="flex items-center gap-2">
-                <Info className="h-4 w-4" />
-                Informações
-              </TabsTrigger>
-              <TabsTrigger value="midias" className="flex items-center gap-2">
-                <ImageIcon className="h-4 w-4" />
-                Mídias ({midias.length})
-              </TabsTrigger>
-            </TabsList>
+        {filtroAtivo === 'inativos' && (
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-muted-foreground whitespace-nowrap">Dias sem compra:</span>
+            <Select value={String(diasInatividadeLimite)} onValueChange={(v) => setDiasInatividadeLimite(Number(v))}>
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30">30 dias</SelectItem>
+                <SelectItem value="60">60 dias</SelectItem>
+                <SelectItem value="90">90 dias</SelectItem>
+                <SelectItem value="120">120 dias</SelectItem>
+                <SelectItem value="180">180 dias</SelectItem>
+                <SelectItem value="365">1 ano</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
 
-            <ScrollArea className="flex-1 px-6 pb-6">
-              {/* Tab Informações */}
-              <TabsContent value="info" className="mt-4 space-y-6">
-                {/* Cards de Info Rápida */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <Card className="p-3">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <Package className="h-4 w-4" />
-                      <span className="text-xs">Preço Base</span>
-                    </div>
-                    {editMode ? (
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={preco}
-                        onChange={(e) => setPreco(e.target.value)}
-                        className="h-8"
-                      />
-                    ) : (
-                      <p className="font-bold text-lg">R$ {parseFloat(preco || '0').toFixed(2)}</p>
-                    )}
-                  </Card>
+      {/* Results info */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-muted-foreground">
+          {filteredClientes.length} cliente{filteredClientes.length !== 1 ? 's' : ''} encontrado{filteredClientes.length !== 1 ? 's' : ''}
+        </p>
+        {loadingPedidos && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Analisando pedidos...
+          </div>
+        )}
+      </div>
 
-                  <Card className="p-3">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <Shield className="h-4 w-4" />
-                      <span className="text-xs">Garantia</span>
-                    </div>
-                    {editMode ? (
-                      <Input
-                        value={garantia}
-                        onChange={(e) => setGarantia(e.target.value)}
-                        placeholder="Ex: Vitalícia"
-                        className="h-8"
-                      />
-                    ) : (
-                      <p className="font-semibold">{garantia || '-'}</p>
-                    )}
-                  </Card>
-
-                  <Card className="p-3">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <Clock className="h-4 w-4" />
-                      <span className="text-xs">Prazo</span>
-                    </div>
-                    {editMode ? (
-                      <Input
-                        value={prazoEntrega}
-                        onChange={(e) => setPrazoEntrega(e.target.value)}
-                        placeholder="Ex: 45 dias"
-                        className="h-8"
-                      />
-                    ) : (
-                      <p className="font-semibold">{prazoEntrega || '-'}</p>
-                    )}
-                  </Card>
-
-                  <Card className="p-3">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <FileText className="h-4 w-4" />
-                      <span className="text-xs">Categoria</span>
-                    </div>
-                    {editMode ? (
-                      <select
-                        value={categoria}
-                        onChange={(e) => setCategoria(e.target.value)}
-                        className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
-                      >
-                        {['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR', 'Upsell'].map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <p className="font-semibold">{categoria}</p>
-                    )}
-                  </Card>
-
-                  <Card className="p-3">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <Ruler className="h-4 w-4" />
-                      <span className="text-xs">Comp. Total (cm)</span>
-                    </div>
-                    {editMode ? (
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={comprimentoTotal}
-                        onChange={(e) => setComprimentoTotal(e.target.value)}
-                        placeholder="Ex: 22.5"
-                        className="h-8"
-                      />
-                    ) : (
-                      <p className="font-semibold">{comprimentoTotal ? `${comprimentoTotal} cm` : '-'}</p>
-                    )}
-                  </Card>
-
-                  <Card className="p-3">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <Ruler className="h-4 w-4" />
-                      <span className="text-xs">Fio de Corte (cm)</span>
-                    </div>
-                    {editMode ? (
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={areaUtilCorte}
-                        onChange={(e) => setAreaUtilCorte(e.target.value)}
-                        placeholder="Ex: 10.5"
-                        className="h-8"
-                      />
-                    ) : (
-                      <p className="font-semibold">{areaUtilCorte ? `${areaUtilCorte} cm` : '-'}</p>
-                    )}
-                  </Card>
-                </div>
-
-                {/* Nome do Modelo */}
-                {editMode && (
-                  <div>
-                    <Label htmlFor="nome">Nome do Modelo</Label>
-                    <Input
-                      id="nome"
-                      value={nomeModelo}
-                      onChange={(e) => setNomeModelo(e.target.value)}
-                      className="mt-1"
-                    />
+      {/* Client List */}
+      {loading && !contatos.length ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : filteredClientes.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <Filter className="h-12 w-12 mx-auto mb-3 opacity-40" />
+          <p>Nenhum cliente encontrado com esse filtro.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredClientes.map((cliente) => (
+            <Card
+              key={cliente.id}
+              className="cursor-pointer hover:shadow-md transition-all hover:border-primary/30 group"
+              onClick={() => setSelectedCliente(cliente)}
+            >
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-3">
+                  {/* Avatar / Icon */}
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Users className="h-5 w-5 text-primary" />
                   </div>
-                )}
 
-                {/* Apresentação de Venda */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="text-base font-semibold">Apresentação de Venda</Label>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={copiarApresentacao}
-                      disabled={!apresentacao}
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copiar
-                    </Button>
-                  </div>
-                  {editMode ? (
-                    <Textarea
-                      value={apresentacao}
-                      onChange={(e) => setApresentacao(e.target.value)}
-                      placeholder="Escreva aqui a apresentação de venda..."
-                      rows={6}
-                    />
-                  ) : (
-                    <Card className="p-4 bg-muted/50">
-                      {apresentacao ? (
-                        <p className="whitespace-pre-wrap text-sm">{apresentacao}</p>
-                      ) : (
-                        <p className="text-muted-foreground text-sm italic">Nenhuma apresentação cadastrada</p>
+                  {/* Name + info */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                        {cliente.nome}
+                      </h3>
+                      {getStatusBadge(cliente)}
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground flex-wrap">
+                      {cliente.telefone && (
+                        <span className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" /> {cliente.telefone}
+                        </span>
                       )}
-                    </Card>
-                  )}
-                </div>
-
-                {/* Vídeo de Apresentação */}
-                {editMode && (
-                  <div>
-                    <Label>Vídeo de Apresentação</Label>
-                    <div className="mt-2">
-                      <Button variant="outline" size="sm" asChild>
-                        <label className="cursor-pointer">
-                          <Video className="h-4 w-4 mr-2" />
-                          {videoFile ? 'Trocar Vídeo' : videoUrl ? 'Substituir Vídeo' : 'Upload de Vídeo'}
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept="video/*,.mov,.MOV,.mp4,.MP4,.webm,.WEBM"
-                            onChange={(e) => {
-                              if (e.target.files?.[0]) {
-                                setVideoFile(e.target.files[0]);
-                              }
-                            }}
-                          />
-                        </label>
-                      </Button>
-                      {videoFile && (
-                        <span className="ml-2 text-sm text-muted-foreground">
-                          {videoFile.name}
+                      {cliente.ultimaCompra && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" /> {cliente.ultimaCompra.toLocaleDateString('pt-BR')}
                         </span>
                       )}
                     </div>
                   </div>
-                )}
 
-                {/* URL da Imagem Principal */}
-                {editMode && (
-                  <div>
-                    <Label htmlFor="imagem">URL da Imagem Principal</Label>
-                    <Input
-                      id="imagem"
-                      value={imagemModelo}
-                      onChange={(e) => setImagemModelo(e.target.value)}
-                      placeholder="https://..."
-                      className="mt-1"
-                    />
+                  {/* Metrics */}
+                  <div className="hidden sm:flex items-center gap-4 text-sm shrink-0">
+                    <div className="text-center">
+                      <p className="font-bold text-foreground">{cliente.totalPedidos}</p>
+                      <p className="text-xs text-muted-foreground">pedidos</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-foreground">R$ {cliente.totalGasto.toFixed(0)}</p>
+                      <p className="text-xs text-muted-foreground">gasto</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-foreground">R$ {cliente.ticketMedio.toFixed(0)}</p>
+                      <p className="text-xs text-muted-foreground">ticket</p>
+                    </div>
                   </div>
-                )}
 
-                {/* Botão Salvar */}
-                {editMode && (
-                  <div className="flex justify-end gap-3 pt-4 border-t">
-                    <Button variant="outline" onClick={() => setEditMode(false)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={salvarAlteracoes} disabled={salvando}>
-                      {salvando && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Salvar Alterações
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
-              {/* Tab Mídias */}
-              <TabsContent value="midias" className="mt-4 space-y-6">
-                {/* Barra de Ações */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" asChild disabled={uploadandoMidia}>
-                      <label className="cursor-pointer">
-                        {uploadandoMidia ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Upload className="h-4 w-4 mr-2" />
-                        )}
-                        {uploadandoMidia ? 'Enviando...' : 'Adicionar Mídia'}
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*,video/*,.mov,.MOV,.mp4,.MP4"
-                          onChange={handleUploadMidia}
-                          disabled={uploadandoMidia}
-                        />
-                      </label>
-                    </Button>
-                  </div>
-                  {midias.length > 0 && (
-                    <Button variant="outline" size="sm" onClick={downloadTodasMidias}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Baixar Todas
-                    </Button>
+      {/* Client Detail Dialog */}
+      <Dialog open={!!selectedCliente} onOpenChange={(open) => !open && setSelectedCliente(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] p-0 gap-0">
+          <DialogHeader className="p-5 pb-3">
+            <DialogTitle className="text-lg flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              {selectedCliente?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[calc(85vh-70px)]">
+            {selectedCliente && (
+              <div className="px-5 pb-5 space-y-4">
+                {/* Contact info */}
+                <div className="flex flex-wrap gap-3 text-sm">
+                  {selectedCliente.telefone && (
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <Phone className="h-3.5 w-3.5" /> {selectedCliente.telefone}
+                    </span>
+                  )}
+                  {selectedCliente.email && (
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <Mail className="h-3.5 w-3.5" /> {selectedCliente.email}
+                    </span>
                   )}
                 </div>
 
-                {carregandoMidias ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  </div>
-                ) : midias.length === 0 ? (
-                  <Card className="p-8 text-center">
-                    <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Nenhuma mídia adicionada ainda</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Clique em "Adicionar Mídia" para enviar fotos e vídeos
-                    </p>
+                {/* Status & tip */}
+                <Card className="bg-muted/50 border-muted">
+                  <CardContent className="p-3">
+                    <div className="flex items-start gap-2">
+                      <Target className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-foreground mb-0.5">Dica de Repescagem</p>
+                        <p className="text-sm text-muted-foreground">{getDicaRepescagem(selectedCliente)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Metrics */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Card>
+                    <CardContent className="p-3 flex items-center gap-2">
+                      <ShoppingCart className="h-6 w-6 text-primary shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Pedidos</p>
+                        <p className="text-lg font-bold">{selectedCliente.totalPedidos}</p>
+                      </div>
+                    </CardContent>
                   </Card>
-                ) : (
-                  <div className="space-y-6">
-                    {/* Imagens */}
-                    {midiasImagens.length > 0 && (
+                  <Card>
+                    <CardContent className="p-3 flex items-center gap-2">
+                      <DollarSign className="h-6 w-6 text-green-600 shrink-0" />
                       <div>
-                        <h3 className="font-semibold mb-3 flex items-center gap-2">
-                          <ImageIcon className="h-4 w-4" />
-                          Fotos ({midiasImagens.length})
-                        </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                          {midiasImagens.map((midia) => {
-                            const isCapa = imagemModelo === midia.url;
-                            return (
-                              <div
-                                key={midia.id}
-                                className={`relative border rounded-lg overflow-hidden bg-muted aspect-square group ${
-                                  isCapa ? 'ring-2 ring-accent' : ''
-                                }`}
-                              >
-                                {/* Badges */}
-                                <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between">
-                                  <div className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
-                                    midia.visivel_catalogo 
-                                      ? 'bg-green-500/80 text-white' 
-                                      : 'bg-zinc-500/80 text-white'
-                                  }`}>
-                                    {midia.visivel_catalogo ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                                  </div>
-                                  {isCapa && (
-                                    <div className="px-2 py-1 rounded-full text-xs flex items-center gap-1 bg-accent text-accent-foreground">
-                                      <Star className="h-3 w-3 fill-current" />
-                                    </div>
-                                  )}
-                                </div>
-
-                                <img
-                                  src={midia.url}
-                                  alt={midia.nome_arquivo}
-                                  className="w-full h-full object-cover"
-                                />
-                                
-                                {/* Ações */}
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <div className="flex items-center justify-center gap-1">
-                                    <Button
-                                      size="sm"
-                                      variant={isCapa ? 'default' : 'secondary'}
-                                      className="h-7 w-7 p-0"
-                                      onClick={() => definirComoCapa(midia)}
-                                      title="Definir como capa"
-                                      disabled={isCapa}
-                                    >
-                                      <Star className={`h-3 w-3 ${isCapa ? 'fill-current' : ''}`} />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      className="h-7 w-7 p-0"
-                                      onClick={() => toggleVisibilidade(midia)}
-                                    >
-                                      {midia.visivel_catalogo ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      className="h-7 w-7 p-0"
-                                      onClick={() => downloadMidia(midia.url, midia.nome_arquivo)}
-                                    >
-                                      <Download className="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      className="h-7 w-7 p-0"
-                                      onClick={() => compartilharMidia(midia.url, midia.nome_arquivo)}
-                                    >
-                                      <Share2 className="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="destructive"
-                                      className="h-7 w-7 p-0"
-                                      onClick={() => deletarMidia(midia)}
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <p className="text-xs text-muted-foreground">Total Gasto</p>
+                        <p className="text-lg font-bold truncate">R$ {selectedCliente.totalGasto.toFixed(2)}</p>
                       </div>
-                    )}
-
-                    {/* Vídeos */}
-                    {midiasVideos.length > 0 && (
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-3 flex items-center gap-2">
+                      <BarChart3 className="h-6 w-6 text-purple-600 shrink-0" />
                       <div>
-                        <h3 className="font-semibold mb-3 flex items-center gap-2">
-                          <Video className="h-4 w-4" />
-                          Vídeos ({midiasVideos.length})
-                        </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                          {midiasVideos.map((midia) => {
-                            const isCapa = videoUrl === midia.url;
-                            return (
-                              <div
-                                key={midia.id}
-                                className={`relative border rounded-lg overflow-hidden bg-muted aspect-[9/16] group ${
-                                  isCapa ? 'ring-2 ring-accent' : ''
-                                }`}
-                              >
-                                {/* Badges */}
-                                <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between">
-                                  <div className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
-                                    midia.visivel_catalogo 
-                                      ? 'bg-green-500/80 text-white' 
-                                      : 'bg-zinc-500/80 text-white'
-                                  }`}>
-                                    {midia.visivel_catalogo ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                                  </div>
-                                  {isCapa && (
-                                    <div className="px-2 py-1 rounded-full text-xs flex items-center gap-1 bg-accent text-accent-foreground">
-                                      <Star className="h-3 w-3 fill-current" />
-                                    </div>
-                                  )}
-                                </div>
-
-                                <video
-                                  src={midia.url}
-                                  className="w-full h-full object-cover"
-                                  muted
-                                  autoPlay
-                                  loop
-                                  playsInline
-                                />
-                                
-                                {/* Ações */}
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <div className="flex items-center justify-center gap-1">
-                                    <Button
-                                      size="sm"
-                                      variant={isCapa ? 'default' : 'secondary'}
-                                      className="h-7 w-7 p-0"
-                                      onClick={() => definirComoCapa(midia)}
-                                      title="Definir como capa"
-                                      disabled={isCapa}
-                                    >
-                                      <Star className={`h-3 w-3 ${isCapa ? 'fill-current' : ''}`} />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      className="h-7 w-7 p-0"
-                                      onClick={() => toggleVisibilidade(midia)}
-                                    >
-                                      {midia.visivel_catalogo ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      className="h-7 w-7 p-0"
-                                      onClick={() => downloadMidia(midia.url, midia.nome_arquivo)}
-                                    >
-                                      <Download className="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      className="h-7 w-7 p-0"
-                                      onClick={() => compartilharMidia(midia.url, midia.nome_arquivo)}
-                                    >
-                                      <Share2 className="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="destructive"
-                                      className="h-7 w-7 p-0"
-                                      onClick={() => deletarMidia(midia)}
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <p className="text-xs text-muted-foreground">Ticket Médio</p>
+                        <p className="text-lg font-bold truncate">R$ {selectedCliente.ticketMedio.toFixed(2)}</p>
                       </div>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-            </ScrollArea>
-          </Tabs>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-3 flex items-center gap-2">
+                      <Clock className="h-6 w-6 text-amber-600 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Dias sem compra</p>
+                        <p className="text-lg font-bold">{selectedCliente.diasSemCompra === 9999 ? 'N/A' : selectedCliente.diasSemCompra}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Separator />
+
+                {/* Orders */}
+                <div>
+                  <h3 className="font-semibold text-sm mb-2">Histórico de Pedidos</h3>
+                  {selectedCliente.pedidos.length > 0 ? (
+                    <div className="rounded-lg border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead className="text-xs">Nº</TableHead>
+                            <TableHead className="text-xs">Data</TableHead>
+                            <TableHead className="text-xs text-right">Total</TableHead>
+                            <TableHead className="text-xs">Situação</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {selectedCliente.pedidos.map((p: any) => (
+                            <TableRow key={p.id}>
+                              <TableCell className="text-sm font-medium">{p.numero || p.id}</TableCell>
+                              <TableCell className="text-sm">{p.data ? new Date(p.data).toLocaleDateString('pt-BR') : '-'}</TableCell>
+                              <TableCell className="text-sm text-right font-medium">
+                                {p.total ? `R$ ${Number(p.total).toFixed(2)}` : '-'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs">{p.situacao?.valor || '-'}</Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-6 text-sm">Nenhum pedido encontrado.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
