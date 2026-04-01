@@ -6,21 +6,33 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   Users, Search, Loader2, RefreshCw, ShoppingCart, DollarSign,
-  Mail, Phone, MapPin, Building2, User, Calendar, ChevronRight,
-  FileText, Hash
+  Mail, Phone, MapPin, User, Calendar, ChevronRight,
+  FileText, Package
 } from 'lucide-react';
+
+interface RegistroCliente {
+  descricao: string;
+  valorUnitario: number;
+  quantidade: number;
+  tipo: string;
+  numero: string;
+  data: string;
+  pedidoId?: string;
+  nfeId?: string;
+}
 
 export default function Clientes() {
   const [contatos, setContatos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedContato, setSelectedContato] = useState<any>(null);
-  const [contatoPedidos, setContatoPedidos] = useState<any[]>([]);
+  const [registrosCliente, setRegistrosCliente] = useState<RegistroCliente[]>([]);
   const [contatoLoading, setContatoLoading] = useState(false);
   const [connected, setConnected] = useState(false);
   const [checkingConnection, setCheckingConnection] = useState(true);
@@ -40,12 +52,12 @@ export default function Clientes() {
     setCheckingConnection(false);
   };
 
-  const fetchBlingData = async (endpoint: string, params: Record<string, string> = {}) => {
+  const fetchBlingData = async (endpoint: string, params: Record<string, string> = {}, paginate = false) => {
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
     const res = await fetch(`https://${projectId}.supabase.co/functions/v1/bling-api`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint, params }),
+      body: JSON.stringify({ endpoint, params, paginate }),
     });
     return res.json();
   };
@@ -53,7 +65,7 @@ export default function Clientes() {
   const loadContatos = async () => {
     setLoading(true);
     try {
-      const data = await fetchBlingData('contatos', { limite: '100' });
+      const data = await fetchBlingData('contatos', {}, true);
       setContatos(data?.data || []);
     } catch (err: any) {
       toast.error('Erro ao carregar clientes: ' + err.message);
@@ -64,25 +76,145 @@ export default function Clientes() {
   const handleContatoClick = async (contato: any) => {
     setSelectedContato(contato);
     setContatoLoading(true);
-    setContatoPedidos([]);
+    setRegistrosCliente([]);
+
     try {
-      const data = await fetchBlingData('pedidos/vendas', { limite: '100', idContato: String(contato.id) });
-      setContatoPedidos(data?.data || []);
+      // Fetch pedidos desse contato com paginação
+      const pedidosData = await fetchBlingData('pedidos/vendas', { idContato: String(contato.id) }, true);
+      const pedidos = pedidosData?.data || [];
+
+      const registros: RegistroCliente[] = [];
+
+      // Para cada pedido, buscar detalhes com itens
+      const detailPromises = pedidos.map(async (pedido: any) => {
+        try {
+          const detail = await fetchBlingData(`pedidos/vendas/${pedido.id}`);
+          const pedidoDetail = detail?.data || pedido;
+          const itens = pedidoDetail?.itens || [];
+
+          for (const item of itens) {
+            registros.push({
+              descricao: item.descricao || item.produto?.nome || '-',
+              valorUnitario: Number(item.valor || item.valorUnidade || 0),
+              quantidade: Number(item.quantidade || 1),
+              tipo: 'Venda',
+              numero: String(pedidoDetail.numero || pedido.numero || pedido.id),
+              data: pedidoDetail.data || pedido.data || '',
+              pedidoId: String(pedido.id),
+            });
+          }
+
+          // Se não tem itens, registra o pedido como linha
+          if (itens.length === 0) {
+            registros.push({
+              descricao: pedidoDetail.contato?.nome || 'Pedido sem itens detalhados',
+              valorUnitario: Number(pedidoDetail.total || pedido.total || 0),
+              quantidade: 1,
+              tipo: 'Venda',
+              numero: String(pedidoDetail.numero || pedido.numero || pedido.id),
+              data: pedidoDetail.data || pedido.data || '',
+              pedidoId: String(pedido.id),
+            });
+          }
+        } catch {
+          // Fallback: register just the order
+          registros.push({
+            descricao: 'Pedido (sem detalhes)',
+            valorUnitario: Number(pedido.total || 0),
+            quantidade: 1,
+            tipo: 'Venda',
+            numero: String(pedido.numero || pedido.id),
+            data: pedido.data || '',
+            pedidoId: String(pedido.id),
+          });
+        }
+      });
+
+      await Promise.all(detailPromises);
+
+      // Buscar NF-es do contato
+      try {
+        const nfesData = await fetchBlingData('nfe', { idContato: String(contato.id) }, true);
+        const nfes = nfesData?.data || [];
+
+        for (const nfe of nfes) {
+          try {
+            const nfeDetail = await fetchBlingData(`nfe/${nfe.id}`);
+            const nfeData = nfeDetail?.data || nfe;
+            const itens = nfeData?.itens || [];
+
+            for (const item of itens) {
+              registros.push({
+                descricao: item.descricao || item.produto?.nome || '-',
+                valorUnitario: Number(item.valor || item.valorUnidade || 0),
+                quantidade: Number(item.quantidade || 1),
+                tipo: 'Nota Fiscal',
+                numero: String(nfeData.numero || nfe.numero || nfe.id),
+                data: nfeData.dataEmissao || nfe.dataEmissao || '',
+                nfeId: String(nfe.id),
+              });
+            }
+
+            if (itens.length === 0) {
+              registros.push({
+                descricao: 'NF-e (sem itens detalhados)',
+                valorUnitario: Number(nfeData.total || nfe.total || 0),
+                quantidade: 1,
+                tipo: 'Nota Fiscal',
+                numero: String(nfeData.numero || nfe.numero || nfe.id),
+                data: nfeData.dataEmissao || nfe.dataEmissao || '',
+                nfeId: String(nfe.id),
+              });
+            }
+          } catch {
+            registros.push({
+              descricao: 'NF-e (sem detalhes)',
+              valorUnitario: Number(nfe.total || 0),
+              quantidade: 1,
+              tipo: 'Nota Fiscal',
+              numero: String(nfe.numero || nfe.id),
+              data: nfe.dataEmissao || '',
+              nfeId: String(nfe.id),
+            });
+          }
+        }
+      } catch {
+        // NF-e fetch failed silently
+      }
+
+      // Sort by date desc
+      registros.sort((a, b) => {
+        const dA = a.data ? new Date(a.data).getTime() : 0;
+        const dB = b.data ? new Date(b.data).getTime() : 0;
+        return dB - dA;
+      });
+
+      setRegistrosCliente(registros);
     } catch {
-      toast.error('Erro ao carregar pedidos do cliente');
+      toast.error('Erro ao carregar registros do cliente');
     }
     setContatoLoading(false);
   };
 
   const totalGasto = useMemo(() => {
-    return contatoPedidos.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
-  }, [contatoPedidos]);
+    // Sum only "Venda" types to avoid double counting with NF-e
+    return registrosCliente
+      .filter(r => r.tipo === 'Venda')
+      .reduce((sum, r) => sum + (r.valorUnitario * r.quantidade), 0);
+  }, [registrosCliente]);
 
-  const ultimaCompra = useMemo(() => {
-    if (!contatoPedidos.length) return null;
-    const sorted = [...contatoPedidos].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
-    return sorted[0]?.data ? new Date(sorted[0].data) : null;
-  }, [contatoPedidos]);
+  const totalPedidos = useMemo(() => {
+    const ids = new Set(registrosCliente.filter(r => r.pedidoId).map(r => r.pedidoId));
+    return ids.size;
+  }, [registrosCliente]);
+
+  const registrosProdutos = useMemo(() => {
+    return registrosCliente.filter(r => r.tipo === 'Venda');
+  }, [registrosCliente]);
+
+  const registrosFinanceiro = useMemo(() => {
+    return registrosCliente.filter(r => r.tipo === 'Nota Fiscal');
+  }, [registrosCliente]);
 
   const filteredContatos = useMemo(() => {
     if (!searchText) return contatos;
@@ -91,7 +223,8 @@ export default function Clientes() {
       (c.nome || '').toLowerCase().includes(term) ||
       (c.email || '').toLowerCase().includes(term) ||
       (c.telefone || '').includes(term) ||
-      (c.fantasia || '').toLowerCase().includes(term)
+      (c.fantasia || '').toLowerCase().includes(term) ||
+      (c.numeroDocumento || '').includes(term)
     );
   }, [contatos, searchText]);
 
@@ -143,7 +276,7 @@ export default function Clientes() {
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por nome, email, telefone..."
+          placeholder="Buscar por nome, email, telefone, CPF/CNPJ..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           className="pl-10"
@@ -184,6 +317,12 @@ export default function Clientes() {
                 </div>
 
                 <div className="space-y-1.5 text-sm text-muted-foreground">
+                  {contato.numeroDocumento && (
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{contato.numeroDocumento}</span>
+                    </div>
+                  )}
                   {contato.telefone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-3.5 w-3.5 shrink-0" />
@@ -208,7 +347,7 @@ export default function Clientes() {
 
                 <div className="flex items-center justify-end mt-3 pt-2 border-t">
                   <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors flex items-center gap-1">
-                    Ver detalhes <ChevronRight className="h-3 w-3" />
+                    Ver registros <ChevronRight className="h-3 w-3" />
                   </span>
                 </div>
               </CardContent>
@@ -217,95 +356,63 @@ export default function Clientes() {
         </div>
       )}
 
-      {/* Client Detail Modal */}
+      {/* Client Detail Modal - similar to reference image */}
       <Dialog open={!!selectedContato} onOpenChange={(open) => !open && setSelectedContato(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] p-0 gap-0">
-          <DialogHeader className="p-6 pb-4">
-            <DialogTitle className="flex items-center gap-2 text-lg">
-              <User className="h-5 w-5 text-primary" />
-              {selectedContato?.nome}
+        <DialogContent className="max-w-3xl max-h-[85vh] p-0 gap-0">
+          <DialogHeader className="p-5 pb-3">
+            <DialogTitle className="text-lg">
+              Últimos registros deste cliente
             </DialogTitle>
+            <p className="text-sm text-muted-foreground">{selectedContato?.nome}</p>
           </DialogHeader>
 
           <ScrollArea className="max-h-[calc(85vh-80px)]">
-            <div className="px-6 pb-6 space-y-5">
-              {/* Info do Cliente */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {selectedContato?.email && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="truncate">{selectedContato.email}</span>
-                  </div>
-                )}
+            <div className="px-5 pb-5 space-y-4">
+              {/* Contact summary */}
+              <div className="flex flex-wrap gap-4 text-sm">
                 {selectedContato?.telefone && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span>{selectedContato.telefone}</span>
-                  </div>
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <Phone className="h-3.5 w-3.5" /> {selectedContato.telefone}
+                  </span>
                 )}
-                {selectedContato?.celular && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span>{selectedContato.celular}</span>
-                  </div>
+                {selectedContato?.email && (
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5" /> {selectedContato.email}
+                  </span>
                 )}
                 {selectedContato?.numeroDocumento && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span>{selectedContato.numeroDocumento}</span>
-                  </div>
-                )}
-                {(selectedContato?.endereco?.geral?.endereco || selectedContato?.endereco?.municipio) && (
-                  <div className="flex items-start gap-2 text-sm col-span-full">
-                    <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <span>
-                      {[
-                        selectedContato?.endereco?.geral?.endereco,
-                        selectedContato?.endereco?.geral?.numero,
-                        selectedContato?.endereco?.geral?.bairro,
-                        selectedContato?.endereco?.municipio || selectedContato?.endereco?.geral?.municipio,
-                        selectedContato?.endereco?.uf || selectedContato?.endereco?.geral?.uf,
-                        selectedContato?.endereco?.geral?.cep,
-                      ].filter(Boolean).join(', ')}
-                    </span>
-                  </div>
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <FileText className="h-3.5 w-3.5" /> {selectedContato.numeroDocumento}
+                  </span>
                 )}
               </div>
 
-              <Separator />
-
-              {/* Resumo de Compras */}
+              {/* KPIs */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <Card className="bg-primary/5 border-primary/10">
                   <CardContent className="p-3 flex items-center gap-3">
-                    <ShoppingCart className="h-7 w-7 text-primary shrink-0" />
-                    <div className="min-w-0">
+                    <ShoppingCart className="h-6 w-6 text-primary shrink-0" />
+                    <div>
                       <p className="text-xs text-muted-foreground">Pedidos</p>
-                      <p className="text-xl font-bold text-foreground">
-                        {contatoLoading ? '...' : contatoPedidos.length}
-                      </p>
+                      <p className="text-xl font-bold">{contatoLoading ? '...' : totalPedidos}</p>
                     </div>
                   </CardContent>
                 </Card>
                 <Card className="bg-green-500/5 border-green-500/10">
                   <CardContent className="p-3 flex items-center gap-3">
-                    <DollarSign className="h-7 w-7 text-green-600 shrink-0" />
-                    <div className="min-w-0">
+                    <DollarSign className="h-6 w-6 text-green-600 shrink-0" />
+                    <div>
                       <p className="text-xs text-muted-foreground">Total Gasto</p>
-                      <p className="text-xl font-bold text-foreground truncate">
-                        {contatoLoading ? '...' : `R$ ${totalGasto.toFixed(2)}`}
-                      </p>
+                      <p className="text-lg font-bold truncate">{contatoLoading ? '...' : `R$ ${totalGasto.toFixed(2)}`}</p>
                     </div>
                   </CardContent>
                 </Card>
                 <Card className="bg-blue-500/5 border-blue-500/10 col-span-2 sm:col-span-1">
                   <CardContent className="p-3 flex items-center gap-3">
-                    <Calendar className="h-7 w-7 text-blue-600 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">Última Compra</p>
-                      <p className="text-sm font-bold text-foreground">
-                        {contatoLoading ? '...' : ultimaCompra ? ultimaCompra.toLocaleDateString('pt-BR') : 'N/A'}
-                      </p>
+                    <Package className="h-6 w-6 text-blue-600 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Itens</p>
+                      <p className="text-xl font-bold">{contatoLoading ? '...' : registrosCliente.length}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -313,50 +420,108 @@ export default function Clientes() {
 
               <Separator />
 
-              {/* Histórico de Pedidos */}
-              <div>
-                <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                  <ShoppingCart className="h-4 w-4" />
-                  Histórico de Pedidos
-                </h3>
+              {/* Tabs: Produtos + Financeiro */}
+              <Tabs defaultValue="produtos">
+                <TabsList className="w-full grid grid-cols-2">
+                  <TabsTrigger value="produtos" className="gap-1.5">
+                    <Package className="h-4 w-4" /> Produtos
+                  </TabsTrigger>
+                  <TabsTrigger value="financeiro" className="gap-1.5">
+                    <FileText className="h-4 w-4" /> Financeiro
+                  </TabsTrigger>
+                </TabsList>
 
-                {contatoLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : contatoPedidos.length > 0 ? (
-                  <div className="rounded-lg border overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50">
-                          <TableHead className="text-xs">Nº</TableHead>
-                          <TableHead className="text-xs">Data</TableHead>
-                          <TableHead className="text-xs text-right">Total</TableHead>
-                          <TableHead className="text-xs">Situação</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {contatoPedidos.map((p: any) => (
-                          <TableRow key={p.id}>
-                            <TableCell className="font-medium text-sm">{p.numero || p.id}</TableCell>
-                            <TableCell className="text-sm">{p.data ? new Date(p.data).toLocaleDateString('pt-BR') : '-'}</TableCell>
-                            <TableCell className="text-sm text-right font-medium">
-                              {p.total ? `R$ ${Number(p.total).toFixed(2)}` : '-'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="text-xs">{p.situacao?.valor || '-'}</Badge>
-                            </TableCell>
+                <TabsContent value="produtos" className="mt-3">
+                  {/* Search within products */}
+                  {contatoLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : registrosProdutos.length > 0 ? (
+                    <div className="rounded-lg border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead className="text-xs">Descrição</TableHead>
+                            <TableHead className="text-xs text-right">Valor unitário</TableHead>
+                            <TableHead className="text-xs text-center">Qtd</TableHead>
+                            <TableHead className="text-xs">Tipo</TableHead>
+                            <TableHead className="text-xs">Número</TableHead>
+                            <TableHead className="text-xs">Data</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8 text-sm">
-                    Nenhum pedido encontrado para este cliente.
-                  </p>
-                )}
-              </div>
+                        </TableHeader>
+                        <TableBody>
+                          {registrosProdutos.map((r, i) => (
+                            <TableRow key={`prod-${i}`}>
+                              <TableCell className="text-sm font-medium max-w-[200px] truncate">{r.descricao}</TableCell>
+                              <TableCell className="text-sm text-right">
+                                {r.valorUnitario.toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-sm text-center">{r.quantidade.toFixed(3)}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs whitespace-nowrap">{r.tipo}</Badge>
+                              </TableCell>
+                              <TableCell className="text-sm text-primary font-medium">{r.numero}</TableCell>
+                              <TableCell className="text-sm whitespace-nowrap">
+                                {r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8 text-sm">
+                      Nenhum produto encontrado para este cliente.
+                    </p>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="financeiro" className="mt-3">
+                  {contatoLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : registrosFinanceiro.length > 0 ? (
+                    <div className="rounded-lg border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead className="text-xs">Descrição</TableHead>
+                            <TableHead className="text-xs text-right">Valor unitário</TableHead>
+                            <TableHead className="text-xs text-center">Qtd</TableHead>
+                            <TableHead className="text-xs">Tipo</TableHead>
+                            <TableHead className="text-xs">Número</TableHead>
+                            <TableHead className="text-xs">Data</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {registrosFinanceiro.map((r, i) => (
+                            <TableRow key={`fin-${i}`}>
+                              <TableCell className="text-sm font-medium max-w-[200px] truncate">{r.descricao}</TableCell>
+                              <TableCell className="text-sm text-right">
+                                {r.valorUnitario.toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-sm text-center">{r.quantidade.toFixed(3)}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs whitespace-nowrap">{r.tipo}</Badge>
+                              </TableCell>
+                              <TableCell className="text-sm text-primary font-medium">{r.numero}</TableCell>
+                              <TableCell className="text-sm whitespace-nowrap">
+                                {r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8 text-sm">
+                      Nenhuma nota fiscal encontrada para este cliente.
+                    </p>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
           </ScrollArea>
         </DialogContent>
