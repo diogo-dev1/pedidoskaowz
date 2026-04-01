@@ -99,7 +99,7 @@ export default function BlingIntegration() {
   const loadPedidos = async () => {
     setDataLoading(true);
     try {
-      const data = await fetchBlingData('pedidos/vendas', { limite: '100' });
+      const data = await fetchBlingData('pedidos/vendas', {}, true);
       setPedidos(data?.data || []);
     } catch (err: any) {
       toast.error('Erro ao carregar pedidos: ' + err.message);
