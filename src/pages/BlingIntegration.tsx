@@ -110,7 +110,7 @@ export default function BlingIntegration() {
   const loadContatos = async () => {
     setDataLoading(true);
     try {
-      const data = await fetchBlingData('contatos', { limite: '100' });
+      const data = await fetchBlingData('contatos', {}, true);
       setContatos(data?.data || []);
     } catch (err: any) {
       toast.error('Erro ao carregar contatos: ' + err.message);
