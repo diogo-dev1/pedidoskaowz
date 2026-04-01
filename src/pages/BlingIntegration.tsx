@@ -309,19 +309,83 @@ export default function BlingIntegration() {
                   </TableHeader>
                   <TableBody>
                     {contatos.map((c: any) => (
-                      <TableRow key={c.id}>
+                      <TableRow key={c.id} className="cursor-pointer hover:bg-accent" onClick={() => handleContatoClick(c)}>
                         <TableCell className="font-medium">{c.nome || '-'}</TableCell>
                         <TableCell>{c.tipo || '-'}</TableCell>
                         <TableCell>{c.telefone || '-'}</TableCell>
                         <TableCell>{c.email || '-'}</TableCell>
+                        <TableCell className="text-right"><ChevronRight className="h-4 w-4 text-muted-foreground" /></TableCell>
                       </TableRow>
                     ))}
                     {!contatos.length && !dataLoading && (
-                      <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Clique em "Atualizar" para carregar</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Clique em "Atualizar" para carregar</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
               )}
+
+              <Dialog open={!!selectedContato} onOpenChange={(open) => !open && setSelectedContato(null)}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      {selectedContato?.nome}
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <Card>
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <ShoppingCart className="h-8 w-8 text-primary" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Total de Pedidos</p>
+                          <p className="text-2xl font-bold">{contatoPedidos.length}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <DollarSign className="h-8 w-8 text-primary" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Valor Total</p>
+                          <p className="text-2xl font-bold">R$ {totalGastoContato.toFixed(2)}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {contatoLoading ? (
+                    <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+                  ) : contatoPedidos.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Número</TableHead>
+                          <TableHead>Data</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                          <TableHead>Situação</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {contatoPedidos.map((p: any) => (
+                          <TableRow key={p.id}>
+                            <TableCell className="font-medium">{p.numero || p.id}</TableCell>
+                            <TableCell>{p.data ? new Date(p.data).toLocaleDateString('pt-BR') : '-'}</TableCell>
+                            <TableCell className="text-right">
+                              {p.total ? `R$ ${Number(p.total).toFixed(2)}` : '-'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{p.situacao?.valor || '-'}</Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">Nenhum pedido encontrado para este contato.</p>
+                  )}
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         </TabsContent>
