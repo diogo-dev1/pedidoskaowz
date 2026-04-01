@@ -21,6 +21,9 @@ export default function BlingIntegration() {
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [contatos, setContatos] = useState<any[]>([]);
   const [nfes, setNfes] = useState<any[]>([]);
+  const [selectedContato, setSelectedContato] = useState<any>(null);
+  const [contatoPedidos, setContatoPedidos] = useState<any[]>([]);
+  const [contatoLoading, setContatoLoading] = useState(false);
 
   // Check if we have a valid token
   const checkConnection = async () => {
