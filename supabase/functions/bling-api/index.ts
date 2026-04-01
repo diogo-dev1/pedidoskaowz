@@ -18,7 +18,6 @@ async function getValidToken(supabase: any) {
   const now = new Date();
   const expiresAt = new Date(token.expires_at);
 
-  // If token expires in less than 5 minutes, refresh it
   if (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000) {
     const BLING_CLIENT_ID = Deno.env.get("BLING_CLIENT_ID")!;
     const BLING_CLIENT_SECRET = Deno.env.get("BLING_CLIENT_SECRET")!;
@@ -57,6 +56,47 @@ async function getValidToken(supabase: any) {
   return token.access_token;
 }
 
+async function fetchAllPages(accessToken: string, endpoint: string, params: Record<string, string>) {
+  const allData: any[] = [];
+  let page = 1;
+  const limite = 100;
+
+  while (true) {
+    const url = new URL(`${BLING_API_BASE}/${endpoint}`);
+    for (const [key, value] of Object.entries(params)) {
+      if (key !== 'pagina' && key !== 'limite' && key !== 'paginate') {
+        url.searchParams.set(key, String(value));
+      }
+    }
+    url.searchParams.set('pagina', String(page));
+    url.searchParams.set('limite', String(limite));
+
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+    });
+
+    if (!response.ok) break;
+
+    const result = await response.json();
+    const items = result?.data || [];
+    allData.push(...items);
+
+    // If we got fewer than the limit, we've reached the last page
+    if (items.length < limite) break;
+    
+    page++;
+    // Safety limit to avoid infinite loops
+    if (page > 50) break;
+  }
+
+  return allData;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -66,7 +106,7 @@ Deno.serve(async (req) => {
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   try {
-    const { endpoint, method = "GET", params = {}, body } = await req.json();
+    const { endpoint, method = "GET", params = {}, body, paginate = false } = await req.json();
 
     if (!endpoint) {
       return new Response(JSON.stringify({ error: "endpoint is required" }), {
@@ -77,7 +117,15 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const accessToken = await getValidToken(supabase);
 
-    // Build URL with query params
+    // If paginate=true, fetch all pages automatically
+    if (paginate && method === "GET") {
+      const allData = await fetchAllPages(accessToken, endpoint, params);
+      return new Response(JSON.stringify({ data: allData }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Standard single-page request
     const url = new URL(`${BLING_API_BASE}/${endpoint}`);
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.set(key, String(value));
