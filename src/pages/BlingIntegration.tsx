@@ -134,7 +134,7 @@ export default function BlingIntegration() {
     setContatoLoading(true);
     setContatoPedidos([]);
     try {
-      const data = await fetchBlingData('pedidos/vendas', { limite: '100', idContato: String(contato.id) });
+      const data = await fetchBlingData('pedidos/vendas', { idContato: String(contato.id) }, true);
       setContatoPedidos(data?.data || []);
     } catch {
       toast.error('Erro ao carregar pedidos do contato');
