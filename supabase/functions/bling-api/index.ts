@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
       fetchOptions.body = JSON.stringify(body);
     }
 
-    const response = await fetch(url.toString(), fetchOptions);
+    const response = await fetchWithRetry(url.toString(), fetchOptions);
     const data = await response.json();
 
     if (!response.ok) {
