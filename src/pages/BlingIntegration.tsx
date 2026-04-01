@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Link2, Link2Off, RefreshCw, Package, Users, FileText, ShoppingCart, Loader2 } from 'lucide-react';
+import { Link2, Link2Off, RefreshCw, Package, Users, FileText, ShoppingCart, Loader2, ChevronRight, DollarSign, X } from 'lucide-react';
 
 const BLING_CLIENT_ID = '7feedd12c2cc706ef96607e32aa8acbdc52fac4d';
 
