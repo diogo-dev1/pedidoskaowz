@@ -79,12 +79,12 @@ export default function AuxilioVendas() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const contatosData = await fetchBlingData('contatos', { limite: '100' });
+      const contatosData = await fetchBlingData('contatos', {}, true);
       const contatosList = contatosData?.data || [];
       setContatos(contatosList);
 
       setLoadingPedidos(true);
-      const pedidosData = await fetchBlingData('pedidos/vendas', { limite: '100' });
+      const pedidosData = await fetchBlingData('pedidos/vendas', {}, true);
       const pedidosList = pedidosData?.data || [];
 
       const pedidosMap: Record<string, any[]> = {};
