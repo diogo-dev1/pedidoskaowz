@@ -75,12 +75,12 @@ export default function BlingIntegration() {
     window.location.href = `https://www.bling.com.br/b/Api/v3/oauth/authorize?response_type=code&client_id=${BLING_CLIENT_ID}&state=${state}&redirect_uri=${redirectUri}`;
   };
 
-  const fetchBlingData = async (endpoint: string, params: Record<string, string> = {}) => {
+  const fetchBlingData = async (endpoint: string, params: Record<string, string> = {}, paginate = false) => {
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
     const res = await fetch(`https://${projectId}.supabase.co/functions/v1/bling-api`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint, params }),
+      body: JSON.stringify({ endpoint, params, paginate }),
     });
     return res.json();
   };
@@ -88,7 +88,7 @@ export default function BlingIntegration() {
   const loadProdutos = async () => {
     setDataLoading(true);
     try {
-      const data = await fetchBlingData('produtos', { limite: '100' });
+      const data = await fetchBlingData('produtos', {}, true);
       setProdutos(data?.data || []);
     } catch (err: any) {
       toast.error('Erro ao carregar produtos: ' + err.message);
@@ -99,7 +99,7 @@ export default function BlingIntegration() {
   const loadPedidos = async () => {
     setDataLoading(true);
     try {
-      const data = await fetchBlingData('pedidos/vendas', { limite: '100' });
+      const data = await fetchBlingData('pedidos/vendas', {}, true);
       setPedidos(data?.data || []);
     } catch (err: any) {
       toast.error('Erro ao carregar pedidos: ' + err.message);
@@ -110,7 +110,7 @@ export default function BlingIntegration() {
   const loadContatos = async () => {
     setDataLoading(true);
     try {
-      const data = await fetchBlingData('contatos', { limite: '100' });
+      const data = await fetchBlingData('contatos', {}, true);
       setContatos(data?.data || []);
     } catch (err: any) {
       toast.error('Erro ao carregar contatos: ' + err.message);
@@ -121,7 +121,7 @@ export default function BlingIntegration() {
   const loadNfes = async () => {
     setDataLoading(true);
     try {
-      const data = await fetchBlingData('nfe', { limite: '100' });
+      const data = await fetchBlingData('nfe', {}, true);
       setNfes(data?.data || []);
     } catch (err: any) {
       toast.error('Erro ao carregar notas fiscais: ' + err.message);
@@ -134,7 +134,7 @@ export default function BlingIntegration() {
     setContatoLoading(true);
     setContatoPedidos([]);
     try {
-      const data = await fetchBlingData('pedidos/vendas', { limite: '100', idContato: String(contato.id) });
+      const data = await fetchBlingData('pedidos/vendas', { idContato: String(contato.id) }, true);
       setContatoPedidos(data?.data || []);
     } catch {
       toast.error('Erro ao carregar pedidos do contato');

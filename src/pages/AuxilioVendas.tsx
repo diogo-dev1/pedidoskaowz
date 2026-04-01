@@ -66,12 +66,12 @@ export default function AuxilioVendas() {
     setCheckingConnection(false);
   };
 
-  const fetchBlingData = async (endpoint: string, params: Record<string, string> = {}) => {
+  const fetchBlingData = async (endpoint: string, params: Record<string, string> = {}, paginate = false) => {
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
     const res = await fetch(`https://${projectId}.supabase.co/functions/v1/bling-api`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint, params }),
+      body: JSON.stringify({ endpoint, params, paginate }),
     });
     return res.json();
   };
@@ -79,12 +79,12 @@ export default function AuxilioVendas() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const contatosData = await fetchBlingData('contatos', { limite: '100' });
+      const contatosData = await fetchBlingData('contatos', {}, true);
       const contatosList = contatosData?.data || [];
       setContatos(contatosList);
 
       setLoadingPedidos(true);
-      const pedidosData = await fetchBlingData('pedidos/vendas', { limite: '100' });
+      const pedidosData = await fetchBlingData('pedidos/vendas', {}, true);
       const pedidosList = pedidosData?.data || [];
 
       const pedidosMap: Record<string, any[]> = {};
