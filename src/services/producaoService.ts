@@ -1,17 +1,11 @@
 // src/services/producaoService.ts
 
-/**
- * Serviço para enviar os dados do simulador diretamente para a planilha de produção
- * via Google Apps Script (Web App).
- */
 export const enviarParaProducaoManual = async (
   laminas: any[], 
   nomeCliente: string, 
   dataPrazo: string
 ) => {
   const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwhmLigrGD-0Aser1uDyJmcGgxxF-54MkQHUx1hS2U-nQvKNy8BQ_WIlg3ulKYIJLT0Mw/exec"; 
-
-  console.log("Iniciando integração com a planilha...");
 
   for (const item of laminas) {
     const payload = {
@@ -37,18 +31,18 @@ export const enviarParaProducaoManual = async (
     try {
       await fetch(GOOGLE_WEBAPP_URL, {
         method: "POST",
-        mode: "no-cors",
+        mode: "no-cors", 
         headers: {
-          "Content-Type": "text/plain",
+          "Content-Type": "text/plain", 
         },
         body: JSON.stringify(payload),
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       
     } catch (error) {
-      console.error("Erro ao enviar item para a planilha:", error);
-      throw new Error("Falha na integração com a planilha.");
+      console.error("Erro no fetch:", error);
+      throw error;
     }
   }
 };
