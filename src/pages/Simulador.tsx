@@ -13,6 +13,7 @@ import { Trash2, Plus, Search, Check, Eye, Copy, X, Image, FileText, ChevronDown
 import { useAuth } from '@/contexts/AuthContext';
 import { InfoEtapaModal } from '@/components/InfoEtapaModal';
 import edcKnife from '@/assets/edc-knife.svg';
+import { enviarParaProducaoManual } from '@/services/producaoService';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -881,6 +882,15 @@ export default function Simulador() {
           subtotal: calcularSubtotal(),
           quantidade: 1,
         });
+      }
+
+      // Enviar dados para planilha de produção via Google Apps Script
+      try {
+        await enviarParaProducaoManual(todasLaminas, nomeCompleto, prazo);
+        console.log('Dados enviados para planilha de produção com sucesso');
+      } catch (error) {
+        console.error('Erro ao enviar para planilha de produção:', error);
+        toast.error('Erro ao enviar dados para a planilha de produção');
       }
 
       // Formatar itens no padrão: Modelo Aço Acabamento Empunhadura Bainha [Tipo] [Cor]
