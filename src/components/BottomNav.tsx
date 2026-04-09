@@ -3,10 +3,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   Calculator, FileText, Users, TrendingUp, MoreHorizontal,
   ShoppingBag, MessageSquare, BookOpen, Image, Eye, DollarSign,
-  CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, X, User
+  CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 interface NavItem {
   title: string;
