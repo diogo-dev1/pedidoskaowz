@@ -3,10 +3,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   Calculator, FileText, Users, TrendingUp, MoreHorizontal,
   ShoppingBag, MessageSquare, BookOpen, Image, Eye, DollarSign,
-  CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, X, User
+  CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 interface NavItem {
   title: string;
@@ -74,97 +75,87 @@ export function BottomNav() {
 
   return (
     <>
-      {/* More menu overlay */}
-      {moreOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col">
-          <div className="flex-1 bg-black/50" onClick={() => setMoreOpen(false)} />
-          <div className="bg-card border-t border-border rounded-t-2xl max-h-[75vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-200">
-            {/* Header */}
-            <div className="sticky top-0 bg-card border-b border-border px-4 py-3 flex items-center justify-between rounded-t-2xl">
+      {/* Side panel */}
+      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+        <SheetContent side="right" className="w-[280px] p-0 overflow-y-auto">
+          <SheetHeader className="px-4 py-3 border-b border-border">
+            {profile && (
               <div className="flex items-center gap-2">
-                {profile && (
-                  <>
-                    <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-                      <User className="h-4 w-4 text-accent" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{profile.nome_vendedor}</p>
-                      <p className="text-[10px] text-muted-foreground capitalize">{profile.cargo}</p>
-                    </div>
-                  </>
-                )}
+                <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
+                  <User className="h-4 w-4 text-accent" />
+                </div>
+                <div className="text-left">
+                  <SheetTitle className="text-sm">{profile.nome_vendedor}</SheetTitle>
+                  <p className="text-[10px] text-muted-foreground capitalize">{profile.cargo}</p>
+                </div>
               </div>
-              <button onClick={() => setMoreOpen(false)} className="p-2 rounded-full hover:bg-secondary">
-                <X className="h-5 w-5 text-muted-foreground" />
-              </button>
-            </div>
+            )}
+            {!profile && <SheetTitle>Menu</SheetTitle>}
+          </SheetHeader>
 
-            {/* Menu sections */}
-            <div className="p-3 space-y-4">
-              {moreItems.map((group) => (
-                <div key={group.label}>
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground px-2 mb-1.5">{group.label}</p>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {group.items.map((item) => (
-                      <NavLink
-                        key={item.url}
-                        to={item.url}
-                        onClick={() => setMoreOpen(false)}
-                        className={({ isActive }) =>
-                          cn(
-                            'flex flex-col items-center gap-1 rounded-xl p-3 text-xs transition-colors',
-                            isActive
-                              ? 'bg-accent text-accent-foreground font-medium'
-                              : 'text-foreground hover:bg-secondary'
-                          )
-                        }
-                      >
-                        <item.icon className="h-5 w-5" />
-                        <span className="text-center leading-tight">{item.title}</span>
-                      </NavLink>
-                    ))}
-                  </div>
+          <div className="p-3 space-y-4">
+            {moreItems.map((group) => (
+              <div key={group.label}>
+                <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground px-2 mb-1.5">{group.label}</p>
+                <div className="space-y-0.5">
+                  {group.items.map((item) => (
+                    <NavLink
+                      key={item.url}
+                      to={item.url}
+                      onClick={() => setMoreOpen(false)}
+                      className={({ isActive }) =>
+                        cn(
+                          'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
+                          isActive
+                            ? 'bg-accent text-accent-foreground font-medium'
+                            : 'text-foreground hover:bg-secondary'
+                        )
+                      }
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span>{item.title}</span>
+                    </NavLink>
+                  ))}
                 </div>
-              ))}
+              </div>
+            ))}
 
-              {isAdmin && (
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground px-2 mb-1.5">Administração</p>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {adminMoreItems.map((item) => (
-                      <NavLink
-                        key={item.url}
-                        to={item.url}
-                        onClick={() => setMoreOpen(false)}
-                        className={({ isActive }) =>
-                          cn(
-                            'flex flex-col items-center gap-1 rounded-xl p-3 text-xs transition-colors',
-                            isActive
-                              ? 'bg-accent text-accent-foreground font-medium'
-                              : 'text-foreground hover:bg-secondary'
-                          )
-                        }
-                      >
-                        <item.icon className="h-5 w-5" />
-                        <span className="text-center leading-tight">{item.title}</span>
-                      </NavLink>
-                    ))}
-                  </div>
+            {isAdmin && (
+              <div>
+                <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground px-2 mb-1.5">Administração</p>
+                <div className="space-y-0.5">
+                  {adminMoreItems.map((item) => (
+                    <NavLink
+                      key={item.url}
+                      to={item.url}
+                      onClick={() => setMoreOpen(false)}
+                      className={({ isActive }) =>
+                        cn(
+                          'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
+                          isActive
+                            ? 'bg-accent text-accent-foreground font-medium'
+                            : 'text-foreground hover:bg-secondary'
+                        )
+                      }
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span>{item.title}</span>
+                    </NavLink>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Sair */}
-              <button
-                onClick={() => { setMoreOpen(false); signOut(); }}
-                className="w-full flex items-center gap-3 rounded-xl p-3 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-              >
-                <LogOut className="h-5 w-5" />
-                <span>Sair</span>
-              </button>
-            </div>
+            <button
+              onClick={() => { setMoreOpen(false); signOut(); }}
+              className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Sair</span>
+            </button>
           </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
 
       {/* Bottom tab bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border md:hidden safe-area-bottom">
