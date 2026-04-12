@@ -1103,15 +1103,15 @@ OBS: ${observacao || '-'}`;
             <button
               key={i}
               onClick={() => { if (i === 0 || modeloSelecionado) setCurrentStep(i); }}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center justify-center rounded-lg font-medium transition-all ${
                 i === currentStep
-                  ? 'bg-accent text-accent-foreground shadow-sm'
+                  ? 'flex-[2] py-2.5 bg-accent text-accent-foreground shadow-sm text-xs'
                   : i < currentStep || (i > 0 && modeloSelecionado)
-                    ? 'bg-accent/20 text-accent-foreground'
-                    : 'bg-muted text-muted-foreground'
+                    ? 'flex-1 py-2 bg-accent/20 text-accent-foreground text-[10px]'
+                    : 'flex-1 py-2 bg-muted text-muted-foreground text-[10px]'
               }`}
             >
-              <span className="text-[11px]">{step.label}</span>
+              {step.label}
             </button>
           ))}
         </div>
