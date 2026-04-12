@@ -29,7 +29,7 @@ interface ModeloBase {
 interface OpcaoComponente {
   id: string;
   nome_opcao: string;
-  tipo_opcao: 'Aço' | 'Empunhadura' | 'Acabamento' | 'Bainha' | 'Cor de Bainha' | 'Embalagem' | 'Espaçador';
+  tipo_opcao: 'Aço' | 'Empunhadura' | 'Acabamento' | 'Bainha' | 'Cor de Bainha' | 'Embalagem';
   preco_adicional: number;
 }
 
@@ -50,19 +50,14 @@ interface LaminaCustomizada {
   bainha: OpcaoComponente | null;
   corBainha: string;
   corBainhaPersonalizada: string;
-  espacador: OpcaoComponente | null;
-  laser: boolean;
   textoLaser: string;
-  localGravacao: string[];
   embalagem: string;
-  embalagemGravacao: boolean;
-  embalagemTextoGravacao: string;
   observacoesLamina: string;
   subtotal: number;
   quantidade: number;
 }
 
-const LOCAIS_GRAVACAO = ['Dorso Superior', 'Dorso Inferior', 'Lâmina'];
+
 
 export default function Simulador() {
   const { profile } = useAuth();
@@ -82,13 +77,8 @@ export default function Simulador() {
   const [bainhaSelecionada, setBainhaSelecionada] = useState<string>('');
   const [corBainha, setCorBainha] = useState<string>('Preto');
   const [corBainhaPersonalizada, setCorBainhaPersonalizada] = useState<string>('');
-  const [espacadorSelecionado, setEspacadorSelecionado] = useState<string>('');
-  const [laser, setLaser] = useState(false);
   const [textoLaser, setTextoLaser] = useState('');
-  const [localGravacao, setLocalGravacao] = useState<string[]>([]);
   const [embalagem, setEmbalagem] = useState('');
-  const [embalagemGravacao, setEmbalagemGravacao] = useState(false);
-  const [embalagemTextoGravacao, setEmbalagemTextoGravacao] = useState('');
   const [observacoesLamina, setObservacoesLamina] = useState('');
   const [buscaModelo, setBuscaModelo] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('');
@@ -148,10 +138,10 @@ export default function Simulador() {
   // Wizard steps
   const [currentStep, setCurrentStep] = useState(0);
   const STEPS = [
-    { label: 'Modelo', icon: '🔪' },
-    { label: 'Lâmina', icon: '⚙️' },
-    { label: 'Extras', icon: '🎒' },
-    { label: 'Revisar', icon: '✅' },
+    { label: 'Lâmina', icon: '🔪' },
+    { label: 'Empunhadura', icon: '🤚' },
+    { label: 'Bainha', icon: '🎒' },
+    { label: 'Personalização', icon: '✨' },
   ];
 
   useEffect(() => {
