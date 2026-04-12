@@ -1111,8 +1111,7 @@ OBS: ${observacao || '-'}`;
                     : 'bg-muted text-muted-foreground'
               }`}
             >
-              <span>{step.icon}</span>
-              <span className="hidden sm:inline">{step.label}</span>
+              <span className="text-[11px]">{step.label}</span>
             </button>
           ))}
         </div>
