@@ -1097,23 +1097,36 @@ OBS: ${observacao || '-'}`;
           </div>
         </div>
 
-        {/* Stepper compacto */}
-        <div className="flex items-center gap-1 mb-4">
-          {STEPS.map((step, i) => (
-            <button
-              key={i}
-              onClick={() => { if (i === 0 || modeloSelecionado) setCurrentStep(i); }}
-              className={`flex items-center justify-center rounded-lg font-medium transition-all ${
-                i === currentStep
-                  ? 'flex-[2] py-2.5 bg-accent text-accent-foreground shadow-sm text-xs'
-                  : i < currentStep || (i > 0 && modeloSelecionado)
-                    ? 'flex-1 py-2 bg-accent/20 text-accent-foreground text-[10px]'
-                    : 'flex-1 py-2 bg-muted text-muted-foreground text-[10px]'
-              }`}
-            >
-              {step.label}
-            </button>
-          ))}
+        {/* Stepper */}
+        <div className="flex items-end gap-2 mb-4 px-1">
+          {STEPS.map((step, i) => {
+            const isActive = i === currentStep;
+            const isDone = i < currentStep || (i > 0 && modeloSelecionado);
+            return (
+              <button
+                key={i}
+                onClick={() => { if (i === 0 || modeloSelecionado) setCurrentStep(i); }}
+                className="flex flex-col items-center gap-1 flex-1 group"
+              >
+                <span className={`transition-all font-semibold leading-tight text-center ${
+                  isActive
+                    ? 'text-xs text-accent-foreground'
+                    : isDone
+                      ? 'text-[10px] text-muted-foreground'
+                      : 'text-[10px] text-muted-foreground/50'
+                }`}>
+                  {step.label}
+                </span>
+                <div className={`w-full rounded-full transition-all ${
+                  isActive
+                    ? 'h-1 bg-accent'
+                    : isDone
+                      ? 'h-0.5 bg-accent/40'
+                      : 'h-0.5 bg-border'
+                }`} />
+              </button>
+            );
+          })}
         </div>
 
         {/* ===== STEP 0: Modelo + Aço + Acabamento ===== */}
