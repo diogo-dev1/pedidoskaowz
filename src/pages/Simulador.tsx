@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useOpcoesN8n } from '@/hooks/useOpcoesN8n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -65,6 +66,7 @@ const LOCAIS_GRAVACAO = ['Dorso Superior', 'Dorso Inferior', 'Lâmina'];
 
 export default function Simulador() {
   const { profile } = useAuth();
+  const { opcoes: opcoesN8n } = useOpcoesN8n();
   const [modelos, setModelos] = useState<ModeloBase[]>([]);
   const [componentes, setComponentes] = useState<OpcaoComponente[]>([]);
   const [produtosAdicionais, setProdutosAdicionais] = useState<ProdutoAdicional[]>([]);
@@ -166,11 +168,25 @@ export default function Simulador() {
     }
   };
 
-  const acos = componentes.filter(c => c.tipo_opcao === 'Aço');
-  const acabamentos = componentes.filter(c => c.tipo_opcao === 'Acabamento');
-  const empunhaduras = componentes.filter(c => c.tipo_opcao === 'Empunhadura');
+  // Helper: converte strings do n8n em OpcaoComponente, preservando preço do Supabase quando houver match
+  const mergeOpcoes = (n8nList: string[] | undefined, supabaseList: OpcaoComponente[], tipoOpcao: OpcaoComponente['tipo_opcao']): OpcaoComponente[] => {
+    if (!n8nList || n8nList.length === 0) return supabaseList;
+    return n8nList.map((nome) => {
+      const match = supabaseList.find(s => s.nome_opcao === nome);
+      return match || {
+        id: `n8n-${tipoOpcao}-${nome}`,
+        nome_opcao: nome,
+        tipo_opcao: tipoOpcao,
+        preco_adicional: 0,
+      };
+    });
+  };
+
+  const acos = mergeOpcoes(opcoesN8n?.acos, componentes.filter(c => c.tipo_opcao === 'Aço'), 'Aço');
+  const acabamentos = mergeOpcoes(opcoesN8n?.acabamentos, componentes.filter(c => c.tipo_opcao === 'Acabamento'), 'Acabamento');
+  const empunhaduras = mergeOpcoes(opcoesN8n?.empunhaduras, componentes.filter(c => c.tipo_opcao === 'Empunhadura'), 'Empunhadura');
   const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
-  const coresBainha = componentes.filter(c => c.tipo_opcao === 'Cor de Bainha');
+  const coresBainha = mergeOpcoes(opcoesN8n?.coresBainha, componentes.filter(c => c.tipo_opcao === 'Cor de Bainha'), 'Cor de Bainha');
   const embalagens = componentes.filter(c => c.tipo_opcao === 'Embalagem');
   const espacadores = componentes.filter(c => c.tipo_opcao === 'Espaçador');
 
