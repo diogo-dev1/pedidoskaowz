@@ -1559,30 +1559,18 @@ OBS: ${observacao || '-'}`;
                       <p className="font-medium">{laminaModalAberta.corBainha}</p>
                     </div>
                   )}
-                  {laminaModalAberta.espacador && (
-                    <div className="bg-muted p-2.5 rounded-lg">
-                      <p className="text-muted-foreground text-xs">Espaçador</p>
-                      <p className="font-medium">{laminaModalAberta.espacador.nome_opcao}</p>
-                    </div>
-                  )}
                   {laminaModalAberta.embalagem && (
                     <div className="bg-muted p-2.5 rounded-lg col-span-2">
                       <p className="text-muted-foreground text-xs">Embalagem</p>
                       <p className="font-medium">{laminaModalAberta.embalagem}</p>
-                      {laminaModalAberta.embalagemGravacao && laminaModalAberta.embalagemTextoGravacao && (
-                        <p className="text-xs text-muted-foreground mt-1">Gravação: {laminaModalAberta.embalagemTextoGravacao}</p>
-                      )}
                     </div>
                   )}
                 </div>
 
-                {laminaModalAberta.laser && (
+                {laminaModalAberta.textoLaser && laminaModalAberta.textoLaser !== '-' && (
                   <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
-                    <p className="text-muted-foreground text-xs">Personalização à Laser</p>
-                    <p className="font-medium">{laminaModalAberta.textoLaser || 'Sim'}</p>
-                    {laminaModalAberta.localGravacao.length > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">Local: {laminaModalAberta.localGravacao.join(', ')}</p>
-                    )}
+                    <p className="text-muted-foreground text-xs">Gravação à Laser</p>
+                    <p className="font-medium">{laminaModalAberta.textoLaser}</p>
                   </div>
                 )}
               </div>
