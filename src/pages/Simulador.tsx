@@ -145,6 +145,15 @@ export default function Simulador() {
   const [showExtras, setShowExtras] = useState(false);
   const [secaoAberta, setSecaoAberta] = useState<string | null>(null);
 
+  // Wizard steps
+  const [currentStep, setCurrentStep] = useState(0);
+  const STEPS = [
+    { label: 'Modelo', icon: '🔪' },
+    { label: 'Lâmina', icon: '⚙️' },
+    { label: 'Extras', icon: '🎒' },
+    { label: 'Revisar', icon: '✅' },
+  ];
+
   useEffect(() => {
     carregarDados();
   }, []);
@@ -1189,10 +1198,10 @@ OBS: ${observacao || '-'}`;
   }
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-background pb-32">
       <div className="container mx-auto px-3 py-4 max-w-5xl">
-        {/* Header com IA */}
-        <div className="flex items-center justify-between mb-4">
+        {/* Header com IA e lâminas */}
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             {laminasCustomizadas.length > 0 && (
               <Badge variant="secondary" className="text-xs">
@@ -1205,337 +1214,344 @@ OBS: ${observacao || '-'}`;
           </Button>
         </div>
 
-        {/* Imagem do modelo selecionado - Acima do card */}
-        {modeloSelecionado && modeloAtual && (
-          <div className="bg-muted rounded-lg p-4 mb-3">
-            <div className="w-full h-32 bg-white rounded overflow-hidden mb-3">
-              <img
-                src={getModeloImagem(modeloAtual)}
-                alt={modeloAtual.nome_modelo}
-                className="w-full h-full object-contain"
-              />
+        {/* Stepper visual */}
+        <div className="flex items-center justify-between mb-4 px-1">
+          {STEPS.map((step, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                if (i === 0 || modeloSelecionado) setCurrentStep(i);
+              }}
+              className="flex flex-col items-center gap-1 flex-1"
+            >
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm transition-all ${
+                i === currentStep
+                  ? 'bg-accent text-accent-foreground shadow-md scale-110'
+                  : i < currentStep || (i > 0 && modeloSelecionado)
+                    ? 'bg-accent/20 text-accent-foreground'
+                    : 'bg-muted text-muted-foreground'
+              }`}>
+                {step.icon}
+              </div>
+              <span className={`text-[10px] font-medium ${
+                i === currentStep ? 'text-accent-foreground' : 'text-muted-foreground'
+              }`}>
+                {step.label}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-1 bg-muted rounded-full mb-4 overflow-hidden">
+          <div
+            className="h-full bg-accent rounded-full transition-all duration-300"
+            style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
+          />
+        </div>
+
+        {/* ===== STEP 0: Modelo ===== */}
+        {currentStep === 0 && (
+          <div className="bg-card rounded-lg border border-border p-3 mb-3">
+            <div className="flex items-center gap-2 mb-3">
+              <h3 className="font-semibold text-sm">Escolha o Modelo</h3>
+              <InfoEtapaModal etapaKey="modelo" />
             </div>
-            <div className="flex items-center justify-between">
-              <p className="font-medium text-sm">{modeloAtual.nome_modelo}</p>
-              <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0">
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-        )}
 
-        {/* Seleção de Modelo - Compacta */}
-        <div className="bg-card rounded-lg border border-border p-3 mb-3">
-          <div className="flex items-center gap-2 mb-3">
-            <h3 className="font-semibold text-sm">Modelo</h3>
-            <InfoEtapaModal etapaKey="modelo" />
-          </div>
+            {/* Imagem do modelo selecionado */}
+            {modeloSelecionado && modeloAtual && (
+              <div className="bg-muted rounded-lg p-3 mb-3">
+                <div className="w-full h-28 bg-white rounded overflow-hidden mb-2">
+                  <img src={getModeloImagem(modeloAtual)} alt={modeloAtual.nome_modelo} className="w-full h-full object-contain" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="font-medium text-sm">{modeloAtual.nome_modelo}</p>
+                  <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0">
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
 
-          {/* Filtros inline */}
-          <div className="flex flex-wrap gap-1 mb-2">
-            {categorias.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setCategoriaFiltro(cat === categoriaFiltro ? '' : cat)}
-                className={`px-2 py-1 rounded text-xs transition-all ${
-                  categoriaFiltro === cat 
-                    ? 'bg-accent text-accent-foreground' 
-                    : 'bg-muted hover:bg-muted/80'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          <div className="relative mb-2">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Buscar..."
-              value={buscaModelo}
-              onChange={(e) => setBuscaModelo(e.target.value)}
-              className="pl-8 h-8 text-xs"
-            />
-          </div>
-
-          {mostrarModelos && modelosFiltrados.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-32 overflow-y-auto">
-              {modelosFiltrados.map(modelo => (
-                <button
-                  key={modelo.id}
-                  onClick={() => setModeloSelecionado(modelo.id)}
-                  className={`p-2 rounded text-left text-xs transition-all flex items-center justify-between ${
-                    modeloSelecionado === modelo.id
-                      ? 'bg-accent text-accent-foreground'
-                      : 'bg-muted hover:bg-muted/80'
-                  }`}
-                >
-                  <span className="truncate">{modelo.nome_modelo}</span>
-                  {modeloSelecionado === modelo.id && <Check className="h-3 w-3 flex-shrink-0" />}
+            {/* Filtros de categoria */}
+            <div className="flex flex-wrap gap-1 mb-2">
+              {categorias.map(cat => (
+                <button key={cat} onClick={() => setCategoriaFiltro(cat === categoriaFiltro ? '' : cat)}
+                  className={`px-2 py-1 rounded text-xs transition-all ${
+                    categoriaFiltro === cat ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
+                  }`}>
+                  {cat}
                 </button>
               ))}
             </div>
-          )}
-        </div>
 
-        {/* Customização - Collapsibles */}
-        {modeloSelecionado && (
-          <div className="bg-card rounded-lg border border-border p-3 mb-3 space-y-2">
-            <CollapsibleSelect 
-              options={acos} 
-              selected={acoSelecionado} 
-              onSelect={setAcoSelecionado} 
-              label="Aço"
-              etapaKey="aco"
-            />
-
-            <div className="space-y-1.5">
-              <CollapsibleSelect 
-                options={acabamentos} 
-                selected={acabamentoSelecionado} 
-                onSelect={setAcabamentoSelecionado} 
-                label="Acabamento"
-                etapaKey="acabamento"
-              />
-              {acabamentoSelecionado && (
-                <div className="flex items-center gap-2 pl-3">
-                  <Checkbox
-                    id="bruteForge"
-                    checked={bruteForge}
-                    onCheckedChange={(checked) => setBruteForge(checked === true)}
-                    className="h-3.5 w-3.5"
-                  />
-                  <Label htmlFor="bruteForge" className="text-xs cursor-pointer">Brute Forge</Label>
-                </div>
-              )}
+            <div className="relative mb-2">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input placeholder="Buscar..." value={buscaModelo} onChange={(e) => setBuscaModelo(e.target.value)} className="pl-8 h-8 text-xs" />
             </div>
 
-            <div className="space-y-1.5">
-              <CollapsibleSelect 
-                options={empunhaduras} 
-                selected={empunhaduraSelecionada} 
-                onSelect={setEmpunhaduraSelecionada} 
-                label="Empunhadura"
-                etapaKey="empunhadura"
-              />
-              {empunhaduraSelecionada && (
-                <div className="flex items-center gap-2 pl-3">
-                  <Checkbox
-                    id="dragonScale"
-                    checked={dragonScale}
-                    onCheckedChange={(checked) => setDragonScale(checked === true)}
-                    className="h-3.5 w-3.5"
-                  />
-                  <Label htmlFor="dragonScale" className="text-xs cursor-pointer">Dragon Scale</Label>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <CollapsibleSelect 
-                options={bainhas} 
-                selected={bainhaSelecionada} 
-                onSelect={setBainhaSelecionada} 
-                label="Bainha"
-                etapaKey="bainha"
-              />
-              {bainhaSelecionada && (
-                <div className="space-y-2 ml-3">
-                  <Select value={corBainha} onValueChange={(value) => {
-                    setCorBainha(value);
-                    if (value !== 'OUTRA') setCorBainhaPersonalizada('');
-                  }}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Cor da bainha" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {coresBainha.map(cor => (
-                        <SelectItem key={cor.id} value={cor.nome_opcao} className="text-xs">
-                          {cor.nome_opcao}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="OUTRA" className="text-xs">
-                        Outra (digitar)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {corBainha === 'OUTRA' && (
-                    <Input
-                      placeholder="Digite a cor desejada..."
-                      value={corBainhaPersonalizada}
-                      onChange={(e) => setCorBainhaPersonalizada(e.target.value)}
-                      className="h-8 text-xs"
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Espaçador */}
-            <CollapsibleSelect 
-              options={espacadores} 
-              selected={espacadorSelecionado} 
-              onSelect={setEspacadorSelecionado} 
-              label="Espaçador"
-              etapaKey="espacador"
-            />
-
-            {/* Extras colapsável */}
-            <Collapsible open={showExtras} onOpenChange={(open) => { setShowExtras(open); if (open) setSecaoAberta(null); }}>
-              <CollapsibleTrigger asChild>
-                <button className="flex items-center justify-between w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  <span className="flex items-center gap-1.5">
-                    Laser & Embalagem
-                    {(laser || embalagem) && <Badge variant="outline" className="text-[10px] px-1 py-0">Ativo</Badge>}
-                  </span>
-                  {showExtras ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-3 pt-2">
-                {/* Laser */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="laser"
-                      checked={laser}
-                      onCheckedChange={(checked) => setLaser(checked as boolean)}
-                      className="h-3.5 w-3.5"
-                    />
-                    <Label htmlFor="laser" className="text-xs cursor-pointer">Personalização à Laser</Label>
-                    <InfoEtapaModal etapaKey="laser" />
-                  </div>
-                  {laser && (
-                    <div className="space-y-2 pl-5">
-                      <Input
-                        placeholder="Texto para gravação..."
-                        value={textoLaser}
-                        onChange={(e) => setTextoLaser(e.target.value)}
-                        className="h-8 text-xs"
-                      />
-                      <div className="flex flex-wrap gap-1.5">
-                        {LOCAIS_GRAVACAO.map(local => (
-                          <button
-                            key={local}
-                            onClick={() => {
-                              if (localGravacao.includes(local)) {
-                                setLocalGravacao(localGravacao.filter(l => l !== local));
-                              } else {
-                                setLocalGravacao([...localGravacao, local]);
-                              }
-                            }}
-                            className={`px-2 py-1 rounded text-xs transition-all ${
-                              localGravacao.includes(local)
-                                ? 'bg-accent text-accent-foreground'
-                                : 'bg-muted hover:bg-muted/80'
-                            }`}
-                          >
-                            {local}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Embalagem */}
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Embalagem</Label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {embalagens.map(emb => (
-                      <button
-                        key={emb.id}
-                        onClick={() => setEmbalagem(embalagem === emb.nome_opcao ? '' : emb.nome_opcao)}
-                        className={`px-2.5 py-1.5 rounded-md text-xs transition-all ${
-                          embalagem === emb.nome_opcao
-                            ? 'bg-accent text-accent-foreground'
-                            : 'bg-muted hover:bg-muted/80'
-                        }`}
-                      >
-                        {emb.nome_opcao}
-                      </button>
-                    ))}
-                  </div>
-                  {embalagem && (
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="embalagemGravacao"
-                        checked={embalagemGravacao}
-                        onCheckedChange={(checked) => setEmbalagemGravacao(checked as boolean)}
-                        className="h-3.5 w-3.5"
-                      />
-                      <Label htmlFor="embalagemGravacao" className="text-xs cursor-pointer">Gravação na embalagem</Label>
-                    </div>
-                  )}
-                  {embalagemGravacao && (
-                    <Input
-                      placeholder="Texto para embalagem..."
-                      value={embalagemTextoGravacao}
-                      onChange={(e) => setEmbalagemTextoGravacao(e.target.value)}
-                      className="h-8 text-xs"
-                    />
-                  )}
-                </div>
-
-                {/* Observações da Lâmina */}
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Observações da Lâmina</Label>
-                  <Input
-                    placeholder="Observações específicas desta lâmina..."
-                    value={observacoesLamina}
-                    onChange={(e) => setObservacoesLamina(e.target.value)}
-                    className="h-8 text-xs"
-                  />
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+            {mostrarModelos && modelosFiltrados.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto">
+                {modelosFiltrados.map(modelo => (
+                  <button key={modelo.id} onClick={() => { setModeloSelecionado(modelo.id); }}
+                    className={`p-2 rounded text-left text-xs transition-all flex items-center justify-between ${
+                      modeloSelecionado === modelo.id ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
+                    }`}>
+                    <span className="truncate">{modelo.nome_modelo}</span>
+                    {modeloSelecionado === modelo.id && <Check className="h-3 w-3 flex-shrink-0" />}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Produtos Adicionais - Inline */}
-        {produtosAdicionais.length > 0 && (
-          <div className="bg-card rounded-lg border border-border p-3 mb-3">
-            <h3 className="text-sm font-medium mb-2">Produtos Adicionais</h3>
-            <div className="space-y-2 mb-3">
-              {produtosAdicionais.map((produto) => {
+        {/* ===== STEP 1: Lâmina (Aço, Acabamento, Empunhadura) ===== */}
+        {currentStep === 1 && modeloSelecionado && (
+          <div className="space-y-3">
+            {/* Mini preview do modelo */}
+            <div className="flex items-center gap-3 bg-muted rounded-lg p-2.5">
+              <div className="w-14 h-10 bg-white rounded overflow-hidden flex-shrink-0">
+                <img src={getModeloImagem(modeloAtual)} alt="" className="w-full h-full object-contain" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate">{modeloAtual?.nome_modelo}</p>
+                <p className="text-[10px] text-muted-foreground">R$ {modeloAtual?.preco_base.toFixed(2)}</p>
+              </div>
+              <Button size="sm" variant="ghost" onClick={() => { setModeloSelecionado(''); setCurrentStep(0); }} className="h-7 w-7 p-0">
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+
+            <div className="bg-card rounded-lg border border-border p-3 space-y-2">
+              <h3 className="font-semibold text-sm mb-1">Personalize sua Lâmina</h3>
+
+              <CollapsibleSelect options={acos} selected={acoSelecionado} onSelect={setAcoSelecionado} label="Aço" etapaKey="aco" />
+
+              <div className="space-y-1.5">
+                <CollapsibleSelect options={acabamentos} selected={acabamentoSelecionado} onSelect={setAcabamentoSelecionado} label="Acabamento" etapaKey="acabamento" />
+                {acabamentoSelecionado && (
+                  <div className="flex items-center gap-2 pl-3">
+                    <Checkbox id="bruteForge" checked={bruteForge} onCheckedChange={(checked) => setBruteForge(checked === true)} className="h-3.5 w-3.5" />
+                    <Label htmlFor="bruteForge" className="text-xs cursor-pointer">Brute Forge</Label>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <CollapsibleSelect options={empunhaduras} selected={empunhaduraSelecionada} onSelect={setEmpunhaduraSelecionada} label="Empunhadura" etapaKey="empunhadura" />
+                {empunhaduraSelecionada && (
+                  <div className="flex items-center gap-2 pl-3">
+                    <Checkbox id="dragonScale" checked={dragonScale} onCheckedChange={(checked) => setDragonScale(checked === true)} className="h-3.5 w-3.5" />
+                    <Label htmlFor="dragonScale" className="text-xs cursor-pointer">Dragon Scale</Label>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===== STEP 2: Extras (Bainha, Espaçador, Laser, Embalagem) ===== */}
+        {currentStep === 2 && modeloSelecionado && (
+          <div className="space-y-3">
+            {/* Mini preview */}
+            <div className="flex items-center gap-3 bg-muted rounded-lg p-2.5">
+              <div className="w-14 h-10 bg-white rounded overflow-hidden flex-shrink-0">
+                <img src={getModeloImagem(modeloAtual)} alt="" className="w-full h-full object-contain" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate">{modeloAtual?.nome_modelo}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {[acoAtual?.nome_opcao, acabamentoAtual?.nome_opcao, empunhaduraAtual?.nome_opcao].filter(Boolean).join(' • ')}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-card rounded-lg border border-border p-3 space-y-2">
+              <h3 className="font-semibold text-sm mb-1">Bainha & Acessórios</h3>
+
+              <div className="space-y-1.5">
+                <CollapsibleSelect options={bainhas} selected={bainhaSelecionada} onSelect={setBainhaSelecionada} label="Bainha" etapaKey="bainha" />
+                {bainhaSelecionada && (
+                  <div className="space-y-2 ml-3">
+                    <Select value={corBainha} onValueChange={(value) => { setCorBainha(value); if (value !== 'OUTRA') setCorBainhaPersonalizada(''); }}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Cor da bainha" /></SelectTrigger>
+                      <SelectContent>
+                        {coresBainha.map(cor => (
+                          <SelectItem key={cor.id} value={cor.nome_opcao} className="text-xs">{cor.nome_opcao}</SelectItem>
+                        ))}
+                        <SelectItem value="OUTRA" className="text-xs">Outra (digitar)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {corBainha === 'OUTRA' && (
+                      <Input placeholder="Digite a cor desejada..." value={corBainhaPersonalizada} onChange={(e) => setCorBainhaPersonalizada(e.target.value)} className="h-8 text-xs" />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <CollapsibleSelect options={espacadores} selected={espacadorSelecionado} onSelect={setEspacadorSelecionado} label="Espaçador" etapaKey="espacador" />
+            </div>
+
+            {/* Laser & Embalagem */}
+            <div className="bg-card rounded-lg border border-border p-3 space-y-3">
+              <h3 className="font-semibold text-sm">Laser & Embalagem</h3>
+
+              {/* Laser */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox id="laser" checked={laser} onCheckedChange={(checked) => setLaser(checked as boolean)} className="h-3.5 w-3.5" />
+                  <Label htmlFor="laser" className="text-xs cursor-pointer">Personalização à Laser</Label>
+                  <InfoEtapaModal etapaKey="laser" />
+                </div>
+                {laser && (
+                  <div className="space-y-2 pl-5">
+                    <Input placeholder="Texto para gravação..." value={textoLaser} onChange={(e) => setTextoLaser(e.target.value)} className="h-8 text-xs" />
+                    <div className="flex flex-wrap gap-1.5">
+                      {LOCAIS_GRAVACAO.map(local => (
+                        <button key={local} onClick={() => {
+                          if (localGravacao.includes(local)) { setLocalGravacao(localGravacao.filter(l => l !== local)); }
+                          else { setLocalGravacao([...localGravacao, local]); }
+                        }}
+                          className={`px-2 py-1 rounded text-xs transition-all ${
+                            localGravacao.includes(local) ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
+                          }`}>
+                          {local}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Embalagem */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Embalagem</span>
+                  <InfoEtapaModal etapaKey="embalagem" />
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {embalagens.map(emb => (
+                    <button key={emb.id} onClick={() => setEmbalagem(embalagem === emb.nome_opcao ? '' : emb.nome_opcao)}
+                      className={`px-2.5 py-1.5 rounded-md text-xs transition-all ${
+                        embalagem === emb.nome_opcao ? 'bg-accent text-accent-foreground font-medium' : 'bg-muted hover:bg-muted/80'
+                      }`}>
+                      {emb.nome_opcao}
+                    </button>
+                  ))}
+                </div>
+                {embalagem && (
+                  <div className="space-y-2 ml-3">
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="embGrav" checked={embalagemGravacao} onCheckedChange={(checked) => setEmbalagemGravacao(checked === true)} className="h-3.5 w-3.5" />
+                      <Label htmlFor="embGrav" className="text-xs cursor-pointer">Gravação na embalagem</Label>
+                    </div>
+                    {embalagemGravacao && (
+                      <Input placeholder="Texto da gravação..." value={embalagemTextoGravacao} onChange={(e) => setEmbalagemTextoGravacao(e.target.value)} className="h-8 text-xs" />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Observações */}
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Observações da Lâmina</Label>
+                <Input placeholder="Ex: presente, acabamento especial..." value={observacoesLamina} onChange={(e) => setObservacoesLamina(e.target.value)} className="h-8 text-xs" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===== STEP 3: Revisar ===== */}
+        {currentStep === 3 && modeloSelecionado && (
+          <div className="space-y-3">
+            <div className="bg-card rounded-lg border border-border p-3">
+              <h3 className="font-semibold text-sm mb-3">Resumo da Lâmina</h3>
+
+              {/* Preview image */}
+              <div className="w-full h-24 bg-white rounded-lg overflow-hidden mb-3 border border-border">
+                <img src={getModeloImagem(modeloAtual)} alt="" className="w-full h-full object-contain" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-muted p-2 rounded">
+                  <span className="text-muted-foreground block">Modelo</span>
+                  <span className="font-medium">{modeloAtual?.nome_modelo || '-'}</span>
+                </div>
+                <div className="bg-muted p-2 rounded">
+                  <span className="text-muted-foreground block">Aço</span>
+                  <span className="font-medium">{acoAtual?.nome_opcao || '-'}</span>
+                </div>
+                <div className="bg-muted p-2 rounded">
+                  <span className="text-muted-foreground block">Acabamento</span>
+                  <span className="font-medium">{acabamentoAtual?.nome_opcao || '-'}{bruteForge ? ' + BF' : ''}</span>
+                </div>
+                <div className="bg-muted p-2 rounded">
+                  <span className="text-muted-foreground block">Empunhadura</span>
+                  <span className="font-medium">{empunhaduraAtual?.nome_opcao || '-'}{dragonScale ? ' + DS' : ''}</span>
+                </div>
+                {bainhaSelecionada && (
+                  <div className="bg-muted p-2 rounded">
+                    <span className="text-muted-foreground block">Bainha</span>
+                    <span className="font-medium">{bainhaAtual?.nome_opcao || '-'} {corBainha !== 'OUTRA' ? corBainha : corBainhaPersonalizada}</span>
+                  </div>
+                )}
+                {espacadorSelecionado && (
+                  <div className="bg-muted p-2 rounded">
+                    <span className="text-muted-foreground block">Espaçador</span>
+                    <span className="font-medium">{espacadorAtualCalc?.nome_opcao || '-'}</span>
+                  </div>
+                )}
+                {laser && (
+                  <div className="bg-muted p-2 rounded col-span-2">
+                    <span className="text-muted-foreground block">Laser</span>
+                    <span className="font-medium">{textoLaser || 'Sim'} {localGravacao.length > 0 ? `(${localGravacao.join(', ')})` : ''}</span>
+                  </div>
+                )}
+                {embalagem && (
+                  <div className="bg-muted p-2 rounded col-span-2">
+                    <span className="text-muted-foreground block">Embalagem</span>
+                    <span className="font-medium">{embalagem}{embalagemGravacao && embalagemTextoGravacao ? ` — ${embalagemTextoGravacao}` : ''}</span>
+                  </div>
+                )}
+                {observacoesLamina && (
+                  <div className="bg-muted p-2 rounded col-span-2">
+                    <span className="text-muted-foreground block">Observações</span>
+                    <span className="font-medium">{observacoesLamina}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-3 p-2 bg-accent/10 rounded-lg text-center">
+                <span className="text-xs text-muted-foreground">Subtotal</span>
+                <p className="font-bold text-lg">R$ {calcularSubtotal().toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Produtos Adicionais - visível nos steps 3+ */}
+        {currentStep === 3 && produtosAdicionais.length > 0 && (
+          <div className="bg-card rounded-lg border border-border p-3 mt-3">
+            <h3 className="font-semibold text-sm mb-2">Produtos Adicionais</h3>
+            <div className="grid grid-cols-1 gap-1.5">
+              {produtosAdicionais.map(produto => {
                 const quantidade = quantidadesProdutos[produto.id] || 0;
                 return (
-                  <div
-                    key={produto.id}
+                  <div key={produto.id}
                     className={`flex items-center justify-between p-2 rounded-lg transition-all ${
-                      quantidade > 0
-                        ? 'bg-accent/10 border border-accent/30'
-                        : 'bg-muted'
-                    }`}
-                  >
+                      quantidade > 0 ? 'bg-accent/10 border border-accent/30' : 'bg-muted'
+                    }`}>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium truncate">{produto.nome_produto}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        R$ {produto.preco_unitario.toFixed(2)} un.
-                      </p>
+                      <p className="text-[10px] text-muted-foreground">R$ {produto.preco_unitario.toFixed(2)} un.</p>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setQuantidadesProdutos(prev => ({
-                          ...prev,
-                          [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1)
-                        }))}
-                        className="h-6 w-6 p-0"
-                        disabled={quantidade <= 0}
-                      >
+                      <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1) }))} className="h-6 w-6 p-0" disabled={quantidade <= 0}>
                         <Minus className="h-3 w-3" />
                       </Button>
                       <span className="text-xs font-medium w-4 text-center">{quantidade}</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setQuantidadesProdutos(prev => ({
-                          ...prev,
-                          [produto.id]: (prev[produto.id] || 0) + 1
-                        }))}
-                        className="h-6 w-6 p-0"
-                      >
+                      <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: (prev[produto.id] || 0) + 1 }))} className="h-6 w-6 p-0">
                         <Plus className="h-3 w-3" />
                       </Button>
                     </div>
@@ -1543,101 +1559,44 @@ OBS: ${observacao || '-'}`;
                 );
               })}
             </div>
-            <Input
-              placeholder="Observações sobre produtos adicionais..."
-              value={observacoesProdutos}
-              onChange={(e) => setObservacoesProdutos(e.target.value)}
-              className="h-8 text-xs"
-            />
+            <Input placeholder="Observações sobre produtos adicionais..." value={observacoesProdutos} onChange={(e) => setObservacoesProdutos(e.target.value)} className="h-8 text-xs mt-2" />
           </div>
         )}
 
-        {/* Lâminas Adicionadas - Inline compacto */}
+        {/* Lâminas Adicionadas - sempre visível quando existem */}
         {laminasCustomizadas.length > 0 && (
-          <div className="bg-card rounded-lg border border-border p-3 mb-3">
+          <div className="bg-card rounded-lg border border-border p-3 mt-3 mb-3">
             <h3 className="font-semibold text-sm mb-2">
               Lâminas ({laminasCustomizadas.reduce((sum, l) => sum + l.quantidade, 0)})
             </h3>
             <div className="space-y-1.5">
               {laminasCustomizadas.map((lamina) => (
-                <div
-                  key={lamina.id}
+                <div key={lamina.id}
                   className={`p-2 rounded flex items-center justify-between gap-2 ${
-                    laminaEmEdicao === lamina.id 
-                      ? 'bg-accent/20 border border-accent' 
-                      : 'bg-muted hover:bg-muted/80'
-                  }`}
-                >
-                  <div 
-                    className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => setLaminaModalAberta(lamina)}
-                  >
+                    laminaEmEdicao === lamina.id ? 'bg-accent/20 border border-accent' : 'bg-muted hover:bg-muted/80'
+                  }`}>
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setLaminaModalAberta(lamina)}>
                     <p className="text-xs font-medium truncate">
                       {lamina.modelo?.nome_modelo}
-                      {lamina.quantidade > 1 && (
-                        <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5">
-                          x{lamina.quantidade}
-                        </Badge>
-                      )}
+                      {lamina.quantidade > 1 && <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5">x{lamina.quantidade}</Badge>}
                     </p>
                     <p className="text-[10px] text-muted-foreground truncate">
                       {[lamina.aco?.nome_opcao, lamina.acabamento?.nome_opcao].filter(Boolean).join(' • ')}
                     </p>
                   </div>
-                  
-                  {/* Controles de quantidade */}
                   <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        alterarQuantidadeLamina(lamina.id, lamina.quantidade - 1);
-                      }}
-                      className="h-6 w-6 p-0"
-                      disabled={lamina.quantidade <= 1}
-                    >
+                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); alterarQuantidadeLamina(lamina.id, lamina.quantidade - 1); }} className="h-6 w-6 p-0" disabled={lamina.quantidade <= 1}>
                       <Minus className="h-3 w-3" />
                     </Button>
                     <span className="text-xs font-medium w-4 text-center">{lamina.quantidade}</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        alterarQuantidadeLamina(lamina.id, lamina.quantidade + 1);
-                      }}
-                      className="h-6 w-6 p-0"
-                    >
+                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); alterarQuantidadeLamina(lamina.id, lamina.quantidade + 1); }} className="h-6 w-6 p-0">
                       <Plus className="h-3 w-3" />
                     </Button>
                   </div>
-
-                  {/* Botão editar */}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      editarLamina(lamina);
-                    }}
-                    className="h-6 w-6 p-0"
-                    title="Editar"
-                  >
+                  <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); editarLamina(lamina); setCurrentStep(1); }} className="h-6 w-6 p-0" title="Editar">
                     <Pencil className="h-3 w-3" />
                   </Button>
-
-                  {/* Botão remover */}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removerLamina(lamina.id);
-                    }}
-                    className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                    title="Remover"
-                  >
+                  <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); removerLamina(lamina.id); }} className="h-6 w-6 p-0 text-destructive hover:text-destructive" title="Remover">
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
@@ -1647,34 +1606,47 @@ OBS: ${observacao || '-'}`;
         )}
       </div>
 
-      {/* Bottom bar fixo */}
+      {/* Bottom bar fixo - Wizard navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50">
         <div className="px-3 py-3">
-          <div className="flex items-center justify-end gap-2 max-w-5xl mx-auto">
+          <div className="flex items-center justify-between gap-2 max-w-5xl mx-auto">
+            {/* Left: Back */}
+            <div>
+              {currentStep > 0 && (
+                <Button onClick={() => setCurrentStep(currentStep - 1)} variant="outline" size="sm" className="text-xs h-9">
+                  Voltar
+                </Button>
+              )}
+            </div>
+
+            {/* Right: Actions */}
             <div className="flex gap-2">
               {laminaEmEdicao ? (
                 <>
-                  <Button onClick={cancelarEdicao} variant="outline" size="sm" className="text-xs h-9">
+                  <Button onClick={() => { cancelarEdicao(); setCurrentStep(0); }} variant="outline" size="sm" className="text-xs h-9">
                     Cancelar
                   </Button>
-                  <Button onClick={salvarEdicaoLamina} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
+                  <Button onClick={() => { salvarEdicaoLamina(); setCurrentStep(0); }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
                     <Check className="h-3.5 w-3.5 mr-1" />
-                    Salvar Alterações
+                    Salvar
                   </Button>
                 </>
+              ) : currentStep < 3 ? (
+                <Button onClick={() => {
+                  if (currentStep === 0 && !modeloSelecionado) {
+                    toast.error('Selecione um modelo primeiro');
+                    return;
+                  }
+                  setCurrentStep(currentStep + 1);
+                }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
+                  Próximo
+                </Button>
               ) : (
                 <>
-                  {modeloSelecionado && (
-                    <>
-                      <Button onClick={limparFormulario} variant="outline" size="sm" className="text-xs h-9">
-                        Limpar
-                      </Button>
-                      <Button onClick={adicionarLamina} variant="outline" size="sm" className="text-xs h-9 border-accent text-accent">
-                        <Plus className="h-3.5 w-3.5 mr-1" />
-                        Adicionar
-                      </Button>
-                    </>
-                  )}
+                  <Button onClick={() => { adicionarLamina(); setCurrentStep(0); }} variant="outline" size="sm" className="text-xs h-9 border-accent text-accent">
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    Adicionar
+                  </Button>
                   {(laminasCustomizadas.length > 0 || modeloSelecionado) && (
                     <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
                       Fechar Pedido
