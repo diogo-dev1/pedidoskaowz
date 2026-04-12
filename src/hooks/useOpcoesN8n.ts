@@ -7,6 +7,7 @@ export interface OpcoesN8n {
   acos: string[];
   acabamentos: string[];
   empunhaduras: string[];
+  bainhas: string[];
   coresBainha: string[];
 }
 

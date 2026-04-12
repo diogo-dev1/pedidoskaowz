@@ -187,13 +187,30 @@ export default function Simulador() {
   const acos = mergeOpcoes(opcoesN8n?.acos, componentes.filter(c => c.tipo_opcao === 'Aço'), 'Aço');
   const acabamentos = mergeOpcoes(opcoesN8n?.acabamentos, componentes.filter(c => c.tipo_opcao === 'Acabamento'), 'Acabamento');
   const empunhaduras = mergeOpcoes(opcoesN8n?.empunhaduras, componentes.filter(c => c.tipo_opcao === 'Empunhadura'), 'Empunhadura');
-  const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
+  const bainhas = mergeOpcoes(opcoesN8n?.bainhas, componentes.filter(c => c.tipo_opcao === 'Bainha'), 'Bainha');
   const coresBainha = mergeOpcoes(opcoesN8n?.coresBainha, componentes.filter(c => c.tipo_opcao === 'Cor de Bainha'), 'Cor de Bainha');
   const embalagens = componentes.filter(c => c.tipo_opcao === 'Embalagem');
 
+  // Filtrar modelos: se n8n retornar lista de modelos, usar apenas esses nomes
+  const modelosDisponiveis = useMemo(() => {
+    if (opcoesN8n?.modelos && opcoesN8n.modelos.length > 0) {
+      return opcoesN8n.modelos.map((nome) => {
+        const match = modelos.find(m => m.nome_modelo === nome);
+        return match || {
+          id: `n8n-modelo-${nome}`,
+          nome_modelo: nome,
+          preco_base: 0,
+          categoria: null,
+          imagem_modelo: null,
+        };
+      });
+    }
+    return modelos;
+  }, [modelos, opcoesN8n]);
+
   const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR'];
 
-  const modelosFiltrados = modelos.filter(m => {
+  const modelosFiltrados = modelosDisponiveis.filter(m => {
     const matchBusca = m.nome_modelo.toLowerCase().includes(buscaModelo.toLowerCase());
     const matchCategoria = !categoriaFiltro || m.categoria === categoriaFiltro;
     return matchBusca && matchCategoria;
@@ -201,12 +218,12 @@ export default function Simulador() {
 
   const mostrarModelos = categoriaFiltro !== '' || buscaModelo.trim() !== '';
 
-  // Objetos selecionados para exibição no resumo em tempo real
-  const modeloAtual = modelos.find(m => m.id === modeloSelecionado);
-  const acoAtual = componentes.find(c => c.id === acoSelecionado);
-  const acabamentoAtual = componentes.find(c => c.id === acabamentoSelecionado);
-  const empunhaduraAtual = componentes.find(c => c.id === empunhaduraSelecionada);
-  const bainhaAtual = componentes.find(c => c.id === bainhaSelecionada);
+  // Objetos selecionados - buscar tanto nos componentes Supabase quanto nas listas mescladas
+  const modeloAtual = modelosDisponiveis.find(m => m.id === modeloSelecionado);
+  const acoAtual = acos.find(c => c.id === acoSelecionado);
+  const acabamentoAtual = acabamentos.find(c => c.id === acabamentoSelecionado);
+  const empunhaduraAtual = empunhaduras.find(c => c.id === empunhaduraSelecionada);
+  const bainhaAtual = bainhas.find(c => c.id === bainhaSelecionada);
 
   const calcularSubtotal = (): number => {
     const precoBase = modeloAtual?.preco_base || 0;
