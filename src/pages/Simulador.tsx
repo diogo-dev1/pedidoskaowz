@@ -1239,7 +1239,7 @@ OBS: ${observacao || '-'}`;
           </div>
         )}
 
-        {/* ===== STEP 1: Lâmina (Aço, Acabamento, Empunhadura) ===== */}
+        {/* ===== STEP 1: Empunhadura ===== */}
         {currentStep === 1 && modeloSelecionado && (
           <div className="space-y-3">
             {/* Mini preview do modelo */}
@@ -1249,27 +1249,14 @@ OBS: ${observacao || '-'}`;
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold truncate">{modeloAtual?.nome_modelo}</p>
-                <p className="text-[10px] text-muted-foreground">R$ {modeloAtual?.preco_base.toFixed(2)}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {[acoAtual?.nome_opcao, acabamentoAtual?.nome_opcao].filter(Boolean).join(' • ')}
+                </p>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => { setModeloSelecionado(''); setCurrentStep(0); }} className="h-7 w-7 p-0">
-                <X className="h-3 w-3" />
-              </Button>
             </div>
 
             <div className="bg-card rounded-lg border border-border p-3 space-y-2">
-              <h3 className="font-semibold text-sm mb-1">Personalize sua Lâmina</h3>
-
-              <CollapsibleSelect options={acos} selected={acoSelecionado} onSelect={setAcoSelecionado} label="Aço" etapaKey="aco" />
-
-              <div className="space-y-1.5">
-                <CollapsibleSelect options={acabamentos} selected={acabamentoSelecionado} onSelect={setAcabamentoSelecionado} label="Acabamento" etapaKey="acabamento" />
-                {acabamentoSelecionado && (
-                  <div className="flex items-center gap-2 pl-3">
-                    <Checkbox id="bruteForge" checked={bruteForge} onCheckedChange={(checked) => setBruteForge(checked === true)} className="h-3.5 w-3.5" />
-                    <Label htmlFor="bruteForge" className="text-xs cursor-pointer">Brute Forge</Label>
-                  </div>
-                )}
-              </div>
+              <h3 className="font-semibold text-sm mb-1">Empunhadura</h3>
 
               <div className="space-y-1.5">
                 <CollapsibleSelect options={empunhaduras} selected={empunhaduraSelecionada} onSelect={setEmpunhaduraSelecionada} label="Empunhadura" etapaKey="empunhadura" />
@@ -1284,7 +1271,7 @@ OBS: ${observacao || '-'}`;
           </div>
         )}
 
-        {/* ===== STEP 2: Extras (Bainha, Espaçador, Laser, Embalagem) ===== */}
+        {/* ===== STEP 2: Bainha ===== */}
         {currentStep === 2 && modeloSelecionado && (
           <div className="space-y-3">
             {/* Mini preview */}
@@ -1301,7 +1288,7 @@ OBS: ${observacao || '-'}`;
             </div>
 
             <div className="bg-card rounded-lg border border-border p-3 space-y-2">
-              <h3 className="font-semibold text-sm mb-1">Bainha & Acessórios</h3>
+              <h3 className="font-semibold text-sm mb-1">Bainha</h3>
 
               <div className="space-y-1.5">
                 <CollapsibleSelect options={bainhas} selected={bainhaSelecionada} onSelect={setBainhaSelecionada} label="Bainha" etapaKey="bainha" />
@@ -1322,39 +1309,41 @@ OBS: ${observacao || '-'}`;
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        )}
 
-              <CollapsibleSelect options={espacadores} selected={espacadorSelecionado} onSelect={setEspacadorSelecionado} label="Espaçador" etapaKey="espacador" />
+        {/* ===== STEP 3: Personalização ===== */}
+        {currentStep === 3 && modeloSelecionado && (
+          <div className="space-y-3">
+            {/* Mini preview */}
+            <div className="flex items-center gap-3 bg-muted rounded-lg p-2.5">
+              <div className="w-14 h-10 bg-white rounded overflow-hidden flex-shrink-0">
+                <img src={getModeloImagem(modeloAtual)} alt="" className="w-full h-full object-contain" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate">{modeloAtual?.nome_modelo}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {[acoAtual?.nome_opcao, acabamentoAtual?.nome_opcao, empunhaduraAtual?.nome_opcao].filter(Boolean).join(' • ')}
+                </p>
+              </div>
             </div>
 
-            {/* Laser & Embalagem */}
             <div className="bg-card rounded-lg border border-border p-3 space-y-3">
-              <h3 className="font-semibold text-sm">Laser & Embalagem</h3>
+              <h3 className="font-semibold text-sm">Personalização</h3>
 
-              {/* Laser */}
-              <div className="space-y-2">
+              {/* Gravação - campo de texto simples */}
+              <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Checkbox id="laser" checked={laser} onCheckedChange={(checked) => setLaser(checked as boolean)} className="h-3.5 w-3.5" />
-                  <Label htmlFor="laser" className="text-xs cursor-pointer">Personalização à Laser</Label>
+                  <Label className="text-xs text-muted-foreground">Gravação à Laser</Label>
                   <InfoEtapaModal etapaKey="laser" />
                 </div>
-                {laser && (
-                  <div className="space-y-2 pl-5">
-                    <Input placeholder="Texto para gravação..." value={textoLaser} onChange={(e) => setTextoLaser(e.target.value)} className="h-8 text-xs" />
-                    <div className="flex flex-wrap gap-1.5">
-                      {LOCAIS_GRAVACAO.map(local => (
-                        <button key={local} onClick={() => {
-                          if (localGravacao.includes(local)) { setLocalGravacao(localGravacao.filter(l => l !== local)); }
-                          else { setLocalGravacao([...localGravacao, local]); }
-                        }}
-                          className={`px-2 py-1 rounded text-xs transition-all ${
-                            localGravacao.includes(local) ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
-                          }`}>
-                          {local}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <Input 
+                  placeholder="Texto para gravação (deixe vazio para '-')" 
+                  value={textoLaser} 
+                  onChange={(e) => setTextoLaser(e.target.value)} 
+                  className="h-8 text-xs" 
+                />
               </div>
 
               {/* Embalagem */}
@@ -1373,17 +1362,6 @@ OBS: ${observacao || '-'}`;
                     </button>
                   ))}
                 </div>
-                {embalagem && (
-                  <div className="space-y-2 ml-3">
-                    <div className="flex items-center gap-2">
-                      <Checkbox id="embGrav" checked={embalagemGravacao} onCheckedChange={(checked) => setEmbalagemGravacao(checked === true)} className="h-3.5 w-3.5" />
-                      <Label htmlFor="embGrav" className="text-xs cursor-pointer">Gravação na embalagem</Label>
-                    </div>
-                    {embalagemGravacao && (
-                      <Input placeholder="Texto da gravação..." value={embalagemTextoGravacao} onChange={(e) => setEmbalagemTextoGravacao(e.target.value)} className="h-8 text-xs" />
-                    )}
-                  </div>
-                )}
               </div>
 
               {/* Observações */}
@@ -1395,75 +1373,7 @@ OBS: ${observacao || '-'}`;
           </div>
         )}
 
-        {/* ===== STEP 3: Revisar ===== */}
-        {currentStep === 3 && modeloSelecionado && (
-          <div className="space-y-3">
-            <div className="bg-card rounded-lg border border-border p-3">
-              <h3 className="font-semibold text-sm mb-3">Resumo da Lâmina</h3>
-
-              {/* Preview image */}
-              <div className="w-full h-24 bg-white rounded-lg overflow-hidden mb-3 border border-border">
-                <img src={getModeloImagem(modeloAtual)} alt="" className="w-full h-full object-contain" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-muted p-2 rounded">
-                  <span className="text-muted-foreground block">Modelo</span>
-                  <span className="font-medium">{modeloAtual?.nome_modelo || '-'}</span>
-                </div>
-                <div className="bg-muted p-2 rounded">
-                  <span className="text-muted-foreground block">Aço</span>
-                  <span className="font-medium">{acoAtual?.nome_opcao || '-'}</span>
-                </div>
-                <div className="bg-muted p-2 rounded">
-                  <span className="text-muted-foreground block">Acabamento</span>
-                  <span className="font-medium">{acabamentoAtual?.nome_opcao || '-'}{bruteForge ? ' + BF' : ''}</span>
-                </div>
-                <div className="bg-muted p-2 rounded">
-                  <span className="text-muted-foreground block">Empunhadura</span>
-                  <span className="font-medium">{empunhaduraAtual?.nome_opcao || '-'}{dragonScale ? ' + DS' : ''}</span>
-                </div>
-                {bainhaSelecionada && (
-                  <div className="bg-muted p-2 rounded">
-                    <span className="text-muted-foreground block">Bainha</span>
-                    <span className="font-medium">{bainhaAtual?.nome_opcao || '-'} {corBainha !== 'OUTRA' ? corBainha : corBainhaPersonalizada}</span>
-                  </div>
-                )}
-                {espacadorSelecionado && (
-                  <div className="bg-muted p-2 rounded">
-                    <span className="text-muted-foreground block">Espaçador</span>
-                    <span className="font-medium">{espacadorAtualCalc?.nome_opcao || '-'}</span>
-                  </div>
-                )}
-                {laser && (
-                  <div className="bg-muted p-2 rounded col-span-2">
-                    <span className="text-muted-foreground block">Laser</span>
-                    <span className="font-medium">{textoLaser || 'Sim'} {localGravacao.length > 0 ? `(${localGravacao.join(', ')})` : ''}</span>
-                  </div>
-                )}
-                {embalagem && (
-                  <div className="bg-muted p-2 rounded col-span-2">
-                    <span className="text-muted-foreground block">Embalagem</span>
-                    <span className="font-medium">{embalagem}{embalagemGravacao && embalagemTextoGravacao ? ` — ${embalagemTextoGravacao}` : ''}</span>
-                  </div>
-                )}
-                {observacoesLamina && (
-                  <div className="bg-muted p-2 rounded col-span-2">
-                    <span className="text-muted-foreground block">Observações</span>
-                    <span className="font-medium">{observacoesLamina}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-3 p-2 bg-accent/10 rounded-lg text-center">
-                <span className="text-xs text-muted-foreground">Subtotal</span>
-                <p className="font-bold text-lg">R$ {calcularSubtotal().toFixed(2)}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Produtos Adicionais - visível nos steps 3+ */}
+        {/* Produtos Adicionais - visível no step 3 */}
         {currentStep === 3 && produtosAdicionais.length > 0 && (
           <div className="bg-card rounded-lg border border-border p-3 mt-3">
             <h3 className="font-semibold text-sm mb-2">Produtos Adicionais</h3>
