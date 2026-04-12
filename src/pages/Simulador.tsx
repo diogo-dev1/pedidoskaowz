@@ -1108,12 +1108,12 @@ OBS: ${observacao || '-'}`;
                 onClick={() => { if (i === 0 || modeloSelecionado) setCurrentStep(i); }}
                 className="flex flex-col items-center gap-1 flex-1 group"
               >
-                <span className={`transition-all font-semibold leading-tight text-center ${
+                <span className={`transition-all leading-tight text-center ${
                   isActive
-                    ? 'text-xs text-accent-foreground'
+                    ? 'text-sm font-bold text-foreground'
                     : isDone
-                      ? 'text-[10px] text-muted-foreground'
-                      : 'text-[10px] text-muted-foreground/50'
+                      ? 'text-[10px] font-medium text-muted-foreground'
+                      : 'text-[10px] font-medium text-muted-foreground/50'
                 }`}>
                   {step.label}
                 </span>
