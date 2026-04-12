@@ -596,13 +596,8 @@ export default function Simulador() {
         dragonScale,
         bainha: bainhaAtual,
         corBainha,
-        espacador: espacadorAtualCalc,
-        laser,
-        textoLaser,
-        localGravacao,
+        textoLaser: textoLaser || '-',
         embalagem,
-        embalagemGravacao,
-        embalagemTextoGravacao,
         observacoesLamina,
         subtotal: calcularSubtotal(),
         quantidade: 1,
@@ -631,9 +626,8 @@ export default function Simulador() {
           ['Bainha', `${lamina.bainha?.nome_opcao || '-'} ${lamina.corBainha || ''}`],
         ];
 
-        if ((lamina as any).espacador) specs.push(['Espaçador', (lamina as any).espacador.nome_opcao]);
         if (lamina.embalagem) specs.push(['Embalagem', lamina.embalagem]);
-        if (lamina.laser) specs.push(['Gravação Laser', `${lamina.textoLaser}${lamina.localGravacao?.length ? ` (${lamina.localGravacao.join(', ')})` : ''}`]);
+        if (lamina.textoLaser && lamina.textoLaser !== '-') specs.push(['Gravação', lamina.textoLaser]);
         if ((lamina as any).observacoesLamina) specs.push(['Observações', (lamina as any).observacoesLamina]);
 
         // Two-column specs
@@ -840,7 +834,6 @@ export default function Simulador() {
     try {
       const todasLaminas = [...laminasCustomizadas];
       if (modeloSelecionado && modeloAtual) {
-        const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
         const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
         todasLaminas.push({
           id: crypto.randomUUID(),
@@ -853,13 +846,8 @@ export default function Simulador() {
           bainha: bainhaAtual || null,
           corBainha: corBainhaFinal,
           corBainhaPersonalizada,
-          espacador: espacadorAtual || null,
-          laser,
-          textoLaser,
-          localGravacao,
+            textoLaser: textoLaser || '-',
           embalagem,
-          embalagemGravacao,
-          embalagemTextoGravacao,
           observacoesLamina,
           subtotal: calcularSubtotal(),
           quantidade: 1,
@@ -887,14 +875,13 @@ export default function Simulador() {
           ? `Bainha ${lamina.bainha.nome_opcao}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
           : '';
         
-        const espacadorInfo = lamina.espacador ? `Espaçador ${lamina.espacador.nome_opcao}` : '';
-        
-        const partes = [modelo, aco, acabamento, empunhadura, bainhaFormatada, espacadorInfo].filter(Boolean).join(' ');
+                
+        const partes = [modelo, aco, acabamento, empunhadura, bainhaFormatada].filter(Boolean).join(' ');
         return `Item ${index + 1}: ${partes}`;
       }).join('\n\n');
 
       // Personalização à laser
-      const laminasComLaser = todasLaminas.filter(l => l.laser && l.textoLaser);
+      const laminasComLaser = todasLaminas.filter(l => l.textoLaser && l.textoLaser !== '-');
       let personalizacaoTexto = 'Não';
       if (laminasComLaser.length > 0) {
         const todasIguais = laminasComLaser.every(l => l.textoLaser === laminasComLaser[0].textoLaser);
@@ -970,7 +957,6 @@ OBS: ${observacao || '-'}`;
     try {
       const todasLaminas = [...laminasCustomizadas];
       if (modeloSelecionado && modeloAtual) {
-        const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
         const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
         todasLaminas.push({
           id: crypto.randomUUID(),
@@ -983,13 +969,8 @@ OBS: ${observacao || '-'}`;
           bainha: bainhaAtual || null,
           corBainha: corBainhaFinal,
           corBainhaPersonalizada,
-          espacador: espacadorAtual || null,
-          laser,
-          textoLaser,
-          localGravacao,
+            textoLaser: textoLaser || '-',
           embalagem,
-          embalagemGravacao,
-          embalagemTextoGravacao,
           observacoesLamina,
           subtotal: calcularSubtotal(),
           quantidade: 1,
@@ -1003,13 +984,8 @@ OBS: ${observacao || '-'}`;
         acabamento: (lamina.acabamento?.nome_opcao || '') + (lamina.bruteForge ? ' + Brute Forge' : ''),
         bainha: lamina.bainha?.nome_opcao || '',
         corBainha: lamina.corBainha,
-        espacador: lamina.espacador?.nome_opcao || '',
-        laser: lamina.laser,
         textoLaser: lamina.textoLaser,
-        localGravacao: lamina.localGravacao.join(', '),
         embalagem: lamina.embalagem,
-        embalagemGravacao: lamina.embalagemGravacao,
-        embalagemTextoGravacao: lamina.embalagemTextoGravacao,
         observacoesLamina: lamina.observacoesLamina || '',
         subtotal: lamina.subtotal,
       }));
@@ -2013,8 +1989,7 @@ OBS: ${observacao || '-'}`;
                   dragonScale,
                   bainha: bainhaAtual,
                   corBainha,
-                  espacador: espacadorAtualCalc,
-                  laser,
+                            laser,
                   textoLaser,
                   localGravacao,
                   embalagem,
