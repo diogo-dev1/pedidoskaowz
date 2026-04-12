@@ -1139,9 +1139,6 @@ OBS: ${observacao || '-'}`;
 
             {modeloSelecionado && modeloAtual && (
               <div className="bg-muted rounded-lg p-3 mb-3 flex items-center gap-3">
-                <div className="w-20 h-14 bg-white rounded-lg overflow-hidden flex-shrink-0">
-                  <img src={getModeloImagem(modeloAtual)} alt={modeloAtual.nome_modelo} className="w-full h-full object-contain" />
-                </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm truncate">{modeloAtual.nome_modelo}</p>
                   <p className="text-[10px] text-muted-foreground">{modeloAtual.categoria}</p>
