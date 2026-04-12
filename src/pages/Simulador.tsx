@@ -29,7 +29,7 @@ interface ModeloBase {
 interface OpcaoComponente {
   id: string;
   nome_opcao: string;
-  tipo_opcao: 'Aço' | 'Empunhadura' | 'Acabamento' | 'Bainha' | 'Cor de Bainha' | 'Embalagem' | 'Espaçador';
+  tipo_opcao: 'Aço' | 'Empunhadura' | 'Acabamento' | 'Bainha' | 'Cor de Bainha' | 'Embalagem';
   preco_adicional: number;
 }
 
@@ -50,19 +50,14 @@ interface LaminaCustomizada {
   bainha: OpcaoComponente | null;
   corBainha: string;
   corBainhaPersonalizada: string;
-  espacador: OpcaoComponente | null;
-  laser: boolean;
   textoLaser: string;
-  localGravacao: string[];
   embalagem: string;
-  embalagemGravacao: boolean;
-  embalagemTextoGravacao: string;
   observacoesLamina: string;
   subtotal: number;
   quantidade: number;
 }
 
-const LOCAIS_GRAVACAO = ['Dorso Superior', 'Dorso Inferior', 'Lâmina'];
+
 
 export default function Simulador() {
   const { profile } = useAuth();
@@ -82,13 +77,8 @@ export default function Simulador() {
   const [bainhaSelecionada, setBainhaSelecionada] = useState<string>('');
   const [corBainha, setCorBainha] = useState<string>('Preto');
   const [corBainhaPersonalizada, setCorBainhaPersonalizada] = useState<string>('');
-  const [espacadorSelecionado, setEspacadorSelecionado] = useState<string>('');
-  const [laser, setLaser] = useState(false);
   const [textoLaser, setTextoLaser] = useState('');
-  const [localGravacao, setLocalGravacao] = useState<string[]>([]);
   const [embalagem, setEmbalagem] = useState('');
-  const [embalagemGravacao, setEmbalagemGravacao] = useState(false);
-  const [embalagemTextoGravacao, setEmbalagemTextoGravacao] = useState('');
   const [observacoesLamina, setObservacoesLamina] = useState('');
   const [buscaModelo, setBuscaModelo] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('');
@@ -148,10 +138,10 @@ export default function Simulador() {
   // Wizard steps
   const [currentStep, setCurrentStep] = useState(0);
   const STEPS = [
-    { label: 'Modelo', icon: '🔪' },
-    { label: 'Lâmina', icon: '⚙️' },
-    { label: 'Extras', icon: '🎒' },
-    { label: 'Revisar', icon: '✅' },
+    { label: 'Lâmina', icon: '🔪' },
+    { label: 'Empunhadura', icon: '🤚' },
+    { label: 'Bainha', icon: '🎒' },
+    { label: 'Personalização', icon: '✨' },
   ];
 
   useEffect(() => {
@@ -197,7 +187,6 @@ export default function Simulador() {
   const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
   const coresBainha = mergeOpcoes(opcoesN8n?.coresBainha, componentes.filter(c => c.tipo_opcao === 'Cor de Bainha'), 'Cor de Bainha');
   const embalagens = componentes.filter(c => c.tipo_opcao === 'Embalagem');
-  const espacadores = componentes.filter(c => c.tipo_opcao === 'Espaçador');
 
   const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR'];
 
@@ -216,17 +205,14 @@ export default function Simulador() {
   const empunhaduraAtual = componentes.find(c => c.id === empunhaduraSelecionada);
   const bainhaAtual = componentes.find(c => c.id === bainhaSelecionada);
 
-  const espacadorAtualCalc = componentes.find(c => c.id === espacadorSelecionado);
-
   const calcularSubtotal = (): number => {
     const precoBase = modeloAtual?.preco_base || 0;
     const precoAco = acoAtual?.preco_adicional || 0;
     const precoAcabamento = acabamentoAtual?.preco_adicional || 0;
     const precoEmpunhadura = empunhaduraAtual?.preco_adicional || 0;
     const precoBainha = bainhaAtual?.preco_adicional || 0;
-    const precoEspacador = espacadorAtualCalc?.preco_adicional || 0;
-    const precoLaser = laser ? 30 : 0;
-    return precoBase + precoAco + precoAcabamento + precoEmpunhadura + precoBainha + precoEspacador + precoLaser;
+    const precoLaser = textoLaser && textoLaser !== '-' ? 30 : 0;
+    return precoBase + precoAco + precoAcabamento + precoEmpunhadura + precoBainha + precoLaser;
   };
 
   const valorTotalCalculado = useMemo(() => {
@@ -245,8 +231,6 @@ export default function Simulador() {
       return;
     }
 
-    const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
-    
     // Determinar cor da bainha final (personalizada ou selecionada)
     const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
     
@@ -261,13 +245,8 @@ export default function Simulador() {
       bainha: bainhaAtual || null,
       corBainha: corBainhaFinal,
       corBainhaPersonalizada,
-      espacador: espacadorAtual || null,
-      laser,
-      textoLaser,
-      localGravacao,
+      textoLaser: textoLaser || '-',
       embalagem,
-      embalagemGravacao,
-      embalagemTextoGravacao,
       observacoesLamina,
       subtotal: calcularSubtotal(),
       quantidade: 1,
@@ -294,7 +273,6 @@ export default function Simulador() {
     setEmpunhaduraSelecionada(lamina.empunhadura?.id || '');
     setDragonScale(lamina.dragonScale);
     setBainhaSelecionada(lamina.bainha?.id || '');
-    // Se tiver cor personalizada, setar como OUTRA
     if (lamina.corBainhaPersonalizada) {
       setCorBainha('OUTRA');
       setCorBainhaPersonalizada(lamina.corBainhaPersonalizada);
@@ -302,18 +280,9 @@ export default function Simulador() {
       setCorBainha(lamina.corBainha);
       setCorBainhaPersonalizada('');
     }
-    setEspacadorSelecionado(lamina.espacador?.id || '');
-    setLaser(lamina.laser);
-    setTextoLaser(lamina.textoLaser);
-    setLocalGravacao(lamina.localGravacao);
+    setTextoLaser(lamina.textoLaser === '-' ? '' : lamina.textoLaser);
     setEmbalagem(lamina.embalagem);
-    setEmbalagemGravacao(lamina.embalagemGravacao);
-    setEmbalagemTextoGravacao(lamina.embalagemTextoGravacao);
     setObservacoesLamina(lamina.observacoesLamina || '');
-    setLaminaEmEdicao(lamina.id);
-    setLaminaModalAberta(null);
-    toast.info('Editando lâmina - faça as alterações e clique em Salvar');
-    setEmbalagemTextoGravacao(lamina.embalagemTextoGravacao);
     setLaminaEmEdicao(lamina.id);
     setLaminaModalAberta(null);
     toast.info('Editando lâmina - faça as alterações e clique em Salvar');
@@ -326,10 +295,8 @@ export default function Simulador() {
       return;
     }
 
-    const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
     const laminaExistente = laminasCustomizadas.find(l => l.id === laminaEmEdicao);
     
-    // Determinar cor da bainha final (personalizada ou selecionada)
     const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
     
     const laminaAtualizada: LaminaCustomizada = {
@@ -343,13 +310,8 @@ export default function Simulador() {
       bainha: bainhaAtual || null,
       corBainha: corBainhaFinal,
       corBainhaPersonalizada,
-      espacador: espacadorAtual || null,
-      laser,
-      textoLaser,
-      localGravacao,
+      textoLaser: textoLaser || '-',
       embalagem,
-      embalagemGravacao,
-      embalagemTextoGravacao,
       observacoesLamina,
       subtotal: calcularSubtotal(),
       quantidade: laminaExistente?.quantidade || 1,
@@ -402,13 +364,8 @@ export default function Simulador() {
     setBainhaSelecionada('');
     setCorBainha('Preto');
     setCorBainhaPersonalizada('');
-    setEspacadorSelecionado('');
-    setLaser(false);
     setTextoLaser('');
-    setLocalGravacao([]);
     setEmbalagem('');
-    setEmbalagemGravacao(false);
-    setEmbalagemTextoGravacao('');
     setObservacoesLamina('');
     setBuscaModelo('');
     setCategoriaFiltro('');
@@ -639,13 +596,8 @@ export default function Simulador() {
         dragonScale,
         bainha: bainhaAtual,
         corBainha,
-        espacador: espacadorAtualCalc,
-        laser,
-        textoLaser,
-        localGravacao,
+        textoLaser: textoLaser || '-',
         embalagem,
-        embalagemGravacao,
-        embalagemTextoGravacao,
         observacoesLamina,
         subtotal: calcularSubtotal(),
         quantidade: 1,
@@ -674,9 +626,8 @@ export default function Simulador() {
           ['Bainha', `${lamina.bainha?.nome_opcao || '-'} ${lamina.corBainha || ''}`],
         ];
 
-        if ((lamina as any).espacador) specs.push(['Espaçador', (lamina as any).espacador.nome_opcao]);
         if (lamina.embalagem) specs.push(['Embalagem', lamina.embalagem]);
-        if (lamina.laser) specs.push(['Gravação Laser', `${lamina.textoLaser}${lamina.localGravacao?.length ? ` (${lamina.localGravacao.join(', ')})` : ''}`]);
+        if (lamina.textoLaser && lamina.textoLaser !== '-') specs.push(['Gravação', lamina.textoLaser]);
         if ((lamina as any).observacoesLamina) specs.push(['Observações', (lamina as any).observacoesLamina]);
 
         // Two-column specs
@@ -883,7 +834,6 @@ export default function Simulador() {
     try {
       const todasLaminas = [...laminasCustomizadas];
       if (modeloSelecionado && modeloAtual) {
-        const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
         const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
         todasLaminas.push({
           id: crypto.randomUUID(),
@@ -896,13 +846,8 @@ export default function Simulador() {
           bainha: bainhaAtual || null,
           corBainha: corBainhaFinal,
           corBainhaPersonalizada,
-          espacador: espacadorAtual || null,
-          laser,
-          textoLaser,
-          localGravacao,
+            textoLaser: textoLaser || '-',
           embalagem,
-          embalagemGravacao,
-          embalagemTextoGravacao,
           observacoesLamina,
           subtotal: calcularSubtotal(),
           quantidade: 1,
@@ -930,14 +875,13 @@ export default function Simulador() {
           ? `Bainha ${lamina.bainha.nome_opcao}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
           : '';
         
-        const espacadorInfo = lamina.espacador ? `Espaçador ${lamina.espacador.nome_opcao}` : '';
-        
-        const partes = [modelo, aco, acabamento, empunhadura, bainhaFormatada, espacadorInfo].filter(Boolean).join(' ');
+                
+        const partes = [modelo, aco, acabamento, empunhadura, bainhaFormatada].filter(Boolean).join(' ');
         return `Item ${index + 1}: ${partes}`;
       }).join('\n\n');
 
       // Personalização à laser
-      const laminasComLaser = todasLaminas.filter(l => l.laser && l.textoLaser);
+      const laminasComLaser = todasLaminas.filter(l => l.textoLaser && l.textoLaser !== '-');
       let personalizacaoTexto = 'Não';
       if (laminasComLaser.length > 0) {
         const todasIguais = laminasComLaser.every(l => l.textoLaser === laminasComLaser[0].textoLaser);
@@ -1013,7 +957,6 @@ OBS: ${observacao || '-'}`;
     try {
       const todasLaminas = [...laminasCustomizadas];
       if (modeloSelecionado && modeloAtual) {
-        const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
         const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
         todasLaminas.push({
           id: crypto.randomUUID(),
@@ -1026,13 +969,8 @@ OBS: ${observacao || '-'}`;
           bainha: bainhaAtual || null,
           corBainha: corBainhaFinal,
           corBainhaPersonalizada,
-          espacador: espacadorAtual || null,
-          laser,
-          textoLaser,
-          localGravacao,
+            textoLaser: textoLaser || '-',
           embalagem,
-          embalagemGravacao,
-          embalagemTextoGravacao,
           observacoesLamina,
           subtotal: calcularSubtotal(),
           quantidade: 1,
@@ -1046,13 +984,8 @@ OBS: ${observacao || '-'}`;
         acabamento: (lamina.acabamento?.nome_opcao || '') + (lamina.bruteForge ? ' + Brute Forge' : ''),
         bainha: lamina.bainha?.nome_opcao || '',
         corBainha: lamina.corBainha,
-        espacador: lamina.espacador?.nome_opcao || '',
-        laser: lamina.laser,
         textoLaser: lamina.textoLaser,
-        localGravacao: lamina.localGravacao.join(', '),
         embalagem: lamina.embalagem,
-        embalagemGravacao: lamina.embalagemGravacao,
-        embalagemTextoGravacao: lamina.embalagemTextoGravacao,
         observacoesLamina: lamina.observacoesLamina || '',
         subtotal: lamina.subtotal,
       }));
@@ -1306,7 +1239,7 @@ OBS: ${observacao || '-'}`;
           </div>
         )}
 
-        {/* ===== STEP 1: Lâmina (Aço, Acabamento, Empunhadura) ===== */}
+        {/* ===== STEP 1: Empunhadura ===== */}
         {currentStep === 1 && modeloSelecionado && (
           <div className="space-y-3">
             {/* Mini preview do modelo */}
@@ -1316,27 +1249,14 @@ OBS: ${observacao || '-'}`;
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold truncate">{modeloAtual?.nome_modelo}</p>
-                <p className="text-[10px] text-muted-foreground">R$ {modeloAtual?.preco_base.toFixed(2)}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {[acoAtual?.nome_opcao, acabamentoAtual?.nome_opcao].filter(Boolean).join(' • ')}
+                </p>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => { setModeloSelecionado(''); setCurrentStep(0); }} className="h-7 w-7 p-0">
-                <X className="h-3 w-3" />
-              </Button>
             </div>
 
             <div className="bg-card rounded-lg border border-border p-3 space-y-2">
-              <h3 className="font-semibold text-sm mb-1">Personalize sua Lâmina</h3>
-
-              <CollapsibleSelect options={acos} selected={acoSelecionado} onSelect={setAcoSelecionado} label="Aço" etapaKey="aco" />
-
-              <div className="space-y-1.5">
-                <CollapsibleSelect options={acabamentos} selected={acabamentoSelecionado} onSelect={setAcabamentoSelecionado} label="Acabamento" etapaKey="acabamento" />
-                {acabamentoSelecionado && (
-                  <div className="flex items-center gap-2 pl-3">
-                    <Checkbox id="bruteForge" checked={bruteForge} onCheckedChange={(checked) => setBruteForge(checked === true)} className="h-3.5 w-3.5" />
-                    <Label htmlFor="bruteForge" className="text-xs cursor-pointer">Brute Forge</Label>
-                  </div>
-                )}
-              </div>
+              <h3 className="font-semibold text-sm mb-1">Empunhadura</h3>
 
               <div className="space-y-1.5">
                 <CollapsibleSelect options={empunhaduras} selected={empunhaduraSelecionada} onSelect={setEmpunhaduraSelecionada} label="Empunhadura" etapaKey="empunhadura" />
@@ -1351,7 +1271,7 @@ OBS: ${observacao || '-'}`;
           </div>
         )}
 
-        {/* ===== STEP 2: Extras (Bainha, Espaçador, Laser, Embalagem) ===== */}
+        {/* ===== STEP 2: Bainha ===== */}
         {currentStep === 2 && modeloSelecionado && (
           <div className="space-y-3">
             {/* Mini preview */}
@@ -1368,7 +1288,7 @@ OBS: ${observacao || '-'}`;
             </div>
 
             <div className="bg-card rounded-lg border border-border p-3 space-y-2">
-              <h3 className="font-semibold text-sm mb-1">Bainha & Acessórios</h3>
+              <h3 className="font-semibold text-sm mb-1">Bainha</h3>
 
               <div className="space-y-1.5">
                 <CollapsibleSelect options={bainhas} selected={bainhaSelecionada} onSelect={setBainhaSelecionada} label="Bainha" etapaKey="bainha" />
@@ -1389,39 +1309,41 @@ OBS: ${observacao || '-'}`;
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        )}
 
-              <CollapsibleSelect options={espacadores} selected={espacadorSelecionado} onSelect={setEspacadorSelecionado} label="Espaçador" etapaKey="espacador" />
+        {/* ===== STEP 3: Personalização ===== */}
+        {currentStep === 3 && modeloSelecionado && (
+          <div className="space-y-3">
+            {/* Mini preview */}
+            <div className="flex items-center gap-3 bg-muted rounded-lg p-2.5">
+              <div className="w-14 h-10 bg-white rounded overflow-hidden flex-shrink-0">
+                <img src={getModeloImagem(modeloAtual)} alt="" className="w-full h-full object-contain" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate">{modeloAtual?.nome_modelo}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {[acoAtual?.nome_opcao, acabamentoAtual?.nome_opcao, empunhaduraAtual?.nome_opcao].filter(Boolean).join(' • ')}
+                </p>
+              </div>
             </div>
 
-            {/* Laser & Embalagem */}
             <div className="bg-card rounded-lg border border-border p-3 space-y-3">
-              <h3 className="font-semibold text-sm">Laser & Embalagem</h3>
+              <h3 className="font-semibold text-sm">Personalização</h3>
 
-              {/* Laser */}
-              <div className="space-y-2">
+              {/* Gravação - campo de texto simples */}
+              <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Checkbox id="laser" checked={laser} onCheckedChange={(checked) => setLaser(checked as boolean)} className="h-3.5 w-3.5" />
-                  <Label htmlFor="laser" className="text-xs cursor-pointer">Personalização à Laser</Label>
+                  <Label className="text-xs text-muted-foreground">Gravação à Laser</Label>
                   <InfoEtapaModal etapaKey="laser" />
                 </div>
-                {laser && (
-                  <div className="space-y-2 pl-5">
-                    <Input placeholder="Texto para gravação..." value={textoLaser} onChange={(e) => setTextoLaser(e.target.value)} className="h-8 text-xs" />
-                    <div className="flex flex-wrap gap-1.5">
-                      {LOCAIS_GRAVACAO.map(local => (
-                        <button key={local} onClick={() => {
-                          if (localGravacao.includes(local)) { setLocalGravacao(localGravacao.filter(l => l !== local)); }
-                          else { setLocalGravacao([...localGravacao, local]); }
-                        }}
-                          className={`px-2 py-1 rounded text-xs transition-all ${
-                            localGravacao.includes(local) ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80'
-                          }`}>
-                          {local}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <Input 
+                  placeholder="Texto para gravação (deixe vazio para '-')" 
+                  value={textoLaser} 
+                  onChange={(e) => setTextoLaser(e.target.value)} 
+                  className="h-8 text-xs" 
+                />
               </div>
 
               {/* Embalagem */}
@@ -1440,17 +1362,6 @@ OBS: ${observacao || '-'}`;
                     </button>
                   ))}
                 </div>
-                {embalagem && (
-                  <div className="space-y-2 ml-3">
-                    <div className="flex items-center gap-2">
-                      <Checkbox id="embGrav" checked={embalagemGravacao} onCheckedChange={(checked) => setEmbalagemGravacao(checked === true)} className="h-3.5 w-3.5" />
-                      <Label htmlFor="embGrav" className="text-xs cursor-pointer">Gravação na embalagem</Label>
-                    </div>
-                    {embalagemGravacao && (
-                      <Input placeholder="Texto da gravação..." value={embalagemTextoGravacao} onChange={(e) => setEmbalagemTextoGravacao(e.target.value)} className="h-8 text-xs" />
-                    )}
-                  </div>
-                )}
               </div>
 
               {/* Observações */}
@@ -1462,75 +1373,7 @@ OBS: ${observacao || '-'}`;
           </div>
         )}
 
-        {/* ===== STEP 3: Revisar ===== */}
-        {currentStep === 3 && modeloSelecionado && (
-          <div className="space-y-3">
-            <div className="bg-card rounded-lg border border-border p-3">
-              <h3 className="font-semibold text-sm mb-3">Resumo da Lâmina</h3>
-
-              {/* Preview image */}
-              <div className="w-full h-24 bg-white rounded-lg overflow-hidden mb-3 border border-border">
-                <img src={getModeloImagem(modeloAtual)} alt="" className="w-full h-full object-contain" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-muted p-2 rounded">
-                  <span className="text-muted-foreground block">Modelo</span>
-                  <span className="font-medium">{modeloAtual?.nome_modelo || '-'}</span>
-                </div>
-                <div className="bg-muted p-2 rounded">
-                  <span className="text-muted-foreground block">Aço</span>
-                  <span className="font-medium">{acoAtual?.nome_opcao || '-'}</span>
-                </div>
-                <div className="bg-muted p-2 rounded">
-                  <span className="text-muted-foreground block">Acabamento</span>
-                  <span className="font-medium">{acabamentoAtual?.nome_opcao || '-'}{bruteForge ? ' + BF' : ''}</span>
-                </div>
-                <div className="bg-muted p-2 rounded">
-                  <span className="text-muted-foreground block">Empunhadura</span>
-                  <span className="font-medium">{empunhaduraAtual?.nome_opcao || '-'}{dragonScale ? ' + DS' : ''}</span>
-                </div>
-                {bainhaSelecionada && (
-                  <div className="bg-muted p-2 rounded">
-                    <span className="text-muted-foreground block">Bainha</span>
-                    <span className="font-medium">{bainhaAtual?.nome_opcao || '-'} {corBainha !== 'OUTRA' ? corBainha : corBainhaPersonalizada}</span>
-                  </div>
-                )}
-                {espacadorSelecionado && (
-                  <div className="bg-muted p-2 rounded">
-                    <span className="text-muted-foreground block">Espaçador</span>
-                    <span className="font-medium">{espacadorAtualCalc?.nome_opcao || '-'}</span>
-                  </div>
-                )}
-                {laser && (
-                  <div className="bg-muted p-2 rounded col-span-2">
-                    <span className="text-muted-foreground block">Laser</span>
-                    <span className="font-medium">{textoLaser || 'Sim'} {localGravacao.length > 0 ? `(${localGravacao.join(', ')})` : ''}</span>
-                  </div>
-                )}
-                {embalagem && (
-                  <div className="bg-muted p-2 rounded col-span-2">
-                    <span className="text-muted-foreground block">Embalagem</span>
-                    <span className="font-medium">{embalagem}{embalagemGravacao && embalagemTextoGravacao ? ` — ${embalagemTextoGravacao}` : ''}</span>
-                  </div>
-                )}
-                {observacoesLamina && (
-                  <div className="bg-muted p-2 rounded col-span-2">
-                    <span className="text-muted-foreground block">Observações</span>
-                    <span className="font-medium">{observacoesLamina}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-3 p-2 bg-accent/10 rounded-lg text-center">
-                <span className="text-xs text-muted-foreground">Subtotal</span>
-                <p className="font-bold text-lg">R$ {calcularSubtotal().toFixed(2)}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Produtos Adicionais - visível nos steps 3+ */}
+        {/* Produtos Adicionais - visível no step 3 */}
         {currentStep === 3 && produtosAdicionais.length > 0 && (
           <div className="bg-card rounded-lg border border-border p-3 mt-3">
             <h3 className="font-semibold text-sm mb-2">Produtos Adicionais</h3>
@@ -1716,30 +1559,18 @@ OBS: ${observacao || '-'}`;
                       <p className="font-medium">{laminaModalAberta.corBainha}</p>
                     </div>
                   )}
-                  {laminaModalAberta.espacador && (
-                    <div className="bg-muted p-2.5 rounded-lg">
-                      <p className="text-muted-foreground text-xs">Espaçador</p>
-                      <p className="font-medium">{laminaModalAberta.espacador.nome_opcao}</p>
-                    </div>
-                  )}
                   {laminaModalAberta.embalagem && (
                     <div className="bg-muted p-2.5 rounded-lg col-span-2">
                       <p className="text-muted-foreground text-xs">Embalagem</p>
                       <p className="font-medium">{laminaModalAberta.embalagem}</p>
-                      {laminaModalAberta.embalagemGravacao && laminaModalAberta.embalagemTextoGravacao && (
-                        <p className="text-xs text-muted-foreground mt-1">Gravação: {laminaModalAberta.embalagemTextoGravacao}</p>
-                      )}
                     </div>
                   )}
                 </div>
 
-                {laminaModalAberta.laser && (
+                {laminaModalAberta.textoLaser && laminaModalAberta.textoLaser !== '-' && (
                   <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
-                    <p className="text-muted-foreground text-xs">Personalização à Laser</p>
-                    <p className="font-medium">{laminaModalAberta.textoLaser || 'Sim'}</p>
-                    {laminaModalAberta.localGravacao.length > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">Local: {laminaModalAberta.localGravacao.join(', ')}</p>
-                    )}
+                    <p className="text-muted-foreground text-xs">Gravação à Laser</p>
+                    <p className="font-medium">{laminaModalAberta.textoLaser}</p>
                   </div>
                 )}
               </div>
@@ -2056,17 +1887,13 @@ OBS: ${observacao || '-'}`;
                   dragonScale,
                   bainha: bainhaAtual,
                   corBainha,
-                  espacador: espacadorAtualCalc,
-                  laser,
-                  textoLaser,
-                  localGravacao,
+                  textoLaser: textoLaser || '-',
                   embalagem,
-                  embalagemGravacao,
-                  embalagemTextoGravacao,
                   observacoesLamina,
+                  corBainhaPersonalizada,
                   subtotal: calcularSubtotal(),
                   quantidade: 1,
-                }] : [])].map((lamina, index) => (
+                }] as LaminaCustomizada[] : [])].map((lamina, index) => (
                   <div key={lamina.id} data-pdf-section className="mb-3 p-4 border border-border rounded-lg bg-card">
                     <div className="flex items-start gap-3 mb-3">
                       <div className="w-28 h-20 bg-white rounded-lg overflow-hidden flex-shrink-0 border border-border p-1">
@@ -2090,9 +1917,8 @@ OBS: ${observacao || '-'}`;
                       <span>Acabamento: {lamina.acabamento?.nome_opcao || '-'}{(lamina as any).bruteForge ? ' + Brute Forge' : ''}</span>
                       <span>Empunhadura: {lamina.empunhadura?.nome_opcao || '-'}{lamina.dragonScale ? ' + DS' : ''}</span>
                       <span>Bainha: {lamina.bainha?.nome_opcao || '-'} {lamina.corBainha}</span>
-                      {(lamina as any).espacador && <span>Espaçador: {(lamina as any).espacador.nome_opcao}</span>}
                       {lamina.embalagem && <span>Embalagem: {lamina.embalagem}</span>}
-                      {lamina.laser && <span className="col-span-2">Laser: {lamina.textoLaser}{lamina.localGravacao?.length > 0 ? ` (${lamina.localGravacao.join(', ')})` : ''}</span>}
+                      {lamina.textoLaser && lamina.textoLaser !== '-' && <span className="col-span-2">Gravação: {lamina.textoLaser}</span>}
                       {(lamina as any).observacoesLamina && <span className="col-span-2 text-muted-foreground italic">Obs: {(lamina as any).observacoesLamina}</span>}
                     </div>
                   </div>
