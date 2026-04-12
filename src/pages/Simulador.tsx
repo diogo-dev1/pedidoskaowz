@@ -135,14 +135,8 @@ export default function Simulador() {
   const [showExtras, setShowExtras] = useState(false);
   const [secaoAberta, setSecaoAberta] = useState<string | null>(null);
 
-  // Wizard steps
-  const [currentStep, setCurrentStep] = useState(0);
-  const STEPS = [
-    { label: 'Lâmina', icon: '🔪' },
-    { label: 'Empunhadura', icon: '🤚' },
-    { label: 'Bainha', icon: '🎒' },
-    { label: 'Personalização', icon: '✨' },
-  ];
+  // Searchable empunhadura
+  const [buscaEmpunhadura, setBuscaEmpunhadura] = useState('');
 
   useEffect(() => {
     carregarDados();
