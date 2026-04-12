@@ -1887,16 +1887,13 @@ OBS: ${observacao || '-'}`;
                   dragonScale,
                   bainha: bainhaAtual,
                   corBainha,
-                            laser,
-                  textoLaser,
-                  localGravacao,
+                  textoLaser: textoLaser || '-',
                   embalagem,
-                  embalagemGravacao,
-                  embalagemTextoGravacao,
                   observacoesLamina,
+                  corBainhaPersonalizada,
                   subtotal: calcularSubtotal(),
                   quantidade: 1,
-                }] : [])].map((lamina, index) => (
+                }] as LaminaCustomizada[] : [])].map((lamina, index) => (
                   <div key={lamina.id} data-pdf-section className="mb-3 p-4 border border-border rounded-lg bg-card">
                     <div className="flex items-start gap-3 mb-3">
                       <div className="w-28 h-20 bg-white rounded-lg overflow-hidden flex-shrink-0 border border-border p-1">
@@ -1920,9 +1917,8 @@ OBS: ${observacao || '-'}`;
                       <span>Acabamento: {lamina.acabamento?.nome_opcao || '-'}{(lamina as any).bruteForge ? ' + Brute Forge' : ''}</span>
                       <span>Empunhadura: {lamina.empunhadura?.nome_opcao || '-'}{lamina.dragonScale ? ' + DS' : ''}</span>
                       <span>Bainha: {lamina.bainha?.nome_opcao || '-'} {lamina.corBainha}</span>
-                      {(lamina as any).espacador && <span>Espaçador: {(lamina as any).espacador.nome_opcao}</span>}
                       {lamina.embalagem && <span>Embalagem: {lamina.embalagem}</span>}
-                      {lamina.laser && <span className="col-span-2">Laser: {lamina.textoLaser}{lamina.localGravacao?.length > 0 ? ` (${lamina.localGravacao.join(', ')})` : ''}</span>}
+                      {lamina.textoLaser && lamina.textoLaser !== '-' && <span className="col-span-2">Gravação: {lamina.textoLaser}</span>}
                       {(lamina as any).observacoesLamina && <span className="col-span-2 text-muted-foreground italic">Obs: {(lamina as any).observacoesLamina}</span>}
                     </div>
                   </div>
