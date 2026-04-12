@@ -187,7 +187,6 @@ export default function Simulador() {
   const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
   const coresBainha = mergeOpcoes(opcoesN8n?.coresBainha, componentes.filter(c => c.tipo_opcao === 'Cor de Bainha'), 'Cor de Bainha');
   const embalagens = componentes.filter(c => c.tipo_opcao === 'Embalagem');
-  const embalagens = componentes.filter(c => c.tipo_opcao === 'Embalagem');
 
   const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR'];
 
