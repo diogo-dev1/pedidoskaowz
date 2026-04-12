@@ -138,6 +138,15 @@ export default function Simulador() {
   // Searchable empunhadura
   const [buscaEmpunhadura, setBuscaEmpunhadura] = useState('');
 
+  // Wizard step
+  const [currentStep, setCurrentStep] = useState(0);
+  const STEPS = [
+    { label: 'Lâmina', icon: '🔪' },
+    { label: 'Cabo', icon: '🤚' },
+    { label: 'Bainha', icon: '🎒' },
+    { label: 'Detalhes', icon: '✨' },
+  ];
+
   useEffect(() => {
     carregarDados();
   }, []);
@@ -1071,10 +1080,10 @@ OBS: ${observacao || '-'}`;
   }
 
   return (
-    <div className="min-h-screen bg-background pb-40">
+    <div className="min-h-screen bg-background pb-36">
       <div className="container mx-auto px-3 py-4 max-w-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <h1 className="text-lg font-bold tracking-tight">Monte sua Faca</h1>
           <div className="flex items-center gap-2">
             {laminasCustomizadas.length > 0 && (
@@ -1088,148 +1097,154 @@ OBS: ${observacao || '-'}`;
           </div>
         </div>
 
-        {/* ===== GRUPO 1: Modelo + Aço + Acabamento ===== */}
-        <div className="bg-card rounded-xl border border-border p-4 mb-3">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-base">🔪</span>
-            <h2 className="font-semibold text-sm">Lâmina</h2>
-            <InfoEtapaModal etapaKey="modelo" />
-          </div>
+        {/* Stepper compacto */}
+        <div className="flex items-center gap-1 mb-4">
+          {STEPS.map((step, i) => (
+            <button
+              key={i}
+              onClick={() => { if (i === 0 || modeloSelecionado) setCurrentStep(i); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all ${
+                i === currentStep
+                  ? 'bg-accent text-accent-foreground shadow-sm'
+                  : i < currentStep || (i > 0 && modeloSelecionado)
+                    ? 'bg-accent/20 text-accent-foreground'
+                    : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              <span>{step.icon}</span>
+              <span className="hidden sm:inline">{step.label}</span>
+            </button>
+          ))}
+        </div>
 
-          {/* Modelo selecionado */}
-          {modeloSelecionado && modeloAtual && (
-            <div className="bg-muted rounded-lg p-3 mb-3 flex items-center gap-3">
-              <div className="w-20 h-14 bg-white rounded-lg overflow-hidden flex-shrink-0">
-                <img src={getModeloImagem(modeloAtual)} alt={modeloAtual.nome_modelo} className="w-full h-full object-contain" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{modeloAtual.nome_modelo}</p>
-                <p className="text-[10px] text-muted-foreground">{modeloAtual.categoria}</p>
-              </div>
-              <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0 flex-shrink-0">
-                <X className="h-3.5 w-3.5" />
-              </Button>
+        {/* ===== STEP 0: Modelo + Aço + Acabamento ===== */}
+        {currentStep === 0 && (
+          <div className="bg-card rounded-xl border border-border p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="font-semibold text-sm">Escolha o Modelo</h2>
+              <InfoEtapaModal etapaKey="modelo" />
             </div>
-          )}
 
-          {/* Categorias */}
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {categorias.map(cat => (
-              <button key={cat} onClick={() => setCategoriaFiltro(cat === categoriaFiltro ? '' : cat)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  categoriaFiltro === cat ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80 text-foreground'
-                }`}>
-                {cat}
-              </button>
-            ))}
-          </div>
+            {modeloSelecionado && modeloAtual && (
+              <div className="bg-muted rounded-lg p-3 mb-3 flex items-center gap-3">
+                <div className="w-20 h-14 bg-white rounded-lg overflow-hidden flex-shrink-0">
+                  <img src={getModeloImagem(modeloAtual)} alt={modeloAtual.nome_modelo} className="w-full h-full object-contain" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{modeloAtual.nome_modelo}</p>
+                  <p className="text-[10px] text-muted-foreground">{modeloAtual.categoria}</p>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => setModeloSelecionado('')} className="h-7 w-7 p-0 flex-shrink-0">
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
 
-          {/* Busca */}
-          <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input placeholder="Buscar modelo..." value={buscaModelo} onChange={(e) => setBuscaModelo(e.target.value)} className="pl-9 h-9 text-sm" />
-          </div>
-
-          {/* Lista de modelos */}
-          {mostrarModelos && modelosFiltrados.length > 0 && (
-            <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto mb-3">
-              {modelosFiltrados.map(modelo => (
-                <button key={modelo.id} onClick={() => setModeloSelecionado(modelo.id)}
-                  className={`p-2.5 rounded-lg text-left text-xs transition-all flex items-center justify-between ${
-                    modeloSelecionado === modelo.id ? 'bg-accent text-accent-foreground ring-1 ring-accent' : 'bg-muted hover:bg-muted/80'
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {categorias.map(cat => (
+                <button key={cat} onClick={() => setCategoriaFiltro(cat === categoriaFiltro ? '' : cat)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    categoriaFiltro === cat ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80 text-foreground'
                   }`}>
-                  <span className="truncate font-medium">{modelo.nome_modelo}</span>
-                  {modeloSelecionado === modelo.id && <Check className="h-3.5 w-3.5 flex-shrink-0" />}
+                  {cat}
                 </button>
               ))}
             </div>
-          )}
 
-          {/* Aço e Acabamento - só mostram após modelo selecionado */}
-          {modeloSelecionado && (
-            <div className="space-y-3 pt-2 border-t border-border">
-              {/* Aço - badge style */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Label className="text-xs text-muted-foreground font-medium">Aço</Label>
-                  <InfoEtapaModal etapaKey="aco" />
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {acos.map(opt => (
-                    <button key={opt.id} onClick={() => setAcoSelecionado(opt.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        acoSelecionado === opt.id
-                          ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm'
-                          : 'bg-muted hover:bg-muted/80 text-foreground'
-                      }`}>
-                      {opt.nome_opcao}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Acabamento - badge style */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Label className="text-xs text-muted-foreground font-medium">Acabamento</Label>
-                  <InfoEtapaModal etapaKey="acabamento" />
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {acabamentos.map(opt => (
-                    <button key={opt.id} onClick={() => setAcabamentoSelecionado(opt.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        acabamentoSelecionado === opt.id
-                          ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm'
-                          : 'bg-muted hover:bg-muted/80 text-foreground'
-                      }`}>
-                      {opt.nome_opcao}
-                    </button>
-                  ))}
-                </div>
-                {acabamentoSelecionado && (
-                  <div className="flex items-center gap-2 mt-2 ml-1">
-                    <Checkbox id="bruteForge" checked={bruteForge} onCheckedChange={(checked) => setBruteForge(checked === true)} className="h-3.5 w-3.5" />
-                    <Label htmlFor="bruteForge" className="text-xs cursor-pointer">Brute Forge</Label>
-                  </div>
-                )}
-              </div>
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input placeholder="Buscar modelo..." value={buscaModelo} onChange={(e) => setBuscaModelo(e.target.value)} className="pl-9 h-9 text-sm" />
             </div>
-          )}
-        </div>
 
-        {/* ===== GRUPO 2: Empunhadura ===== */}
-        {modeloSelecionado && (
-          <div className="bg-card rounded-xl border border-border p-4 mb-3">
+            {mostrarModelos && modelosFiltrados.length > 0 && (
+              <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto mb-3">
+                {modelosFiltrados.map(modelo => (
+                  <button key={modelo.id} onClick={() => setModeloSelecionado(modelo.id)}
+                    className={`p-2.5 rounded-lg text-left text-xs transition-all flex items-center justify-between ${
+                      modeloSelecionado === modelo.id ? 'bg-accent text-accent-foreground ring-1 ring-accent' : 'bg-muted hover:bg-muted/80'
+                    }`}>
+                    <span className="truncate font-medium">{modelo.nome_modelo}</span>
+                    {modeloSelecionado === modelo.id && <Check className="h-3.5 w-3.5 flex-shrink-0" />}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {modeloSelecionado && (
+              <div className="space-y-3 pt-3 border-t border-border">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Label className="text-xs text-muted-foreground font-medium">Aço</Label>
+                    <InfoEtapaModal etapaKey="aco" />
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {acos.map(opt => (
+                      <button key={opt.id} onClick={() => setAcoSelecionado(opt.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          acoSelecionado === opt.id ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
+                        }`}>
+                        {opt.nome_opcao}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Label className="text-xs text-muted-foreground font-medium">Acabamento</Label>
+                    <InfoEtapaModal etapaKey="acabamento" />
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {acabamentos.map(opt => (
+                      <button key={opt.id} onClick={() => setAcabamentoSelecionado(opt.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          acabamentoSelecionado === opt.id ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
+                        }`}>
+                        {opt.nome_opcao}
+                      </button>
+                    ))}
+                  </div>
+                  {acabamentoSelecionado && (
+                    <div className="flex items-center gap-2 mt-2 ml-1">
+                      <Checkbox id="bruteForge" checked={bruteForge} onCheckedChange={(checked) => setBruteForge(checked === true)} className="h-3.5 w-3.5" />
+                      <Label htmlFor="bruteForge" className="text-xs cursor-pointer">Brute Forge</Label>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== STEP 1: Empunhadura ===== */}
+        {currentStep === 1 && modeloSelecionado && (
+          <div className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-base">🤚</span>
               <h2 className="font-semibold text-sm">Empunhadura</h2>
               <InfoEtapaModal etapaKey="empunhadura" />
             </div>
 
-            {/* Busca empunhadura */}
             <div className="relative mb-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input placeholder="Buscar empunhadura..." value={buscaEmpunhadura} onChange={(e) => setBuscaEmpunhadura(e.target.value)} className="pl-9 h-9 text-sm" />
             </div>
 
-            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
               {empunhadurasFiltradas.map(opt => (
                 <button key={opt.id} onClick={() => setEmpunhaduraSelecionada(opt.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    empunhaduraSelecionada === opt.id
-                      ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm'
-                      : 'bg-muted hover:bg-muted/80 text-foreground'
+                    empunhaduraSelecionada === opt.id ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
                   }`}>
                   {opt.nome_opcao}
                 </button>
               ))}
               {empunhadurasFiltradas.length === 0 && (
-                <p className="text-xs text-muted-foreground py-2">Nenhuma empunhadura encontrada</p>
+                <p className="text-xs text-muted-foreground py-2">Nenhuma encontrada</p>
               )}
             </div>
 
             {empunhaduraSelecionada && (
-              <div className="flex items-center gap-2 mt-2 ml-1">
+              <div className="flex items-center gap-2 mt-3 ml-1">
                 <Checkbox id="dragonScale" checked={dragonScale} onCheckedChange={(checked) => setDragonScale(checked === true)} className="h-3.5 w-3.5" />
                 <Label htmlFor="dragonScale" className="text-xs cursor-pointer">Dragon Scale</Label>
               </div>
@@ -1237,11 +1252,10 @@ OBS: ${observacao || '-'}`;
           </div>
         )}
 
-        {/* ===== GRUPO 3: Bainha + Cor ===== */}
-        {modeloSelecionado && (
-          <div className="bg-card rounded-xl border border-border p-4 mb-3">
+        {/* ===== STEP 2: Bainha ===== */}
+        {currentStep === 2 && modeloSelecionado && (
+          <div className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-base">🎒</span>
               <h2 className="font-semibold text-sm">Bainha</h2>
               <InfoEtapaModal etapaKey="bainha" />
             </div>
@@ -1250,18 +1264,15 @@ OBS: ${observacao || '-'}`;
               {bainhas.map(opt => (
                 <button key={opt.id} onClick={() => setBainhaSelecionada(opt.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    bainhaSelecionada === opt.id
-                      ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm'
-                      : 'bg-muted hover:bg-muted/80 text-foreground'
+                    bainhaSelecionada === opt.id ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
                   }`}>
                   {opt.nome_opcao}
                 </button>
               ))}
             </div>
 
-            {/* Cor da bainha - só habilita se bainha selecionada */}
             {bainhaSelecionada && (
-              <div className="space-y-2 pt-2 border-t border-border">
+              <div className="space-y-2 pt-3 border-t border-border">
                 <Label className="text-xs text-muted-foreground font-medium">Cor da Bainha</Label>
                 <Select value={corBainha} onValueChange={(value) => { setCorBainha(value); if (value !== 'OUTRA') setCorBainhaPersonalizada(''); }}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Cor da bainha" /></SelectTrigger>
@@ -1280,92 +1291,82 @@ OBS: ${observacao || '-'}`;
           </div>
         )}
 
-        {/* ===== GRUPO 4: Personalização ===== */}
-        {modeloSelecionado && (
-          <div className="bg-card rounded-xl border border-border p-4 mb-3">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-base">✨</span>
-              <h2 className="font-semibold text-sm">Personalização</h2>
-            </div>
+        {/* ===== STEP 3: Personalização + Produtos ===== */}
+        {currentStep === 3 && modeloSelecionado && (
+          <div className="space-y-3">
+            <div className="bg-card rounded-xl border border-border p-4">
+              <h2 className="font-semibold text-sm mb-3">Personalização</h2>
 
-            <div className="space-y-3">
-              {/* Gravação */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs text-muted-foreground font-medium">Gravação à Laser</Label>
-                  <InfoEtapaModal etapaKey="laser" />
-                </div>
-                <Input 
-                  placeholder="Texto para gravação (vazio = sem gravação)" 
-                  value={textoLaser} 
-                  onChange={(e) => setTextoLaser(e.target.value)} 
-                  className="h-9 text-sm" 
-                />
-              </div>
-
-              {/* Embalagem */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs text-muted-foreground font-medium">Embalagem</Label>
-                  <InfoEtapaModal etapaKey="embalagem" />
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {embalagens.map(emb => (
-                    <button key={emb.id} onClick={() => setEmbalagem(embalagem === emb.nome_opcao ? '' : emb.nome_opcao)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        embalagem === emb.nome_opcao ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
-                      }`}>
-                      {emb.nome_opcao}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Observações */}
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground font-medium">Observações da Lâmina</Label>
-                <Input placeholder="Ex: presente, acabamento especial..." value={observacoesLamina} onChange={(e) => setObservacoesLamina(e.target.value)} className="h-9 text-sm" />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Produtos Adicionais */}
-        {modeloSelecionado && produtosAdicionais.length > 0 && (
-          <div className="bg-card rounded-xl border border-border p-4 mb-3">
-            <h3 className="font-semibold text-sm mb-2">Produtos Adicionais</h3>
-            <div className="grid grid-cols-1 gap-1.5">
-              {produtosAdicionais.map(produto => {
-                const quantidade = quantidadesProdutos[produto.id] || 0;
-                return (
-                  <div key={produto.id}
-                    className={`flex items-center justify-between p-2.5 rounded-lg transition-all ${
-                      quantidade > 0 ? 'bg-accent/10 border border-accent/30' : 'bg-muted'
-                    }`}>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{produto.nome_produto}</p>
-                      <p className="text-[10px] text-muted-foreground">R$ {produto.preco_unitario.toFixed(2)} un.</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1) }))} className="h-6 w-6 p-0" disabled={quantidade <= 0}>
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="text-xs font-medium w-4 text-center">{quantidade}</span>
-                      <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: (prev[produto.id] || 0) + 1 }))} className="h-6 w-6 p-0">
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground font-medium">Gravação à Laser</Label>
+                    <InfoEtapaModal etapaKey="laser" />
                   </div>
-                );
-              })}
+                  <Input placeholder="Texto para gravação (vazio = sem gravação)" value={textoLaser} onChange={(e) => setTextoLaser(e.target.value)} className="h-9 text-sm" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground font-medium">Embalagem</Label>
+                    <InfoEtapaModal etapaKey="embalagem" />
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {embalagens.map(emb => (
+                      <button key={emb.id} onClick={() => setEmbalagem(embalagem === emb.nome_opcao ? '' : emb.nome_opcao)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          embalagem === emb.nome_opcao ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
+                        }`}>
+                        {emb.nome_opcao}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground font-medium">Observações da Lâmina</Label>
+                  <Input placeholder="Ex: presente, acabamento especial..." value={observacoesLamina} onChange={(e) => setObservacoesLamina(e.target.value)} className="h-9 text-sm" />
+                </div>
+              </div>
             </div>
-            <Input placeholder="Observações sobre produtos adicionais..." value={observacoesProdutos} onChange={(e) => setObservacoesProdutos(e.target.value)} className="h-9 text-sm mt-2" />
+
+            {produtosAdicionais.length > 0 && (
+              <div className="bg-card rounded-xl border border-border p-4">
+                <h3 className="font-semibold text-sm mb-2">Produtos Adicionais</h3>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {produtosAdicionais.map(produto => {
+                    const quantidade = quantidadesProdutos[produto.id] || 0;
+                    return (
+                      <div key={produto.id}
+                        className={`flex items-center justify-between p-2.5 rounded-lg transition-all ${
+                          quantidade > 0 ? 'bg-accent/10 border border-accent/30' : 'bg-muted'
+                        }`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{produto.nome_produto}</p>
+                          <p className="text-[10px] text-muted-foreground">R$ {produto.preco_unitario.toFixed(2)} un.</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1) }))} className="h-6 w-6 p-0" disabled={quantidade <= 0}>
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="text-xs font-medium w-4 text-center">{quantidade}</span>
+                          <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: (prev[produto.id] || 0) + 1 }))} className="h-6 w-6 p-0">
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <Input placeholder="Observações sobre produtos adicionais..." value={observacoesProdutos} onChange={(e) => setObservacoesProdutos(e.target.value)} className="h-9 text-sm mt-2" />
+              </div>
+            )}
           </div>
         )}
 
-        {/* Lâminas Adicionadas */}
+        {/* Lâminas Adicionadas - sempre visível */}
         {laminasCustomizadas.length > 0 && (
-          <div className="bg-card rounded-xl border border-border p-4 mb-3">
+          <div className="bg-card rounded-xl border border-border p-4 mt-3">
             <h3 className="font-semibold text-sm mb-2">
               Lâminas ({laminasCustomizadas.reduce((sum, l) => sum + l.quantidade, 0)})
             </h3>
@@ -1393,7 +1394,7 @@ OBS: ${observacao || '-'}`;
                       <Plus className="h-3 w-3" />
                     </Button>
                   </div>
-                  <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); editarLamina(lamina); }} className="h-6 w-6 p-0" title="Editar">
+                  <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); editarLamina(lamina); setCurrentStep(0); }} className="h-6 w-6 p-0" title="Editar">
                     <Pencil className="h-3 w-3" />
                   </Button>
                   <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); removerLamina(lamina.id); }} className="h-6 w-6 p-0 text-destructive hover:text-destructive" title="Remover">
@@ -1406,9 +1407,8 @@ OBS: ${observacao || '-'}`;
         )}
       </div>
 
-      {/* ===== BOTTOM BAR: Summary + Actions ===== */}
+      {/* ===== BOTTOM BAR ===== */}
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50">
-        {/* Resumo dinâmico */}
         {resumoParts.length > 0 && (
           <div className="px-3 pt-2 pb-1">
             <p className="text-[11px] text-muted-foreground truncate text-center">
@@ -1418,33 +1418,48 @@ OBS: ${observacao || '-'}`;
         )}
         <div className="px-3 py-2.5">
           <div className="flex items-center justify-between gap-2 max-w-2xl mx-auto">
+            <div>
+              {currentStep > 0 && (
+                <Button onClick={() => setCurrentStep(currentStep - 1)} variant="outline" size="sm" className="text-xs h-9">
+                  Voltar
+                </Button>
+              )}
+            </div>
             <div className="flex gap-2">
               {laminaEmEdicao ? (
                 <>
-                  <Button onClick={cancelarEdicao} variant="outline" size="sm" className="text-xs h-9">
+                  <Button onClick={() => { cancelarEdicao(); setCurrentStep(0); }} variant="outline" size="sm" className="text-xs h-9">
                     Cancelar
                   </Button>
-                  <Button onClick={salvarEdicaoLamina} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
+                  <Button onClick={() => { salvarEdicaoLamina(); setCurrentStep(0); }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
                     <Check className="h-3.5 w-3.5 mr-1" />
                     Salvar
                   </Button>
                 </>
+              ) : currentStep < 3 ? (
+                <Button onClick={() => {
+                  if (currentStep === 0 && !modeloSelecionado) {
+                    toast.error('Selecione um modelo primeiro');
+                    return;
+                  }
+                  setCurrentStep(currentStep + 1);
+                }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
+                  Próximo
+                </Button>
               ) : (
                 <>
-                  {modeloSelecionado && (
-                    <Button onClick={adicionarLamina} variant="outline" size="sm" className="text-xs h-9 border-accent text-accent-foreground">
-                      <Plus className="h-3.5 w-3.5 mr-1" />
-                      Adicionar
+                  <Button onClick={() => { adicionarLamina(); setCurrentStep(0); }} variant="outline" size="sm" className="text-xs h-9 border-accent text-accent-foreground">
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    Adicionar
+                  </Button>
+                  {(laminasCustomizadas.length > 0 || modeloSelecionado) && (
+                    <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90 font-semibold">
+                      Fechar Pedido
                     </Button>
                   )}
                 </>
               )}
             </div>
-            {(laminasCustomizadas.length > 0 || modeloSelecionado) && !laminaEmEdicao && (
-              <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90 font-semibold">
-                Fechar Pedido
-              </Button>
-            )}
           </div>
         </div>
       </div>
