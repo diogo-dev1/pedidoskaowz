@@ -1052,73 +1052,7 @@ OBS: ${observacao || '-'}`;
     return modelo.imagem_modelo || edcKnife;
   };
 
-  // Componente de seleção inline compacto
-  // Componente colapsável para seleção limpa
-  const CollapsibleSelect = ({ 
-    options, 
-    selected, 
-    onSelect, 
-    label,
-    etapaKey 
-  }: { 
-    options: OpcaoComponente[], 
-    selected: string, 
-    onSelect: (id: string) => void, 
-    label: string,
-    etapaKey?: string 
-  }) => {
-    const sectionId = etapaKey || label;
-    const isOpen = secaoAberta === sectionId;
-    const selectedOption = options.find(o => o.id === selected);
 
-    return (
-      <Collapsible open={isOpen} onOpenChange={(open) => {
-        setSecaoAberta(open ? sectionId : null);
-        if (open) setShowExtras(false);
-      }}>
-        <CollapsibleTrigger asChild>
-          <button className="w-full flex items-center justify-between p-2.5 rounded-lg bg-muted hover:bg-muted/80 transition-all">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">{label}</span>
-              {selectedOption && (
-                <Badge variant="secondary" className="text-xs font-medium">
-                  {selectedOption.nome_opcao}
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5">
-              {etapaKey && (
-                <span onClick={(e) => e.stopPropagation()}>
-                  <InfoEtapaModal etapaKey={etapaKey} />
-                </span>
-              )}
-              {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            </div>
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pt-2">
-          <div className="flex flex-wrap gap-1.5">
-            {options.map(opt => (
-              <button
-                key={opt.id}
-                onClick={() => {
-                  onSelect(opt.id);
-                  setSecaoAberta(null);
-                }}
-                className={`px-2.5 py-1.5 rounded-md text-xs transition-all ${
-                  selected === opt.id
-                    ? 'bg-accent text-accent-foreground font-medium'
-                    : 'bg-background border border-border hover:border-accent/50'
-                }`}
-              >
-                {opt.nome_opcao}
-              </button>
-            ))}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-    );
-  };
 
   const empunhadurasFiltradas = empunhaduras.filter(e =>
     e.nome_opcao.toLowerCase().includes(buscaEmpunhadura.toLowerCase())
