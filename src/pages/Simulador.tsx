@@ -66,6 +66,7 @@ const LOCAIS_GRAVACAO = ['Dorso Superior', 'Dorso Inferior', 'Lâmina'];
 
 export default function Simulador() {
   const { profile } = useAuth();
+  const { opcoes: opcoesN8n } = useOpcoesN8n();
   const [modelos, setModelos] = useState<ModeloBase[]>([]);
   const [componentes, setComponentes] = useState<OpcaoComponente[]>([]);
   const [produtosAdicionais, setProdutosAdicionais] = useState<ProdutoAdicional[]>([]);
