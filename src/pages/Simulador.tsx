@@ -138,6 +138,15 @@ export default function Simulador() {
   // Searchable empunhadura
   const [buscaEmpunhadura, setBuscaEmpunhadura] = useState('');
 
+  // Wizard step
+  const [currentStep, setCurrentStep] = useState(0);
+  const STEPS = [
+    { label: 'Lâmina', icon: '🔪' },
+    { label: 'Cabo', icon: '🤚' },
+    { label: 'Bainha', icon: '🎒' },
+    { label: 'Detalhes', icon: '✨' },
+  ];
+
   useEffect(() => {
     carregarDados();
   }, []);
