@@ -145,6 +145,15 @@ export default function Simulador() {
   const [showExtras, setShowExtras] = useState(false);
   const [secaoAberta, setSecaoAberta] = useState<string | null>(null);
 
+  // Wizard steps
+  const [currentStep, setCurrentStep] = useState(0);
+  const STEPS = [
+    { label: 'Modelo', icon: '🔪' },
+    { label: 'Lâmina', icon: '⚙️' },
+    { label: 'Extras', icon: '🎒' },
+    { label: 'Revisar', icon: '✅' },
+  ];
+
   useEffect(() => {
     carregarDados();
   }, []);
