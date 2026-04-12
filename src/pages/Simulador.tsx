@@ -187,7 +187,7 @@ export default function Simulador() {
   const bainhas = componentes.filter(c => c.tipo_opcao === 'Bainha');
   const coresBainha = mergeOpcoes(opcoesN8n?.coresBainha, componentes.filter(c => c.tipo_opcao === 'Cor de Bainha'), 'Cor de Bainha');
   const embalagens = componentes.filter(c => c.tipo_opcao === 'Embalagem');
-  const espacadores = componentes.filter(c => c.tipo_opcao === 'Espaçador');
+  const embalagens = componentes.filter(c => c.tipo_opcao === 'Embalagem');
 
   const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR'];
 
@@ -206,17 +206,14 @@ export default function Simulador() {
   const empunhaduraAtual = componentes.find(c => c.id === empunhaduraSelecionada);
   const bainhaAtual = componentes.find(c => c.id === bainhaSelecionada);
 
-  const espacadorAtualCalc = componentes.find(c => c.id === espacadorSelecionado);
-
   const calcularSubtotal = (): number => {
     const precoBase = modeloAtual?.preco_base || 0;
     const precoAco = acoAtual?.preco_adicional || 0;
     const precoAcabamento = acabamentoAtual?.preco_adicional || 0;
     const precoEmpunhadura = empunhaduraAtual?.preco_adicional || 0;
     const precoBainha = bainhaAtual?.preco_adicional || 0;
-    const precoEspacador = espacadorAtualCalc?.preco_adicional || 0;
-    const precoLaser = laser ? 30 : 0;
-    return precoBase + precoAco + precoAcabamento + precoEmpunhadura + precoBainha + precoEspacador + precoLaser;
+    const precoLaser = textoLaser && textoLaser !== '-' ? 30 : 0;
+    return precoBase + precoAco + precoAcabamento + precoEmpunhadura + precoBainha + precoLaser;
   };
 
   const valorTotalCalculado = useMemo(() => {
@@ -235,8 +232,6 @@ export default function Simulador() {
       return;
     }
 
-    const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
-    
     // Determinar cor da bainha final (personalizada ou selecionada)
     const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
     
@@ -251,13 +246,8 @@ export default function Simulador() {
       bainha: bainhaAtual || null,
       corBainha: corBainhaFinal,
       corBainhaPersonalizada,
-      espacador: espacadorAtual || null,
-      laser,
-      textoLaser,
-      localGravacao,
+      textoLaser: textoLaser || '-',
       embalagem,
-      embalagemGravacao,
-      embalagemTextoGravacao,
       observacoesLamina,
       subtotal: calcularSubtotal(),
       quantidade: 1,
@@ -284,7 +274,6 @@ export default function Simulador() {
     setEmpunhaduraSelecionada(lamina.empunhadura?.id || '');
     setDragonScale(lamina.dragonScale);
     setBainhaSelecionada(lamina.bainha?.id || '');
-    // Se tiver cor personalizada, setar como OUTRA
     if (lamina.corBainhaPersonalizada) {
       setCorBainha('OUTRA');
       setCorBainhaPersonalizada(lamina.corBainhaPersonalizada);
@@ -292,18 +281,9 @@ export default function Simulador() {
       setCorBainha(lamina.corBainha);
       setCorBainhaPersonalizada('');
     }
-    setEspacadorSelecionado(lamina.espacador?.id || '');
-    setLaser(lamina.laser);
-    setTextoLaser(lamina.textoLaser);
-    setLocalGravacao(lamina.localGravacao);
+    setTextoLaser(lamina.textoLaser === '-' ? '' : lamina.textoLaser);
     setEmbalagem(lamina.embalagem);
-    setEmbalagemGravacao(lamina.embalagemGravacao);
-    setEmbalagemTextoGravacao(lamina.embalagemTextoGravacao);
     setObservacoesLamina(lamina.observacoesLamina || '');
-    setLaminaEmEdicao(lamina.id);
-    setLaminaModalAberta(null);
-    toast.info('Editando lâmina - faça as alterações e clique em Salvar');
-    setEmbalagemTextoGravacao(lamina.embalagemTextoGravacao);
     setLaminaEmEdicao(lamina.id);
     setLaminaModalAberta(null);
     toast.info('Editando lâmina - faça as alterações e clique em Salvar');
@@ -316,10 +296,8 @@ export default function Simulador() {
       return;
     }
 
-    const espacadorAtual = componentes.find(c => c.id === espacadorSelecionado);
     const laminaExistente = laminasCustomizadas.find(l => l.id === laminaEmEdicao);
     
-    // Determinar cor da bainha final (personalizada ou selecionada)
     const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
     
     const laminaAtualizada: LaminaCustomizada = {
@@ -333,13 +311,8 @@ export default function Simulador() {
       bainha: bainhaAtual || null,
       corBainha: corBainhaFinal,
       corBainhaPersonalizada,
-      espacador: espacadorAtual || null,
-      laser,
-      textoLaser,
-      localGravacao,
+      textoLaser: textoLaser || '-',
       embalagem,
-      embalagemGravacao,
-      embalagemTextoGravacao,
       observacoesLamina,
       subtotal: calcularSubtotal(),
       quantidade: laminaExistente?.quantidade || 1,
@@ -392,13 +365,8 @@ export default function Simulador() {
     setBainhaSelecionada('');
     setCorBainha('Preto');
     setCorBainhaPersonalizada('');
-    setEspacadorSelecionado('');
-    setLaser(false);
     setTextoLaser('');
-    setLocalGravacao([]);
     setEmbalagem('');
-    setEmbalagemGravacao(false);
-    setEmbalagemTextoGravacao('');
     setObservacoesLamina('');
     setBuscaModelo('');
     setCategoriaFiltro('');
