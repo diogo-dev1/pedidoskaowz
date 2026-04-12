@@ -170,16 +170,16 @@ export default function Simulador() {
     }
   };
 
-  // Helper: converte strings do n8n em OpcaoComponente, preservando preço do Supabase quando houver match
+  // Helper: converte strings do n8n em OpcaoComponente, preservando preço do Supabase mas usando NOME do n8n
   const mergeOpcoes = (n8nList: string[] | undefined, supabaseList: OpcaoComponente[], tipoOpcao: OpcaoComponente['tipo_opcao']): OpcaoComponente[] => {
     if (!n8nList || n8nList.length === 0) return supabaseList;
     return n8nList.map((nome) => {
       const match = supabaseList.find(s => s.nome_opcao === nome);
-      return match || {
-        id: `n8n-${tipoOpcao}-${nome}`,
+      return {
+        id: match?.id || `n8n-${tipoOpcao}-${nome}`,
         nome_opcao: nome,
         tipo_opcao: tipoOpcao,
-        preco_adicional: 0,
+        preco_adicional: match?.preco_adicional || 0,
       };
     });
   };
@@ -208,15 +208,12 @@ export default function Simulador() {
     return modelos;
   }, [modelos, opcoesN8n]);
 
-  const categorias = ['EDC', 'Adaga', 'Campo', 'Cozinha', 'Defesa', 'KZR'];
-
   const modelosFiltrados = modelosDisponiveis.filter(m => {
     const matchBusca = m.nome_modelo.toLowerCase().includes(buscaModelo.toLowerCase());
-    const matchCategoria = !categoriaFiltro || m.categoria === categoriaFiltro;
-    return matchBusca && matchCategoria;
+    return matchBusca;
   });
 
-  const mostrarModelos = categoriaFiltro !== '' || buscaModelo.trim() !== '';
+  const mostrarModelos = buscaModelo.trim() !== '';
 
   // Objetos selecionados - buscar tanto nos componentes Supabase quanto nas listas mescladas
   const modeloAtual = modelosDisponiveis.find(m => m.id === modeloSelecionado);
@@ -1166,16 +1163,6 @@ OBS: ${observacao || '-'}`;
               </div>
             )}
 
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {categorias.map(cat => (
-                <button key={cat} onClick={() => setCategoriaFiltro(cat === categoriaFiltro ? '' : cat)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    categoriaFiltro === cat ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-muted/80 text-foreground'
-                  }`}>
-                  {cat}
-                </button>
-              ))}
-            </div>
 
             <div className="relative mb-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
