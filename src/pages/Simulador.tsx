@@ -903,11 +903,9 @@ export default function Simulador() {
         
         const nomeBainha = lamina.bainha?.nome_opcao || '';
         const bainhaLimpa = nomeBainha.replace(/^bainha\s*/i, '').trim();
-        const bainhaFormatada = bainhaLimpa
-          ? `${bainhaLimpa}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
-          : '';
+        const corBainha = lamina.corBainha || '';
         
-        return `\nItem ${index + 1}:\nModelo: ${modelo}\nAço: ${aco}\nAcabamento: ${acabamento}\nEmpunhadura: ${empunhadura}\nBainha: ${bainhaFormatada}\n`;
+        return `\nItem ${index + 1}:\nModelo: ${modelo}\nAço: ${aco}\nAcabamento: ${acabamento}\nEmpunhadura: ${empunhadura}\nBainha: ${bainhaLimpa}\nCor: ${corBainha}\n`;
       }).join('\n\n');
 
       // Personalização à laser - sempre listar por item
