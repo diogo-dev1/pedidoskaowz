@@ -1809,38 +1809,6 @@ OBS: ${observacao || '-'}`;
                 </CollapsibleContent>
               </Collapsible>
 
-              {/* Produtos Adicionais */}
-              {produtosAdicionais.length > 0 && (
-                <div className="space-y-2 border-t border-border pt-3">
-                  <h4 className="text-xs font-semibold">Produtos Adicionais</h4>
-                  <div className="grid grid-cols-1 gap-1.5">
-                    {produtosAdicionais.map(produto => {
-                      const quantidade = quantidadesProdutos[produto.id] || 0;
-                      return (
-                        <div key={produto.id}
-                          className={`flex items-center justify-between p-2 rounded-lg transition-all ${
-                            quantidade > 0 ? 'bg-accent/10 border border-accent/30' : 'bg-muted'
-                          }`}>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate">{produto.nome_produto}</p>
-                            <p className="text-[10px] text-muted-foreground">R$ {produto.preco_unitario.toFixed(2)} un.</p>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1) }))} className="h-6 w-6 p-0" disabled={quantidade <= 0}>
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="text-xs font-medium w-4 text-center">{quantidade}</span>
-                            <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: (prev[produto.id] || 0) + 1 }))} className="h-6 w-6 p-0">
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <Input placeholder="Observações sobre produtos adicionais..." value={observacoesProdutos} onChange={(e) => setObservacoesProdutos(e.target.value)} className="h-8 text-xs" />
-                </div>
-              )}
 
               <div className="flex gap-2 pt-4">
                 <Button variant="outline" onClick={() => setModalOpen(false)} className="flex-1">
