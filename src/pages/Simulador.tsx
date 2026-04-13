@@ -1446,9 +1446,6 @@ OBS: ${observacao || '-'}`;
                     <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90 font-semibold">
                       Fechar Pedido
                     </Button>
-                  )}
-                    </Button>
-                  )}
                 </>
               )}
             </div>
