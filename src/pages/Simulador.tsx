@@ -901,8 +901,9 @@ export default function Simulador() {
         const acabamento = (lamina.acabamento?.nome_opcao || '') + (lamina.bruteForge ? ' + Brute Forge' : '');
         const empunhadura = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
         
-        const bainhaFormatada = lamina.bainha?.nome_opcao 
-          ? `Bainha ${lamina.bainha.nome_opcao}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
+        const nomeBainha = lamina.bainha?.nome_opcao || '';
+        const bainhaFormatada = nomeBainha
+          ? `${nomeBainha.toLowerCase().startsWith('bainha') ? '' : 'Bainha '}${nomeBainha}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
           : '';
         
         const partes = [modelo, aco, acabamento, empunhadura, bainhaFormatada].filter(Boolean).join(' ');
