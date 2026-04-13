@@ -1420,24 +1420,33 @@ OBS: ${observacao || '-'}`;
                   </Button>
                 </>
               ) : currentStep < 3 ? (
-                <Button onClick={() => {
-                  if (currentStep === 0 && !modeloSelecionado) {
-                    toast.error('Selecione um modelo primeiro');
-                    return;
-                  }
-                  setCurrentStep(currentStep + 1);
-                }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
-                  Próximo
-                </Button>
+                <>
+                  <Button onClick={() => {
+                    if (currentStep === 0 && !modeloSelecionado) {
+                      toast.error('Selecione um modelo primeiro');
+                      return;
+                    }
+                    setCurrentStep(currentStep + 1);
+                  }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
+                    Próximo
+                  </Button>
+                  {laminasCustomizadas.length > 0 && (
+                    <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90 font-semibold">
+                      Fechar Pedido
+                    </Button>
+                  )}
+                </>
               ) : (
                 <>
-                  <Button onClick={() => { adicionarLamina(); setCurrentStep(0); }} variant="outline" size="sm" className="text-xs h-9 border-accent text-accent-foreground">
+                  <Button onClick={() => { adicionarLamina(); setCurrentStep(0); }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
                     <Plus className="h-3.5 w-3.5 mr-1" />
                     Adicionar
                   </Button>
                   {(laminasCustomizadas.length > 0 || modeloSelecionado) && (
                     <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90 font-semibold">
                       Fechar Pedido
+                    </Button>
+                  )}
                     </Button>
                   )}
                 </>
