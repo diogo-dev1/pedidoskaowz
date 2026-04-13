@@ -1218,10 +1218,14 @@ OBS: ${observacao || '-'}`;
                     ))}
                   </div>
                   {acabamentoSelecionado && (
-                    <div className="flex items-center gap-2 mt-2 ml-1">
-                      <Checkbox id="bruteForge" checked={bruteForge} onCheckedChange={(checked) => setBruteForge(checked === true)} className="h-3.5 w-3.5" />
-                      <Label htmlFor="bruteForge" className="text-xs cursor-pointer">Brute Forge</Label>
-                    </div>
+                    <button
+                      onClick={() => setBruteForge(!bruteForge)}
+                      className={`mt-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        bruteForge ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
+                      }`}
+                    >
+                      Brute Forge
+                    </button>
                   )}
                 </div>
               </div>
@@ -1304,76 +1308,42 @@ OBS: ${observacao || '-'}`;
           </div>
         )}
 
-        {/* ===== STEP 3: Personalização + Produtos ===== */}
+        {/* ===== STEP 3: Personalização ===== */}
         {currentStep === 3 && modeloSelecionado && (
-          <div className="space-y-3">
-            <div className="bg-card rounded-xl border border-border p-4">
-              <h2 className="font-semibold text-sm mb-3">Personalização</h2>
+          <div className="bg-card rounded-xl border border-border p-4">
+            <h2 className="font-semibold text-sm mb-3">Personalização</h2>
 
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs text-muted-foreground font-medium">Gravação à Laser</Label>
-                    <InfoEtapaModal etapaKey="laser" />
-                  </div>
-                  <Input placeholder="Texto para gravação (vazio = sem gravação)" value={textoLaser} onChange={(e) => setTextoLaser(e.target.value)} className="h-9 text-sm" />
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground font-medium">Gravação à Laser</Label>
+                  <InfoEtapaModal etapaKey="laser" />
                 </div>
+                <Input placeholder="Texto para gravação (vazio = sem gravação)" value={textoLaser} onChange={(e) => setTextoLaser(e.target.value)} className="h-9 text-sm" />
+              </div>
 
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs text-muted-foreground font-medium">Embalagem</Label>
-                    <InfoEtapaModal etapaKey="embalagem" />
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {embalagens.map(emb => (
-                      <button key={emb.id} onClick={() => setEmbalagem(embalagem === emb.nome_opcao ? '' : emb.nome_opcao)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                          embalagem === emb.nome_opcao ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
-                        }`}>
-                        {emb.nome_opcao}
-                      </button>
-                    ))}
-                  </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground font-medium">Embalagem</Label>
+                  <InfoEtapaModal etapaKey="embalagem" />
                 </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {embalagens.map(emb => (
+                    <button key={emb.id} onClick={() => setEmbalagem(embalagem === emb.nome_opcao ? '' : emb.nome_opcao)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        embalagem === emb.nome_opcao ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
+                      }`}>
+                      {emb.nome_opcao}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-medium">Observações da Lâmina</Label>
-                  <Input placeholder="Ex: presente, acabamento especial..." value={observacoesLamina} onChange={(e) => setObservacoesLamina(e.target.value)} className="h-9 text-sm" />
-                </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground font-medium">Observações da Lâmina</Label>
+                <Input placeholder="Ex: presente, acabamento especial..." value={observacoesLamina} onChange={(e) => setObservacoesLamina(e.target.value)} className="h-9 text-sm" />
               </div>
             </div>
-
-            {produtosAdicionais.length > 0 && (
-              <div className="bg-card rounded-xl border border-border p-4">
-                <h3 className="font-semibold text-sm mb-2">Produtos Adicionais</h3>
-                <div className="grid grid-cols-1 gap-1.5">
-                  {produtosAdicionais.map(produto => {
-                    const quantidade = quantidadesProdutos[produto.id] || 0;
-                    return (
-                      <div key={produto.id}
-                        className={`flex items-center justify-between p-2.5 rounded-lg transition-all ${
-                          quantidade > 0 ? 'bg-accent/10 border border-accent/30' : 'bg-muted'
-                        }`}>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{produto.nome_produto}</p>
-                          <p className="text-[10px] text-muted-foreground">R$ {produto.preco_unitario.toFixed(2)} un.</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1) }))} className="h-6 w-6 p-0" disabled={quantidade <= 0}>
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="text-xs font-medium w-4 text-center">{quantidade}</span>
-                          <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: (prev[produto.id] || 0) + 1 }))} className="h-6 w-6 p-0">
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <Input placeholder="Observações sobre produtos adicionais..." value={observacoesProdutos} onChange={(e) => setObservacoesProdutos(e.target.value)} className="h-9 text-sm mt-2" />
-              </div>
-            )}
           </div>
         )}
 
@@ -1450,18 +1420,25 @@ OBS: ${observacao || '-'}`;
                   </Button>
                 </>
               ) : currentStep < 3 ? (
-                <Button onClick={() => {
-                  if (currentStep === 0 && !modeloSelecionado) {
-                    toast.error('Selecione um modelo primeiro');
-                    return;
-                  }
-                  setCurrentStep(currentStep + 1);
-                }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
-                  Próximo
-                </Button>
+                <>
+                  <Button onClick={() => {
+                    if (currentStep === 0 && !modeloSelecionado) {
+                      toast.error('Selecione um modelo primeiro');
+                      return;
+                    }
+                    setCurrentStep(currentStep + 1);
+                  }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
+                    Próximo
+                  </Button>
+                  {laminasCustomizadas.length > 0 && (
+                    <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90 font-semibold">
+                      Fechar Pedido
+                    </Button>
+                  )}
+                </>
               ) : (
                 <>
-                  <Button onClick={() => { adicionarLamina(); setCurrentStep(0); }} variant="outline" size="sm" className="text-xs h-9 border-accent text-accent-foreground">
+                  <Button onClick={() => { adicionarLamina(); setCurrentStep(0); }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
                     <Plus className="h-3.5 w-3.5 mr-1" />
                     Adicionar
                   </Button>
@@ -1808,6 +1785,39 @@ OBS: ${observacao || '-'}`;
                   </div>
                 </CollapsibleContent>
               </Collapsible>
+
+              {/* Produtos Adicionais */}
+              {produtosAdicionais.length > 0 && (
+                <div className="space-y-2 border-t border-border pt-3">
+                  <h4 className="text-xs font-semibold">Produtos Adicionais</h4>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {produtosAdicionais.map(produto => {
+                      const quantidade = quantidadesProdutos[produto.id] || 0;
+                      return (
+                        <div key={produto.id}
+                          className={`flex items-center justify-between p-2 rounded-lg transition-all ${
+                            quantidade > 0 ? 'bg-accent/10 border border-accent/30' : 'bg-muted'
+                          }`}>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{produto.nome_produto}</p>
+                            <p className="text-[10px] text-muted-foreground">R$ {produto.preco_unitario.toFixed(2)} un.</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1) }))} className="h-6 w-6 p-0" disabled={quantidade <= 0}>
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="text-xs font-medium w-4 text-center">{quantidade}</span>
+                            <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: (prev[produto.id] || 0) + 1 }))} className="h-6 w-6 p-0">
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <Input placeholder="Observações sobre produtos adicionais..." value={observacoesProdutos} onChange={(e) => setObservacoesProdutos(e.target.value)} className="h-8 text-xs" />
+                </div>
+              )}
 
               <div className="flex gap-2 pt-4">
                 <Button variant="outline" onClick={() => setModalOpen(false)} className="flex-1">
