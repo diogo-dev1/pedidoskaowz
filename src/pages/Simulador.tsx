@@ -640,7 +640,7 @@ export default function Simulador() {
           ['Aço', lamina.aco?.nome_opcao || '-'],
           ['Acabamento', `${lamina.acabamento?.nome_opcao || '-'}${(lamina as any).bruteForge ? ' + Brute Forge' : ''}`],
           ['Empunhadura', `${lamina.empunhadura?.nome_opcao || '-'}${lamina.dragonScale ? ' + Dragon Scale' : ''}`],
-          ['Bainha', `${lamina.bainha?.nome_opcao || '-'} ${lamina.corBainha || ''}`],
+          ['Bainha', `${lamina.bainha?.nome_opcao || '-'}${lamina.corBainha && !lamina.bainha?.nome_opcao?.toLowerCase().includes(lamina.corBainha.toLowerCase()) ? ` ${lamina.corBainha}` : ''}`],
         ];
 
         if (lamina.embalagem) specs.push(['Embalagem', lamina.embalagem]);
