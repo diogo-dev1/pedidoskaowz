@@ -849,6 +849,12 @@ export default function Simulador() {
     setSubmitting(true);
 
     try {
+      console.log('DEBUG handleFinalizarPedido:', {
+        laminasCustomizadasLength: laminasCustomizadas.length,
+        laminasCustomizadas: laminasCustomizadas.map(l => l.modelo?.nome_modelo),
+        modeloSelecionado,
+        modeloAtual: modeloAtual?.nome_modelo,
+      });
       const todasLaminas = [...laminasCustomizadas];
       if (modeloSelecionado && modeloAtual) {
         const corBainhaFinal = corBainha === 'OUTRA' ? corBainhaPersonalizada : corBainha;
