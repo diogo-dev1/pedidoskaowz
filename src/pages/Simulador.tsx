@@ -1260,12 +1260,6 @@ OBS: ${observacao || '-'}`;
               )}
             </div>
 
-            {empunhaduraSelecionada && (
-              <div className="flex items-center gap-2 mt-3 ml-1">
-                <Checkbox id="dragonScale" checked={dragonScale} onCheckedChange={(checked) => setDragonScale(checked === true)} className="h-3.5 w-3.5" />
-                <Label htmlFor="dragonScale" className="text-xs cursor-pointer">Dragon Scale</Label>
-              </div>
-            )}
           </div>
         )}
 
@@ -1291,15 +1285,22 @@ OBS: ${observacao || '-'}`;
             {bainhaSelecionada && (
               <div className="space-y-2 pt-3 border-t border-border">
                 <Label className="text-xs text-muted-foreground font-medium">Cor da Bainha</Label>
-                <Select value={corBainha} onValueChange={(value) => { setCorBainha(value); if (value !== 'OUTRA') setCorBainhaPersonalizada(''); }}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Cor da bainha" /></SelectTrigger>
-                  <SelectContent>
-                    {coresBainha.map(cor => (
-                      <SelectItem key={cor.id} value={cor.nome_opcao} className="text-sm">{cor.nome_opcao}</SelectItem>
-                    ))}
-                    <SelectItem value="OUTRA" className="text-sm">Outra (digitar)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-wrap gap-1.5">
+                  {coresBainha.map(cor => (
+                    <button key={cor.id} onClick={() => { setCorBainha(cor.nome_opcao); setCorBainhaPersonalizada(''); }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        corBainha === cor.nome_opcao ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
+                      }`}>
+                      {cor.nome_opcao}
+                    </button>
+                  ))}
+                  <button onClick={() => setCorBainha('OUTRA')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      corBainha === 'OUTRA' ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
+                    }`}>
+                    Outra
+                  </button>
+                </div>
                 {corBainha === 'OUTRA' && (
                   <Input placeholder="Digite a cor desejada..." value={corBainhaPersonalizada} onChange={(e) => setCorBainhaPersonalizada(e.target.value)} className="h-9 text-sm" />
                 )}
@@ -1343,6 +1344,37 @@ OBS: ${observacao || '-'}`;
                 <Label className="text-xs text-muted-foreground font-medium">Observações da Lâmina</Label>
                 <Input placeholder="Ex: presente, acabamento especial..." value={observacoesLamina} onChange={(e) => setObservacoesLamina(e.target.value)} className="h-9 text-sm" />
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===== Produtos Adicionais - sempre visível ===== */}
+        {produtosAdicionais.length > 0 && (
+          <div className="bg-card rounded-xl border border-border p-4 mt-3">
+            <h3 className="font-semibold text-sm mb-2">Produtos Adicionais</h3>
+            <div className="space-y-1.5">
+              {produtosAdicionais.map(produto => {
+                const quantidade = quantidadesProdutos[produto.id] || 0;
+                return (
+                  <div key={produto.id} className={`p-2.5 rounded-lg flex items-center justify-between gap-2 ${
+                    quantidade > 0 ? 'bg-accent/10 border border-accent/30' : 'bg-muted'
+                  }`}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate">{produto.nome_produto}</p>
+                      <p className="text-[10px] text-muted-foreground">R$ {produto.preco_unitario.toFixed(2)} un.</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: Math.max(0, (prev[produto.id] || 0) - 1) }))} className="h-6 w-6 p-0" disabled={quantidade <= 0}>
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="text-xs font-medium w-4 text-center">{quantidade}</span>
+                      <Button size="sm" variant="ghost" onClick={() => setQuantidadesProdutos(prev => ({ ...prev, [produto.id]: (prev[produto.id] || 0) + 1 }))} className="h-6 w-6 p-0">
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -1391,7 +1423,7 @@ OBS: ${observacao || '-'}`;
       </div>
 
       {/* ===== BOTTOM BAR ===== */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50">
+      <div className="fixed bottom-16 left-0 right-0 bg-card border-t border-border shadow-lg z-40 md:bottom-0">
         {resumoParts.length > 0 && (
           <div className="px-3 pt-2 pb-1">
             <p className="text-[11px] text-muted-foreground truncate text-center">
@@ -1421,15 +1453,6 @@ OBS: ${observacao || '-'}`;
                 </>
               ) : currentStep < 3 ? (
                 <>
-                  <Button onClick={() => {
-                    if (currentStep === 0 && !modeloSelecionado) {
-                      toast.error('Selecione um modelo primeiro');
-                      return;
-                    }
-                    setCurrentStep(currentStep + 1);
-                  }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
-                    Próximo
-                  </Button>
                   {laminasCustomizadas.length > 0 && (
                     <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90 font-semibold">
                       Fechar Pedido
