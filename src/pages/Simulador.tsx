@@ -894,7 +894,7 @@ export default function Simulador() {
         }
       }
 
-      // Formatar itens no padrão: Modelo Aço Acabamento Empunhadura Bainha [Tipo] [Cor]
+      // Formatar itens com separador pipe |
       const itensPedido = laminasExpandidas.map((lamina, index) => {
         const modelo = lamina.modelo?.nome_modelo || '';
         const aco = lamina.aco?.nome_opcao || '';
@@ -906,24 +906,14 @@ export default function Simulador() {
           ? `${nomeBainha.toLowerCase().startsWith('bainha') ? '' : 'Bainha '}${nomeBainha}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
           : '';
         
-        const partes = [modelo, aco, acabamento, empunhadura, bainhaFormatada].filter(Boolean).join(' ');
+        const partes = [modelo, aco, acabamento, empunhadura, bainhaFormatada].filter(Boolean).join(' | ');
         return `Item ${index + 1}: ${partes}`;
-      }).join('\n\n');
+      }).join('\n');
 
-      // Personalização à laser
-      const laminasComLaser = laminasExpandidas.filter(l => l.textoLaser && l.textoLaser !== '-');
-      let personalizacaoTexto = 'Não';
-      if (laminasComLaser.length > 0) {
-        const todasIguais = laminasComLaser.every(l => l.textoLaser === laminasComLaser[0].textoLaser);
-        if (todasIguais && laminasComLaser.length === laminasExpandidas.length) {
-          personalizacaoTexto = laminasComLaser[0].textoLaser;
-        } else {
-          personalizacaoTexto = '\n' + laminasComLaser.map((l, i) => {
-            const idx = laminasExpandidas.indexOf(l) + 1;
-            return `Item ${idx}: ${l.textoLaser}`;
-          }).join('\n');
-        }
-      }
+      // Personalização à laser - sempre listar por item
+      const personalizacaoTexto = '\n' + laminasExpandidas.map((lamina, index) => {
+        return `Item ${index + 1}: ${lamina.textoLaser && lamina.textoLaser !== '-' ? lamina.textoLaser : 'Sem gravação'}`;
+      }).join('\n');
 
       // Embalagem por lâmina
       const embalagemPorLamina = laminasExpandidas.map((l, i) => {
