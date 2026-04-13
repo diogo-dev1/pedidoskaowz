@@ -905,7 +905,7 @@ export default function Simulador() {
         const bainhaLimpa = nomeBainha.replace(/^bainha\s*/i, '').trim();
         const corBainha = lamina.corBainha || '';
         
-        return `\nItem ${index + 1}:\nModelo: ${modelo}\nAço: ${aco}\nAcabamento: ${acabamento}\nEmpunhadura: ${empunhadura}\nBainha: ${bainhaLimpa}\nCor: ${corBainha}\n`;
+        return `\nItem ${index + 1}:\nModelo: ${modelo}\nAço: ${aco}\nAcabamento: ${acabamento}\nEmpunhadura: ${empunhadura}\nBainha: ${bainhaLimpa}\nCor Bainha: ${corBainha}\n`;
       }).join('\n\n');
 
       // Personalização à laser - sempre listar por item
