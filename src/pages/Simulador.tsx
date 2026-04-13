@@ -894,7 +894,7 @@ export default function Simulador() {
         }
       }
 
-      // Formatar itens no padrão: Modelo Aço Acabamento Empunhadura Bainha [Tipo] [Cor]
+      // Formatar itens com separador pipe |
       const itensPedido = laminasExpandidas.map((lamina, index) => {
         const modelo = lamina.modelo?.nome_modelo || '';
         const aco = lamina.aco?.nome_opcao || '';
@@ -906,9 +906,9 @@ export default function Simulador() {
           ? `${nomeBainha.toLowerCase().startsWith('bainha') ? '' : 'Bainha '}${nomeBainha}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
           : '';
         
-        const partes = [modelo, aco, acabamento, empunhadura, bainhaFormatada].filter(Boolean).join(' ');
+        const partes = [modelo, aco, acabamento, empunhadura, bainhaFormatada].filter(Boolean).join(' | ');
         return `Item ${index + 1}: ${partes}`;
-      }).join('\n\n');
+      }).join('\n');
 
       // Personalização à laser
       const laminasComLaser = laminasExpandidas.filter(l => l.textoLaser && l.textoLaser !== '-');
