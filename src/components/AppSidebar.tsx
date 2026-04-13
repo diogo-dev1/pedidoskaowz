@@ -101,7 +101,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="border-r-0">
-      <SidebarContent className="bg-sidebar-background overflow-y-auto">
+      <SidebarContent className="bg-sidebar-background overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="space-y-1 py-2">
           <MenuSection label="Vendas" items={vendaItems} isCollapsed={isCollapsed} />
           <MenuSection label="CRM" items={crmItems} isCollapsed={isCollapsed} />

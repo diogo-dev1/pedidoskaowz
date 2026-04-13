@@ -640,7 +640,7 @@ export default function Simulador() {
           ['Aço', lamina.aco?.nome_opcao || '-'],
           ['Acabamento', `${lamina.acabamento?.nome_opcao || '-'}${(lamina as any).bruteForge ? ' + Brute Forge' : ''}`],
           ['Empunhadura', `${lamina.empunhadura?.nome_opcao || '-'}${lamina.dragonScale ? ' + Dragon Scale' : ''}`],
-          ['Bainha', `${lamina.bainha?.nome_opcao || '-'} ${lamina.corBainha || ''}`],
+          ['Bainha', `${lamina.bainha?.nome_opcao || '-'}${lamina.corBainha && !lamina.bainha?.nome_opcao?.toLowerCase().includes(lamina.corBainha.toLowerCase()) ? ` ${lamina.corBainha}` : ''}`],
         ];
 
         if (lamina.embalagem) specs.push(['Embalagem', lamina.embalagem]);
@@ -901,8 +901,9 @@ export default function Simulador() {
         const acabamento = (lamina.acabamento?.nome_opcao || '') + (lamina.bruteForge ? ' + Brute Forge' : '');
         const empunhadura = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
         
-        const bainhaFormatada = lamina.bainha?.nome_opcao 
-          ? `Bainha ${lamina.bainha.nome_opcao}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
+        const nomeBainha = lamina.bainha?.nome_opcao || '';
+        const bainhaFormatada = nomeBainha
+          ? `${nomeBainha.toLowerCase().startsWith('bainha') ? '' : 'Bainha '}${nomeBainha}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
           : '';
         
         const partes = [modelo, aco, acabamento, empunhadura, bainhaFormatada].filter(Boolean).join(' ');
