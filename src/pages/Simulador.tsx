@@ -906,8 +906,8 @@ export default function Simulador() {
           ? `${nomeBainha.toLowerCase().startsWith('bainha') ? '' : 'Bainha '}${nomeBainha}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
           : '';
         
-        return `Item ${index + 1}: Modelo: ${modelo} Aço: ${aco} Acabamento: ${acabamento} Empunhadura: ${empunhadura} Bainha: ${bainhaFormatada}`;
-      }).join('\n');
+        return `Item ${index + 1}:\nModelo: ${modelo}\nAço: ${aco}\nAcabamento: ${acabamento}\nEmpunhadura: ${empunhadura}\nBainha: ${bainhaFormatada}`;
+      }).join('\n\n');
 
       // Personalização à laser - sempre listar por item
       const personalizacaoTexto = '\n' + laminasExpandidas.map((lamina, index) => {
