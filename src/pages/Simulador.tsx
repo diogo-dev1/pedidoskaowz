@@ -880,19 +880,25 @@ export default function Simulador() {
         toast.error('Erro ao enviar dados para a planilha de produção');
       }
 
+      // Expandir lâminas por quantidade
+      const laminasExpandidas: typeof todasLaminas = [];
+      for (const lamina of todasLaminas) {
+        for (let i = 0; i < lamina.quantidade; i++) {
+          laminasExpandidas.push({ ...lamina, quantidade: 1 });
+        }
+      }
+
       // Formatar itens no padrão: Modelo Aço Acabamento Empunhadura Bainha [Tipo] [Cor]
-      const itensPedido = todasLaminas.map((lamina, index) => {
+      const itensPedido = laminasExpandidas.map((lamina, index) => {
         const modelo = lamina.modelo?.nome_modelo || '';
         const aco = lamina.aco?.nome_opcao || '';
         const acabamento = (lamina.acabamento?.nome_opcao || '') + (lamina.bruteForge ? ' + Brute Forge' : '');
         const empunhadura = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
         
-        // Formato bainha: "Bainha [Tipo] [Cor]"
         const bainhaFormatada = lamina.bainha?.nome_opcao 
           ? `Bainha ${lamina.bainha.nome_opcao}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
           : '';
         
-                
         const partes = [modelo, aco, acabamento, empunhadura, bainhaFormatada].filter(Boolean).join(' ');
         return `Item ${index + 1}: ${partes}`;
       }).join('\n\n');
