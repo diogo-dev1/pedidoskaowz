@@ -902,11 +902,12 @@ export default function Simulador() {
         const empunhadura = (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : '');
         
         const nomeBainha = lamina.bainha?.nome_opcao || '';
-        const bainhaFormatada = nomeBainha
-          ? `${nomeBainha.toLowerCase().startsWith('bainha') ? '' : 'Bainha '}${nomeBainha}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
+        const bainhaLimpa = nomeBainha.replace(/^bainha\s*/i, '').trim();
+        const bainhaFormatada = bainhaLimpa
+          ? `${bainhaLimpa}${lamina.corBainha ? ` ${lamina.corBainha}` : ''}`
           : '';
         
-        return `Item ${index + 1}:\nModelo: ${modelo}\nAço: ${aco}\nAcabamento: ${acabamento}\nEmpunhadura: ${empunhadura}\nBainha: ${bainhaFormatada}`;
+        return `\nItem ${index + 1}:\nModelo: ${modelo}\nAço: ${aco}\nAcabamento: ${acabamento}\nEmpunhadura: ${empunhadura}\nBainha: ${bainhaFormatada}\n`;
       }).join('\n\n');
 
       // Personalização à laser - sempre listar por item
