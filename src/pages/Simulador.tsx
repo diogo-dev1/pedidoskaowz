@@ -904,22 +904,22 @@ export default function Simulador() {
       }).join('\n\n');
 
       // Personalização à laser
-      const laminasComLaser = todasLaminas.filter(l => l.textoLaser && l.textoLaser !== '-');
+      const laminasComLaser = laminasExpandidas.filter(l => l.textoLaser && l.textoLaser !== '-');
       let personalizacaoTexto = 'Não';
       if (laminasComLaser.length > 0) {
         const todasIguais = laminasComLaser.every(l => l.textoLaser === laminasComLaser[0].textoLaser);
-        if (todasIguais && laminasComLaser.length === todasLaminas.length) {
+        if (todasIguais && laminasComLaser.length === laminasExpandidas.length) {
           personalizacaoTexto = laminasComLaser[0].textoLaser;
         } else {
           personalizacaoTexto = '\n' + laminasComLaser.map((l, i) => {
-            const idx = todasLaminas.indexOf(l) + 1;
+            const idx = laminasExpandidas.indexOf(l) + 1;
             return `Item ${idx}: ${l.textoLaser}`;
           }).join('\n');
         }
       }
 
       // Embalagem por lâmina
-      const embalagemPorLamina = todasLaminas.map((l, i) => {
+      const embalagemPorLamina = laminasExpandidas.map((l, i) => {
         if (!l.embalagem) return null;
         return `Item ${i + 1}: ${l.embalagem}`;
       }).filter(Boolean);
