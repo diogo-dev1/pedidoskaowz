@@ -910,20 +910,10 @@ export default function Simulador() {
         return `Item ${index + 1}: ${partes}`;
       }).join('\n');
 
-      // Personalização à laser
-      const laminasComLaser = laminasExpandidas.filter(l => l.textoLaser && l.textoLaser !== '-');
-      let personalizacaoTexto = 'Não';
-      if (laminasComLaser.length > 0) {
-        const todasIguais = laminasComLaser.every(l => l.textoLaser === laminasComLaser[0].textoLaser);
-        if (todasIguais && laminasComLaser.length === laminasExpandidas.length) {
-          personalizacaoTexto = laminasComLaser[0].textoLaser;
-        } else {
-          personalizacaoTexto = '\n' + laminasComLaser.map((l, i) => {
-            const idx = laminasExpandidas.indexOf(l) + 1;
-            return `Item ${idx}: ${l.textoLaser}`;
-          }).join('\n');
-        }
-      }
+      // Personalização à laser - sempre listar por item
+      const personalizacaoTexto = '\n' + laminasExpandidas.map((lamina, index) => {
+        return `Item ${index + 1}: ${lamina.textoLaser && lamina.textoLaser !== '-' ? lamina.textoLaser : 'Sem gravação'}`;
+      }).join('\n');
 
       // Embalagem por lâmina
       const embalagemPorLamina = laminasExpandidas.map((l, i) => {
