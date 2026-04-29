@@ -714,7 +714,7 @@ export default function CatalogoInternacional() {
               <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-base md:text-lg">{t.categories}</span>
-                  {categoriaAtiva && <Badge className="bg-accent text-white text-xs">{categoriaAtiva}</Badge>}
+                  {categoriaAtiva && <Badge className="bg-accent text-white text-xs">{translateCategoria(categoriaAtiva, lang)}</Badge>}
                   {categoriasMultiplas.length > 0 && <Badge className="bg-accent text-white text-xs">{categoriasMultiplas.length} {t.selected}</Badge>}
                   {filtroProntaEntrega && <Badge className="bg-emerald-600 text-white text-xs">{t.readyDelivery}</Badge>}
                 </div>
