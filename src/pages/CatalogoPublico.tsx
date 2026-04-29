@@ -55,6 +55,9 @@ const CATEGORY_I18N: Record<string, string> = {
   'Sobrevivencia': 'Survival', 'Adagas': 'Daggers', 'Adaga': 'Dagger', 'Espada': 'Sword',
   'Espadas': 'Swords', 'Machados': 'Axes', 'Machado': 'Axe', 'Personalizada': 'Custom',
   'Personalizadas': 'Custom', 'Acessórios': 'Accessories', 'Acessorios': 'Accessories',
+  'Defesa': 'Defense', 'EDCs': 'EDC', 'EDC Mini': 'Mini EDC', 'Campo': 'Outdoor', 'Churrasco': 'BBQ',
+  'Kits': 'Kits', 'Utensílios': 'Accessories', 'Vestuário': 'Apparel', 'Cafés': 'Coffee',
+  'Novidades': 'New Arrivals', 'Porte velado': 'Concealed Carry',
 };
 
 interface CatalogoPublicoProps {
