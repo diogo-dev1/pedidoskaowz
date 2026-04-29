@@ -313,9 +313,10 @@ export default function CatalogoInternacional() {
     debounceRef.current = setTimeout(() => setFaixaPreco(v as [number, number]), 200);
   }, []);
 
+  const getNomeCategoria = (c: CategoriaVisivel) => lang === 'en' ? (c.nome_en || c.categoria) : c.categoria;
   const categorias = categoriasVisiveis.filter((c) => c.visivel);
   const categoriasVenda = categorias.map((cat) => ({
-    subtitulo: cat.categoria, categoria: cat.categoria, icon: getIconComponent(cat.icone),
+    subtitulo: getNomeCategoria(cat), categoria: cat.categoria, icon: getIconComponent(cat.icone),
   }));
 
   useEffect(() => {
