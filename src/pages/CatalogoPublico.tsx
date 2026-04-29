@@ -886,7 +886,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                     }`}
                     onClick={() => { setCategoriaAtiva(null); setCategoriasMultiplas([]); setFiltroProntaEntrega(false); setSearchParams({}); }}
                   >
-                    Todas
+                    {T.todas}
                   </Button>
                   <Button
                     variant={filtroProntaEntrega ? "default" : "ghost"}
@@ -899,11 +899,11 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                     onClick={() => { setCategoriaAtiva(null); setCategoriasMultiplas([]); setFiltroProntaEntrega(true); }}
                   >
                     <Zap className="h-3.5 w-3.5" />
-                    Pronta Entrega
+                    {T.prontaEntrega}
                   </Button>
                   
                   <div className="border-t border-zinc-700 pt-2 mt-2">
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1.5 px-2">Selecione categorias</p>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1.5 px-2">{T.selecione}</p>
                   </div>
                   {categorias.map((cat) => {
                     const isActive = categoriaAtiva === cat.categoria || categoriasMultiplas.includes(cat.categoria);
