@@ -162,7 +162,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate(isRevendedor ? '/catalogo-revendedor' : '/catalogo')}
+                onClick={() => navigate(isInternacional ? '/catalogo-internacional' : isRevendedor ? '/catalogo-revendedor' : '/catalogo')}
                 className="text-white hover:bg-white/10 text-xs"
               >
                 <ArrowLeft className="h-4 w-4 mr-1" />
