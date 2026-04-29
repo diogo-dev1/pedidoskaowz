@@ -420,7 +420,7 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
               {modelo.pronta_entrega && (
                 <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400">
                   <Zap className="h-3 w-3" />
-                  Pronta Entrega
+                  {t.readyDelivery}
                 </span>
               )}
               {modelo.categorias?.map((cat: string) => (
@@ -430,11 +430,22 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
 
             {/* Nome */}
             <h1 className="text-2xl md:text-3xl font-semibold text-white tracking-tight leading-tight break-words">
-              {modelo.nome_modelo}
+              {nomeExibido}
             </h1>
 
             {/* Preço */}
-            {isRevendedor && modelo ? (() => {
+            {isInternacional ? (exibirPrecos && (
+              <div className="space-y-1">
+                <p className="text-2xl font-semibold text-accent">
+                  {formatPrecoIntl(modelo.preco_base)}
+                </p>
+                {intlConfig && (
+                  <p className="text-xs text-zinc-500">
+                    {t.exchange}: 1 {intlConfig.base_currency} = {exchange.getRate(currency)?.toFixed(4) || '—'} {currency}
+                  </p>
+                )}
+              </div>
+            )) : isRevendedor && modelo ? (() => {
               const margem = margemProduto ?? margemGlobal;
               const precoRevenda = modelo.preco_base * (1 - margem / 100);
               const lucro = modelo.preco_base * (margem / 100);
