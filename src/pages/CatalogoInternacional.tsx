@@ -107,9 +107,9 @@ const T = {
     currency: 'Currency',
     exchangeNote: 'Exchange',
     salePrice: 'Final Price',
-    cost: 'Base',
-    profit: 'Markup',
-    marginNote: 'Applied markup',
+    cost: 'Reseller Cost',
+    profit: 'Profit',
+    marginNote: 'Applied commission',
     worldwide: 'Worldwide Shipping',
   },
 } as const;
