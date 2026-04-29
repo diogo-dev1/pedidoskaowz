@@ -38,8 +38,10 @@ const moreItems: { label: string; items: NavItem[] }[] = [
   {
     label: 'Conteúdo',
     items: [
-      { title: 'Catálogo', url: '/catalogo', icon: ShoppingBag },
-      { title: 'Cat. Revendedor', url: '/catalogo-revendedor', icon: Store },
+      { title: 'Catálogo Público', url: '/catalogo', icon: ShoppingBag },
+      { title: 'Catálogo Público Internacional', url: '/catalogo-publico-internacional', icon: Globe },
+      { title: 'Catálogo Revendedor', url: '/catalogo-revendedor', icon: Store },
+      { title: 'Catálogo Revendedor Internacional', url: '/catalogo-internacional', icon: Globe },
       { title: 'Auxílio de Vendas', url: '/auxilio-vendas', icon: BookOpen },
       { title: 'Mensagens', url: '/mensagens', icon: MessageSquare },
       { title: 'Mídia', url: '/midia', icon: Image },
