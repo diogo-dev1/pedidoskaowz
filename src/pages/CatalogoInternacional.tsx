@@ -271,10 +271,10 @@ export default function CatalogoInternacional() {
 
   const getMargemModelo = (modeloId: string) => margensProduto[modeloId] ?? margemGlobal;
 
-  // Preço final de venda ao cliente (em moeda alvo): preço base convertido + margem cambial
+  // Preço final de venda ao cliente (em moeda alvo): apenas preço base convertido pelo câmbio.
+  // A lógica de margem segue idêntica ao catálogo revendedor primário (apenas comissão do revendedor).
   const getPrecoFinal = (basePrice: number) => {
-    const cambialMargin = 1 + (Number(intlConfig?.margin_percent) || 0) / 100;
-    return exchange.convert(basePrice, currency) * cambialMargin;
+    return exchange.convert(basePrice, currency);
   };
 
   // Custo do revendedor: preço final descontado pela margem de comissão (markup sobre o custo)

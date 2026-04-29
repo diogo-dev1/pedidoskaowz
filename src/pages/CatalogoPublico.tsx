@@ -140,12 +140,11 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     return basePrice;
   }, [isInternacional, marginGlobal, margemPorProduto]);
 
-  const computePrice = useCallback((basePrice: number, modeloId: string) => {
-    const cambialMargin = 1 + (marginGlobal || 0) / 100;
-    const productMargin = 1 + (margemPorProduto[modeloId] || 0) / 100;
+  const computePrice = useCallback((basePrice: number, _modeloId: string) => {
     if (!isInternacional) return basePrice;
-    return exchange.convert(basePrice, currency) * cambialMargin * productMargin;
-  }, [isInternacional, marginGlobal, margemPorProduto, exchange, currency]);
+    // Internacional: apenas conversão de câmbio. Demais lógicas (Pix, parcelamento, etc) permanecem iguais ao primário.
+    return exchange.convert(basePrice, currency);
+  }, [isInternacional, exchange, currency]);
 
   const fmtPrice = useCallback((basePrice: number, modeloId: string) => {
     if (!isInternacional) return `R$ ${basePrice.toFixed(2)}`;
