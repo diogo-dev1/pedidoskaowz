@@ -490,14 +490,14 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
             )}
 
             {/* WhatsApp */}
-            {!isRevendedor && (
+            {(!isRevendedor || isInternacional) && (
               <Button
                 size="lg"
                 className="w-full bg-accent hover:bg-accent/90 text-white rounded-xl h-12"
                 onClick={enviarWhatsApp}
               >
                 <MessageCircle className="h-5 w-5 mr-2" />
-                Consultar no WhatsApp
+                {t.askWhatsapp}
               </Button>
             )}
 
@@ -506,19 +506,19 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
               <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5">
                 <span className="text-emerald-400 text-base">🛡️</span>
                 <div>
-                  <p className="text-emerald-400 text-xs font-semibold tracking-wide uppercase">Garantia Vitalícia</p>
-                  <p className="text-zinc-500 text-[11px]">Qualidade que dura para sempre</p>
+                  <p className="text-emerald-400 text-xs font-semibold tracking-wide uppercase">{t.lifetimeWarranty}</p>
+                  <p className="text-zinc-500 text-[11px]">{t.lifetimeSub}</p>
                 </div>
               </div>
             ) : modelo.garantia ? (
               <div className="flex gap-4 text-xs text-zinc-500 pt-1">
-                <span>Garantia: {modelo.garantia}</span>
+                <span>{t.warranty} {modelo.garantia}</span>
               </div>
             ) : null}
 
             {/* Prazo entrega */}
             {modelo.prazo_entrega && (
-              <p className="text-xs text-zinc-500">Entrega: {modelo.prazo_entrega}</p>
+              <p className="text-xs text-zinc-500">{t.delivery} {modelo.prazo_entrega}</p>
             )}
 
             {/* Separador */}
