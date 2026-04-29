@@ -438,7 +438,7 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
                 </span>
               )}
               {modelo.categorias?.map((cat: string) => (
-                <span key={cat} className="text-xs text-zinc-500">{cat}</span>
+                <span key={cat} className="text-xs text-zinc-500">{isInternacional ? trCategoria(cat, lang) : cat}</span>
               ))}
             </div>
 
