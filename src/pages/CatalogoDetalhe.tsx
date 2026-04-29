@@ -304,9 +304,8 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
   };
 
   const formatPrecoIntl = (basePrice: number) => {
-    const cambialMargin = 1 + (Number(intlConfig?.margin_percent) || 0) / 100;
-    const productMargin = 1 + ((intlMargemProduto ?? intlMargemGlobal) / 100);
-    const converted = exchange.convert(basePrice, currency) * cambialMargin * productMargin;
+    // Mesma lógica do catálogo público internacional: apenas conversão de câmbio.
+    const converted = exchange.convert(basePrice, currency);
     return exchange.format(converted, currency);
   };
 
