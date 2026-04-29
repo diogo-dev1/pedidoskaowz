@@ -581,25 +581,56 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
   if (mostrarLanding) {
     return (
       <div className="min-h-screen bg-zinc-950 overflow-x-hidden max-w-[100vw]">
+        {/* International selectors */}
+        {isInternacional && (showLangSelector || showCurrencySelector) && (
+          <div className="w-full bg-black/60 border-b border-white/10">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-end gap-3">
+              {showLangSelector && (
+                <div className="flex items-center gap-1.5">
+                  <Globe className="h-3.5 w-3.5 text-zinc-400" />
+                  <Select value={lang} onValueChange={(v) => setLang(v as 'pt' | 'en')}>
+                    <SelectTrigger className="h-7 text-xs bg-zinc-900 border-zinc-700 text-white w-[88px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {availableLanguages.map(l => (
+                        <SelectItem key={l} value={l}>{l === 'pt' ? 'Português' : 'English'}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {showCurrencySelector && (
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="h-3.5 w-3.5 text-zinc-400" />
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger className="h-7 text-xs bg-zinc-900 border-zinc-700 text-white w-[80px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {availableCurrencies.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {/* Hero Header */}
         <header className="relative py-10 md:py-16 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-accent/10 via-transparent to-transparent" />
           <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 text-center relative z-10">
             <div className="inline-block mb-3">
-              <span className="text-accent text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">Cutelaria Artesanal</span>
+              <span className="text-accent text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">{T.cutelaria}</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight leading-tight">
-              CATÁLOGO <span className="text-accent">KAOWZ</span>
+              {T.catalogo} <span className="text-accent">KAOWZ</span>
             </h1>
             <p className="text-zinc-400 text-sm md:text-lg max-w-md mx-auto">
-              Alta performance feita à mão. Escolha sua categoria.
+              {T.heroDesc}
             </p>
 
             {/* Banner Garantia Vitalícia - Discreto mas visível */}
             <div className="mt-6 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-4 py-2">
               <span className="text-emerald-400 text-lg">🛡️</span>
               <span className="text-emerald-400 text-xs md:text-sm font-medium tracking-wide">
-                Garantia Vitalícia de qualidade e manutenção de afiação em todas as nossas lâminas
+                {T.garantia}
               </span>
             </div>
           </div>
