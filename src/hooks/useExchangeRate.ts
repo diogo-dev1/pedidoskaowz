@@ -131,15 +131,14 @@ export function useExchangeRate(options: UseExchangeRateOptions): UseExchangeRat
     manualRatesUpdatedAt = null,
   } = options;
 
-  const [autoData, setAutoData] = useState<CachedRates | null>(() =>
-    mode === 'auto' ? readCache(baseCurrency) : null,
-  );
-  const [loading, setLoading] = useState<boolean>(mode === 'auto' && !autoData);
+  // Sempre carregamos as taxas automáticas — usadas como fallback quando o modo
+  // manual não tiver cotação configurada para a moeda solicitada.
+  const [autoData, setAutoData] = useState<CachedRates | null>(() => readCache(baseCurrency));
+  const [loading, setLoading] = useState<boolean>(!autoData);
   const [error, setError] = useState<string | null>(null);
 
   const loadAuto = useCallback(
     async (force = false) => {
-      if (mode !== 'auto') return;
       if (!force) {
         const cached = readCache(baseCurrency);
         if (cached) {
@@ -160,18 +159,12 @@ export function useExchangeRate(options: UseExchangeRateOptions): UseExchangeRat
         setLoading(false);
       }
     },
-    [mode, baseCurrency],
+    [baseCurrency],
   );
 
   useEffect(() => {
-    if (mode === 'auto') {
-      loadAuto(false);
-    } else {
-      setAutoData(null);
-      setLoading(false);
-      setError(null);
-    }
-  }, [mode, baseCurrency, loadAuto]);
+    loadAuto(false);
+  }, [baseCurrency, loadAuto]);
 
   const refresh = useCallback(async () => {
     if (typeof window !== 'undefined') {
@@ -191,7 +184,11 @@ export function useExchangeRate(options: UseExchangeRateOptions): UseExchangeRat
       const code = target.toUpperCase();
       if (code === baseCurrency.toUpperCase()) return 1;
       if (mode === 'manual') {
-        return normalizedManual[code] ?? 0;
+        const manual = normalizedManual[code];
+        if (manual && manual > 0) return manual;
+        // Fallback: se a cotação manual não foi configurada para essa moeda,
+        // usamos a cotação automática para não exibir preços zerados.
+        return autoData?.rates?.[code] ?? 0;
       }
       return autoData?.rates?.[code] ?? 0;
     },
