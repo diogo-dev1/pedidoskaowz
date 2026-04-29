@@ -20,7 +20,7 @@ const ALL_CURRENCIES = ['USD', 'BRL', 'EUR', 'AED'] as const;
 const ALL_LANGUAGES = [{ code: 'pt', label: 'Português' }, { code: 'en', label: 'English' }] as const;
 
 interface CategoriaVisivel {
-  id: string; categoria: string; visivel: boolean; visivel_todas: boolean; visivel_kit: boolean;
+  id: string; categoria: string; nome_en: string | null; visivel: boolean; visivel_todas: boolean; visivel_kit: boolean;
   ordem: number; icone: string; categoria_pai_id: string | null;
 }
 interface ModeloCatalogo {
