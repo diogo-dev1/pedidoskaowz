@@ -358,7 +358,7 @@ function ShareButton({ language }: { language: string }) {
       toast.success(t.copied, { description: url });
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error(url);
+      toast.error('Error');
     }
   }
 
@@ -373,3 +373,5 @@ function ShareButton({ language }: { language: string }) {
     </button>
   );
 }
+
+export default CatalogoInternacional;
