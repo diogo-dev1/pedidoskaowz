@@ -12,6 +12,7 @@ import { getIconComponent } from '@/lib/icon-utils';
 interface Modelo {
   id: string;
   nome_modelo: string;
+  nome_modelo_en?: string | null;
   preco_base: number;
   imagem_modelo: string | null;
   categorias: string[];
@@ -21,8 +22,35 @@ interface Modelo {
 
 interface Categoria {
   categoria: string;
+  nome_en?: string | null;
   icone: string;
 }
+
+const KIT_I18N = {
+  pt: {
+    addAtLeast: 'Adicione pelo menos um item ao kit', back: 'Voltar', titleReseller: 'Monte um Kit', titleCustomer: 'Monte seu Kit', myKit: 'Meu Kit',
+    search: 'Buscar lâminas para adicionar...', all: 'Todas', instructionStart: 'Toque em', instructionEnd: 'para adicionar lâminas ao seu kit. Escolha quantas quiser!',
+    loading: 'Carregando produtos...', emptyProducts: 'Nenhum produto encontrado', add: 'Adicionar', inKit: 'no kit', viewKit: 'Ver kit', send: 'Enviar',
+    yourKit: 'Seu Kit', emptyKit: 'Seu kit está vazio', emptyKitHint: 'Adicione lâminas para montar seu kit', sendKit: 'Enviar Kit no WhatsApp', clearKit: 'Limpar kit',
+    waKit: (items: string, total: number) => `Olá! Gostaria de montar um kit com os seguintes itens:\n\n${items}\n\nTotal de ${total} ${total === 1 ? 'item' : 'itens'}`,
+    waResellerKit: (items: string, total: number) => `Olá! Sou revendedor e gostaria de montar um kit com os seguintes itens:\n\n${items}\n\nTotal de ${total} ${total === 1 ? 'item' : 'itens'}`,
+  },
+  en: {
+    addAtLeast: 'Add at least one item to the kit', back: 'Back', titleReseller: 'Build a Kit', titleCustomer: 'Build your Kit', myKit: 'My Kit',
+    search: 'Search blades to add...', all: 'All', instructionStart: 'Tap', instructionEnd: 'to add blades to your kit. Choose as many as you want!',
+    loading: 'Loading products...', emptyProducts: 'No products found', add: 'Add', inKit: 'in kit', viewKit: 'View kit', send: 'Send',
+    yourKit: 'Your Kit', emptyKit: 'Your kit is empty', emptyKitHint: 'Add blades to build your kit', sendKit: 'Send Kit on WhatsApp', clearKit: 'Clear kit',
+    waKit: (items: string, total: number) => `Hello! I would like to build a kit with the following items:\n\n${items}\n\nTotal: ${total} ${total === 1 ? 'item' : 'items'}`,
+    waResellerKit: (items: string, total: number) => `Hello! I am a reseller and would like to build a kit with the following items:\n\n${items}\n\nTotal: ${total} ${total === 1 ? 'item' : 'items'}`,
+  },
+} as const;
+
+const CATEGORY_I18N: Record<string, string> = {
+  'Defesa': 'Defense', 'EDCs': 'EDC', 'EDC Mini': 'Mini EDC', 'Campo': 'Outdoor', 'Cozinha': 'Kitchen',
+  'Churrasco': 'BBQ', 'Kits': 'Kits', 'Utensílios': 'Accessories', 'Vestuário': 'Apparel', 'Cafés': 'Coffee',
+  'Novidades': 'New Arrivals', 'Porte velado': 'Concealed Carry', 'Caça': 'Hunting', 'Tática': 'Tactical',
+  'Coleção': 'Collection', 'Bushcraft': 'Bushcraft', 'Sobrevivência': 'Survival', 'Acessórios': 'Accessories',
+};
 
 interface ItemKit {
   modelo: Modelo;
