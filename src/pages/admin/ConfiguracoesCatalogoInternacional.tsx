@@ -14,6 +14,7 @@ import { Plus, Loader2, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, C
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getIconComponent } from '@/lib/icon-utils';
 import { useExchangeRate, type ExchangeMode } from '@/hooks/useExchangeRate';
+import { TranslationManager } from '@/components/admin/TranslationManager';
 
 const ALL_CURRENCIES = ['USD', 'BRL', 'EUR', 'AED'] as const;
 const ALL_LANGUAGES = [{ code: 'pt', label: 'Português' }, { code: 'en', label: 'English' }] as const;
