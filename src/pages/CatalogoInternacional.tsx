@@ -59,6 +59,11 @@ const T = {
     language: 'Idioma',
     currency: 'Moeda',
     exchangeNote: 'Cotação',
+    salePrice: 'Preço Final',
+    cost: 'Base',
+    profit: 'Margem',
+    marginNote: 'Margem aplicada',
+    worldwide: 'Envio Internacional',
   },
   en: {
     title: 'INTERNATIONAL',
@@ -101,8 +106,32 @@ const T = {
     language: 'Language',
     currency: 'Currency',
     exchangeNote: 'Exchange',
+    salePrice: 'Final Price',
+    cost: 'Base',
+    profit: 'Markup',
+    marginNote: 'Applied markup',
+    worldwide: 'Worldwide Shipping',
   },
 } as const;
+
+// Categorias PT → EN
+const CATEGORY_I18N: Record<string, string> = {
+  'Defesa': 'Defense',
+  'EDCs': 'EDC',
+  'EDC Mini': 'Mini EDC',
+  'Campo': 'Outdoor',
+  'Cozinha': 'Kitchen',
+  'Churrasco': 'BBQ',
+  'Kits': 'Kits',
+  'Utensílios': 'Accessories',
+  'Vestuário': 'Apparel',
+  'Cafés': 'Coffee',
+  'Novidades': 'New Arrivals',
+  'Porte velado': 'Concealed Carry',
+};
+
+const translateCategoria = (cat: string, lang: 'pt' | 'en') =>
+  lang === 'en' ? (CATEGORY_I18N[cat] || cat) : cat;
 
 type Lang = keyof typeof T;
 
@@ -239,10 +268,24 @@ export default function CatalogoInternacional() {
     setModelosSelecionados(novaSelecao);
   };
 
-  const formatPrice = (basePrice: number) => {
-    const margin = 1 + (Number(intlConfig?.margin_percent) || 0) / 100;
-    const converted = exchange.convert(basePrice, currency) * margin;
+  const getMargemModelo = (modeloId: string) => margensProduto[modeloId] ?? margemGlobal;
+
+  const formatPrice = (basePrice: number, modeloId?: string) => {
+    const cambialMargin = 1 + (Number(intlConfig?.margin_percent) || 0) / 100;
+    const productMargin = 1 + (modeloId ? getMargemModelo(modeloId) : margemGlobal) / 100;
+    const converted = exchange.convert(basePrice, currency) * cambialMargin * productMargin;
     return exchange.format(converted, currency);
+  };
+
+  const getBaseConverted = (basePrice: number) => {
+    const cambialMargin = 1 + (Number(intlConfig?.margin_percent) || 0) / 100;
+    return exchange.convert(basePrice, currency) * cambialMargin;
+  };
+
+  const getProfitConverted = (basePrice: number, modeloId: string) => {
+    const base = getBaseConverted(basePrice);
+    const productMargin = getMargemModelo(modeloId) / 100;
+    return base * productMargin;
   };
 
   const enviarWhatsAppCombo = () => {
@@ -255,7 +298,7 @@ export default function CatalogoInternacional() {
         const m = modelos.find(x => x.id === id);
         if (!m) return '';
         const name = lang === 'en' ? (m.nome_modelo_en || m.nome_modelo) : m.nome_modelo;
-        return `• ${name} — ${formatPrice(m.preco_base)}`;
+        return `• ${name} — ${formatPrice(m.preco_base, m.id)}`;
       })
       .filter(Boolean).join('\n');
     const mensagem = `${t.quoteMsgIntro}\n\n${modelosTexto}`;
@@ -563,6 +606,18 @@ export default function CatalogoInternacional() {
             <Button onClick={verProntaEntrega} variant="outline"
               className="flex-1 border-emerald-600/50 text-emerald-400 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 font-bold h-12 text-sm md:text-base rounded-xl transition-all">
               <Zap className="h-4 w-4 mr-2" />{t.readyDelivery}
+            </Button>
+          </div>
+
+          {/* Monte um Kit */}
+          <div className="flex justify-center max-w-lg mx-auto mt-3">
+            <Button
+              onClick={() => navigate('/catalogo-internacional/montar-kit')}
+              variant="outline"
+              className="w-full border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent font-bold h-12 text-sm md:text-base rounded-xl transition-all"
+            >
+              <Package className="h-4 w-4 mr-2" />
+              {t.buildKit}
             </Button>
           </div>
 

@@ -29,7 +29,7 @@ interface ItemKit {
   quantidade: number;
 }
 
-export default function MontarKit({ isRevendedor = false }: { isRevendedor?: boolean }) {
+export default function MontarKit({ isRevendedor = false, isInternacional = false }: { isRevendedor?: boolean; isInternacional?: boolean }) {
   const navigate = useNavigate();
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -133,7 +133,9 @@ export default function MontarKit({ isRevendedor = false }: { isRevendedor?: boo
       .map(item => `• ${item.modelo.nome_modelo}${item.quantidade > 1 ? ` (x${item.quantidade})` : ''}`)
       .join('\n');
 
-    const mensagem = isRevendedor
+    const mensagem = isInternacional
+      ? `Hello! I would like to build a kit with the following items:\n\n${itensTexto}\n\nTotal: ${totalItens} ${totalItens === 1 ? 'item' : 'items'}`
+      : isRevendedor
       ? `Olá! Sou revendedor e gostaria de montar um kit com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`
       : `Olá! Gostaria de montar um kit com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
@@ -160,7 +162,7 @@ export default function MontarKit({ isRevendedor = false }: { isRevendedor?: boo
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate(isRevendedor ? '/catalogo-revendedor' : '/catalogo')}
+                onClick={() => navigate(isInternacional ? '/catalogo-internacional' : isRevendedor ? '/catalogo-revendedor' : '/catalogo')}
                 className="text-white hover:bg-white/10 text-xs"
               >
                 <ArrowLeft className="h-4 w-4 mr-1" />
