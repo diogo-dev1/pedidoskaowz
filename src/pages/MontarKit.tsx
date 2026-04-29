@@ -12,6 +12,7 @@ import { getIconComponent } from '@/lib/icon-utils';
 interface Modelo {
   id: string;
   nome_modelo: string;
+  nome_modelo_en?: string | null;
   preco_base: number;
   imagem_modelo: string | null;
   categorias: string[];
@@ -21,8 +22,35 @@ interface Modelo {
 
 interface Categoria {
   categoria: string;
+  nome_en?: string | null;
   icone: string;
 }
+
+const KIT_I18N = {
+  pt: {
+    addAtLeast: 'Adicione pelo menos um item ao kit', back: 'Voltar', titleReseller: 'Monte um Kit', titleCustomer: 'Monte seu Kit', myKit: 'Meu Kit',
+    search: 'Buscar lâminas para adicionar...', all: 'Todas', instructionStart: 'Toque em', instructionEnd: 'para adicionar lâminas ao seu kit. Escolha quantas quiser!',
+    loading: 'Carregando produtos...', emptyProducts: 'Nenhum produto encontrado', add: 'Adicionar', inKit: 'no kit', viewKit: 'Ver kit', send: 'Enviar',
+    yourKit: 'Seu Kit', emptyKit: 'Seu kit está vazio', emptyKitHint: 'Adicione lâminas para montar seu kit', sendKit: 'Enviar Kit no WhatsApp', clearKit: 'Limpar kit',
+    waKit: (items: string, total: number) => `Olá! Gostaria de montar um kit com os seguintes itens:\n\n${items}\n\nTotal de ${total} ${total === 1 ? 'item' : 'itens'}`,
+    waResellerKit: (items: string, total: number) => `Olá! Sou revendedor e gostaria de montar um kit com os seguintes itens:\n\n${items}\n\nTotal de ${total} ${total === 1 ? 'item' : 'itens'}`,
+  },
+  en: {
+    addAtLeast: 'Add at least one item to the kit', back: 'Back', titleReseller: 'Build a Kit', titleCustomer: 'Build your Kit', myKit: 'My Kit',
+    search: 'Search blades to add...', all: 'All', instructionStart: 'Tap', instructionEnd: 'to add blades to your kit. Choose as many as you want!',
+    loading: 'Loading products...', emptyProducts: 'No products found', add: 'Add', inKit: 'in kit', viewKit: 'View kit', send: 'Send',
+    yourKit: 'Your Kit', emptyKit: 'Your kit is empty', emptyKitHint: 'Add blades to build your kit', sendKit: 'Send Kit on WhatsApp', clearKit: 'Clear kit',
+    waKit: (items: string, total: number) => `Hello! I would like to build a kit with the following items:\n\n${items}\n\nTotal: ${total} ${total === 1 ? 'item' : 'items'}`,
+    waResellerKit: (items: string, total: number) => `Hello! I am a reseller and would like to build a kit with the following items:\n\n${items}\n\nTotal: ${total} ${total === 1 ? 'item' : 'items'}`,
+  },
+} as const;
+
+const CATEGORY_I18N: Record<string, string> = {
+  'Defesa': 'Defense', 'EDCs': 'EDC', 'EDC Mini': 'Mini EDC', 'Campo': 'Outdoor', 'Cozinha': 'Kitchen',
+  'Churrasco': 'BBQ', 'Kits': 'Kits', 'Utensílios': 'Accessories', 'Vestuário': 'Apparel', 'Cafés': 'Coffee',
+  'Novidades': 'New Arrivals', 'Porte velado': 'Concealed Carry', 'Caça': 'Hunting', 'Tática': 'Tactical',
+  'Coleção': 'Collection', 'Bushcraft': 'Bushcraft', 'Sobrevivência': 'Survival', 'Acessórios': 'Accessories',
+};
 
 interface ItemKit {
   modelo: Modelo;
@@ -31,6 +59,7 @@ interface ItemKit {
 
 export default function MontarKit({ isRevendedor = false, isInternacional = false }: { isRevendedor?: boolean; isInternacional?: boolean }) {
   const navigate = useNavigate();
+  const t = isInternacional ? KIT_I18N.en : KIT_I18N.pt;
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriaSelecionada, setCategoriaSelecionada] = useState<string | null>(null);
@@ -54,7 +83,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
 
       const { data, error } = await supabase
         .from('catalogo_modelos')
-        .select('id, nome_modelo, preco_base, imagem_modelo, categorias, aspect_ratio, pronta_entrega')
+        .select('id, nome_modelo, nome_modelo_en, preco_base, imagem_modelo, categorias, aspect_ratio, pronta_entrega')
         .eq('visivel_catalogo', true)
         .order('nome_modelo');
 
@@ -76,7 +105,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
     try {
       const { data, error } = await (supabase
         .from('categorias_catalogo_visiveis')
-        .select('categoria, icone') as any)
+        .select('categoria, nome_en, icone') as any)
         .eq('visivel', true)
         .eq('visivel_kit', true)
         .order('ordem');
@@ -122,22 +151,24 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
   };
 
   const totalItens = Array.from(kitItens.values()).reduce((sum, item) => sum + item.quantidade, 0);
+  const getNomeModelo = (modelo: Modelo) => isInternacional ? (modelo.nome_modelo_en || modelo.nome_modelo) : modelo.nome_modelo;
+  const getNomeCategoria = (cat: Categoria) => isInternacional ? (cat.nome_en || CATEGORY_I18N[cat.categoria] || cat.categoria) : cat.categoria;
 
   const enviarWhatsApp = () => {
     if (kitItens.size === 0) {
-      toast.error('Adicione pelo menos um item ao kit');
+      toast.error(t.addAtLeast);
       return;
     }
 
     const itensTexto = Array.from(kitItens.values())
-      .map(item => `• ${item.modelo.nome_modelo}${item.quantidade > 1 ? ` (x${item.quantidade})` : ''}`)
+      .map(item => `• ${getNomeModelo(item.modelo)}${item.quantidade > 1 ? ` (x${item.quantidade})` : ''}`)
       .join('\n');
 
     const mensagem = isInternacional
-      ? `Hello! I would like to build a kit with the following items:\n\n${itensTexto}\n\nTotal: ${totalItens} ${totalItens === 1 ? 'item' : 'items'}`
+      ? t.waKit(itensTexto, totalItens)
       : isRevendedor
-      ? `Olá! Sou revendedor e gostaria de montar um kit com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`
-      : `Olá! Gostaria de montar um kit com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`;
+      ? t.waResellerKit(itensTexto, totalItens)
+      : t.waKit(itensTexto, totalItens);
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
@@ -166,11 +197,11 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                 className="text-white hover:bg-white/10 text-xs"
               >
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                Voltar
+                {t.back}
               </Button>
               <h1 className="text-lg md:text-2xl font-bold text-white tracking-tight">
                 <Package className="h-5 w-5 inline mr-2 text-accent" />
-                {isRevendedor ? 'Monte um Kit' : 'Monte seu Kit'}
+                {isRevendedor ? t.titleReseller : t.titleCustomer}
               </h1>
             </div>
             {/* Botão carrinho flutuante no header */}
@@ -180,7 +211,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
               size="sm"
             >
               <Package className="h-4 w-4" />
-              <span className="hidden sm:inline">Meu Kit</span>
+              <span className="hidden sm:inline">{t.myKit}</span>
               {totalItens > 0 && (
                 <Badge className="absolute -top-2 -right-2 bg-white text-accent border-0 h-5 w-5 p-0 flex items-center justify-center text-xs font-bold">
                   {totalItens}
@@ -192,7 +223,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
           <div className="relative mt-3">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
             <Input
-              placeholder="Buscar lâminas para adicionar..."
+              placeholder={t.search}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-accent h-10"
@@ -213,7 +244,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                   : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-600'
               }`}
             >
-              Todas
+              {t.all}
             </button>
             {categorias.map((cat) => {
               const IconComp = getIconComponent(cat.icone);
@@ -229,7 +260,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                   }`}
                 >
                   {IconComp && <IconComp className="h-3.5 w-3.5" />}
-                  {cat.categoria}
+                  {getNomeCategoria(cat)}
                 </button>
               );
             })}
@@ -240,7 +271,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
       {/* Instrução */}
       <div className="container mx-auto px-4 pt-2 pb-2">
         <p className="text-zinc-400 text-sm text-center">
-          Toque em <span className="text-accent font-semibold">+</span> para adicionar lâminas ao seu kit. Escolha quantas quiser!
+          {t.instructionStart} <span className="text-accent font-semibold">+</span> {t.instructionEnd}
         </p>
       </div>
 
@@ -248,11 +279,11 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
       <div className="container mx-auto px-4 py-4 pb-24">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-pulse text-zinc-400">Carregando produtos...</div>
+            <div className="animate-pulse text-zinc-400">{t.loading}</div>
           </div>
         ) : modelosFiltrados.length === 0 ? (
           <div className="text-center py-20 text-zinc-400">
-            Nenhum produto encontrado
+            {t.emptyProducts}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -298,7 +329,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                   {/* Info */}
                   <div className="p-2.5">
                     <h3 className="text-white text-xs font-medium truncate mb-2">
-                      {modelo.nome_modelo}
+                      {getNomeModelo(modelo)}
                     </h3>
                     {/* Controles */}
                     {noKit ? (
@@ -327,7 +358,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                         className="w-full h-8 bg-zinc-800 hover:bg-accent text-zinc-300 hover:text-white text-xs transition-colors"
                       >
                         <Plus className="h-3.5 w-3.5 mr-1" />
-                        Adicionar
+                        {t.add}
                       </Button>
                     )}
                   </div>
@@ -344,7 +375,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
           <div className="container mx-auto flex items-center justify-between gap-3 max-w-lg">
             <div className="text-white">
               <span className="text-accent font-bold text-lg">{totalItens}</span>
-              <span className="text-zinc-400 text-sm ml-1.5">{totalItens === 1 ? 'item' : 'itens'} no kit</span>
+              <span className="text-zinc-400 text-sm ml-1.5">{totalItens === 1 ? 'item' : isInternacional ? 'items' : 'itens'} {t.inKit}</span>
             </div>
             <div className="flex gap-2">
               <Button
@@ -353,7 +384,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                 onClick={() => setMostrarResumo(true)}
                 className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
               >
-                Ver kit
+                {t.viewKit}
               </Button>
               <Button
                 size="sm"
@@ -361,7 +392,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                 className="bg-green-600 hover:bg-green-700 text-white gap-1"
               >
                 <MessageCircle className="h-4 w-4" />
-                Enviar
+                {t.send}
               </Button>
             </div>
           </div>
@@ -379,8 +410,8 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
             <div className="flex items-center justify-between p-4 border-b border-zinc-800">
               <div className="flex items-center gap-2">
                 <Package className="h-5 w-5 text-accent" />
-                <h2 className="text-white font-bold text-lg">Seu Kit</h2>
-                <Badge className="bg-accent/20 text-accent border-0">{totalItens} {totalItens === 1 ? 'item' : 'itens'}</Badge>
+                <h2 className="text-white font-bold text-lg">{t.yourKit}</h2>
+                <Badge className="bg-accent/20 text-accent border-0">{totalItens} {totalItens === 1 ? 'item' : isInternacional ? 'items' : 'itens'}</Badge>
               </div>
               <Button
                 variant="ghost"
@@ -397,8 +428,8 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
               {kitItens.size === 0 ? (
                 <div className="p-8 text-center">
                   <Package className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
-                  <p className="text-zinc-500 text-sm">Seu kit está vazio</p>
-                  <p className="text-zinc-600 text-xs mt-1">Adicione lâminas para montar seu kit</p>
+                  <p className="text-zinc-500 text-sm">{t.emptyKit}</p>
+                  <p className="text-zinc-600 text-xs mt-1">{t.emptyKitHint}</p>
                 </div>
               ) : (
                 <div className="p-4 space-y-3">
@@ -416,7 +447,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">{modelo.nome_modelo}</p>
+                        <p className="text-white text-sm font-medium truncate">{getNomeModelo(modelo)}</p>
                         <div className="flex items-center gap-2 mt-1.5">
                           <Button
                             size="sm"
@@ -459,7 +490,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                   className="w-full bg-green-600 hover:bg-green-700 text-white h-12 font-bold gap-2"
                 >
                   <MessageCircle className="h-5 w-5" />
-                  Enviar Kit no WhatsApp
+                  {t.sendKit}
                 </Button>
                 <Button
                   variant="ghost"
@@ -469,7 +500,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                   }}
                   className="w-full text-zinc-500 hover:text-red-400 text-sm"
                 >
-                  Limpar kit
+                  {t.clearKit}
                 </Button>
               </div>
             )}

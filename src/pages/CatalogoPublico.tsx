@@ -55,6 +55,9 @@ const CATEGORY_I18N: Record<string, string> = {
   'Sobrevivencia': 'Survival', 'Adagas': 'Daggers', 'Adaga': 'Dagger', 'Espada': 'Sword',
   'Espadas': 'Swords', 'Machados': 'Axes', 'Machado': 'Axe', 'Personalizada': 'Custom',
   'Personalizadas': 'Custom', 'Acessórios': 'Accessories', 'Acessorios': 'Accessories',
+  'Defesa': 'Defense', 'EDCs': 'EDC', 'EDC Mini': 'Mini EDC', 'Campo': 'Outdoor', 'Churrasco': 'BBQ',
+  'Kits': 'Kits', 'Utensílios': 'Accessories', 'Vestuário': 'Apparel', 'Cafés': 'Coffee',
+  'Novidades': 'New Arrivals', 'Porte velado': 'Concealed Carry',
 };
 
 interface CatalogoPublicoProps {
@@ -301,13 +304,14 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     if (!data) return;
     const map: Record<string, string> = {};
     data.forEach((d: any) => { map[d.chave] = d.valor; });
-    if (map.default_language) setLang(map.default_language === 'pt' ? 'pt' : 'en');
+    setLang('en');
     if (map.default_currency) setCurrency(map.default_currency);
     if (map.exchange_mode) setExchangeMode(map.exchange_mode === 'manual' ? 'manual' : 'auto');
     if (map.margin_percent) setMarginGlobal(parseFloat(map.margin_percent) || 0);
     if (map.show_language_selector) setShowLangSelector(map.show_language_selector === 'true');
     if (map.show_currency_selector) setShowCurrencySelector(map.show_currency_selector === 'true');
-    if (map.available_languages) setAvailableLanguages(map.available_languages.split(',').map((s: string) => s.trim()).filter(Boolean));
+    if (isInternacional) setAvailableLanguages(['en']);
+    else if (map.available_languages) setAvailableLanguages(map.available_languages.split(',').map((s: string) => s.trim()).filter(Boolean));
     if (map.available_currencies) setAvailableCurrencies(map.available_currencies.split(',').map((s: string) => s.trim()).filter(Boolean));
     if (map.manual_rates) {
       try { setManualRates(JSON.parse(map.manual_rates)); } catch { /* noop */ }
@@ -936,7 +940,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                         className="bg-accent/20 text-accent border-accent/30 text-[10px] cursor-pointer hover:bg-accent/30 gap-1"
                         onClick={() => toggleCategoriaFiltro(cat)}
                       >
-                        {cat}
+                        {trCat(cat)}
                         <X className="h-2.5 w-2.5" />
                       </Badge>
                     ))}
@@ -944,7 +948,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                       className="text-[10px] text-zinc-500 hover:text-zinc-300 underline"
                       onClick={() => { setCategoriasMultiplas([]); setSearchParams({}); }}
                     >
-                      Limpar
+                      {T.limpar}
                     </button>
                   </div>
                 )}
@@ -957,7 +961,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                 <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="h-4 w-4 text-accent" />
-                    <span className="font-semibold text-base md:text-lg">Faixa de Preço</span>
+                    <span className="font-semibold text-base md:text-lg">{T.faixaPreco}</span>
                   </div>
                   <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
@@ -979,7 +983,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                     {/* Mínimo / Máximo inputs abaixo */}
                     <div className="flex items-center gap-3">
                       <div className="flex-1 space-y-1">
-                        <label className="text-[11px] text-zinc-500">Mínimo:</label>
+                        <label className="text-[11px] text-zinc-500">{T.minimo}</label>
                         <Input
                           type="number"
                           value={faixaPrecoVisual[0] === 0 ? '' : faixaPrecoVisual[0]}
@@ -999,7 +1003,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                         />
                       </div>
                       <div className="flex-1 space-y-1">
-                        <label className="text-[11px] text-zinc-500">Máximo:</label>
+                        <label className="text-[11px] text-zinc-500">{T.maximo}</label>
                         <Input
                           type="number"
                           value={faixaPrecoVisual[1] === 0 ? '' : faixaPrecoVisual[1]}
@@ -1022,7 +1026,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                     
                     {/* Contagem de resultados */}
                     <p className="text-center text-xs text-zinc-500">
-                      {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'lâmina encontrada' : 'lâminas encontradas'}
+                      {modelosFiltrados.length} {modelosFiltrados.length === 1 ? T.encontradaSing : T.encontradaPlu}
                     </p>
 
                     {(faixaPrecoVisual[0] > 0 || faixaPrecoVisual[1] < precoMaxGlobal) && (
@@ -1032,7 +1036,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                         className="w-full text-xs text-zinc-400 hover:text-white"
                         onClick={() => { setFaixaPreco([0, precoMaxGlobal]); setFaixaPrecoVisual([0, precoMaxGlobal]); }}
                       >
-                        Limpar filtro
+                        {T.limparFiltro}
                       </Button>
                     )}
                   </div>
@@ -1046,7 +1050,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                 <CollapsibleTrigger className="w-full p-3 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="h-3.5 w-3.5 text-accent" />
-                    <span className="font-semibold text-sm">Comprimento Total</span>
+                    <span className="font-semibold text-sm">{T.comprimento}</span>
                     {tamanhosSelecionados.length > 0 && (
                       <Badge className="bg-accent text-white text-[10px] h-4 px-1.5">{tamanhosSelecionados.length}</Badge>
                     )}
@@ -1054,7 +1058,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                   <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="px-3 pb-3">
-                  <p className="text-[10px] text-zinc-500 mb-1.5 pt-1">Exibir lâminas até:</p>
+                  <p className="text-[10px] text-zinc-500 mb-1.5 pt-1">{T.exibirAte}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {tamanhosDisponiveis.map((tam) => {
                       const isSelected = tamanhosSelecionados.includes(tam);
@@ -1073,7 +1077,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                   </div>
                   {tamanhosSelecionados.length > 0 && (
                     <button className="text-[10px] text-zinc-500 hover:text-zinc-300 mt-2 underline" onClick={() => setTamanhosSelecionados([])}>
-                      Limpar
+                      {T.limpar}
                     </button>
                   )}
                 </CollapsibleContent>
@@ -1086,7 +1090,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                 <CollapsibleTrigger className="w-full p-3 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="h-3.5 w-3.5 text-accent" />
-                    <span className="font-semibold text-sm">Fio de Corte</span>
+                    <span className="font-semibold text-sm">{T.fioCorte}</span>
                     {laminasSelecionadas.length > 0 && (
                       <Badge className="bg-accent text-white text-[10px] h-4 px-1.5">{laminasSelecionadas.length}</Badge>
                     )}
@@ -1094,7 +1098,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                   <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="px-3 pb-3">
-                  <p className="text-[10px] text-zinc-500 mb-1.5 pt-1">Exibir lâminas até:</p>
+                  <p className="text-[10px] text-zinc-500 mb-1.5 pt-1">{T.exibirAte}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {laminasDisponiveis.map((lam) => {
                       const isSelected = laminasSelecionadas.includes(lam);
@@ -1113,7 +1117,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                   </div>
                   {laminasSelecionadas.length > 0 && (
                     <button className="text-[10px] text-zinc-500 hover:text-zinc-300 mt-2 underline" onClick={() => setLaminasSelecionadas([])}>
-                      Limpar
+                      {T.limpar}
                     </button>
                   )}
                 </CollapsibleContent>
@@ -1268,7 +1272,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
 
                 {modelosFiltrados.length === 0 && (
                   <div className="text-center py-12">
-                    <p className="text-zinc-400">Nenhuma lâmina encontrada</p>
+                    <p className="text-zinc-400">{T.nenhuma}</p>
                   </div>
                 )}
               </>
@@ -1286,7 +1290,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
             className="rounded-full bg-accent hover:bg-accent/90 text-white font-semibold shadow-[0_0_40px_rgba(251,146,60,0.5)] hover:scale-105 transition-all"
           >
             <MessageCircle className="h-5 w-5 mr-2" />
-            Consultar no WhatsApp ({modelosSelecionados.size})
+            {T.consultar} ({modelosSelecionados.size})
           </Button>
         </div>
       )}

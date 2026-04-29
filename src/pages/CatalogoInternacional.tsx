@@ -229,8 +229,8 @@ export default function CatalogoInternacional() {
   const [margensProduto, setMargensProduto] = useState<Record<string, number>>({});
   const [intlConfig, setIntlConfig] = useState<IntlConfig | null>(null);
   const [lang, setLang] = useState<Lang>(() => {
-    if (typeof window === 'undefined') return 'en';
-    return (sessionStorage.getItem(PREF_LANG_KEY) as Lang) || 'en';
+    if (typeof window !== 'undefined') sessionStorage.setItem(PREF_LANG_KEY, 'en');
+    return 'en';
   });
   const [currency, setCurrency] = useState<string>(() => {
     if (typeof window === 'undefined') return 'USD';
@@ -238,7 +238,7 @@ export default function CatalogoInternacional() {
   });
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const t = T[lang];
+  const t = T.en;
 
   // Hook de câmbio
   const exchange = useExchangeRate({
@@ -249,7 +249,7 @@ export default function CatalogoInternacional() {
   });
 
   // Persist lang/currency
-  useEffect(() => { if (typeof window !== 'undefined') sessionStorage.setItem(PREF_LANG_KEY, lang); }, [lang]);
+  useEffect(() => { if (typeof window !== 'undefined') sessionStorage.setItem(PREF_LANG_KEY, 'en'); }, []);
   useEffect(() => { if (typeof window !== 'undefined') sessionStorage.setItem(PREF_CURRENCY_KEY, currency); }, [currency]);
 
   // Persist selection
@@ -382,9 +382,7 @@ export default function CatalogoInternacional() {
       setIntlConfig(c);
       // Aplica preferências padrão se ainda não houver no sessionStorage
       if (typeof window !== 'undefined') {
-        if (!sessionStorage.getItem(PREF_LANG_KEY) && c.default_language) {
-          setLang((c.default_language as Lang) === 'pt' ? 'pt' : 'en');
-        }
+        sessionStorage.setItem(PREF_LANG_KEY, 'en');
         if (!sessionStorage.getItem(PREF_CURRENCY_KEY) && c.default_currency) {
           setCurrency(c.default_currency);
         }
@@ -532,14 +530,12 @@ export default function CatalogoInternacional() {
             {/* Seletor idioma/moeda */}
             <div className="absolute top-0 right-3 sm:right-4 flex gap-2 z-20">
               {showLangSelector && (
-                <Select value={lang} onValueChange={(v) => setLang(v as Lang)}>
+                <Select value="en" onValueChange={() => setLang('en')}>
                   <SelectTrigger className="h-8 w-[88px] bg-zinc-900 border-zinc-700 text-white text-xs">
                     <Languages className="h-3 w-3 mr-1" /><SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(intlConfig?.available_languages || ['en', 'pt']).map((l) => (
-                      <SelectItem key={l} value={l}>{l === 'pt' ? 'PT-BR' : 'EN'}</SelectItem>
-                    ))}
+                    <SelectItem value="en">EN</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -663,14 +659,12 @@ export default function CatalogoInternacional() {
             </div>
             <div className="flex gap-2 w-full md:w-auto items-center">
               {showLangSelector && (
-                <Select value={lang} onValueChange={(v) => setLang(v as Lang)}>
+                <Select value="en" onValueChange={() => setLang('en')}>
                   <SelectTrigger className="h-9 w-[80px] bg-white/5 border-white/20 text-white text-xs">
                     <Languages className="h-3 w-3 mr-1" /><SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(intlConfig?.available_languages || ['en', 'pt']).map((l) => (
-                      <SelectItem key={l} value={l}>{l === 'pt' ? 'PT' : 'EN'}</SelectItem>
-                    ))}
+                    <SelectItem value="en">EN</SelectItem>
                   </SelectContent>
                 </Select>
               )}
