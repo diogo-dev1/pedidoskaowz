@@ -62,47 +62,61 @@ serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SERVICE);
 
+    const BATCH_LIMIT = mode === 'single' ? 1 : 8;
+    const CONCURRENCY = 5;
+
     let query = admin.from('catalogo_modelos').select('id, nome_modelo, descricao_html, nome_modelo_en, descricao_html_en');
     if (mode === 'single' && modelo_id) query = query.eq('id', modelo_id);
-    const { data: models, error } = await query;
+    if (mode === 'missing') query = query.or('nome_modelo_en.is.null,descricao_html_en.is.null');
+    const { data: allModels, error } = await query;
     if (error) throw error;
 
+    const candidates = (allModels || []).filter(m => {
+      const needName = !m.nome_modelo_en || mode === 'all';
+      const needDesc = (!!m.descricao_html && (!m.descricao_html_en || mode === 'all'));
+      return needName || needDesc;
+    });
+
+    const batch = candidates.slice(0, BATCH_LIMIT);
+    const remaining = Math.max(0, candidates.length - batch.length);
+
     let translated = 0;
-    let skipped = 0;
     let failed = 0;
     const errors: string[] = [];
 
-    for (const m of (models || [])) {
+    const processOne = async (m: any) => {
       try {
         const needName = !m.nome_modelo_en || mode === 'all';
         const needDesc = (!!m.descricao_html && (!m.descricao_html_en || mode === 'all'));
-        if (!needName && !needDesc) { skipped++; continue; }
-
         const updates: Record<string, string> = {};
+        const tasks: Promise<void>[] = [];
         if (needName && m.nome_modelo) {
-          updates.nome_modelo_en = await translate(m.nome_modelo, 'name', LOVABLE_API_KEY);
-          await new Promise(r => setTimeout(r, 400));
+          tasks.push(translate(m.nome_modelo, 'name', LOVABLE_API_KEY).then(v => { updates.nome_modelo_en = v; }));
         }
         if (needDesc && m.descricao_html) {
-          updates.descricao_html_en = await translate(m.descricao_html, 'html', LOVABLE_API_KEY);
-          await new Promise(r => setTimeout(r, 400));
+          tasks.push(translate(m.descricao_html, 'html', LOVABLE_API_KEY).then(v => { updates.descricao_html_en = v; }));
         }
+        await Promise.all(tasks);
         if (Object.keys(updates).length > 0) {
           const { error: uErr } = await admin.from('catalogo_modelos').update(updates).eq('id', m.id);
           if (uErr) throw uErr;
           translated++;
-        } else {
-          skipped++;
         }
       } catch (e) {
         failed++;
-        errors.push(`${m.nome_modelo}: ${e instanceof Error ? e.message : 'err'}`);
-        if (errors.length >= 5) break;
+        if (errors.length < 5) errors.push(`${m.nome_modelo}: ${e instanceof Error ? e.message : 'err'}`);
       }
+    };
+
+    // Run with concurrency
+    for (let i = 0; i < batch.length; i += CONCURRENCY) {
+      await Promise.all(batch.slice(i, i + CONCURRENCY).map(processOne));
     }
 
+    const skipped = (allModels?.length || 0) - candidates.length;
+
     return new Response(
-      JSON.stringify({ success: true, total: models?.length || 0, translated, skipped, failed, errors }),
+      JSON.stringify({ success: true, total: allModels?.length || 0, translated, skipped, failed, remaining, errors }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (e) {
