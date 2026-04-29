@@ -268,10 +268,24 @@ export default function CatalogoInternacional() {
     setModelosSelecionados(novaSelecao);
   };
 
-  const formatPrice = (basePrice: number) => {
-    const margin = 1 + (Number(intlConfig?.margin_percent) || 0) / 100;
-    const converted = exchange.convert(basePrice, currency) * margin;
+  const getMargemModelo = (modeloId: string) => margensProduto[modeloId] ?? margemGlobal;
+
+  const formatPrice = (basePrice: number, modeloId?: string) => {
+    const cambialMargin = 1 + (Number(intlConfig?.margin_percent) || 0) / 100;
+    const productMargin = 1 + (modeloId ? getMargemModelo(modeloId) : margemGlobal) / 100;
+    const converted = exchange.convert(basePrice, currency) * cambialMargin * productMargin;
     return exchange.format(converted, currency);
+  };
+
+  const getBaseConverted = (basePrice: number) => {
+    const cambialMargin = 1 + (Number(intlConfig?.margin_percent) || 0) / 100;
+    return exchange.convert(basePrice, currency) * cambialMargin;
+  };
+
+  const getProfitConverted = (basePrice: number, modeloId: string) => {
+    const base = getBaseConverted(basePrice);
+    const productMargin = getMargemModelo(modeloId) / 100;
+    return base * productMargin;
   };
 
   const enviarWhatsAppCombo = () => {
