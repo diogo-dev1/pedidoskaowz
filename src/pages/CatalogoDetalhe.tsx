@@ -156,15 +156,15 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
   const [intlMargemGlobal, setIntlMargemGlobal] = useState(30);
   const [intlMargemProduto, setIntlMargemProduto] = useState<number | null>(null);
   const [lang, setLang] = useState<Lang>(() => {
-    if (typeof window === 'undefined') return 'en';
-    return (sessionStorage.getItem(PREF_LANG_KEY) as Lang) || 'en';
+    if (typeof window !== 'undefined') sessionStorage.setItem(PREF_LANG_KEY, 'en');
+    return 'en';
   });
   const [currency, setCurrency] = useState<string>(() => {
     if (typeof window === 'undefined') return 'USD';
     return sessionStorage.getItem(PREF_CURRENCY_KEY) || 'USD';
   });
 
-  const t = isInternacional ? I18N[lang] : I18N.pt;
+  const t = isInternacional ? I18N.en : I18N.pt;
 
   const exchange = useExchangeRate({
     mode: intlConfig?.exchange_mode || 'auto',
@@ -249,9 +249,7 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
         contact_whatsapp: e.contact_whatsapp || null,
       });
       if (typeof window !== 'undefined') {
-        if (!sessionStorage.getItem(PREF_LANG_KEY) && e.default_language) {
-          setLang(e.default_language === 'pt' ? 'pt' : 'en');
-        }
+        sessionStorage.setItem(PREF_LANG_KEY, 'en');
         if (!sessionStorage.getItem(PREF_CURRENCY_KEY) && e.default_currency) {
           setCurrency(e.default_currency);
         }
