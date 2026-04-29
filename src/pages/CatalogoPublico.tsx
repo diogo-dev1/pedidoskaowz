@@ -1,15 +1,65 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X } from 'lucide-react';
+import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X, Globe, DollarSign } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { getIconComponent } from '@/lib/icon-utils';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+
+// Translation map for UI labels
+const UI_I18N: Record<'pt' | 'en', Record<string, string>> = {
+  pt: {
+    cutelaria: 'Cutelaria Artesanal', catalogo: 'CATÁLOGO', heroDesc: 'Alta performance feita à mão. Escolha sua categoria.',
+    garantia: 'Garantia Vitalícia de qualidade e manutenção de afiação em todas as nossas lâminas',
+    verTudo: 'Ver todo o catálogo', prontaEntrega: 'Pronta Entrega', monteKit: 'Monte seu Kit',
+    ajuda: 'Precisa de ajuda para escolher?', falarWhats: 'Fale conosco no WhatsApp',
+    voltar: '← Voltar', buscar: 'Buscar lâminas...', categorias: 'Categorias', selecione: 'Selecione categorias',
+    todas: 'Todas', limpar: 'Limpar', faixaPreco: 'Faixa de Preço', minimo: 'Mínimo:', maximo: 'Máximo:',
+    encontradaSing: 'lâmina encontrada', encontradaPlu: 'lâminas encontradas', limparFiltro: 'Limpar filtro',
+    comprimento: 'Comprimento Total', fioCorte: 'Fio de Corte', exibirAte: 'Exibir lâminas até:',
+    mostrando: 'Mostrando', produto: 'produto', produtos: 'produtos', selecionadas: 'selecionada(s)',
+    semImagem: 'Sem imagem', verDetalhes: 'Ver detalhes', nenhuma: 'Nenhuma lâmina encontrada',
+    tip: 'Selecione as lâminas e peça seu', orcamento: 'orçamento pelo WhatsApp',
+    consultar: 'Consultar no WhatsApp', oi: 'Olá! Gostaria de saber mais sobre as lâminas.',
+    oiKit: 'Olá! Gostaria de saber mais sobre as seguintes lâminas:',
+    idioma: 'Idioma', moeda: 'Moeda',
+  },
+  en: {
+    cutelaria: 'Handcrafted Cutlery', catalogo: 'CATALOG', heroDesc: 'High performance handmade blades. Choose your category.',
+    garantia: 'Lifetime warranty on quality and sharpening maintenance for all our blades',
+    verTudo: 'View full catalog', prontaEntrega: 'In Stock', monteKit: 'Build your Kit',
+    ajuda: 'Need help choosing?', falarWhats: 'Chat with us on WhatsApp',
+    voltar: '← Back', buscar: 'Search blades...', categorias: 'Categories', selecione: 'Select categories',
+    todas: 'All', limpar: 'Clear', faixaPreco: 'Price Range', minimo: 'Min:', maximo: 'Max:',
+    encontradaSing: 'blade found', encontradaPlu: 'blades found', limparFiltro: 'Clear filter',
+    comprimento: 'Total Length', fioCorte: 'Cutting Edge', exibirAte: 'Show blades up to:',
+    mostrando: 'Showing', produto: 'product', produtos: 'products', selecionadas: 'selected',
+    semImagem: 'No image', verDetalhes: 'View details', nenhuma: 'No blades found',
+    tip: 'Select blades and request your', orcamento: 'quote on WhatsApp',
+    consultar: 'Request on WhatsApp', oi: 'Hello! I would like to know more about your blades.',
+    oiKit: 'Hello! I would like more information about the following blades:',
+    idioma: 'Language', moeda: 'Currency',
+  },
+};
+
+const CATEGORY_I18N: Record<string, string> = {
+  'Cozinha': 'Kitchen', 'EDC': 'EDC', 'Caça': 'Hunting', 'Tática': 'Tactical', 'Tatica': 'Tactical',
+  'Coleção': 'Collection', 'Colecao': 'Collection', 'Bushcraft': 'Bushcraft', 'Sobrevivência': 'Survival',
+  'Sobrevivencia': 'Survival', 'Adagas': 'Daggers', 'Adaga': 'Dagger', 'Espada': 'Sword',
+  'Espadas': 'Swords', 'Machados': 'Axes', 'Machado': 'Axe', 'Personalizada': 'Custom',
+  'Personalizadas': 'Custom', 'Acessórios': 'Accessories', 'Acessorios': 'Accessories',
+};
+
+interface CatalogoPublicoProps {
+  isInternacional?: boolean;
+}
 
 interface Banner {
   id: string;
@@ -36,6 +86,8 @@ interface Modelo {
   pronta_entrega: boolean;
   comprimento_total: number | null;
   area_util_corte: number | null;
+  nome_modelo_en?: string | null;
+  descricao_html_en?: string | null;
 }
 
 interface CategoriaVisivel {
@@ -49,10 +101,58 @@ interface CategoriaVisivel {
 }
 
 const SELECAO_STORAGE_KEY = 'catalogo_modelos_selecionados';
+const SELECAO_INTL_STORAGE_KEY = 'catalogo_intl_modelos_selecionados';
 
-export default function CatalogoPublico() {
+export default function CatalogoPublico({ isInternacional = false }: CatalogoPublicoProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const STORAGE_KEY = isInternacional ? SELECAO_INTL_STORAGE_KEY : SELECAO_STORAGE_KEY;
+  const detailRoute = isInternacional ? '/catalogo-publico-internacional' : '/catalogo';
+  const kitRoute = isInternacional ? '/catalogo-publico-internacional/montar-kit' : '/catalogo/montar-kit';
+
+  // International config state
+  const [lang, setLang] = useState<'pt' | 'en'>('en');
+  const [currency, setCurrency] = useState<string>('USD');
+  const [availableLanguages, setAvailableLanguages] = useState<string[]>(['en', 'pt']);
+  const [availableCurrencies, setAvailableCurrencies] = useState<string[]>(['USD', 'BRL', 'EUR']);
+  const [showLangSelector, setShowLangSelector] = useState(true);
+  const [showCurrencySelector, setShowCurrencySelector] = useState(true);
+  const [exchangeMode, setExchangeMode] = useState<'auto' | 'manual'>('auto');
+  const [marginGlobal, setMarginGlobal] = useState(0);
+  const [margemPorProduto, setMargemPorProduto] = useState<Record<string, number>>({});
+  const [manualRates, setManualRates] = useState<Record<string, number>>({});
+
+  const exchange = useExchangeRate({
+    mode: exchangeMode,
+    baseCurrency: 'BRL',
+    manualRates,
+  });
+
+  const T = UI_I18N[isInternacional ? lang : 'pt'];
+  const trCat = useCallback((cat: string) => (isInternacional && lang === 'en') ? (CATEGORY_I18N[cat] || cat) : cat, [isInternacional, lang]);
+  const trModelName = useCallback((m: { nome_modelo: string; nome_modelo_en?: string | null }) =>
+    (isInternacional && lang === 'en' && m.nome_modelo_en) ? m.nome_modelo_en : m.nome_modelo,
+    [isInternacional, lang]);
+
+  const formatPrice = useCallback((basePrice: number) => {
+    if (!isInternacional) return `R$ ${basePrice.toFixed(2)}`;
+    const margem = marginGlobal + (margemPorProduto[''] || 0);
+    return basePrice;
+  }, [isInternacional, marginGlobal, margemPorProduto]);
+
+  const computePrice = useCallback((basePrice: number, modeloId: string) => {
+    const cambialMargin = 1 + (marginGlobal || 0) / 100;
+    const productMargin = 1 + (margemPorProduto[modeloId] || 0) / 100;
+    if (!isInternacional) return basePrice;
+    return exchange.convert(basePrice, currency) * cambialMargin * productMargin;
+  }, [isInternacional, marginGlobal, margemPorProduto, exchange, currency]);
+
+  const fmtPrice = useCallback((basePrice: number, modeloId: string) => {
+    if (!isInternacional) return `R$ ${basePrice.toFixed(2)}`;
+    return exchange.format(computePrice(basePrice, modeloId), currency);
+  }, [isInternacional, exchange, currency, computePrice]);
+
+
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const [categoriasMultiplas, setCategoriasMultiplas] = useState<string[]>([]);
@@ -60,7 +160,7 @@ export default function CatalogoPublico() {
   const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set();
 
-    const selecaoSalva = sessionStorage.getItem(SELECAO_STORAGE_KEY);
+    const selecaoSalva = sessionStorage.getItem(STORAGE_KEY);
     if (!selecaoSalva) return new Set();
 
     try {
@@ -128,6 +228,10 @@ export default function CatalogoPublico() {
     carregarCategoriasVisiveis();
     carregarBanners();
     carregarConfigPrecos();
+    if (isInternacional) {
+      carregarConfigInternacional();
+      carregarMargensInternacional();
+    }
     const catParam = searchParams.get('categoria');
     const verTudoParam = searchParams.get('ver');
     const prontaParam = searchParams.get('pronta_entrega');
@@ -168,12 +272,12 @@ export default function CatalogoPublico() {
     if (typeof window === 'undefined') return;
 
     if (modelosSelecionados.size === 0) {
-      sessionStorage.removeItem(SELECAO_STORAGE_KEY);
+      sessionStorage.removeItem(STORAGE_KEY);
       return;
     }
 
-    sessionStorage.setItem(SELECAO_STORAGE_KEY, JSON.stringify(Array.from(modelosSelecionados)));
-  }, [modelosSelecionados]);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(modelosSelecionados)));
+  }, [modelosSelecionados, STORAGE_KEY]);
 
   // Auto-rotate banners
   useEffect(() => {
@@ -191,6 +295,32 @@ export default function CatalogoPublico() {
       .eq('ativo', true)
       .order('ordem');
     if (data) setBanners(data as Banner[]);
+  };
+
+  const carregarConfigInternacional = async () => {
+    const { data } = await supabase.from('config_publico_internacional').select('chave, valor');
+    if (!data) return;
+    const map: Record<string, string> = {};
+    data.forEach((d: any) => { map[d.chave] = d.valor; });
+    if (map.default_language) setLang(map.default_language === 'pt' ? 'pt' : 'en');
+    if (map.default_currency) setCurrency(map.default_currency);
+    if (map.exchange_mode) setExchangeMode(map.exchange_mode === 'manual' ? 'manual' : 'auto');
+    if (map.margin_percent) setMarginGlobal(parseFloat(map.margin_percent) || 0);
+    if (map.show_language_selector) setShowLangSelector(map.show_language_selector === 'true');
+    if (map.show_currency_selector) setShowCurrencySelector(map.show_currency_selector === 'true');
+    if (map.available_languages) setAvailableLanguages(map.available_languages.split(',').map((s: string) => s.trim()).filter(Boolean));
+    if (map.available_currencies) setAvailableCurrencies(map.available_currencies.split(',').map((s: string) => s.trim()).filter(Boolean));
+    if (map.manual_rates) {
+      try { setManualRates(JSON.parse(map.manual_rates)); } catch { /* noop */ }
+    }
+  };
+
+  const carregarMargensInternacional = async () => {
+    const { data } = await supabase.from('margem_publico_internacional').select('modelo_id, margem_percentual');
+    if (!data) return;
+    const map: Record<string, number> = {};
+    data.forEach((d: any) => { map[d.modelo_id] = parseFloat(d.margem_percentual) || 0; });
+    setMargemPorProduto(map);
   };
 
   const carregarConfigPrecos = async () => {
@@ -215,14 +345,15 @@ export default function CatalogoPublico() {
   const carregarOrdemCategoria = async (categoria: string) => {
     const catObj = categoriasVisiveis.find(c => c.categoria === categoria);
     if (!catObj) { setOrdemCategoria({}); return; }
+    const tabela = isInternacional ? 'ordem_categoria_publico_internacional' : 'ordem_categoria_modelos';
     const { data } = await supabase
-      .from('ordem_categoria_modelos')
+      .from(tabela as any)
       .select('modelo_id, ordem')
       .eq('categoria_id', catObj.id)
       .order('ordem');
     if (data && data.length > 0) {
       const map: Record<string, number> = {};
-      data.forEach(d => { map[d.modelo_id] = d.ordem; });
+      data.forEach((d: any) => { map[d.modelo_id] = d.ordem; });
       setOrdemCategoria(map);
     } else {
       setOrdemCategoria({});
@@ -426,19 +557,22 @@ export default function CatalogoPublico() {
 
   const enviarWhatsApp = () => {
     if (modelosSelecionados.size === 0) {
-      toast.error('Selecione pelo menos uma lâmina');
+      toast.error(isInternacional && lang === 'en' ? 'Select at least one blade' : 'Selecione pelo menos uma lâmina');
       return;
     }
 
     const modelosTexto = Array.from(modelosSelecionados)
       .map(id => {
         const modelo = modelos.find(m => m.id === id);
-        return modelo ? `${modelo.nome_modelo} - R$ ${modelo.preco_base.toFixed(2)}` : '';
+        if (!modelo) return '';
+        const nome = trModelName(modelo);
+        const precoStr = isInternacional ? fmtPrice(modelo.preco_base, modelo.id) : `R$ ${modelo.preco_base.toFixed(2)}`;
+        return `${nome} - ${precoStr}`;
       })
       .filter(Boolean)
       .join('\n');
 
-    const mensagem = `Olá! Gostaria de saber mais sobre as seguintes lâminas:\n\n${modelosTexto}`;
+    const mensagem = `${T.oiKit}\n\n${modelosTexto}`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
@@ -447,25 +581,56 @@ export default function CatalogoPublico() {
   if (mostrarLanding) {
     return (
       <div className="min-h-screen bg-zinc-950 overflow-x-hidden max-w-[100vw]">
+        {/* International selectors */}
+        {isInternacional && (showLangSelector || showCurrencySelector) && (
+          <div className="w-full bg-black/60 border-b border-white/10">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-end gap-3">
+              {showLangSelector && (
+                <div className="flex items-center gap-1.5">
+                  <Globe className="h-3.5 w-3.5 text-zinc-400" />
+                  <Select value={lang} onValueChange={(v) => setLang(v as 'pt' | 'en')}>
+                    <SelectTrigger className="h-7 text-xs bg-zinc-900 border-zinc-700 text-white w-[88px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {availableLanguages.map(l => (
+                        <SelectItem key={l} value={l}>{l === 'pt' ? 'Português' : 'English'}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {showCurrencySelector && (
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="h-3.5 w-3.5 text-zinc-400" />
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger className="h-7 text-xs bg-zinc-900 border-zinc-700 text-white w-[80px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {availableCurrencies.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {/* Hero Header */}
         <header className="relative py-10 md:py-16 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-accent/10 via-transparent to-transparent" />
           <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 text-center relative z-10">
             <div className="inline-block mb-3">
-              <span className="text-accent text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">Cutelaria Artesanal</span>
+              <span className="text-accent text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">{T.cutelaria}</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight leading-tight">
-              CATÁLOGO <span className="text-accent">KAOWZ</span>
+              {T.catalogo} <span className="text-accent">KAOWZ</span>
             </h1>
             <p className="text-zinc-400 text-sm md:text-lg max-w-md mx-auto">
-              Alta performance feita à mão. Escolha sua categoria.
+              {T.heroDesc}
             </p>
 
             {/* Banner Garantia Vitalícia - Discreto mas visível */}
             <div className="mt-6 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-4 py-2">
               <span className="text-emerald-400 text-lg">🛡️</span>
               <span className="text-emerald-400 text-xs md:text-sm font-medium tracking-wide">
-                Garantia Vitalícia de qualidade e manutenção de afiação em todas as nossas lâminas
+                {T.garantia}
               </span>
             </div>
           </div>
@@ -528,7 +693,7 @@ export default function CatalogoPublico() {
                       <Icon className="h-6 w-6 md:h-7 md:w-7 text-accent" />
                     </div>
                     <h3 className="text-white font-bold text-xs md:text-sm tracking-wide">
-                      {cat.subtitulo}
+                      {trCat(cat.subtitulo)}
                     </h3>
                     <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <ArrowRight className="h-4 w-4 text-accent mx-auto" />
@@ -546,7 +711,7 @@ export default function CatalogoPublico() {
               className="flex-1 bg-accent hover:bg-accent/90 text-white font-bold h-12 text-sm md:text-base rounded-xl shadow-[0_0_30px_rgba(251,146,60,0.3)] hover:shadow-[0_0_40px_rgba(251,146,60,0.5)] transition-all"
             >
               <Star className="h-4 w-4 mr-2" />
-              Ver todo o catálogo
+              {T.verTudo}
             </Button>
             <Button
               onClick={verProntaEntrega}
@@ -554,35 +719,35 @@ export default function CatalogoPublico() {
               className="flex-1 border-emerald-600/50 text-emerald-400 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 font-bold h-12 text-sm md:text-base rounded-xl transition-all"
             >
               <Zap className="h-4 w-4 mr-2" />
-              Pronta Entrega
+              {T.prontaEntrega}
             </Button>
           </div>
 
           {/* Monte seu Kit */}
           <div className="flex justify-center max-w-lg mx-auto mt-3">
             <Button
-              onClick={() => navigate('/catalogo/montar-kit')}
+              onClick={() => navigate(kitRoute)}
               variant="outline"
               className="w-full border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent font-bold h-12 text-sm md:text-base rounded-xl transition-all"
             >
               <Package className="h-4 w-4 mr-2" />
-              Monte seu Kit
+              {T.monteKit}
             </Button>
           </div>
 
           {/* WhatsApp CTA */}
           <div className="text-center mt-10 pt-8 border-t border-zinc-800/50">
-            <p className="text-zinc-500 text-xs mb-3">Precisa de ajuda para escolher?</p>
+            <p className="text-zinc-500 text-xs mb-3">{T.ajuda}</p>
             <Button
               variant="outline"
               onClick={() => {
-                const url = `https://wa.me/5528999025695?text=${encodeURIComponent('Olá! Gostaria de saber mais sobre as lâminas.')}`;
+                const url = `https://wa.me/5528999025695?text=${encodeURIComponent(T.oi)}`;
                 window.open(url, '_blank');
               }}
               className="border-green-600/50 text-green-400 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all"
             >
               <MessageCircle className="h-4 w-4 mr-2" />
-              Fale conosco no WhatsApp
+              {T.falarWhats}
             </Button>
           </div>
         </div>
@@ -593,8 +758,39 @@ export default function CatalogoPublico() {
   // Catálogo de Produtos
   return (
     <div className="min-h-screen bg-zinc-950 overflow-x-hidden max-w-[100vw]">
+      {/* International selectors */}
+      {isInternacional && (showLangSelector || showCurrencySelector) && (
+        <div className="w-full bg-black border-b border-white/10 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-end gap-3">
+            {showLangSelector && (
+              <div className="flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5 text-zinc-400" />
+                <Select value={lang} onValueChange={(v) => setLang(v as 'pt' | 'en')}>
+                  <SelectTrigger className="h-7 text-xs bg-zinc-900 border-zinc-700 text-white w-[88px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {availableLanguages.map(l => (
+                      <SelectItem key={l} value={l}>{l === 'pt' ? 'Português' : 'English'}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {showCurrencySelector && (
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="h-3.5 w-3.5 text-zinc-400" />
+                <Select value={currency} onValueChange={setCurrency}>
+                  <SelectTrigger className="h-7 text-xs bg-zinc-900 border-zinc-700 text-white w-[80px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {availableCurrencies.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {/* Header */}
-      <header className="bg-black border-b border-white/10 sticky top-0 z-50">
+      <header className={`bg-black border-b border-white/10 sticky ${isInternacional ? 'top-[44px]' : 'top-0'} z-40`}>
         <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-3 md:py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
             <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto">
@@ -609,17 +805,17 @@ export default function CatalogoPublico() {
                 }}
                 className="text-white hover:bg-white/10 text-xs md:text-sm"
               >
-                ← Voltar
+                {T.voltar}
               </Button>
               <h1 className="text-lg md:text-3xl font-bold text-white tracking-tight">
-                {filtroProntaEntrega ? 'PRONTA ENTREGA' : 'CATÁLOGO KAOWZ'}
+                {filtroProntaEntrega ? T.prontaEntrega.toUpperCase() : `${T.catalogo} KAOWZ`}
               </h1>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
               <div className="relative flex-1 md:w-80">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 md:h-4 md:w-4 text-white/40" />
                 <Input
-                  placeholder="Buscar lâminas..."
+                  placeholder={T.buscar}
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
                   className="pl-9 md:pl-10 text-sm md:text-base bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-accent h-9 md:h-10"
@@ -635,7 +831,7 @@ export default function CatalogoPublico() {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-center gap-2">
           <span className="text-emerald-400 text-sm">🛡️</span>
           <span className="text-zinc-400 text-xs">
-            Garantia Vitalícia de qualidade e manutenção de afiação em todas as nossas lâminas
+            {T.garantia}
           </span>
         </div>
       </div>
@@ -652,7 +848,7 @@ export default function CatalogoPublico() {
               <MessageCircle className="h-3.5 w-3.5" />
             </span>
             <span className="text-zinc-300">
-              Selecione as lâminas e peça seu <strong className="text-green-400">orçamento pelo WhatsApp</strong>
+              {T.tip} <strong className="text-green-400">{T.orcamento}</strong>
             </span>
           </div>
         </div>
@@ -665,15 +861,15 @@ export default function CatalogoPublico() {
             <Collapsible open={secaoAberta === 'categorias'} onOpenChange={(open) => setSecaoAberta(open ? 'categorias' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-24 shadow-sm">
               <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-base md:text-lg">Categorias</span>
+                  <span className="font-semibold text-base md:text-lg">{T.categorias}</span>
                   {categoriaAtiva && (
-                    <Badge className="bg-accent text-white text-xs">{categoriaAtiva}</Badge>
+                    <Badge className="bg-accent text-white text-xs">{trCat(categoriaAtiva)}</Badge>
                   )}
                   {categoriasMultiplas.length > 0 && (
-                    <Badge className="bg-accent text-white text-xs">{categoriasMultiplas.length} selecionadas</Badge>
+                    <Badge className="bg-accent text-white text-xs">{categoriasMultiplas.length} {T.selecionadas}</Badge>
                   )}
                   {filtroProntaEntrega && (
-                    <Badge className="bg-emerald-600 text-white text-xs">Pronta Entrega</Badge>
+                    <Badge className="bg-emerald-600 text-white text-xs">{T.prontaEntrega}</Badge>
                   )}
                 </div>
                 <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
@@ -690,7 +886,7 @@ export default function CatalogoPublico() {
                     }`}
                     onClick={() => { setCategoriaAtiva(null); setCategoriasMultiplas([]); setFiltroProntaEntrega(false); setSearchParams({}); }}
                   >
-                    Todas
+                    {T.todas}
                   </Button>
                   <Button
                     variant={filtroProntaEntrega ? "default" : "ghost"}
@@ -703,11 +899,11 @@ export default function CatalogoPublico() {
                     onClick={() => { setCategoriaAtiva(null); setCategoriasMultiplas([]); setFiltroProntaEntrega(true); }}
                   >
                     <Zap className="h-3.5 w-3.5" />
-                    Pronta Entrega
+                    {T.prontaEntrega}
                   </Button>
                   
                   <div className="border-t border-zinc-700 pt-2 mt-2">
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1.5 px-2">Selecione categorias</p>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1.5 px-2">{T.selecione}</p>
                   </div>
                   {categorias.map((cat) => {
                     const isActive = categoriaAtiva === cat.categoria || categoriasMultiplas.includes(cat.categoria);
@@ -726,7 +922,7 @@ export default function CatalogoPublico() {
                         }`}>
                           {isActive && <Check className="h-3 w-3 text-white" />}
                         </div>
-                        {cat.categoria}
+                        {trCat(cat.categoria)}
                       </button>
                     );
                   })}
@@ -971,7 +1167,7 @@ export default function CatalogoPublico() {
                             {/* Imagem ou Vídeo */}
                             <div
                               className="bg-zinc-700 overflow-hidden cursor-pointer aspect-[3/4]"
-                              onClick={() => navigate(`/catalogo/${modelo.id}`)}
+                              onClick={() => navigate(`${detailRoute}/${modelo.id}`)}
                             >
                               {modelo.video_url ? (
                                 <video
@@ -1030,7 +1226,7 @@ export default function CatalogoPublico() {
                           <div className="p-2 md:p-4 flex flex-col flex-1 gap-0.5">
                             <h3
                               className="font-bold line-clamp-1 text-sm md:text-base text-white hover:text-accent transition-colors cursor-pointer"
-                              onClick={() => navigate(`/catalogo/${modelo.id}`)}
+                              onClick={() => navigate(`${detailRoute}/${modelo.id}`)}
                             >
                               {modelo.nome_modelo}
                             </h3>
@@ -1059,7 +1255,7 @@ export default function CatalogoPublico() {
                             <Button
                               size="sm"
                               className="w-full mt-1.5 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]"
-                              onClick={() => navigate(`/catalogo/${modelo.id}`)}
+                              onClick={() => navigate(`${detailRoute}/${modelo.id}`)}
                             >
                               Ver detalhes
                               <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1" />

@@ -373,6 +373,30 @@ export type Database = {
         }
         Relationships: []
       }
+      config_publico_internacional: {
+        Row: {
+          chave: string
+          created_at: string
+          id: string
+          updated_at: string
+          valor: string
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor: string
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor?: string
+        }
+        Relationships: []
+      }
       config_revendedor: {
         Row: {
           chave: string
@@ -621,6 +645,30 @@ export type Database = {
           created_at?: string
           id?: string
           margem_percentual: number
+          modelo_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          margem_percentual?: number
+          modelo_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      margem_publico_internacional: {
+        Row: {
+          created_at: string
+          id: string
+          margem_percentual: number
+          modelo_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          margem_percentual?: number
           modelo_id: string
           updated_at?: string
         }
@@ -918,6 +966,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ordem_categoria_publico_internacional: {
+        Row: {
+          categoria_id: string
+          created_at: string
+          id: string
+          modelo_id: string
+          ordem: number
+        }
+        Insert: {
+          categoria_id: string
+          created_at?: string
+          id?: string
+          modelo_id: string
+          ordem?: number
+        }
+        Update: {
+          categoria_id?: string
+          created_at?: string
+          id?: string
+          modelo_id?: string
+          ordem?: number
+        }
+        Relationships: []
       }
       ordem_categoria_revendedor: {
         Row: {

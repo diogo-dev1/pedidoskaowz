@@ -12,6 +12,7 @@ import Lote from "./pages/Lote";
 import AuxilioVendas from "./pages/AuxilioVendas";
 import Clientes from "./pages/Clientes";
 import CatalogoPublico from "./pages/CatalogoPublico";
+import CatalogoPublicoInternacional from "./pages/CatalogoPublicoInternacional";
 import CatalogoDetalhe from "./pages/CatalogoDetalhe";
 import MontarKit from "./pages/MontarKit";
 import CustomizarLamina from "./pages/CustomizarLamina";
@@ -131,6 +132,18 @@ const App = () => (
             />
             <Route
               path="/catalogo/:id"
+              element={<CatalogoDetalhe />}
+            />
+            <Route
+              path="/catalogo-publico-internacional"
+              element={<CatalogoPublicoInternacional />}
+            />
+            <Route
+              path="/catalogo-publico-internacional/montar-kit"
+              element={<MontarKit />}
+            />
+            <Route
+              path="/catalogo-publico-internacional/:id"
               element={<CatalogoDetalhe />}
             />
             <Route
