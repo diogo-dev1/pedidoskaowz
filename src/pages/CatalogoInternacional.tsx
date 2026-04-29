@@ -60,9 +60,9 @@ const T = {
     currency: 'Moeda',
     exchangeNote: 'Cotação',
     salePrice: 'Preço Final',
-    cost: 'Base',
-    profit: 'Margem',
-    marginNote: 'Margem aplicada',
+    cost: 'Custo Revendedor',
+    profit: 'Lucro',
+    marginNote: 'Comissão aplicada',
     worldwide: 'Envio Internacional',
   },
   en: {
