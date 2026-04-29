@@ -557,19 +557,22 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
 
   const enviarWhatsApp = () => {
     if (modelosSelecionados.size === 0) {
-      toast.error('Selecione pelo menos uma lâmina');
+      toast.error(isInternacional && lang === 'en' ? 'Select at least one blade' : 'Selecione pelo menos uma lâmina');
       return;
     }
 
     const modelosTexto = Array.from(modelosSelecionados)
       .map(id => {
         const modelo = modelos.find(m => m.id === id);
-        return modelo ? `${modelo.nome_modelo} - R$ ${modelo.preco_base.toFixed(2)}` : '';
+        if (!modelo) return '';
+        const nome = trModelName(modelo);
+        const precoStr = isInternacional ? fmtPrice(modelo.preco_base, modelo.id) : `R$ ${modelo.preco_base.toFixed(2)}`;
+        return `${nome} - ${precoStr}`;
       })
       .filter(Boolean)
       .join('\n');
 
-    const mensagem = `Olá! Gostaria de saber mais sobre as seguintes lâminas:\n\n${modelosTexto}`;
+    const mensagem = `${T.oiKit}\n\n${modelosTexto}`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
