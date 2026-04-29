@@ -609,6 +609,18 @@ export default function CatalogoInternacional() {
             </Button>
           </div>
 
+          {/* Monte um Kit */}
+          <div className="flex justify-center max-w-lg mx-auto mt-3">
+            <Button
+              onClick={() => navigate('/catalogo-internacional/montar-kit')}
+              variant="outline"
+              className="w-full border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent font-bold h-12 text-sm md:text-base rounded-xl transition-all"
+            >
+              <Package className="h-4 w-4 mr-2" />
+              {t.buildKit}
+            </Button>
+          </div>
+
           <div className="text-center mt-10 pt-8 border-t border-zinc-800/50">
             <p className="text-zinc-500 text-xs mb-3">{t.helpQuestion}</p>
             <Button variant="outline"
