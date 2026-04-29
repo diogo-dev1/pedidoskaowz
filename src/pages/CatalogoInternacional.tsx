@@ -762,10 +762,14 @@ export default function CatalogoInternacional() {
                 </div>
                 {categoriasMultiplas.length > 0 &&
                   <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-zinc-700">
-                    {categoriasMultiplas.map((cat) =>
+                    {categoriasMultiplas.map((cat) => {
+                      const co = categoriasVisiveis.find((c) => c.categoria === cat);
+                      const label = co ? getNomeCategoria(co) : cat;
+                      return (
                       <Badge key={cat} className="bg-accent/20 text-accent border-accent/30 text-[10px] cursor-pointer hover:bg-accent/30 gap-1" onClick={() => toggleCategoriaFiltro(cat)}>
-                        {cat}<X className="h-2.5 w-2.5" />
-                      </Badge>)}
+                        {label}<X className="h-2.5 w-2.5" />
+                      </Badge>);
+                    })}
                     <button className="text-[10px] text-zinc-500 hover:text-zinc-300 underline" onClick={() => { setCategoriasMultiplas([]); setSearchParams({}); }}>{t.clear}</button>
                   </div>}
               </CollapsibleContent>
