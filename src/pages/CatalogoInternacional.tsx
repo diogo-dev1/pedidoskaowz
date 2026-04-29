@@ -271,23 +271,30 @@ export default function CatalogoInternacional() {
 
   const getMargemModelo = (modeloId: string) => margensProduto[modeloId] ?? margemGlobal;
 
-  const formatPrice = (basePrice: number, modeloId?: string) => {
-    const cambialMargin = 1 + (Number(intlConfig?.margin_percent) || 0) / 100;
-    const productMargin = 1 + (modeloId ? getMargemModelo(modeloId) : margemGlobal) / 100;
-    const converted = exchange.convert(basePrice, currency) * cambialMargin * productMargin;
-    return exchange.format(converted, currency);
-  };
-
-  const getBaseConverted = (basePrice: number) => {
+  // Preço final de venda ao cliente (em moeda alvo): preço base convertido + margem cambial
+  const getPrecoFinal = (basePrice: number) => {
     const cambialMargin = 1 + (Number(intlConfig?.margin_percent) || 0) / 100;
     return exchange.convert(basePrice, currency) * cambialMargin;
   };
 
-  const getProfitConverted = (basePrice: number, modeloId: string) => {
-    const base = getBaseConverted(basePrice);
-    const productMargin = getMargemModelo(modeloId) / 100;
-    return base * productMargin;
+  // Custo do revendedor: preço final descontado pela margem de comissão (markup sobre o custo)
+  // precoFinal = custo * (1 + margem/100)  =>  custo = precoFinal / (1 + margem/100)
+  const getCustoRevendedor = (basePrice: number, modeloId?: string) => {
+    const margem = modeloId ? getMargemModelo(modeloId) : margemGlobal;
+    return getPrecoFinal(basePrice) / (1 + margem / 100);
   };
+
+  const getLucroRevendedor = (basePrice: number, modeloId?: string) => {
+    return getPrecoFinal(basePrice) - getCustoRevendedor(basePrice, modeloId);
+  };
+
+  const formatPrice = (basePrice: number, _modeloId?: string) => {
+    return exchange.format(getPrecoFinal(basePrice), currency);
+  };
+
+  // Compat: "base convertida" agora é o custo do revendedor
+  const getBaseConverted = (basePrice: number, modeloId?: string) => getCustoRevendedor(basePrice, modeloId);
+  const getProfitConverted = (basePrice: number, modeloId: string) => getLucroRevendedor(basePrice, modeloId);
 
   const enviarWhatsAppCombo = () => {
     if (modelosSelecionados.size === 0) {
@@ -911,8 +918,8 @@ export default function CatalogoInternacional() {
 
                             {exibirPrecos && (() => {
                               const margem = getMargemModelo(modelo.id);
-                              const precoFinalNum = exchange.convert(modelo.preco_base, currency) * (1 + (Number(intlConfig?.margin_percent) || 0) / 100) * (1 + margem / 100);
-                              const custoNum = getBaseConverted(modelo.preco_base);
+                              const precoFinalNum = getPrecoFinal(modelo.preco_base);
+                              const custoNum = getCustoRevendedor(modelo.preco_base, modelo.id);
                               const lucroNum = precoFinalNum - custoNum;
                               return (
                                 <div className="flex-1 space-y-1 mt-1">
