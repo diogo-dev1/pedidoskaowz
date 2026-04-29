@@ -17,23 +17,30 @@ async function translate(text: string, kind: 'name' | 'html', apiKey: string): P
     ? `Translate this product name to English (concise, brand-appropriate):\n\n${text}`
     : `Translate the visible text in this HTML to English. Keep all tags/attributes/classes intact:\n\n${text}`;
 
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userPrompt },
-      ],
-    }),
-  });
-  if (!resp.ok) {
-    const t = await resp.text();
-    throw new Error(`AI ${resp.status}: ${t.slice(0, 200)}`);
+  const ctrl = new AbortController();
+  const timeoutId = setTimeout(() => ctrl.abort(), 45_000); // 45s per call
+  try {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+    if (!resp.ok) {
+      const t = await resp.text();
+      throw new Error(`AI ${resp.status}: ${t.slice(0, 200)}`);
+    }
+    const json = await resp.json();
+    return (json.choices?.[0]?.message?.content || '').trim();
+  } finally {
+    clearTimeout(timeoutId);
   }
-  const json = await resp.json();
-  return (json.choices?.[0]?.message?.content || '').trim();
 }
 
 serve(async (req) => {
@@ -62,8 +69,10 @@ serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SERVICE);
 
-    const BATCH_LIMIT = mode === 'single' ? 1 : 8;
-    const CONCURRENCY = 5;
+    const BATCH_LIMIT = mode === 'single' ? 1 : 4;
+    const CONCURRENCY = 4;
+    const DEADLINE_MS = 120_000; // stop accepting new work after 120s
+    const startedAt = Date.now();
 
     let query = admin.from('catalogo_modelos').select('id, nome_modelo, descricao_html, nome_modelo_en, descricao_html_en');
     if (mode === 'single' && modelo_id) query = query.eq('id', modelo_id);
@@ -78,13 +87,14 @@ serve(async (req) => {
     });
 
     const batch = candidates.slice(0, BATCH_LIMIT);
-    const remaining = Math.max(0, candidates.length - batch.length);
+    let processedCount = 0;
 
     let translated = 0;
     let failed = 0;
     const errors: string[] = [];
 
     const processOne = async (m: any) => {
+      if (Date.now() - startedAt > DEADLINE_MS) return; // skip if past deadline
       try {
         const needName = !m.nome_modelo_en || mode === 'all';
         const needDesc = (!!m.descricao_html && (!m.descricao_html_en || mode === 'all'));
@@ -102,17 +112,20 @@ serve(async (req) => {
           if (uErr) throw uErr;
           translated++;
         }
+        processedCount++;
       } catch (e) {
         failed++;
+        processedCount++;
         if (errors.length < 5) errors.push(`${m.nome_modelo}: ${e instanceof Error ? e.message : 'err'}`);
       }
     };
 
-    // Run with concurrency
     for (let i = 0; i < batch.length; i += CONCURRENCY) {
+      if (Date.now() - startedAt > DEADLINE_MS) break;
       await Promise.all(batch.slice(i, i + CONCURRENCY).map(processOne));
     }
 
+    const remaining = Math.max(0, candidates.length - processedCount);
     const skipped = (allModels?.length || 0) - candidates.length;
 
     return new Response(
