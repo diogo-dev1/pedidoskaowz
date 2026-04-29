@@ -69,8 +69,10 @@ serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SERVICE);
 
-    const BATCH_LIMIT = mode === 'single' ? 1 : 8;
-    const CONCURRENCY = 5;
+    const BATCH_LIMIT = mode === 'single' ? 1 : 4;
+    const CONCURRENCY = 4;
+    const DEADLINE_MS = 120_000; // stop accepting new work after 120s
+    const startedAt = Date.now();
 
     let query = admin.from('catalogo_modelos').select('id, nome_modelo, descricao_html, nome_modelo_en, descricao_html_en');
     if (mode === 'single' && modelo_id) query = query.eq('id', modelo_id);
@@ -85,13 +87,14 @@ serve(async (req) => {
     });
 
     const batch = candidates.slice(0, BATCH_LIMIT);
-    const remaining = Math.max(0, candidates.length - batch.length);
+    let processedCount = 0;
 
     let translated = 0;
     let failed = 0;
     const errors: string[] = [];
 
     const processOne = async (m: any) => {
+      if (Date.now() - startedAt > DEADLINE_MS) return; // skip if past deadline
       try {
         const needName = !m.nome_modelo_en || mode === 'all';
         const needDesc = (!!m.descricao_html && (!m.descricao_html_en || mode === 'all'));
@@ -109,17 +112,20 @@ serve(async (req) => {
           if (uErr) throw uErr;
           translated++;
         }
+        processedCount++;
       } catch (e) {
         failed++;
+        processedCount++;
         if (errors.length < 5) errors.push(`${m.nome_modelo}: ${e instanceof Error ? e.message : 'err'}`);
       }
     };
 
-    // Run with concurrency
     for (let i = 0; i < batch.length; i += CONCURRENCY) {
+      if (Date.now() - startedAt > DEADLINE_MS) break;
       await Promise.all(batch.slice(i, i + CONCURRENCY).map(processOne));
     }
 
+    const remaining = Math.max(0, candidates.length - processedCount);
     const skipped = (allModels?.length || 0) - candidates.length;
 
     return new Response(
