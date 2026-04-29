@@ -693,7 +693,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                       <Icon className="h-6 w-6 md:h-7 md:w-7 text-accent" />
                     </div>
                     <h3 className="text-white font-bold text-xs md:text-sm tracking-wide">
-                      {cat.subtitulo}
+                      {trCat(cat.subtitulo)}
                     </h3>
                     <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <ArrowRight className="h-4 w-4 text-accent mx-auto" />
@@ -711,7 +711,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
               className="flex-1 bg-accent hover:bg-accent/90 text-white font-bold h-12 text-sm md:text-base rounded-xl shadow-[0_0_30px_rgba(251,146,60,0.3)] hover:shadow-[0_0_40px_rgba(251,146,60,0.5)] transition-all"
             >
               <Star className="h-4 w-4 mr-2" />
-              Ver todo o catálogo
+              {T.verTudo}
             </Button>
             <Button
               onClick={verProntaEntrega}
@@ -719,35 +719,35 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
               className="flex-1 border-emerald-600/50 text-emerald-400 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 font-bold h-12 text-sm md:text-base rounded-xl transition-all"
             >
               <Zap className="h-4 w-4 mr-2" />
-              Pronta Entrega
+              {T.prontaEntrega}
             </Button>
           </div>
 
           {/* Monte seu Kit */}
           <div className="flex justify-center max-w-lg mx-auto mt-3">
             <Button
-              onClick={() => navigate('/catalogo/montar-kit')}
+              onClick={() => navigate(kitRoute)}
               variant="outline"
               className="w-full border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent font-bold h-12 text-sm md:text-base rounded-xl transition-all"
             >
               <Package className="h-4 w-4 mr-2" />
-              Monte seu Kit
+              {T.monteKit}
             </Button>
           </div>
 
           {/* WhatsApp CTA */}
           <div className="text-center mt-10 pt-8 border-t border-zinc-800/50">
-            <p className="text-zinc-500 text-xs mb-3">Precisa de ajuda para escolher?</p>
+            <p className="text-zinc-500 text-xs mb-3">{T.ajuda}</p>
             <Button
               variant="outline"
               onClick={() => {
-                const url = `https://wa.me/5528999025695?text=${encodeURIComponent('Olá! Gostaria de saber mais sobre as lâminas.')}`;
+                const url = `https://wa.me/5528999025695?text=${encodeURIComponent(T.oi)}`;
                 window.open(url, '_blank');
               }}
               className="border-green-600/50 text-green-400 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all"
             >
               <MessageCircle className="h-4 w-4 mr-2" />
-              Fale conosco no WhatsApp
+              {T.falarWhats}
             </Button>
           </div>
         </div>
