@@ -32,16 +32,25 @@ export function TranslationManager({ produtos, busca, setBusca, onRefresh }: Pro
 
   const runBulk = async (mode: 'missing' | 'all') => {
     setBulkLoading(mode);
+    let totalTranslated = 0;
+    let totalFailed = 0;
     try {
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
-      const { data, error } = await supabase.functions.invoke('translate-products', {
-        body: { mode },
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Falha na tradução');
-      toast.success(`Traduzidos ${data.translated} • Pulados ${data.skipped} • Falhas ${data.failed}`);
+      // Loop in batches until no remaining items (avoids 150s edge timeout)
+      for (let i = 0; i < 50; i++) {
+        const { data, error } = await supabase.functions.invoke('translate-products', {
+          body: { mode },
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (error) throw error;
+        if (!data?.success) throw new Error(data?.error || 'Falha na tradução');
+        totalTranslated += data.translated || 0;
+        totalFailed += data.failed || 0;
+        toast.message(`Lote ${i + 1}: +${data.translated} traduzidos • ${data.remaining} restantes`);
+        if (!data.remaining || data.remaining === 0) break;
+      }
+      toast.success(`Concluído: ${totalTranslated} traduzidos • ${totalFailed} falhas`);
       onRefresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Erro ao traduzir');
