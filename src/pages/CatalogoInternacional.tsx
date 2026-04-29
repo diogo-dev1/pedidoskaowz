@@ -277,11 +277,11 @@ export default function CatalogoInternacional() {
     return exchange.convert(basePrice, currency);
   };
 
-  // Custo do revendedor: preço final descontado pela margem de comissão (markup sobre o custo)
-  // precoFinal = custo * (1 + margem/100)  =>  custo = precoFinal / (1 + margem/100)
+  // Custo do revendedor: desconto direto sobre o preço final ao cliente.
+  // Ex: preço 1035 com margem 30% => custo = 1035 * (1 - 0.30) = 724,50 (lucro 310,50).
   const getCustoRevendedor = (basePrice: number, modeloId?: string) => {
     const margem = modeloId ? getMargemModelo(modeloId) : margemGlobal;
-    return getPrecoFinal(basePrice) / (1 + margem / 100);
+    return getPrecoFinal(basePrice) * (1 - margem / 100);
   };
 
   const getLucroRevendedor = (basePrice: number, modeloId?: string) => {
