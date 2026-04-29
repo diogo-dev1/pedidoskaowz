@@ -86,6 +86,8 @@ interface Modelo {
   pronta_entrega: boolean;
   comprimento_total: number | null;
   area_util_corte: number | null;
+  nome_modelo_en?: string | null;
+  descricao_html_en?: string | null;
 }
 
 interface CategoriaVisivel {
@@ -99,10 +101,58 @@ interface CategoriaVisivel {
 }
 
 const SELECAO_STORAGE_KEY = 'catalogo_modelos_selecionados';
+const SELECAO_INTL_STORAGE_KEY = 'catalogo_intl_modelos_selecionados';
 
-export default function CatalogoPublico() {
+export default function CatalogoPublico({ isInternacional = false }: CatalogoPublicoProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const STORAGE_KEY = isInternacional ? SELECAO_INTL_STORAGE_KEY : SELECAO_STORAGE_KEY;
+  const detailRoute = isInternacional ? '/catalogo-publico-internacional' : '/catalogo';
+  const kitRoute = isInternacional ? '/catalogo-publico-internacional/montar-kit' : '/catalogo/montar-kit';
+
+  // International config state
+  const [lang, setLang] = useState<'pt' | 'en'>('en');
+  const [currency, setCurrency] = useState<string>('USD');
+  const [availableLanguages, setAvailableLanguages] = useState<string[]>(['en', 'pt']);
+  const [availableCurrencies, setAvailableCurrencies] = useState<string[]>(['USD', 'BRL', 'EUR']);
+  const [showLangSelector, setShowLangSelector] = useState(true);
+  const [showCurrencySelector, setShowCurrencySelector] = useState(true);
+  const [exchangeMode, setExchangeMode] = useState<'auto' | 'manual'>('auto');
+  const [marginGlobal, setMarginGlobal] = useState(0);
+  const [margemPorProduto, setMargemPorProduto] = useState<Record<string, number>>({});
+  const [manualRates, setManualRates] = useState<Record<string, number>>({});
+
+  const exchange = useExchangeRate({
+    mode: exchangeMode,
+    baseCurrency: 'BRL',
+    manualRates,
+  });
+
+  const T = UI_I18N[isInternacional ? lang : 'pt'];
+  const trCat = useCallback((cat: string) => (isInternacional && lang === 'en') ? (CATEGORY_I18N[cat] || cat) : cat, [isInternacional, lang]);
+  const trModelName = useCallback((m: { nome_modelo: string; nome_modelo_en?: string | null }) =>
+    (isInternacional && lang === 'en' && m.nome_modelo_en) ? m.nome_modelo_en : m.nome_modelo,
+    [isInternacional, lang]);
+
+  const formatPrice = useCallback((basePrice: number) => {
+    if (!isInternacional) return `R$ ${basePrice.toFixed(2)}`;
+    const margem = marginGlobal + (margemPorProduto[''] || 0);
+    return basePrice;
+  }, [isInternacional, marginGlobal, margemPorProduto]);
+
+  const computePrice = useCallback((basePrice: number, modeloId: string) => {
+    const cambialMargin = 1 + (marginGlobal || 0) / 100;
+    const productMargin = 1 + (margemPorProduto[modeloId] || 0) / 100;
+    if (!isInternacional) return basePrice;
+    return exchange.convert(basePrice, currency) * cambialMargin * productMargin;
+  }, [isInternacional, marginGlobal, margemPorProduto, exchange, currency]);
+
+  const fmtPrice = useCallback((basePrice: number, modeloId: string) => {
+    if (!isInternacional) return `R$ ${basePrice.toFixed(2)}`;
+    return exchange.format(computePrice(basePrice, modeloId), currency);
+  }, [isInternacional, exchange, currency, computePrice]);
+
+
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const [categoriasMultiplas, setCategoriasMultiplas] = useState<string[]>([]);
