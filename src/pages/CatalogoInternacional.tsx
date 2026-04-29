@@ -917,16 +917,42 @@ export default function CatalogoInternacional() {
                               {nome}
                             </h3>
 
-                            {exibirPrecos && (
-                              <div className="flex-1 space-y-1 mt-1">
-                                <div>
-                                  <p className="text-[9px] md:text-[10px] text-zinc-500 uppercase tracking-wider">{t.base}</p>
-                                  <p className="text-base md:text-xl font-black text-accent truncate">
-                                    {formatPrice(modelo.preco_base)}
-                                  </p>
+                            {exibirPrecos && (() => {
+                              const margem = getMargemModelo(modelo.id);
+                              const precoFinalNum = exchange.convert(modelo.preco_base, currency) * (1 + (Number(intlConfig?.margin_percent) || 0) / 100) * (1 + margem / 100);
+                              const custoNum = getBaseConverted(modelo.preco_base);
+                              const lucroNum = precoFinalNum - custoNum;
+                              return (
+                                <div className="flex-1 space-y-1 mt-1">
+                                  {/* Preço de Venda Final (laranja) */}
+                                  <div>
+                                    <p className="text-[9px] md:text-[10px] text-zinc-500 uppercase tracking-wider">{t.salePrice}</p>
+                                    <p className="text-base md:text-xl font-black text-accent truncate">
+                                      {exchange.format(precoFinalNum, currency)}
+                                    </p>
+                                  </div>
+                                  {/* Custo (cinza) */}
+                                  <div>
+                                    <p className="text-[9px] md:text-[10px] text-zinc-500 uppercase tracking-wider">{t.cost}</p>
+                                    <p className="text-sm md:text-base font-bold text-zinc-200 truncate">
+                                      {exchange.format(custoNum, currency)}
+                                    </p>
+                                  </div>
+                                  {/* Lucro/Margem (verde) */}
+                                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-1.5">
+                                    <p className="text-[9px] md:text-[10px] text-emerald-400/70 uppercase tracking-wider">{t.profit}</p>
+                                    <div className="flex items-center justify-between gap-1">
+                                      <p className="text-sm md:text-lg font-black text-emerald-400 truncate">
+                                        {exchange.format(lucroNum, currency)}
+                                      </p>
+                                      <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] md:text-xs font-bold shrink-0">
+                                        {margem.toFixed(0)}%
+                                      </Badge>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              );
+                            })()}
 
                             <Button size="sm" className="w-full mt-1.5 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]" onClick={() => navigate(`/catalogo-internacional/${modelo.id}`)}>
                               {t.seeDetails}
