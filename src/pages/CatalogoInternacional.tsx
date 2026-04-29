@@ -59,6 +59,11 @@ const T = {
     language: 'Idioma',
     currency: 'Moeda',
     exchangeNote: 'Cotação',
+    salePrice: 'Preço Final',
+    cost: 'Base',
+    profit: 'Margem',
+    marginNote: 'Margem aplicada',
+    worldwide: 'Envio Internacional',
   },
   en: {
     title: 'INTERNATIONAL',
@@ -101,8 +106,32 @@ const T = {
     language: 'Language',
     currency: 'Currency',
     exchangeNote: 'Exchange',
+    salePrice: 'Final Price',
+    cost: 'Base',
+    profit: 'Markup',
+    marginNote: 'Applied markup',
+    worldwide: 'Worldwide Shipping',
   },
 } as const;
+
+// Categorias PT → EN
+const CATEGORY_I18N: Record<string, string> = {
+  'Defesa': 'Defense',
+  'EDCs': 'EDC',
+  'EDC Mini': 'Mini EDC',
+  'Campo': 'Outdoor',
+  'Cozinha': 'Kitchen',
+  'Churrasco': 'BBQ',
+  'Kits': 'Kits',
+  'Utensílios': 'Accessories',
+  'Vestuário': 'Apparel',
+  'Cafés': 'Coffee',
+  'Novidades': 'New Arrivals',
+  'Porte velado': 'Concealed Carry',
+};
+
+const translateCategoria = (cat: string, lang: 'pt' | 'en') =>
+  lang === 'en' ? (CATEGORY_I18N[cat] || cat) : cat;
 
 type Lang = keyof typeof T;
 
