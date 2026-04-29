@@ -307,7 +307,8 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     if (map.margin_percent) setMarginGlobal(parseFloat(map.margin_percent) || 0);
     if (map.show_language_selector) setShowLangSelector(map.show_language_selector === 'true');
     if (map.show_currency_selector) setShowCurrencySelector(map.show_currency_selector === 'true');
-    if (map.available_languages) setAvailableLanguages(map.available_languages.split(',').map((s: string) => s.trim()).filter(Boolean));
+    if (isInternacional) setAvailableLanguages(['en']);
+    else if (map.available_languages) setAvailableLanguages(map.available_languages.split(',').map((s: string) => s.trim()).filter(Boolean));
     if (map.available_currencies) setAvailableCurrencies(map.available_currencies.split(',').map((s: string) => s.trim()).filter(Boolean));
     if (map.manual_rates) {
       try { setManualRates(JSON.parse(map.manual_rates)); } catch { /* noop */ }
