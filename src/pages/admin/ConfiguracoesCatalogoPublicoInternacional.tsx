@@ -88,7 +88,7 @@ export default function ConfiguracoesCatalogoPublicoInternacional() {
         available_languages: safeParse(map.available_languages, DEFAULT.available_languages),
         show_language_selector: (map.show_language_selector ?? 'true') === 'true',
         default_currency: map.default_currency || DEFAULT.default_currency,
-        base_currency: map.base_currency || DEFAULT.base_currency,
+        base_currency: 'BRL',
         available_currencies: safeParse(map.available_currencies, DEFAULT.available_currencies),
         show_currency_selector: (map.show_currency_selector ?? 'true') === 'true',
         exchange_mode: (map.exchange_mode as ExchangeMode) || 'auto',
@@ -253,10 +253,8 @@ export default function ConfiguracoesCatalogoPublicoInternacional() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-sm">Moeda base (preços)</Label>
-                  <Select value={cfg.base_currency} onValueChange={(v) => update('base_currency', v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{ALL_CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <Input value="BRL" disabled className="bg-muted" />
+                  <p className="text-[11px] text-muted-foreground">Os preços cadastrados estão em reais (BRL). Configure as taxas manuais para converter para outras moedas.</p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-sm">Moeda padrão (exibida)</Label>

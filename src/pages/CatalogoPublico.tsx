@@ -310,7 +310,10 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     data.forEach((d: any) => { map[d.chave] = d.valor; });
     setLang('en');
     if (map.default_currency) setCurrency(map.default_currency);
-    if (map.base_currency) setBaseCurrency(map.base_currency);
+    // Os preços do banco SEMPRE estão em BRL — base_currency salvo pelo admin
+    // serve apenas como referência da moeda base de configuração das taxas manuais.
+    // Forçamos BRL aqui para evitar que valores em reais sejam exibidos como dólar.
+    setBaseCurrency('BRL');
     if (map.exchange_mode) setExchangeMode(map.exchange_mode === 'manual' ? 'manual' : 'auto');
     if (map.margin_global) setMarginGlobal(parseFloat(map.margin_global) || 0);
     else if (map.margin_percent) setMarginGlobal(parseFloat(map.margin_percent) || 0);
