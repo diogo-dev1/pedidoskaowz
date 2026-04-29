@@ -131,15 +131,14 @@ export function useExchangeRate(options: UseExchangeRateOptions): UseExchangeRat
     manualRatesUpdatedAt = null,
   } = options;
 
-  const [autoData, setAutoData] = useState<CachedRates | null>(() =>
-    mode === 'auto' ? readCache(baseCurrency) : null,
-  );
-  const [loading, setLoading] = useState<boolean>(mode === 'auto' && !autoData);
+  // Sempre carregamos as taxas automáticas — usadas como fallback quando o modo
+  // manual não tiver cotação configurada para a moeda solicitada.
+  const [autoData, setAutoData] = useState<CachedRates | null>(() => readCache(baseCurrency));
+  const [loading, setLoading] = useState<boolean>(!autoData);
   const [error, setError] = useState<string | null>(null);
 
   const loadAuto = useCallback(
     async (force = false) => {
-      if (mode !== 'auto') return;
       if (!force) {
         const cached = readCache(baseCurrency);
         if (cached) {
