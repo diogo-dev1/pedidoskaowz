@@ -365,11 +365,11 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
       <header className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800/50">
         <div className="max-w-5xl mx-auto px-4 py-3">
           <button
-            onClick={() => navigate(isRevendedor ? '/catalogo-revendedor' : -1 as any)}
+            onClick={() => navigate(isInternacional ? '/catalogo-internacional' : isRevendedor ? '/catalogo-revendedor' : -1 as any)}
             className="text-zinc-500 hover:text-white transition-colors text-sm flex items-center gap-1.5"
           >
             <ArrowLeft className="h-4 w-4" />
-            {isRevendedor ? 'Catálogo Revendedor' : 'Catálogo'}
+            {isInternacional ? t.back : isRevendedor ? 'Catálogo Revendedor' : 'Catálogo'}
           </button>
         </div>
       </header>
