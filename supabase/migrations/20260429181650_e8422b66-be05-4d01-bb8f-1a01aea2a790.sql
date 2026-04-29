@@ -1,0 +1,1 @@
+UPDATE public.config_publico_internacional SET valor = 'BRL' WHERE chave = 'base_currency';
