@@ -68,7 +68,7 @@ const T = {
   en: {
     title: 'KAOWZ',
     titleAccent: 'CATALOG',
-    subtitle: 'Live currency conversion at checkout.',
+    subtitle: 'Worldwide shipping. Premium handcrafted blades.',
     seeAll: 'View entire catalog',
     readyDelivery: 'In Stock',
     buildKit: 'Build a Kit',
