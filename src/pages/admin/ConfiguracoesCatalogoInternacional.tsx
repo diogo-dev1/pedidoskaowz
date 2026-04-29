@@ -220,9 +220,19 @@ export default function ConfiguracoesCatalogoInternacional() {
 
   const visibleProductIds = new Set(config.visible_product_ids || []);
 
+  async function copiarLinkCatalogo() {
+    const url = `${window.location.origin}/catalogo-internacional`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copiado!', { description: url });
+    } catch {
+      toast.error('Não foi possível copiar. Link: ' + url);
+    }
+  }
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-24">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Globe className="h-6 w-6" />
@@ -232,10 +242,16 @@ export default function ConfiguracoesCatalogoInternacional() {
             Configure idioma, moeda, cotação e produtos do catálogo internacional.
           </p>
         </div>
-        <Button onClick={salvar} disabled={saving} size="lg">
-          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-          Salvar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={copiarLinkCatalogo} variant="outline" size="lg">
+            <Link2 className="h-4 w-4 mr-2" />
+            Copiar link
+          </Button>
+          <Button onClick={salvar} disabled={saving} size="lg">
+            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            Salvar
+          </Button>
+        </div>
       </div>
 
       {/* Visibilidade */}
