@@ -861,15 +861,15 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
             <Collapsible open={secaoAberta === 'categorias'} onOpenChange={(open) => setSecaoAberta(open ? 'categorias' : null)} className="bg-zinc-800 border border-zinc-700 rounded-lg sticky top-24 shadow-sm">
               <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-base md:text-lg">Categorias</span>
+                  <span className="font-semibold text-base md:text-lg">{T.categorias}</span>
                   {categoriaAtiva && (
-                    <Badge className="bg-accent text-white text-xs">{categoriaAtiva}</Badge>
+                    <Badge className="bg-accent text-white text-xs">{trCat(categoriaAtiva)}</Badge>
                   )}
                   {categoriasMultiplas.length > 0 && (
-                    <Badge className="bg-accent text-white text-xs">{categoriasMultiplas.length} selecionadas</Badge>
+                    <Badge className="bg-accent text-white text-xs">{categoriasMultiplas.length} {T.selecionadas}</Badge>
                   )}
                   {filtroProntaEntrega && (
-                    <Badge className="bg-emerald-600 text-white text-xs">Pronta Entrega</Badge>
+                    <Badge className="bg-emerald-600 text-white text-xs">{T.prontaEntrega}</Badge>
                   )}
                 </div>
                 <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
