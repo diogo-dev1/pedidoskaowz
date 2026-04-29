@@ -349,6 +349,30 @@ export type Database = {
           },
         ]
       }
+      config_internacional: {
+        Row: {
+          chave: string
+          created_at: string
+          id: string
+          updated_at: string
+          valor: string
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor: string
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor?: string
+        }
+        Relationships: []
+      }
       config_revendedor: {
         Row: {
           chave: string
@@ -585,6 +609,30 @@ export type Database = {
         }
         Relationships: []
       }
+      margem_internacional_produto: {
+        Row: {
+          created_at: string
+          id: string
+          margem_percentual: number
+          modelo_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          margem_percentual: number
+          modelo_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          margem_percentual?: number
+          modelo_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       margem_revendedor_produto: {
         Row: {
           created_at: string
@@ -805,6 +853,30 @@ export type Database = {
           preco_adicional?: number
           tipo_opcao?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      ordem_categoria_internacional: {
+        Row: {
+          categoria_id: string
+          created_at: string
+          id: string
+          modelo_id: string
+          ordem: number
+        }
+        Insert: {
+          categoria_id: string
+          created_at?: string
+          id?: string
+          modelo_id: string
+          ordem?: number
+        }
+        Update: {
+          categoria_id?: string
+          created_at?: string
+          id?: string
+          modelo_id?: string
+          ordem?: number
         }
         Relationships: []
       }
