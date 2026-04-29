@@ -835,7 +835,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                 {T.voltar}
               </Button>
               <h1 className="text-lg md:text-3xl font-bold text-white tracking-tight">
-                {filtroProntaEntrega ? T.prontaEntrega.toUpperCase() : `${T.catalogo} KAOWZ`}
+                {filtroProntaEntrega ? T.prontaEntrega.toUpperCase() : `KAOWZ ${T.catalogo}`}
               </h1>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
