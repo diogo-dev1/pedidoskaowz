@@ -313,12 +313,11 @@ export default function CatalogoInternacional() {
       if (bnrs) setBanners(bnrs as Banner[]);
 
       const modelosComMidia = new Set((midiasData || []).map((m: any) => m.modelo_id));
-      let modelosFiltrados = ((prods as any[]) || []).filter(
+      // Mesma regra do Catálogo Revendedor: visivel_catalogo=true + presença de mídia.
+      // A visibilidade por categoria/produto (visivel_todas) é aplicada no filtro abaixo.
+      const modelosFiltrados = ((prods as any[]) || []).filter(
         (m) => m.imagem_modelo || m.video_url || modelosComMidia.has(m.id),
       );
-      if (cfgRow && cfgRow.visible_product_ids && cfgRow.visible_product_ids.length > 0) {
-        modelosFiltrados = modelosFiltrados.filter((m) => cfgRow.visible_product_ids.includes(m.id));
-      }
 
       setModelos(modelosFiltrados as Modelo[]);
 
