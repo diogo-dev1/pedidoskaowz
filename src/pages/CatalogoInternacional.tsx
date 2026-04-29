@@ -689,20 +689,6 @@ export default function CatalogoInternacional() {
         </div>
       </header>
 
-      {/* Banner de cotação */}
-      {exibirPrecos && intlConfig && (
-        <div className="w-full bg-gradient-to-r from-blue-950/30 via-zinc-900/50 to-blue-950/30 border-b border-blue-800/20">
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-center gap-2 flex-wrap">
-            <Globe className="h-3.5 w-3.5 text-blue-400" />
-            <span className="text-zinc-400 text-xs">
-              {t.exchangeNote}: <strong className="text-blue-400">1 {intlConfig.base_currency} = {exchange.getRate(currency)?.toFixed(4) || '—'} {currency}</strong>
-              {(Number(intlConfig.margin_percent) || 0) > 0 && (
-                <> · <strong className="text-emerald-400">+{intlConfig.margin_percent}%</strong></>
-              )}
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* Floating tip */}
       {modelosSelecionados.size === 0 && (
@@ -728,7 +714,7 @@ export default function CatalogoInternacional() {
               <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-base md:text-lg">{t.categories}</span>
-                  {categoriaAtiva && <Badge className="bg-accent text-white text-xs">{categoriaAtiva}</Badge>}
+                  {categoriaAtiva && <Badge className="bg-accent text-white text-xs">{translateCategoria(categoriaAtiva, lang)}</Badge>}
                   {categoriasMultiplas.length > 0 && <Badge className="bg-accent text-white text-xs">{categoriasMultiplas.length} {t.selected}</Badge>}
                   {filtroProntaEntrega && <Badge className="bg-emerald-600 text-white text-xs">{t.readyDelivery}</Badge>}
                 </div>
@@ -914,7 +900,7 @@ export default function CatalogoInternacional() {
                                 <Zap className="h-3 w-3" />{t.readyDelivery}
                               </Badge>}
                             {modelo.categorias && modelo.categorias.length > 0 &&
-                              <Badge className="absolute bottom-3 left-3 bg-accent text-white border-0">{modelo.categorias[0]}</Badge>}
+                              <Badge className="absolute bottom-3 left-3 bg-accent text-white border-0">{translateCategoria(modelo.categorias[0], lang)}</Badge>}
                           </div>
 
                           <div className="p-2 md:p-4 flex flex-col flex-1 gap-1">
