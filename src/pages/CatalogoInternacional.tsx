@@ -21,7 +21,7 @@ const T = {
   pt: {
     title: 'CATÁLOGO',
     titleAccent: 'KAOWZ',
-    subtitle: 'Preços convertidos em tempo real para a sua moeda.',
+    subtitle: 'Envio internacional. Lâminas artesanais premium.',
     seeAll: 'Ver todo o catálogo',
     readyDelivery: 'Pronta Entrega',
     buildKit: 'Monte um Kit',
