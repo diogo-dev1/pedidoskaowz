@@ -14,6 +14,7 @@ import { Plus, Loader2, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, C
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getIconComponent } from '@/lib/icon-utils';
 import { useExchangeRate, type ExchangeMode } from '@/hooks/useExchangeRate';
+import { TranslationManager } from '@/components/admin/TranslationManager';
 
 const ALL_CURRENCIES = ['USD', 'BRL', 'EUR', 'AED'] as const;
 const ALL_LANGUAGES = [{ code: 'pt', label: 'Português' }, { code: 'en', label: 'English' }] as const;
@@ -446,28 +447,12 @@ export default function ConfiguracoesCatalogoInternacional() {
               {savingIntl ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />} Salvar idioma/moeda
             </Button>
 
-            <Card>
-              <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Package className="h-4 w-4" /> Status de tradução</CardTitle>
-                <CardDescription className="text-xs">Veja quais produtos já têm nome/descrição em inglês.</CardDescription></CardHeader>
-              <CardContent className="space-y-2">
-                <Input placeholder="Buscar..." value={buscaProdutoIntl} onChange={(e) => setBuscaProdutoIntl(e.target.value)} className="h-8 text-sm" />
-                <div className="border rounded-md divide-y max-h-[320px] overflow-y-auto">
-                  {produtosFiltradosIntl.map(p => {
-                    const traduzido = !!p.nome_modelo_en && !!p.descricao_html_en;
-                    return (
-                      <div key={p.id} className="flex items-center gap-2 p-2">
-                        {p.imagem_modelo ? <img src={p.imagem_modelo} className="h-8 w-8 rounded object-cover" /> : <div className="h-8 w-8 rounded bg-muted" />}
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-medium truncate">{p.nome_modelo}</div>
-                          {p.nome_modelo_en && <div className="text-[10px] text-muted-foreground truncate">EN: {p.nome_modelo_en}</div>}
-                        </div>
-                        {traduzido ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <AlertTriangle className="h-4 w-4 text-yellow-500" />}
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+            <TranslationManager
+              produtos={produtosFiltradosIntl}
+              busca={buscaProdutoIntl}
+              setBusca={setBuscaProdutoIntl}
+              onRefresh={fetchModelos}
+            />
           </>)}
         </TabsContent>
 
