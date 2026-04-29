@@ -439,11 +439,6 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
                 <p className="text-2xl font-semibold text-accent">
                   {formatPrecoIntl(modelo.preco_base)}
                 </p>
-                {intlConfig && (
-                  <p className="text-xs text-zinc-500">
-                    {t.exchange}: 1 {intlConfig.base_currency} = {exchange.getRate(currency)?.toFixed(4) || '—'} {currency}
-                  </p>
-                )}
               </div>
             )) : isRevendedor && modelo ? (() => {
               const margem = margemProduto ?? margemGlobal;
