@@ -5,6 +5,34 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, MessageCircle, Zap, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
+import { useExchangeRate, type ExchangeMode } from '@/hooks/useExchangeRate';
+
+const PREF_LANG_KEY = 'catalogo_internacional_lang';
+const PREF_CURRENCY_KEY = 'catalogo_internacional_currency';
+
+const I18N = {
+  pt: {
+    back: 'Catálogo', loading: 'Carregando...', notFound: 'Produto não encontrado',
+    backToCatalog: 'Voltar ao catálogo', readyDelivery: 'Pronta Entrega',
+    salePrice: 'Preço de Venda', cost: 'Custo Revendedor', profit: 'Lucro',
+    base: 'Preço', exchange: 'Câmbio', delivery: 'Entrega:', warranty: 'Garantia:',
+    lifetimeWarranty: 'Garantia Vitalícia', lifetimeSub: 'Qualidade que dura para sempre',
+    askWhatsapp: 'Consultar no WhatsApp',
+    waMsg: (n: string, p: string) => `Olá! Gostaria de saber mais sobre:\n\n${n}\n${p}`,
+    waMsgNoPrice: (n: string) => `Olá! Gostaria de saber mais sobre:\n\n${n}`,
+  },
+  en: {
+    back: 'Catalog', loading: 'Loading...', notFound: 'Product not found',
+    backToCatalog: 'Back to catalog', readyDelivery: 'In Stock',
+    salePrice: 'Sale Price', cost: 'Reseller Cost', profit: 'Profit',
+    base: 'Price', exchange: 'Exchange', delivery: 'Delivery:', warranty: 'Warranty:',
+    lifetimeWarranty: 'Lifetime Warranty', lifetimeSub: 'Quality that lasts forever',
+    askWhatsapp: 'Ask on WhatsApp',
+    waMsg: (n: string, p: string) => `Hello! I would like to know more about:\n\n${n}\n${p}`,
+    waMsgNoPrice: (n: string) => `Hello! I would like to know more about:\n\n${n}`,
+  },
+} as const;
+type Lang = keyof typeof I18N;
 
 function convertPlainToHtml(text: string): string {
   const sectionHeaders = [
