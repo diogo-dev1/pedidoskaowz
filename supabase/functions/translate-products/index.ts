@@ -17,23 +17,30 @@ async function translate(text: string, kind: 'name' | 'html', apiKey: string): P
     ? `Translate this product name to English (concise, brand-appropriate):\n\n${text}`
     : `Translate the visible text in this HTML to English. Keep all tags/attributes/classes intact:\n\n${text}`;
 
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userPrompt },
-      ],
-    }),
-  });
-  if (!resp.ok) {
-    const t = await resp.text();
-    throw new Error(`AI ${resp.status}: ${t.slice(0, 200)}`);
+  const ctrl = new AbortController();
+  const timeoutId = setTimeout(() => ctrl.abort(), 45_000); // 45s per call
+  try {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+    if (!resp.ok) {
+      const t = await resp.text();
+      throw new Error(`AI ${resp.status}: ${t.slice(0, 200)}`);
+    }
+    const json = await resp.json();
+    return (json.choices?.[0]?.message?.content || '').trim();
+  } finally {
+    clearTimeout(timeoutId);
   }
-  const json = await resp.json();
-  return (json.choices?.[0]?.message?.content || '').trim();
 }
 
 serve(async (req) => {
