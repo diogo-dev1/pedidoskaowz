@@ -329,7 +329,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                   {/* Info */}
                   <div className="p-2.5">
                     <h3 className="text-white text-xs font-medium truncate mb-2">
-                      {modelo.nome_modelo}
+                      {getNomeModelo(modelo)}
                     </h3>
                     {/* Controles */}
                     {noKit ? (
@@ -375,7 +375,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
           <div className="container mx-auto flex items-center justify-between gap-3 max-w-lg">
             <div className="text-white">
               <span className="text-accent font-bold text-lg">{totalItens}</span>
-              <span className="text-zinc-400 text-sm ml-1.5">{totalItens === 1 ? 'item' : 'itens'} no kit</span>
+              <span className="text-zinc-400 text-sm ml-1.5">{totalItens === 1 ? 'item' : isInternacional ? 'items' : 'itens'} {t.inKit}</span>
             </div>
             <div className="flex gap-2">
               <Button
@@ -384,7 +384,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                 onClick={() => setMostrarResumo(true)}
                 className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
               >
-                Ver kit
+                {t.viewKit}
               </Button>
               <Button
                 size="sm"
@@ -392,7 +392,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                 className="bg-green-600 hover:bg-green-700 text-white gap-1"
               >
                 <MessageCircle className="h-4 w-4" />
-                Enviar
+                {t.send}
               </Button>
             </div>
           </div>
@@ -410,8 +410,8 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
             <div className="flex items-center justify-between p-4 border-b border-zinc-800">
               <div className="flex items-center gap-2">
                 <Package className="h-5 w-5 text-accent" />
-                <h2 className="text-white font-bold text-lg">Seu Kit</h2>
-                <Badge className="bg-accent/20 text-accent border-0">{totalItens} {totalItens === 1 ? 'item' : 'itens'}</Badge>
+                <h2 className="text-white font-bold text-lg">{t.yourKit}</h2>
+                <Badge className="bg-accent/20 text-accent border-0">{totalItens} {totalItens === 1 ? 'item' : isInternacional ? 'items' : 'itens'}</Badge>
               </div>
               <Button
                 variant="ghost"
@@ -428,8 +428,8 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
               {kitItens.size === 0 ? (
                 <div className="p-8 text-center">
                   <Package className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
-                  <p className="text-zinc-500 text-sm">Seu kit está vazio</p>
-                  <p className="text-zinc-600 text-xs mt-1">Adicione lâminas para montar seu kit</p>
+                  <p className="text-zinc-500 text-sm">{t.emptyKit}</p>
+                  <p className="text-zinc-600 text-xs mt-1">{t.emptyKitHint}</p>
                 </div>
               ) : (
                 <div className="p-4 space-y-3">
@@ -447,7 +447,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">{modelo.nome_modelo}</p>
+                        <p className="text-white text-sm font-medium truncate">{getNomeModelo(modelo)}</p>
                         <div className="flex items-center gap-2 mt-1.5">
                           <Button
                             size="sm"
@@ -490,7 +490,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                   className="w-full bg-green-600 hover:bg-green-700 text-white h-12 font-bold gap-2"
                 >
                   <MessageCircle className="h-5 w-5" />
-                  Enviar Kit no WhatsApp
+                  {t.sendKit}
                 </Button>
                 <Button
                   variant="ghost"
@@ -500,7 +500,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                   }}
                   className="w-full text-zinc-500 hover:text-red-400 text-sm"
                 >
-                  Limpar kit
+                  {t.clearKit}
                 </Button>
               </div>
             )}
