@@ -74,16 +74,29 @@ function writeCache(data: CachedRates) {
 }
 
 async function fetchFromApi(base: string): Promise<CachedRates> {
-  const url = `https://open.er-api.com/v6/latest/${encodeURIComponent(base)}`;
+  // Sempre buscamos a partir de USD (mais confiável em planos free) e
+  // derivamos as taxas para a moeda base solicitada.
+  const url = `https://open.er-api.com/v6/latest/USD`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Falha na API de cotação: ${res.status}`);
   const json = await res.json();
   if (json.result !== 'success' || !json.rates) {
     throw new Error('Resposta inválida da API de cotação');
   }
+  const usdRates = json.rates as Record<string, number>; // 1 USD = N MOEDA
+  const baseInUsd = usdRates[base.toUpperCase()];
+  if (!baseInUsd || !isFinite(baseInUsd) || baseInUsd <= 0) {
+    throw new Error(`Moeda base não suportada pela API: ${base}`);
+  }
+  // Converte para "1 BASE = N MOEDA"
+  const rates: Record<string, number> = {};
+  for (const [code, perUsd] of Object.entries(usdRates)) {
+    rates[code] = perUsd / baseInUsd;
+  }
+  rates[base.toUpperCase()] = 1;
   return {
-    rates: json.rates as Record<string, number>,
-    base,
+    rates,
+    base: base.toUpperCase(),
     fetchedAt: new Date().toISOString(),
   };
 }
