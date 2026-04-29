@@ -29,6 +29,7 @@ import {
   Save,
   Mail,
   Phone,
+  Link2,
 } from 'lucide-react';
 import { useExchangeRate, type ExchangeMode } from '@/hooks/useExchangeRate';
 
