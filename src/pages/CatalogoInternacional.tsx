@@ -689,20 +689,6 @@ export default function CatalogoInternacional() {
         </div>
       </header>
 
-      {/* Banner de cotação */}
-      {exibirPrecos && intlConfig && (
-        <div className="w-full bg-gradient-to-r from-blue-950/30 via-zinc-900/50 to-blue-950/30 border-b border-blue-800/20">
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-center gap-2 flex-wrap">
-            <Globe className="h-3.5 w-3.5 text-blue-400" />
-            <span className="text-zinc-400 text-xs">
-              {t.exchangeNote}: <strong className="text-blue-400">1 {intlConfig.base_currency} = {exchange.getRate(currency)?.toFixed(4) || '—'} {currency}</strong>
-              {(Number(intlConfig.margin_percent) || 0) > 0 && (
-                <> · <strong className="text-emerald-400">+{intlConfig.margin_percent}%</strong></>
-              )}
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* Floating tip */}
       {modelosSelecionados.size === 0 && (
