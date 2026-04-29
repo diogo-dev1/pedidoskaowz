@@ -756,7 +756,7 @@ export default function CatalogoInternacional() {
                         <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-accent border-accent' : 'border-zinc-500'}`}>
                           {isActive && <Check className="h-3 w-3 text-white" />}
                         </div>
-                        {cat.categoria}
+                        {getNomeCategoria(cat)}
                       </button>);
                   })}
                 </div>
