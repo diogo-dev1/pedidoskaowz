@@ -135,6 +135,18 @@ const App = () => (
               element={<CatalogoDetalhe />}
             />
             <Route
+              path="/catalogo-publico-internacional"
+              element={<CatalogoPublicoInternacional />}
+            />
+            <Route
+              path="/catalogo-publico-internacional/montar-kit"
+              element={<MontarKit />}
+            />
+            <Route
+              path="/catalogo-publico-internacional/:id"
+              element={<CatalogoDetalhe />}
+            />
+            <Route
               path="/customizar-lamina"
               element={
                 <ProtectedRoute>
