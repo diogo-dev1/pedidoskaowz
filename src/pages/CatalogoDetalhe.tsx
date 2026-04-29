@@ -333,7 +333,7 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-900 flex items-center justify-center">
-        <div className="animate-pulse text-zinc-400">Carregando...</div>
+        <div className="animate-pulse text-zinc-400">{t.loading}</div>
       </div>
     );
   }
@@ -342,14 +342,17 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
     return (
       <div className="min-h-screen bg-zinc-900 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-zinc-400 mb-4">Produto não encontrado</p>
+          <p className="text-zinc-400 mb-4">{t.notFound}</p>
           <Button onClick={() => navigate(-1)} className="bg-accent hover:bg-accent/90">
-            Voltar ao catálogo
+            {t.backToCatalog}
           </Button>
         </div>
       </div>
     );
   }
+
+  const nomeExibido = isInternacional ? (modelo.nome_modelo_en || modelo.nome_modelo) : modelo.nome_modelo;
+  const descricaoIntlHtml = isInternacional && modelo.descricao_html_en ? modelo.descricao_html_en : null;
 
   const descriptionHtml = modelo.descricao_html
     || (modelo.apresentacao_venda && /Itens Inclusos|Especificações|Diferenciais|Características|Detalhes|[✔️📌🔪⚡✅]/i.test(modelo.apresentacao_venda)
