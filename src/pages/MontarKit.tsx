@@ -197,11 +197,11 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                 className="text-white hover:bg-white/10 text-xs"
               >
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                Voltar
+                {t.back}
               </Button>
               <h1 className="text-lg md:text-2xl font-bold text-white tracking-tight">
                 <Package className="h-5 w-5 inline mr-2 text-accent" />
-                {isRevendedor ? 'Monte um Kit' : 'Monte seu Kit'}
+                {isRevendedor ? t.titleReseller : t.titleCustomer}
               </h1>
             </div>
             {/* Botão carrinho flutuante no header */}
@@ -211,7 +211,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
               size="sm"
             >
               <Package className="h-4 w-4" />
-              <span className="hidden sm:inline">Meu Kit</span>
+              <span className="hidden sm:inline">{t.myKit}</span>
               {totalItens > 0 && (
                 <Badge className="absolute -top-2 -right-2 bg-white text-accent border-0 h-5 w-5 p-0 flex items-center justify-center text-xs font-bold">
                   {totalItens}
@@ -223,7 +223,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
           <div className="relative mt-3">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
             <Input
-              placeholder="Buscar lâminas para adicionar..."
+              placeholder={t.search}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-accent h-10"
@@ -244,7 +244,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                   : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-600'
               }`}
             >
-              Todas
+              {t.all}
             </button>
             {categorias.map((cat) => {
               const IconComp = getIconComponent(cat.icone);
@@ -260,7 +260,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                   }`}
                 >
                   {IconComp && <IconComp className="h-3.5 w-3.5" />}
-                  {cat.categoria}
+                  {getNomeCategoria(cat)}
                 </button>
               );
             })}
@@ -271,7 +271,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
       {/* Instrução */}
       <div className="container mx-auto px-4 pt-2 pb-2">
         <p className="text-zinc-400 text-sm text-center">
-          Toque em <span className="text-accent font-semibold">+</span> para adicionar lâminas ao seu kit. Escolha quantas quiser!
+          {t.instructionStart} <span className="text-accent font-semibold">+</span> {t.instructionEnd}
         </p>
       </div>
 
@@ -279,11 +279,11 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
       <div className="container mx-auto px-4 py-4 pb-24">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-pulse text-zinc-400">Carregando produtos...</div>
+            <div className="animate-pulse text-zinc-400">{t.loading}</div>
           </div>
         ) : modelosFiltrados.length === 0 ? (
           <div className="text-center py-20 text-zinc-400">
-            Nenhum produto encontrado
+            {t.emptyProducts}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -358,7 +358,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
                         className="w-full h-8 bg-zinc-800 hover:bg-accent text-zinc-300 hover:text-white text-xs transition-colors"
                       >
                         <Plus className="h-3.5 w-3.5 mr-1" />
-                        Adicionar
+                        {t.add}
                       </Button>
                     )}
                   </div>
