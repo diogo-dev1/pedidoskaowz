@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   Calculator, FileText, Users, TrendingUp, MoreHorizontal,
   ShoppingBag, MessageSquare, BookOpen, Image, Eye, DollarSign,
-  CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User
+  CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User, Globe
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -38,8 +38,10 @@ const moreItems: { label: string; items: NavItem[] }[] = [
   {
     label: 'Conteúdo',
     items: [
-      { title: 'Catálogo', url: '/catalogo', icon: ShoppingBag },
-      { title: 'Cat. Revendedor', url: '/catalogo-revendedor', icon: Store },
+      { title: 'Catálogo Público', url: '/catalogo', icon: ShoppingBag },
+      { title: 'Catálogo Público Internacional', url: '/catalogo-publico-internacional', icon: Globe },
+      { title: 'Catálogo Revendedor', url: '/catalogo-revendedor', icon: Store },
+      { title: 'Catálogo Revendedor Internacional', url: '/catalogo-internacional', icon: Globe },
       { title: 'Auxílio de Vendas', url: '/auxilio-vendas', icon: BookOpen },
       { title: 'Mensagens', url: '/mensagens', icon: MessageSquare },
       { title: 'Mídia', url: '/midia', icon: Image },
@@ -53,8 +55,10 @@ const adminMoreItems: NavItem[] = [
   { title: 'Componentes', url: '/admin/componentes', icon: Package },
   { title: 'Configurações', url: '/admin/configuracoes', icon: Settings },
   { title: 'Informativos', url: '/admin/informativos', icon: Info },
-  { title: 'Config. Catálogo', url: '/admin/catalogo', icon: Store },
-  { title: 'Config. Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
+  { title: 'Config. Catálogo Público', url: '/admin/catalogo', icon: Store },
+  { title: 'Config. Catálogo Público Internacional', url: '/admin/catalogo-publico-internacional', icon: Globe },
+  { title: 'Config. Catálogo Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
+  { title: 'Config. Catálogo Revendedor Internacional', url: '/admin/catalogo-internacional', icon: Globe },
   { title: 'Config. Preview', url: '/admin/preview', icon: Eye },
   { title: 'Bling', url: '/bling', icon: Link2 },
 ];
