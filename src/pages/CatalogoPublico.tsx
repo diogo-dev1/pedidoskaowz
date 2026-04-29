@@ -1,15 +1,65 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X } from 'lucide-react';
+import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X, Globe, DollarSign } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { getIconComponent } from '@/lib/icon-utils';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+
+// Translation map for UI labels
+const UI_I18N: Record<'pt' | 'en', Record<string, string>> = {
+  pt: {
+    cutelaria: 'Cutelaria Artesanal', catalogo: 'CATÁLOGO', heroDesc: 'Alta performance feita à mão. Escolha sua categoria.',
+    garantia: 'Garantia Vitalícia de qualidade e manutenção de afiação em todas as nossas lâminas',
+    verTudo: 'Ver todo o catálogo', prontaEntrega: 'Pronta Entrega', monteKit: 'Monte seu Kit',
+    ajuda: 'Precisa de ajuda para escolher?', falarWhats: 'Fale conosco no WhatsApp',
+    voltar: '← Voltar', buscar: 'Buscar lâminas...', categorias: 'Categorias', selecione: 'Selecione categorias',
+    todas: 'Todas', limpar: 'Limpar', faixaPreco: 'Faixa de Preço', minimo: 'Mínimo:', maximo: 'Máximo:',
+    encontradaSing: 'lâmina encontrada', encontradaPlu: 'lâminas encontradas', limparFiltro: 'Limpar filtro',
+    comprimento: 'Comprimento Total', fioCorte: 'Fio de Corte', exibirAte: 'Exibir lâminas até:',
+    mostrando: 'Mostrando', produto: 'produto', produtos: 'produtos', selecionadas: 'selecionada(s)',
+    semImagem: 'Sem imagem', verDetalhes: 'Ver detalhes', nenhuma: 'Nenhuma lâmina encontrada',
+    tip: 'Selecione as lâminas e peça seu', orcamento: 'orçamento pelo WhatsApp',
+    consultar: 'Consultar no WhatsApp', oi: 'Olá! Gostaria de saber mais sobre as lâminas.',
+    oiKit: 'Olá! Gostaria de saber mais sobre as seguintes lâminas:',
+    idioma: 'Idioma', moeda: 'Moeda',
+  },
+  en: {
+    cutelaria: 'Handcrafted Cutlery', catalogo: 'CATALOG', heroDesc: 'High performance handmade blades. Choose your category.',
+    garantia: 'Lifetime warranty on quality and sharpening maintenance for all our blades',
+    verTudo: 'View full catalog', prontaEntrega: 'In Stock', monteKit: 'Build your Kit',
+    ajuda: 'Need help choosing?', falarWhats: 'Chat with us on WhatsApp',
+    voltar: '← Back', buscar: 'Search blades...', categorias: 'Categories', selecione: 'Select categories',
+    todas: 'All', limpar: 'Clear', faixaPreco: 'Price Range', minimo: 'Min:', maximo: 'Max:',
+    encontradaSing: 'blade found', encontradaPlu: 'blades found', limparFiltro: 'Clear filter',
+    comprimento: 'Total Length', fioCorte: 'Cutting Edge', exibirAte: 'Show blades up to:',
+    mostrando: 'Showing', produto: 'product', produtos: 'products', selecionadas: 'selected',
+    semImagem: 'No image', verDetalhes: 'View details', nenhuma: 'No blades found',
+    tip: 'Select blades and request your', orcamento: 'quote on WhatsApp',
+    consultar: 'Request on WhatsApp', oi: 'Hello! I would like to know more about your blades.',
+    oiKit: 'Hello! I would like more information about the following blades:',
+    idioma: 'Language', moeda: 'Currency',
+  },
+};
+
+const CATEGORY_I18N: Record<string, string> = {
+  'Cozinha': 'Kitchen', 'EDC': 'EDC', 'Caça': 'Hunting', 'Tática': 'Tactical', 'Tatica': 'Tactical',
+  'Coleção': 'Collection', 'Colecao': 'Collection', 'Bushcraft': 'Bushcraft', 'Sobrevivência': 'Survival',
+  'Sobrevivencia': 'Survival', 'Adagas': 'Daggers', 'Adaga': 'Dagger', 'Espada': 'Sword',
+  'Espadas': 'Swords', 'Machados': 'Axes', 'Machado': 'Axe', 'Personalizada': 'Custom',
+  'Personalizadas': 'Custom', 'Acessórios': 'Accessories', 'Acessorios': 'Accessories',
+};
+
+interface CatalogoPublicoProps {
+  isInternacional?: boolean;
+}
 
 interface Banner {
   id: string;
