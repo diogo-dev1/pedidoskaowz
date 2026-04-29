@@ -301,7 +301,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     if (!data) return;
     const map: Record<string, string> = {};
     data.forEach((d: any) => { map[d.chave] = d.valor; });
-    if (map.default_language) setLang(map.default_language === 'pt' ? 'pt' : 'en');
+    setLang('en');
     if (map.default_currency) setCurrency(map.default_currency);
     if (map.exchange_mode) setExchangeMode(map.exchange_mode === 'manual' ? 'manual' : 'auto');
     if (map.margin_percent) setMarginGlobal(parseFloat(map.margin_percent) || 0);
