@@ -112,8 +112,12 @@ export default function ConfiguracoesCatalogoPublicoInternacional() {
     setModelos((mds || []) as ModeloRow[]);
     const mm: Record<string, string> = {};
     (mgs || []).forEach((r: any) => { mm[r.modelo_id] = String(r.margem_percentual); });
-    setMargens(mm);
-    setLoading(false);
+      setMargens(mm);
+    } catch (e) {
+      console.error('fetchAll error:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const update = <K extends keyof PubIntlConfig>(k: K, v: PubIntlConfig[K]) => setCfg((p) => ({ ...p, [k]: v }));
