@@ -937,7 +937,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                         className="bg-accent/20 text-accent border-accent/30 text-[10px] cursor-pointer hover:bg-accent/30 gap-1"
                         onClick={() => toggleCategoriaFiltro(cat)}
                       >
-                        {cat}
+                        {trCat(cat)}
                         <X className="h-2.5 w-2.5" />
                       </Badge>
                     ))}
@@ -945,7 +945,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                       className="text-[10px] text-zinc-500 hover:text-zinc-300 underline"
                       onClick={() => { setCategoriasMultiplas([]); setSearchParams({}); }}
                     >
-                      Limpar
+                      {T.limpar}
                     </button>
                   </div>
                 )}
@@ -958,7 +958,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                 <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="h-4 w-4 text-accent" />
-                    <span className="font-semibold text-base md:text-lg">Faixa de Preço</span>
+                    <span className="font-semibold text-base md:text-lg">{T.faixaPreco}</span>
                   </div>
                   <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
@@ -980,7 +980,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                     {/* Mínimo / Máximo inputs abaixo */}
                     <div className="flex items-center gap-3">
                       <div className="flex-1 space-y-1">
-                        <label className="text-[11px] text-zinc-500">Mínimo:</label>
+                        <label className="text-[11px] text-zinc-500">{T.minimo}</label>
                         <Input
                           type="number"
                           value={faixaPrecoVisual[0] === 0 ? '' : faixaPrecoVisual[0]}
@@ -1000,7 +1000,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                         />
                       </div>
                       <div className="flex-1 space-y-1">
-                        <label className="text-[11px] text-zinc-500">Máximo:</label>
+                        <label className="text-[11px] text-zinc-500">{T.maximo}</label>
                         <Input
                           type="number"
                           value={faixaPrecoVisual[1] === 0 ? '' : faixaPrecoVisual[1]}
@@ -1023,7 +1023,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                     
                     {/* Contagem de resultados */}
                     <p className="text-center text-xs text-zinc-500">
-                      {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'lâmina encontrada' : 'lâminas encontradas'}
+                      {modelosFiltrados.length} {modelosFiltrados.length === 1 ? T.encontradaSing : T.encontradaPlu}
                     </p>
 
                     {(faixaPrecoVisual[0] > 0 || faixaPrecoVisual[1] < precoMaxGlobal) && (
@@ -1033,7 +1033,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                         className="w-full text-xs text-zinc-400 hover:text-white"
                         onClick={() => { setFaixaPreco([0, precoMaxGlobal]); setFaixaPrecoVisual([0, precoMaxGlobal]); }}
                       >
-                        Limpar filtro
+                        {T.limparFiltro}
                       </Button>
                     )}
                   </div>
