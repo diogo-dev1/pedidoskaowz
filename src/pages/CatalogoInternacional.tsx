@@ -229,8 +229,8 @@ export default function CatalogoInternacional() {
   const [margensProduto, setMargensProduto] = useState<Record<string, number>>({});
   const [intlConfig, setIntlConfig] = useState<IntlConfig | null>(null);
   const [lang, setLang] = useState<Lang>(() => {
-    if (typeof window === 'undefined') return 'en';
-    return (sessionStorage.getItem(PREF_LANG_KEY) as Lang) || 'en';
+    if (typeof window !== 'undefined') sessionStorage.setItem(PREF_LANG_KEY, 'en');
+    return 'en';
   });
   const [currency, setCurrency] = useState<string>(() => {
     if (typeof window === 'undefined') return 'USD';
@@ -238,7 +238,7 @@ export default function CatalogoInternacional() {
   });
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const t = T[lang];
+  const t = T.en;
 
   // Hook de câmbio
   const exchange = useExchangeRate({
@@ -249,7 +249,7 @@ export default function CatalogoInternacional() {
   });
 
   // Persist lang/currency
-  useEffect(() => { if (typeof window !== 'undefined') sessionStorage.setItem(PREF_LANG_KEY, lang); }, [lang]);
+  useEffect(() => { if (typeof window !== 'undefined') sessionStorage.setItem(PREF_LANG_KEY, 'en'); }, []);
   useEffect(() => { if (typeof window !== 'undefined') sessionStorage.setItem(PREF_CURRENCY_KEY, currency); }, [currency]);
 
   // Persist selection
