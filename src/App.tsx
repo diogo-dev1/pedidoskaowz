@@ -30,6 +30,8 @@ import Midia from "./pages/Midia";
 import PreviewPage from "./pages/Preview";
 import CatalogoRevendedor from "./pages/CatalogoRevendedor";
 import ConfiguracoesCatalogoRevendedor from "./pages/admin/ConfiguracoesCatalogoRevendedor";
+import CatalogoInternacional from "./pages/CatalogoInternacional";
+import ConfiguracoesCatalogoInternacional from "./pages/admin/ConfiguracoesCatalogoInternacional";
 import ConfiguracoesPreview from "./pages/admin/ConfiguracoesPreview";
 import BlingIntegration from "./pages/BlingIntegration";
 import Install from "./pages/Install";
@@ -247,6 +249,20 @@ const App = () => (
                 <ProtectedRoute requireAdmin>
                   <Layout>
                     <ConfiguracoesCatalogoRevendedor />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/catalogo-internacional"
+              element={<CatalogoInternacional />}
+            />
+            <Route
+              path="/admin/catalogo-internacional"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <ConfiguracoesCatalogoInternacional />
                   </Layout>
                 </ProtectedRoute>
               }

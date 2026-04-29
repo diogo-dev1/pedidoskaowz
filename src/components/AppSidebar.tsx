@@ -2,7 +2,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   Calculator, Settings, LogOut, User, MessageSquare, BookOpen,
   ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign,
-  Users, Store, FileText, Image, TrendingUp, Eye, Link2, LayoutDashboard
+  Users, Store, FileText, Image, TrendingUp, Eye, Link2, LayoutDashboard,
+  Globe
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -80,6 +81,7 @@ export function AppSidebar() {
   const conteudoItems: MenuItem[] = [
     { title: 'Catálogo', url: '/catalogo', icon: ShoppingBag },
     { title: 'Cat. Revendedor', url: '/catalogo-revendedor', icon: Store },
+    { title: 'Cat. Internacional', url: '/catalogo-internacional', icon: Globe },
     { title: 'Auxílio de Vendas', url: '/auxilio-vendas', icon: BookOpen },
     { title: 'Mensagens', url: '/mensagens', icon: MessageSquare },
     { title: 'Mídia', url: '/midia', icon: Image },
@@ -95,6 +97,7 @@ export function AppSidebar() {
     { title: 'Informativos', url: '/admin/informativos', icon: Info },
     { title: 'Config. Catálogo', url: '/admin/catalogo', icon: Store },
     { title: 'Config. Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
+    { title: 'Config. Internacional', url: '/admin/catalogo-internacional', icon: Globe },
     { title: 'Config. Preview', url: '/admin/preview', icon: Eye },
     { title: 'Bling', url: '/bling', icon: Link2 },
   ] : [];
