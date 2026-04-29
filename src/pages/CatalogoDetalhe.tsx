@@ -201,6 +201,49 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
     }
   };
 
+  const carregarConfigInternacional = async () => {
+    // Margem global do catálogo internacional
+    const { data: kv } = await supabase
+      .from('config_internacional' as any)
+      .select('chave, valor')
+      .in('chave', ['exibir_precos', 'margem_global']);
+    if (kv) {
+      (kv as any[]).forEach((d: any) => {
+        if (d.chave === 'exibir_precos') setExibirPrecos(d.valor === 'true');
+        if (d.chave === 'margem_global') setIntlMargemGlobal(parseFloat(d.valor) || 30);
+      });
+    }
+    // Margem individual
+    const { data: mp } = await supabase
+      .from('margem_internacional_produto' as any)
+      .select('margem_percentual').eq('modelo_id', id).maybeSingle();
+    if (mp) setIntlMargemProduto(Number((mp as any).margem_percentual));
+    // Config externa (cotação/idioma/moeda/whatsapp)
+    const { data: ext } = await supabase
+      .from('international_catalog_config')
+      .select('base_currency, exchange_mode, manual_rates, manual_rates_updated_at, margin_percent, contact_whatsapp, default_language, default_currency')
+      .order('updated_at', { ascending: false }).limit(1).maybeSingle();
+    if (ext) {
+      const e = ext as any;
+      setIntlConfig({
+        base_currency: e.base_currency || 'BRL',
+        exchange_mode: e.exchange_mode || 'auto',
+        manual_rates: e.manual_rates || {},
+        manual_rates_updated_at: e.manual_rates_updated_at || null,
+        margin_percent: Number(e.margin_percent) || 0,
+        contact_whatsapp: e.contact_whatsapp || null,
+      });
+      if (typeof window !== 'undefined') {
+        if (!sessionStorage.getItem(PREF_LANG_KEY) && e.default_language) {
+          setLang(e.default_language === 'pt' ? 'pt' : 'en');
+        }
+        if (!sessionStorage.getItem(PREF_CURRENCY_KEY) && e.default_currency) {
+          setCurrency(e.default_currency);
+        }
+      }
+    }
+  };
+
   const carregarMargemProduto = async () => {
     const { data } = await supabase
       .from('margem_revendedor_produto' as any)
