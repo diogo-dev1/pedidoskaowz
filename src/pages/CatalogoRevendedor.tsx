@@ -345,7 +345,8 @@ export default function CatalogoRevendedor() {
 
   const getPrecoRevenda = (precoVenda: number, modeloId: string) => {
     const margem = getMargemModelo(modeloId);
-    return precoVenda / (1 + margem / 100);
+    // Desconto direto: preço de venda ao revendedor = preço final - X%
+    return precoVenda * (1 - margem / 100);
   };
 
   const getLucro = (precoVenda: number, modeloId: string) => {
