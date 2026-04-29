@@ -1181,12 +1181,12 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                               ) : modelo.imagem_modelo ? (
                                 <img
                                   src={modelo.imagem_modelo}
-                                  alt={modelo.nome_modelo}
+                                  alt={trModelName(modelo)}
                                   className="w-full h-full object-cover bg-zinc-800 group-hover:scale-110 transition-transform duration-500"
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-zinc-500">
-                                  Sem imagem
+                                  {T.semImagem}
                                 </div>
                               )}
                             </div>
@@ -1210,14 +1210,14 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                             {modelo.pronta_entrega && (
                               <Badge className="absolute top-3 left-3 bg-emerald-600 text-white border-0 text-[10px] gap-0.5 z-20">
                                 <Zap className="h-3 w-3" />
-                                Pronta Entrega
+                                {T.prontaEntrega}
                               </Badge>
                             )}
 
                             {/* Badge de categoria */}
                             {modelo.categorias && modelo.categorias.length > 0 && (
                               <Badge className="absolute bottom-3 left-3 bg-accent text-white border-0">
-                                {modelo.categorias[0]}
+                                {trCat(modelo.categorias[0])}
                               </Badge>
                             )}
                           </div>
@@ -1228,15 +1228,15 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                               className="font-bold line-clamp-1 text-sm md:text-base text-white hover:text-accent transition-colors cursor-pointer"
                               onClick={() => navigate(`${detailRoute}/${modelo.id}`)}
                             >
-                              {modelo.nome_modelo}
+                              {trModelName(modelo)}
                             </h3>
                             <div className="flex-1">
                               {exibirPrecos && (
                                 <div className="mt-1">
                       <p className="text-base md:text-2xl font-black text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)] truncate">
-                                    R$ {modelo.preco_base.toFixed(2)}
+                                    {fmtPrice(modelo.preco_base, modelo.id)}
                                   </p>
-                                  {exibirFormasPagamento && (
+                                  {exibirFormasPagamento && !isInternacional && (
                                     <>
                                       <p className="text-[10px] md:text-sm text-emerald-400 font-bold mt-0.5 truncate">
                                         R$ {(modelo.preco_base * (1 - descontoPix / 100)).toFixed(2)} <span className="font-medium text-emerald-500">{textoPix} ({descontoPix}% OFF)</span>
@@ -1257,7 +1257,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                               className="w-full mt-1.5 bg-accent hover:bg-accent/90 text-white font-semibold text-[10px] md:text-sm h-8 md:h-10 rounded-lg shadow-[0_4px_15px_rgba(251,146,60,0.25)]"
                               onClick={() => navigate(`${detailRoute}/${modelo.id}`)}
                             >
-                              Ver detalhes
+                              {T.verDetalhes}
                               <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1" />
                             </Button>
                           </div>
