@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Mail, MessageCircle, Globe } from 'lucide-react';
+import { Search, Mail, MessageCircle, Globe, Share2, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { useExchangeRate, type ExchangeMode } from '@/hooks/useExchangeRate';
 
 interface Produto {
@@ -175,6 +176,8 @@ export default function CatalogoInternacional() {
             <div className="font-bold text-lg tracking-tight">Kaowz</div>
           )}
           <div className="flex-1" />
+
+          <ShareButton language={language} />
 
           {config.show_language_selector && config.available_languages.length > 0 && (
             <div className="flex items-center gap-1 bg-zinc-900 rounded-md p-0.5">
