@@ -65,24 +65,37 @@ export default function ConfiguracoesCatalogoPublicoInternacional() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const safeParse = <T,>(raw: string | undefined, fallback: T): T => {
+    if (!raw) return fallback;
+    try { return JSON.parse(raw) as T; }
+    catch {
+      // Fallback: comma-separated string like "en,pt" or single value "en"
+      if (Array.isArray(fallback)) {
+        return raw.split(',').map(s => s.trim()).filter(Boolean) as unknown as T;
+      }
+      return fallback;
+    }
+  };
+
   const fetchAll = async () => {
     setLoading(true);
-    const { data: kv } = await (supabase as any).from('config_publico_internacional').select('chave, valor');
-    const map: Record<string, string> = {};
-    (kv || []).forEach((r: any) => { map[r.chave] = r.valor; });
-    const next: PubIntlConfig = {
-      default_language: map.default_language || DEFAULT.default_language,
-      available_languages: map.available_languages ? JSON.parse(map.available_languages) : DEFAULT.available_languages,
-      show_language_selector: (map.show_language_selector ?? 'true') === 'true',
-      default_currency: map.default_currency || DEFAULT.default_currency,
-      base_currency: map.base_currency || DEFAULT.base_currency,
-      available_currencies: map.available_currencies ? JSON.parse(map.available_currencies) : DEFAULT.available_currencies,
-      show_currency_selector: (map.show_currency_selector ?? 'true') === 'true',
-      exchange_mode: (map.exchange_mode as ExchangeMode) || 'auto',
-      manual_rates: map.manual_rates ? JSON.parse(map.manual_rates) : {},
-      manual_rates_updated_at: map.manual_rates_updated_at || null,
-      margin_global: map.margin_global ? Number(map.margin_global) : 0,
-    };
+    try {
+      const { data: kv } = await (supabase as any).from('config_publico_internacional').select('chave, valor');
+      const map: Record<string, string> = {};
+      (kv || []).forEach((r: any) => { map[r.chave] = r.valor; });
+      const next: PubIntlConfig = {
+        default_language: map.default_language || DEFAULT.default_language,
+        available_languages: safeParse(map.available_languages, DEFAULT.available_languages),
+        show_language_selector: (map.show_language_selector ?? 'true') === 'true',
+        default_currency: map.default_currency || DEFAULT.default_currency,
+        base_currency: map.base_currency || DEFAULT.base_currency,
+        available_currencies: safeParse(map.available_currencies, DEFAULT.available_currencies),
+        show_currency_selector: (map.show_currency_selector ?? 'true') === 'true',
+        exchange_mode: (map.exchange_mode as ExchangeMode) || 'auto',
+        manual_rates: safeParse(map.manual_rates, {} as Record<string, number>),
+        manual_rates_updated_at: map.manual_rates_updated_at || null,
+        margin_global: map.margin_global ? Number(map.margin_global) : 0,
+      };
     setCfg(next);
     const draft: Record<string, string> = {};
     for (const c of next.available_currencies) {
