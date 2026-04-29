@@ -918,8 +918,8 @@ export default function CatalogoInternacional() {
 
                             {exibirPrecos && (() => {
                               const margem = getMargemModelo(modelo.id);
-                              const precoFinalNum = exchange.convert(modelo.preco_base, currency) * (1 + (Number(intlConfig?.margin_percent) || 0) / 100) * (1 + margem / 100);
-                              const custoNum = getBaseConverted(modelo.preco_base);
+                              const precoFinalNum = getPrecoFinal(modelo.preco_base);
+                              const custoNum = getCustoRevendedor(modelo.preco_base, modelo.id);
                               const lucroNum = precoFinalNum - custoNum;
                               return (
                                 <div className="flex-1 space-y-1 mt-1">
