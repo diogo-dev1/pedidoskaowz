@@ -312,6 +312,7 @@ export type Database = {
           created_at: string
           icone: string
           id: string
+          nome_en: string | null
           ordem: number
           visivel: boolean
           visivel_kit: boolean
@@ -323,6 +324,7 @@ export type Database = {
           created_at?: string
           icone?: string
           id?: string
+          nome_en?: string | null
           ordem?: number
           visivel?: boolean
           visivel_kit?: boolean
@@ -334,6 +336,7 @@ export type Database = {
           created_at?: string
           icone?: string
           id?: string
+          nome_en?: string | null
           ordem?: number
           visivel?: boolean
           visivel_kit?: boolean
