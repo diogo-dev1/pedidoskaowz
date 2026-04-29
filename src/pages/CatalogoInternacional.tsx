@@ -99,11 +99,18 @@ export default function CatalogoInternacional() {
 
       const cfgRow = cfg as unknown as Config | null;
 
+      // Mesma fonte dos outros catálogos: catalogo_modelos + visivel_catalogo + presença de mídia
+      const { data: midiasData } = await supabase
+        .from('midias_catalogo')
+        .select('modelo_id');
+      const modelosComMidia = new Set((midiasData || []).map((m: any) => m.modelo_id));
+
       let query = supabase
         .from('catalogo_modelos')
         .select(
-          'id, nome_modelo, nome_modelo_en, descricao_html, descricao_html_en, apresentacao_venda, imagem_modelo, preco_base, categorias',
+          'id, nome_modelo, nome_modelo_en, descricao_html, descricao_html_en, apresentacao_venda, imagem_modelo, video_url, preco_base, categorias, visivel_catalogo',
         )
+        .eq('visivel_catalogo', true)
         .order('nome_modelo', { ascending: true });
 
       if (cfgRow && cfgRow.visible_product_ids && cfgRow.visible_product_ids.length > 0) {
@@ -111,12 +118,16 @@ export default function CatalogoInternacional() {
       }
       const { data: prods } = await query;
 
+      const filtrados = ((prods as any[]) || []).filter(
+        (m) => m.imagem_modelo || m.video_url || modelosComMidia.has(m.id),
+      );
+
       if (cfgRow) {
         setConfig(cfgRow);
         setLanguage(cfgRow.default_language || 'en');
         setCurrency(cfgRow.default_currency || 'USD');
       }
-      setProdutos((prods as Produto[]) || []);
+      setProdutos(filtrados as Produto[]);
     } finally {
       setLoading(false);
     }
