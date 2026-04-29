@@ -647,7 +647,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
               <span className="text-accent text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">{T.cutelaria}</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight leading-tight">
-              {T.catalogo} <span className="text-accent">KAOWZ</span>
+              KAOWZ <span className="text-accent">{T.catalogo}</span>
             </h1>
             <p className="text-zinc-400 text-sm md:text-lg max-w-md mx-auto">
               {T.heroDesc}
