@@ -1047,7 +1047,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                 <CollapsibleTrigger className="w-full p-3 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="h-3.5 w-3.5 text-accent" />
-                    <span className="font-semibold text-sm">Comprimento Total</span>
+                    <span className="font-semibold text-sm">{T.comprimento}</span>
                     {tamanhosSelecionados.length > 0 && (
                       <Badge className="bg-accent text-white text-[10px] h-4 px-1.5">{tamanhosSelecionados.length}</Badge>
                     )}
@@ -1055,7 +1055,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                   <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="px-3 pb-3">
-                  <p className="text-[10px] text-zinc-500 mb-1.5 pt-1">Exibir lâminas até:</p>
+                  <p className="text-[10px] text-zinc-500 mb-1.5 pt-1">{T.exibirAte}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {tamanhosDisponiveis.map((tam) => {
                       const isSelected = tamanhosSelecionados.includes(tam);
@@ -1074,7 +1074,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                   </div>
                   {tamanhosSelecionados.length > 0 && (
                     <button className="text-[10px] text-zinc-500 hover:text-zinc-300 mt-2 underline" onClick={() => setTamanhosSelecionados([])}>
-                      Limpar
+                      {T.limpar}
                     </button>
                   )}
                 </CollapsibleContent>
@@ -1087,7 +1087,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                 <CollapsibleTrigger className="w-full p-3 flex items-center justify-between text-white hover:bg-zinc-700/50 rounded-lg transition-colors">
                   <div className="flex items-center gap-2">
                     <SlidersHorizontal className="h-3.5 w-3.5 text-accent" />
-                    <span className="font-semibold text-sm">Fio de Corte</span>
+                    <span className="font-semibold text-sm">{T.fioCorte}</span>
                     {laminasSelecionadas.length > 0 && (
                       <Badge className="bg-accent text-white text-[10px] h-4 px-1.5">{laminasSelecionadas.length}</Badge>
                     )}
@@ -1095,7 +1095,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                   <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="px-3 pb-3">
-                  <p className="text-[10px] text-zinc-500 mb-1.5 pt-1">Exibir lâminas até:</p>
+                  <p className="text-[10px] text-zinc-500 mb-1.5 pt-1">{T.exibirAte}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {laminasDisponiveis.map((lam) => {
                       const isSelected = laminasSelecionadas.includes(lam);
@@ -1114,7 +1114,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                   </div>
                   {laminasSelecionadas.length > 0 && (
                     <button className="text-[10px] text-zinc-500 hover:text-zinc-300 mt-2 underline" onClick={() => setLaminasSelecionadas([])}>
-                      Limpar
+                      {T.limpar}
                     </button>
                   )}
                 </CollapsibleContent>
