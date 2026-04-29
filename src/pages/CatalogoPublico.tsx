@@ -922,7 +922,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                         }`}>
                           {isActive && <Check className="h-3 w-3 text-white" />}
                         </div>
-                        {cat.categoria}
+                        {trCat(cat.categoria)}
                       </button>
                     );
                   })}
