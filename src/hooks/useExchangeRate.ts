@@ -40,7 +40,7 @@ export interface UseExchangeRateResult {
   refresh: () => Promise<void>;
 }
 
-const CACHE_KEY = 'exchange_rates_cache_v1';
+const CACHE_KEY = 'exchange_rates_cache_v2';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 interface CachedRates {
