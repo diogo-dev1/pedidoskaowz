@@ -160,7 +160,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
   const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set();
 
-    const selecaoSalva = sessionStorage.getItem(SELECAO_STORAGE_KEY);
+    const selecaoSalva = sessionStorage.getItem(STORAGE_KEY);
     if (!selecaoSalva) return new Set();
 
     try {
