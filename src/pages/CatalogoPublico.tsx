@@ -124,11 +124,14 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
   const [marginGlobal, setMarginGlobal] = useState(0);
   const [margemPorProduto, setMargemPorProduto] = useState<Record<string, number>>({});
   const [manualRates, setManualRates] = useState<Record<string, number>>({});
+  const [manualRatesUpdatedAt, setManualRatesUpdatedAt] = useState<string | null>(null);
+  const [baseCurrency, setBaseCurrency] = useState<string>('BRL');
 
   const exchange = useExchangeRate({
     mode: exchangeMode,
-    baseCurrency: 'BRL',
+    baseCurrency,
     manualRates,
+    manualRatesUpdatedAt,
   });
 
   const T = UI_I18N[(isInternacional ? lang : 'pt') as 'pt' | 'en'] || UI_I18N.pt;
@@ -137,17 +140,18 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     (isInternacional && lang === 'en' && m.nome_modelo_en) ? m.nome_modelo_en : m.nome_modelo,
     [isInternacional, lang]);
 
-  const formatPrice = useCallback((basePrice: number) => {
-    if (!isInternacional) return `R$ ${basePrice.toFixed(2)}`;
-    const margem = marginGlobal + (margemPorProduto[''] || 0);
-    return basePrice;
-  }, [isInternacional, marginGlobal, margemPorProduto]);
+  // Margem oculta aplicada ao preço base antes da conversão de câmbio.
+  // Acúmulo: margem global + margem por produto (em %).
+  const getMargemModelo = useCallback((modeloId: string) => {
+    return marginGlobal + (margemPorProduto[modeloId] || 0);
+  }, [marginGlobal, margemPorProduto]);
 
-  const computePrice = useCallback((basePrice: number, _modeloId: string) => {
+  const computePrice = useCallback((basePrice: number, modeloId: string) => {
     if (!isInternacional) return basePrice;
-    // Internacional: apenas conversão de câmbio. Demais lógicas (Pix, parcelamento, etc) permanecem iguais ao primário.
-    return exchange.convert(basePrice, currency);
-  }, [isInternacional, exchange, currency]);
+    const margem = getMargemModelo(modeloId);
+    const precoComMargem = basePrice * (1 + margem / 100);
+    return exchange.convert(precoComMargem, currency);
+  }, [isInternacional, exchange, currency, getMargemModelo]);
 
   const fmtPrice = useCallback((basePrice: number, modeloId: string) => {
     if (!isInternacional) return `R$ ${basePrice.toFixed(2)}`;
@@ -306,16 +310,33 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     data.forEach((d: any) => { map[d.chave] = d.valor; });
     setLang('en');
     if (map.default_currency) setCurrency(map.default_currency);
+    if (map.base_currency) setBaseCurrency(map.base_currency);
     if (map.exchange_mode) setExchangeMode(map.exchange_mode === 'manual' ? 'manual' : 'auto');
-    if (map.margin_percent) setMarginGlobal(parseFloat(map.margin_percent) || 0);
+    if (map.margin_global) setMarginGlobal(parseFloat(map.margin_global) || 0);
+    else if (map.margin_percent) setMarginGlobal(parseFloat(map.margin_percent) || 0);
     if (map.show_language_selector) setShowLangSelector(map.show_language_selector === 'true');
     if (map.show_currency_selector) setShowCurrencySelector(map.show_currency_selector === 'true');
     if (isInternacional) setAvailableLanguages(['en']);
-    else if (map.available_languages) setAvailableLanguages(map.available_languages.split(',').map((s: string) => s.trim()).filter(Boolean));
-    if (map.available_currencies) setAvailableCurrencies(map.available_currencies.split(',').map((s: string) => s.trim()).filter(Boolean));
+    else if (map.available_languages) {
+      try {
+        const parsed = JSON.parse(map.available_languages);
+        setAvailableLanguages(Array.isArray(parsed) ? parsed : map.available_languages.split(',').map((s: string) => s.trim()).filter(Boolean));
+      } catch {
+        setAvailableLanguages(map.available_languages.split(',').map((s: string) => s.trim()).filter(Boolean));
+      }
+    }
+    if (map.available_currencies) {
+      try {
+        const parsed = JSON.parse(map.available_currencies);
+        setAvailableCurrencies(Array.isArray(parsed) ? parsed : map.available_currencies.split(',').map((s: string) => s.trim()).filter(Boolean));
+      } catch {
+        setAvailableCurrencies(map.available_currencies.split(',').map((s: string) => s.trim()).filter(Boolean));
+      }
+    }
     if (map.manual_rates) {
       try { setManualRates(JSON.parse(map.manual_rates)); } catch { /* noop */ }
     }
+    if (map.manual_rates_updated_at) setManualRatesUpdatedAt(map.manual_rates_updated_at);
   };
 
   const carregarMargensInternacional = async () => {
