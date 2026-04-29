@@ -184,7 +184,11 @@ export function useExchangeRate(options: UseExchangeRateOptions): UseExchangeRat
       const code = target.toUpperCase();
       if (code === baseCurrency.toUpperCase()) return 1;
       if (mode === 'manual') {
-        return normalizedManual[code] ?? 0;
+        const manual = normalizedManual[code];
+        if (manual && manual > 0) return manual;
+        // Fallback: se a cotação manual não foi configurada para essa moeda,
+        // usamos a cotação automática para não exibir preços zerados.
+        return autoData?.rates?.[code] ?? 0;
       }
       return autoData?.rates?.[code] ?? 0;
     },
