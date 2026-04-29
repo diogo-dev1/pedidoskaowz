@@ -900,7 +900,7 @@ export default function CatalogoInternacional() {
                                 <Zap className="h-3 w-3" />{t.readyDelivery}
                               </Badge>}
                             {modelo.categorias && modelo.categorias.length > 0 &&
-                              <Badge className="absolute bottom-3 left-3 bg-accent text-white border-0">{modelo.categorias[0]}</Badge>}
+                              <Badge className="absolute bottom-3 left-3 bg-accent text-white border-0">{translateCategoria(modelo.categorias[0], lang)}</Badge>}
                           </div>
 
                           <div className="p-2 md:p-4 flex flex-col flex-1 gap-1">
