@@ -34,6 +34,21 @@ const I18N = {
 } as const;
 type Lang = keyof typeof I18N;
 
+const CATEGORY_I18N: Record<string, string> = {
+  'Cozinha': 'Kitchen', 'EDC': 'EDC', 'EDCs': 'EDC', 'EDC Mini': 'Mini EDC',
+  'Caça': 'Hunting', 'Tática': 'Tactical', 'Tatica': 'Tactical',
+  'Coleção': 'Collection', 'Colecao': 'Collection', 'Bushcraft': 'Bushcraft',
+  'Sobrevivência': 'Survival', 'Sobrevivencia': 'Survival',
+  'Adagas': 'Daggers', 'Adaga': 'Dagger', 'Espada': 'Sword', 'Espadas': 'Swords',
+  'Machados': 'Axes', 'Machado': 'Axe', 'Personalizada': 'Custom', 'Personalizadas': 'Custom',
+  'Acessórios': 'Accessories', 'Acessorios': 'Accessories', 'Utensílios': 'Accessories',
+  'Defesa': 'Defense', 'Campo': 'Outdoor', 'Churrasco': 'BBQ', 'Kits': 'Kits',
+  'Vestuário': 'Apparel', 'Cafés': 'Coffee', 'Novidades': 'New Arrivals',
+  'Porte velado': 'Concealed Carry',
+};
+const trCategoria = (cat: string, lang: Lang) =>
+  lang === 'en' ? (CATEGORY_I18N[cat] || cat) : cat;
+
 function convertPlainToHtml(text: string): string {
   const sectionHeaders = [
     'Itens Inclusos', 'Itens inclusos',
