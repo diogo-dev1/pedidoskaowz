@@ -55,8 +55,10 @@ const adminMoreItems: NavItem[] = [
   { title: 'Componentes', url: '/admin/componentes', icon: Package },
   { title: 'Configurações', url: '/admin/configuracoes', icon: Settings },
   { title: 'Informativos', url: '/admin/informativos', icon: Info },
-  { title: 'Config. Catálogo', url: '/admin/catalogo', icon: Store },
-  { title: 'Config. Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
+  { title: 'Config. Catálogo Público', url: '/admin/catalogo', icon: Store },
+  { title: 'Config. Catálogo Público Internacional', url: '/admin/catalogo-publico-internacional', icon: Globe },
+  { title: 'Config. Catálogo Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
+  { title: 'Config. Catálogo Revendedor Internacional', url: '/admin/catalogo-internacional', icon: Globe },
   { title: 'Config. Preview', url: '/admin/preview', icon: Eye },
   { title: 'Bling', url: '/bling', icon: Link2 },
 ];
