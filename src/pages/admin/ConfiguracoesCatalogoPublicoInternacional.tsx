@@ -88,7 +88,7 @@ export default function ConfiguracoesCatalogoPublicoInternacional() {
         available_languages: safeParse(map.available_languages, DEFAULT.available_languages),
         show_language_selector: (map.show_language_selector ?? 'true') === 'true',
         default_currency: map.default_currency || DEFAULT.default_currency,
-        base_currency: map.base_currency || DEFAULT.base_currency,
+        base_currency: 'BRL',
         available_currencies: safeParse(map.available_currencies, DEFAULT.available_currencies),
         show_currency_selector: (map.show_currency_selector ?? 'true') === 'true',
         exchange_mode: (map.exchange_mode as ExchangeMode) || 'auto',
