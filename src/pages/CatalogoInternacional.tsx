@@ -530,14 +530,12 @@ export default function CatalogoInternacional() {
             {/* Seletor idioma/moeda */}
             <div className="absolute top-0 right-3 sm:right-4 flex gap-2 z-20">
               {showLangSelector && (
-                <Select value={lang} onValueChange={(v) => setLang(v as Lang)}>
+                <Select value="en" onValueChange={() => setLang('en')}>
                   <SelectTrigger className="h-8 w-[88px] bg-zinc-900 border-zinc-700 text-white text-xs">
                     <Languages className="h-3 w-3 mr-1" /><SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(intlConfig?.available_languages || ['en', 'pt']).map((l) => (
-                      <SelectItem key={l} value={l}>{l === 'pt' ? 'PT-BR' : 'EN'}</SelectItem>
-                    ))}
+                    <SelectItem value="en">EN</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -661,14 +659,12 @@ export default function CatalogoInternacional() {
             </div>
             <div className="flex gap-2 w-full md:w-auto items-center">
               {showLangSelector && (
-                <Select value={lang} onValueChange={(v) => setLang(v as Lang)}>
+                <Select value="en" onValueChange={() => setLang('en')}>
                   <SelectTrigger className="h-9 w-[80px] bg-white/5 border-white/20 text-white text-xs">
                     <Languages className="h-3 w-3 mr-1" /><SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(intlConfig?.available_languages || ['en', 'pt']).map((l) => (
-                      <SelectItem key={l} value={l}>{l === 'pt' ? 'PT' : 'EN'}</SelectItem>
-                    ))}
+                    <SelectItem value="en">EN</SelectItem>
                   </SelectContent>
                 </Select>
               )}
