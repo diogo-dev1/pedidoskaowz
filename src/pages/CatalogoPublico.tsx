@@ -124,11 +124,14 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
   const [marginGlobal, setMarginGlobal] = useState(0);
   const [margemPorProduto, setMargemPorProduto] = useState<Record<string, number>>({});
   const [manualRates, setManualRates] = useState<Record<string, number>>({});
+  const [manualRatesUpdatedAt, setManualRatesUpdatedAt] = useState<string | null>(null);
+  const [baseCurrency, setBaseCurrency] = useState<string>('BRL');
 
   const exchange = useExchangeRate({
     mode: exchangeMode,
-    baseCurrency: 'BRL',
+    baseCurrency,
     manualRates,
+    manualRatesUpdatedAt,
   });
 
   const T = UI_I18N[(isInternacional ? lang : 'pt') as 'pt' | 'en'] || UI_I18N.pt;
@@ -137,17 +140,18 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     (isInternacional && lang === 'en' && m.nome_modelo_en) ? m.nome_modelo_en : m.nome_modelo,
     [isInternacional, lang]);
 
-  const formatPrice = useCallback((basePrice: number) => {
-    if (!isInternacional) return `R$ ${basePrice.toFixed(2)}`;
-    const margem = marginGlobal + (margemPorProduto[''] || 0);
-    return basePrice;
-  }, [isInternacional, marginGlobal, margemPorProduto]);
+  // Margem oculta aplicada ao preço base antes da conversão de câmbio.
+  // Acúmulo: margem global + margem por produto (em %).
+  const getMargemModelo = useCallback((modeloId: string) => {
+    return marginGlobal + (margemPorProduto[modeloId] || 0);
+  }, [marginGlobal, margemPorProduto]);
 
-  const computePrice = useCallback((basePrice: number, _modeloId: string) => {
+  const computePrice = useCallback((basePrice: number, modeloId: string) => {
     if (!isInternacional) return basePrice;
-    // Internacional: apenas conversão de câmbio. Demais lógicas (Pix, parcelamento, etc) permanecem iguais ao primário.
-    return exchange.convert(basePrice, currency);
-  }, [isInternacional, exchange, currency]);
+    const margem = getMargemModelo(modeloId);
+    const precoComMargem = basePrice * (1 + margem / 100);
+    return exchange.convert(precoComMargem, currency);
+  }, [isInternacional, exchange, currency, getMargemModelo]);
 
   const fmtPrice = useCallback((basePrice: number, modeloId: string) => {
     if (!isInternacional) return `R$ ${basePrice.toFixed(2)}`;
