@@ -298,7 +298,7 @@ export default function CatalogoInternacional() {
         const m = modelos.find(x => x.id === id);
         if (!m) return '';
         const name = lang === 'en' ? (m.nome_modelo_en || m.nome_modelo) : m.nome_modelo;
-        return `• ${name} — ${formatPrice(m.preco_base)}`;
+        return `• ${name} — ${formatPrice(m.preco_base, m.id)}`;
       })
       .filter(Boolean).join('\n');
     const mensagem = `${t.quoteMsgIntro}\n\n${modelosTexto}`;
