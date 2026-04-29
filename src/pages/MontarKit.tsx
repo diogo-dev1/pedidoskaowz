@@ -59,6 +59,7 @@ interface ItemKit {
 
 export default function MontarKit({ isRevendedor = false, isInternacional = false }: { isRevendedor?: boolean; isInternacional?: boolean }) {
   const navigate = useNavigate();
+  const t = isInternacional ? KIT_I18N.en : KIT_I18N.pt;
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriaSelecionada, setCategoriaSelecionada] = useState<string | null>(null);
@@ -82,7 +83,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
 
       const { data, error } = await supabase
         .from('catalogo_modelos')
-        .select('id, nome_modelo, preco_base, imagem_modelo, categorias, aspect_ratio, pronta_entrega')
+        .select('id, nome_modelo, nome_modelo_en, preco_base, imagem_modelo, categorias, aspect_ratio, pronta_entrega')
         .eq('visivel_catalogo', true)
         .order('nome_modelo');
 
@@ -104,7 +105,7 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
     try {
       const { data, error } = await (supabase
         .from('categorias_catalogo_visiveis')
-        .select('categoria, icone') as any)
+        .select('categoria, nome_en, icone') as any)
         .eq('visivel', true)
         .eq('visivel_kit', true)
         .order('ordem');
@@ -150,22 +151,24 @@ export default function MontarKit({ isRevendedor = false, isInternacional = fals
   };
 
   const totalItens = Array.from(kitItens.values()).reduce((sum, item) => sum + item.quantidade, 0);
+  const getNomeModelo = (modelo: Modelo) => isInternacional ? (modelo.nome_modelo_en || modelo.nome_modelo) : modelo.nome_modelo;
+  const getNomeCategoria = (cat: Categoria) => isInternacional ? (cat.nome_en || CATEGORY_I18N[cat.categoria] || cat.categoria) : cat.categoria;
 
   const enviarWhatsApp = () => {
     if (kitItens.size === 0) {
-      toast.error('Adicione pelo menos um item ao kit');
+      toast.error(t.addAtLeast);
       return;
     }
 
     const itensTexto = Array.from(kitItens.values())
-      .map(item => `• ${item.modelo.nome_modelo}${item.quantidade > 1 ? ` (x${item.quantidade})` : ''}`)
+      .map(item => `• ${getNomeModelo(item.modelo)}${item.quantidade > 1 ? ` (x${item.quantidade})` : ''}`)
       .join('\n');
 
     const mensagem = isInternacional
-      ? `Hello! I would like to build a kit with the following items:\n\n${itensTexto}\n\nTotal: ${totalItens} ${totalItens === 1 ? 'item' : 'items'}`
+      ? t.waKit(itensTexto, totalItens)
       : isRevendedor
-      ? `Olá! Sou revendedor e gostaria de montar um kit com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`
-      : `Olá! Gostaria de montar um kit com os seguintes itens:\n\n${itensTexto}\n\nTotal de ${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`;
+      ? t.waResellerKit(itensTexto, totalItens)
+      : t.waKit(itensTexto, totalItens);
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
