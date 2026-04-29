@@ -166,6 +166,7 @@ interface Modelo {
 interface CategoriaVisivel {
   id: string;
   categoria: string;
+  nome_en: string | null;
   visivel: boolean;
   visivel_todas: boolean;
   ordem: number;
