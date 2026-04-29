@@ -240,10 +240,12 @@ export type Database = {
           comprimento_total: number | null
           created_at: string
           descricao_html: string | null
+          descricao_html_en: string | null
           garantia: string | null
           id: string
           imagem_modelo: string | null
           nome_modelo: string
+          nome_modelo_en: string | null
           ordem_catalogo: number
           prazo_entrega: string | null
           preco_base: number
@@ -262,10 +264,12 @@ export type Database = {
           comprimento_total?: number | null
           created_at?: string
           descricao_html?: string | null
+          descricao_html_en?: string | null
           garantia?: string | null
           id?: string
           imagem_modelo?: string | null
           nome_modelo: string
+          nome_modelo_en?: string | null
           ordem_catalogo?: number
           prazo_entrega?: string | null
           preco_base: number
@@ -284,10 +288,12 @@ export type Database = {
           comprimento_total?: number | null
           created_at?: string
           descricao_html?: string | null
+          descricao_html_en?: string | null
           garantia?: string | null
           id?: string
           imagem_modelo?: string | null
           nome_modelo?: string
+          nome_modelo_en?: string | null
           ordem_catalogo?: number
           prazo_entrega?: string | null
           preco_base?: number
@@ -462,6 +468,81 @@ export type Database = {
           label_botao?: string | null
           titulo?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      international_catalog_config: {
+        Row: {
+          available_currencies: string[]
+          available_languages: string[]
+          banner_content: string | null
+          base_currency: string
+          contact_email: string | null
+          contact_whatsapp: string | null
+          created_at: string
+          default_currency: string
+          default_language: string
+          exchange_mode: string
+          id: string
+          manual_rates: Json
+          manual_rates_updated_at: string | null
+          margin_percent: number
+          show_banner: boolean
+          show_currency_selector: boolean
+          show_language_selector: boolean
+          show_logo: boolean
+          show_prices: boolean
+          show_stock: boolean
+          updated_at: string
+          visible_product_ids: string[]
+        }
+        Insert: {
+          available_currencies?: string[]
+          available_languages?: string[]
+          banner_content?: string | null
+          base_currency?: string
+          contact_email?: string | null
+          contact_whatsapp?: string | null
+          created_at?: string
+          default_currency?: string
+          default_language?: string
+          exchange_mode?: string
+          id?: string
+          manual_rates?: Json
+          manual_rates_updated_at?: string | null
+          margin_percent?: number
+          show_banner?: boolean
+          show_currency_selector?: boolean
+          show_language_selector?: boolean
+          show_logo?: boolean
+          show_prices?: boolean
+          show_stock?: boolean
+          updated_at?: string
+          visible_product_ids?: string[]
+        }
+        Update: {
+          available_currencies?: string[]
+          available_languages?: string[]
+          banner_content?: string | null
+          base_currency?: string
+          contact_email?: string | null
+          contact_whatsapp?: string | null
+          created_at?: string
+          default_currency?: string
+          default_language?: string
+          exchange_mode?: string
+          id?: string
+          manual_rates?: Json
+          manual_rates_updated_at?: string | null
+          margin_percent?: number
+          show_banner?: boolean
+          show_currency_selector?: boolean
+          show_language_selector?: boolean
+          show_logo?: boolean
+          show_prices?: boolean
+          show_stock?: boolean
+          updated_at?: string
+          visible_product_ids?: string[]
         }
         Relationships: []
       }
