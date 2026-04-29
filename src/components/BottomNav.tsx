@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   Calculator, FileText, Users, TrendingUp, MoreHorizontal,
   ShoppingBag, MessageSquare, BookOpen, Image, Eye, DollarSign,
-  CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User
+  CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User, Globe
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
