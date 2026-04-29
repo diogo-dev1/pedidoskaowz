@@ -159,18 +159,12 @@ export function useExchangeRate(options: UseExchangeRateOptions): UseExchangeRat
         setLoading(false);
       }
     },
-    [mode, baseCurrency],
+    [baseCurrency],
   );
 
   useEffect(() => {
-    if (mode === 'auto') {
-      loadAuto(false);
-    } else {
-      setAutoData(null);
-      setLoading(false);
-      setError(null);
-    }
-  }, [mode, baseCurrency, loadAuto]);
+    loadAuto(false);
+  }, [baseCurrency, loadAuto]);
 
   const refresh = useCallback(async () => {
     if (typeof window !== 'undefined') {
