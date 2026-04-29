@@ -292,12 +292,21 @@ export default function ConfiguracoesCatalogoPublicoInternacional() {
                 </Select>
               </div>
               {cfg.exchange_mode === 'manual' && (
-                <div className="space-y-2">
-                  <Label className="text-sm">Taxas manuais (1 {cfg.base_currency} = X)</Label>
+                <div className="space-y-2 rounded-md border p-3 bg-yellow-50 dark:bg-yellow-950/30 border-yellow-300">
+                  <p className="text-xs text-yellow-900 dark:text-yellow-200">
+                    Informe quantos {cfg.base_currency} vale 1 unidade da moeda. Ex.: 1 USD = 4.90 BRL.
+                  </p>
                   {cfg.available_currencies.filter(c => c !== cfg.base_currency).map(c => (
                     <div key={c} className="flex items-center gap-2">
-                      <span className="text-sm w-12">{c}</span>
-                      <Input value={manualDraft[c] ?? ''} onChange={(e) => setManualDraft(prev => ({ ...prev, [c]: e.target.value }))} placeholder="0.00" />
+                      <Label className="w-12 font-mono text-xs">{c}</Label>
+                      <Input
+                        type="number"
+                        step="0.0001"
+                        placeholder={`1 ${c} = X ${cfg.base_currency}`}
+                        value={manualDraft[c] ?? ''}
+                        onChange={(e) => setManualDraft(prev => ({ ...prev, [c]: e.target.value }))}
+                        className="h-8 text-xs"
+                      />
                     </div>
                   ))}
                 </div>
