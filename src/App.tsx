@@ -258,6 +258,14 @@ const App = () => (
               element={<CatalogoInternacional />}
             />
             <Route
+              path="/catalogo-internacional/montar-kit"
+              element={<MontarKit isInternacional />}
+            />
+            <Route
+              path="/catalogo-internacional/:id"
+              element={<CatalogoDetalhe isInternacional />}
+            />
+            <Route
               path="/admin/catalogo-internacional"
               element={
                 <ProtectedRoute requireAdmin>
