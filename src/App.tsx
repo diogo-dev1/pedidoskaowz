@@ -155,7 +155,7 @@ const App = () => (
             />
             <Route
               path="/catalogo-publico-internacional/:id"
-              element={<CatalogoDetalhe />}
+              element={<CatalogoDetalhe isInternacional />}
             />
             <Route
               path="/customizar-lamina"
