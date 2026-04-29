@@ -85,7 +85,45 @@ interface CatalogoDetalheProps {
   isRevendedor?: boolean;
 }
 
-export default function CatalogoDetalhe({ isRevendedor = false }: CatalogoDetalheProps) {
+interface Modelo {
+  id: string;
+  nome_modelo: string;
+  nome_modelo_en?: string | null;
+  preco_base: number;
+  imagem_modelo: string | null;
+  categorias: string[];
+  categoria: string | null;
+  apresentacao_venda: string | null;
+  descricao_html: string | null;
+  descricao_html_en?: string | null;
+  video_url: string | null;
+  garantia: string | null;
+  prazo_entrega: string | null;
+  aspect_ratio: string;
+  pronta_entrega: boolean;
+}
+
+interface Midia {
+  id: string;
+  nome_arquivo: string;
+  url: string;
+}
+
+interface CatalogoDetalheProps {
+  isRevendedor?: boolean;
+  isInternacional?: boolean;
+}
+
+interface IntlConfig {
+  base_currency: string;
+  exchange_mode: ExchangeMode;
+  manual_rates: Record<string, number>;
+  manual_rates_updated_at: string | null;
+  margin_percent: number;
+  contact_whatsapp: string | null;
+}
+
+export default function CatalogoDetalhe({ isRevendedor = false, isInternacional = false }: CatalogoDetalheProps) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [modelo, setModelo] = useState<Modelo | null>(null);
@@ -99,12 +137,34 @@ export default function CatalogoDetalhe({ isRevendedor = false }: CatalogoDetalh
   const [textoParcelamento, setTextoParcelamento] = useState('3x sem juros ou até 12x no cartão');
   const [margemGlobal, setMargemGlobal] = useState(30);
   const [margemProduto, setMargemProduto] = useState<number | null>(null);
+  const [intlConfig, setIntlConfig] = useState<IntlConfig | null>(null);
+  const [intlMargemGlobal, setIntlMargemGlobal] = useState(30);
+  const [intlMargemProduto, setIntlMargemProduto] = useState<number | null>(null);
+  const [lang, setLang] = useState<Lang>(() => {
+    if (typeof window === 'undefined') return 'en';
+    return (sessionStorage.getItem(PREF_LANG_KEY) as Lang) || 'en';
+  });
+  const [currency, setCurrency] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'USD';
+    return sessionStorage.getItem(PREF_CURRENCY_KEY) || 'USD';
+  });
+
+  const t = isInternacional ? I18N[lang] : I18N.pt;
+
+  const exchange = useExchangeRate({
+    mode: intlConfig?.exchange_mode || 'auto',
+    baseCurrency: intlConfig?.base_currency || 'BRL',
+    manualRates: intlConfig?.manual_rates || {},
+    manualRatesUpdatedAt: intlConfig?.manual_rates_updated_at || null,
+  });
 
   useEffect(() => {
     if (id) {
       carregarModelo();
       carregarMidias();
-      if (isRevendedor) {
+      if (isInternacional) {
+        carregarConfigInternacional();
+      } else if (isRevendedor) {
         carregarConfigRevendedor();
         carregarMargemProduto();
       } else {
