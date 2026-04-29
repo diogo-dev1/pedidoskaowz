@@ -1269,7 +1269,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
 
                 {modelosFiltrados.length === 0 && (
                   <div className="text-center py-12">
-                    <p className="text-zinc-400">Nenhuma lâmina encontrada</p>
+                    <p className="text-zinc-400">{T.nenhuma}</p>
                   </div>
                 )}
               </>
@@ -1287,7 +1287,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
             className="rounded-full bg-accent hover:bg-accent/90 text-white font-semibold shadow-[0_0_40px_rgba(251,146,60,0.5)] hover:scale-105 transition-all"
           >
             <MessageCircle className="h-5 w-5 mr-2" />
-            Consultar no WhatsApp ({modelosSelecionados.size})
+            {T.consultar} ({modelosSelecionados.size})
           </Button>
         </div>
       )}
