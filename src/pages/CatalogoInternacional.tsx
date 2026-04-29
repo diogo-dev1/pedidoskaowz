@@ -335,3 +335,41 @@ export default function CatalogoInternacional() {
     </div>
   );
 }
+
+function ShareButton({ language }: { language: string }) {
+  const [copied, setCopied] = useState(false);
+  const t = language === 'en'
+    ? { copy: 'Copy link', copied: 'Copied!' }
+    : { copy: 'Copiar link', copied: 'Copiado!' };
+
+  async function handleCopy() {
+    const url = `${window.location.origin}/catalogo-internacional`;
+    try {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: 'Kaowz', url });
+          return;
+        } catch {
+          /* fallback to copy */
+        }
+      }
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success(t.copied, { description: url });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error(url);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white transition"
+      aria-label={t.copy}
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Share2 className="h-3.5 w-3.5" />}
+      <span className="hidden sm:inline">{copied ? t.copied : t.copy}</span>
+    </button>
+  );
+}
