@@ -128,7 +128,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     manualRates,
   });
 
-  const T = UI_I18N[isInternacional ? lang : 'pt'];
+  const T = UI_I18N[(isInternacional ? lang : 'pt') as 'pt' | 'en'] || UI_I18N.pt;
   const trCat = useCallback((cat: string) => (isInternacional && lang === 'en') ? (CATEGORY_I18N[cat] || cat) : cat, [isInternacional, lang]);
   const trModelName = useCallback((m: { nome_modelo: string; nome_modelo_en?: string | null }) =>
     (isInternacional && lang === 'en' && m.nome_modelo_en) ? m.nome_modelo_en : m.nome_modelo,
