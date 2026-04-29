@@ -20,7 +20,7 @@ const PREF_CURRENCY_KEY = 'catalogo_internacional_currency';
 const T = {
   pt: {
     title: 'CATÁLOGO',
-    titleAccent: 'INTERNACIONAL',
+    titleAccent: 'KAOWZ',
     subtitle: 'Preços convertidos em tempo real para a sua moeda.',
     seeAll: 'Ver todo o catálogo',
     readyDelivery: 'Pronta Entrega',
@@ -28,7 +28,7 @@ const T = {
     helpQuestion: 'Precisa de ajuda?',
     talkWhatsapp: 'Fale conosco no WhatsApp',
     back: '← Voltar',
-    catalogTitle: 'CATÁLOGO INTERNACIONAL',
+    catalogTitle: 'CATÁLOGO KAOWZ',
     search: 'Buscar lâminas...',
     categories: 'Categorias',
     selected: 'selecionadas',
@@ -66,7 +66,7 @@ const T = {
     worldwide: 'Envio Internacional',
   },
   en: {
-    title: 'INTERNATIONAL',
+    title: 'KAOWZ',
     titleAccent: 'CATALOG',
     subtitle: 'Live currency conversion at checkout.',
     seeAll: 'View entire catalog',
@@ -75,7 +75,7 @@ const T = {
     helpQuestion: 'Need help?',
     talkWhatsapp: 'Talk to us on WhatsApp',
     back: '← Back',
-    catalogTitle: 'INTERNATIONAL CATALOG',
+    catalogTitle: 'KAOWZ CATALOG',
     search: 'Search blades...',
     categories: 'Categories',
     selected: 'selected',
@@ -313,7 +313,7 @@ export default function CatalogoInternacional() {
     debounceRef.current = setTimeout(() => setFaixaPreco(v as [number, number]), 200);
   }, []);
 
-  const getNomeCategoria = (c: CategoriaVisivel) => lang === 'en' ? (c.nome_en || c.categoria) : c.categoria;
+  const getNomeCategoria = (c: CategoriaVisivel) => lang === 'en' ? (c.nome_en || CATEGORY_I18N[c.categoria] || c.categoria) : c.categoria;
   const categorias = categoriasVisiveis.filter((c) => c.visivel);
   const categoriasVenda = categorias.map((cat) => ({
     subtitulo: getNomeCategoria(cat), categoria: cat.categoria, icon: getIconComponent(cat.icone),
