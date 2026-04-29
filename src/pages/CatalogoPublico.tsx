@@ -228,6 +228,10 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     carregarCategoriasVisiveis();
     carregarBanners();
     carregarConfigPrecos();
+    if (isInternacional) {
+      carregarConfigInternacional();
+      carregarMargensInternacional();
+    }
     const catParam = searchParams.get('categoria');
     const verTudoParam = searchParams.get('ver');
     const prontaParam = searchParams.get('pronta_entrega');
@@ -268,12 +272,12 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     if (typeof window === 'undefined') return;
 
     if (modelosSelecionados.size === 0) {
-      sessionStorage.removeItem(SELECAO_STORAGE_KEY);
+      sessionStorage.removeItem(STORAGE_KEY);
       return;
     }
 
-    sessionStorage.setItem(SELECAO_STORAGE_KEY, JSON.stringify(Array.from(modelosSelecionados)));
-  }, [modelosSelecionados]);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(modelosSelecionados)));
+  }, [modelosSelecionados, STORAGE_KEY]);
 
   // Auto-rotate banners
   useEffect(() => {
@@ -291,6 +295,32 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
       .eq('ativo', true)
       .order('ordem');
     if (data) setBanners(data as Banner[]);
+  };
+
+  const carregarConfigInternacional = async () => {
+    const { data } = await supabase.from('config_publico_internacional').select('chave, valor');
+    if (!data) return;
+    const map: Record<string, string> = {};
+    data.forEach((d: any) => { map[d.chave] = d.valor; });
+    if (map.default_language) setLang(map.default_language === 'pt' ? 'pt' : 'en');
+    if (map.default_currency) setCurrency(map.default_currency);
+    if (map.exchange_mode) setExchangeMode(map.exchange_mode === 'manual' ? 'manual' : 'auto');
+    if (map.margin_percent) setMarginGlobal(parseFloat(map.margin_percent) || 0);
+    if (map.show_language_selector) setShowLangSelector(map.show_language_selector === 'true');
+    if (map.show_currency_selector) setShowCurrencySelector(map.show_currency_selector === 'true');
+    if (map.available_languages) setAvailableLanguages(map.available_languages.split(',').map((s: string) => s.trim()).filter(Boolean));
+    if (map.available_currencies) setAvailableCurrencies(map.available_currencies.split(',').map((s: string) => s.trim()).filter(Boolean));
+    if (map.manual_rates) {
+      try { setManualRates(JSON.parse(map.manual_rates)); } catch { /* noop */ }
+    }
+  };
+
+  const carregarMargensInternacional = async () => {
+    const { data } = await supabase.from('margem_publico_internacional').select('modelo_id, margem_percentual');
+    if (!data) return;
+    const map: Record<string, number> = {};
+    data.forEach((d: any) => { map[d.modelo_id] = parseFloat(d.margem_percentual) || 0; });
+    setMargemPorProduto(map);
   };
 
   const carregarConfigPrecos = async () => {
@@ -315,14 +345,15 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
   const carregarOrdemCategoria = async (categoria: string) => {
     const catObj = categoriasVisiveis.find(c => c.categoria === categoria);
     if (!catObj) { setOrdemCategoria({}); return; }
+    const tabela = isInternacional ? 'ordem_categoria_publico_internacional' : 'ordem_categoria_modelos';
     const { data } = await supabase
-      .from('ordem_categoria_modelos')
+      .from(tabela as any)
       .select('modelo_id, ordem')
       .eq('categoria_id', catObj.id)
       .order('ordem');
     if (data && data.length > 0) {
       const map: Record<string, number> = {};
-      data.forEach(d => { map[d.modelo_id] = d.ordem; });
+      data.forEach((d: any) => { map[d.modelo_id] = d.ordem; });
       setOrdemCategoria(map);
     } else {
       setOrdemCategoria({});
