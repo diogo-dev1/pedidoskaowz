@@ -382,9 +382,7 @@ export default function CatalogoInternacional() {
       setIntlConfig(c);
       // Aplica preferências padrão se ainda não houver no sessionStorage
       if (typeof window !== 'undefined') {
-        if (!sessionStorage.getItem(PREF_LANG_KEY) && c.default_language) {
-          setLang((c.default_language as Lang) === 'pt' ? 'pt' : 'en');
-        }
+        sessionStorage.setItem(PREF_LANG_KEY, 'en');
         if (!sessionStorage.getItem(PREF_CURRENCY_KEY) && c.default_currency) {
           setCurrency(c.default_currency);
         }
