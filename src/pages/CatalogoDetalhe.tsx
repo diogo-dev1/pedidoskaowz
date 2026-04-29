@@ -288,17 +288,31 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
     }
   };
 
+  const formatPrecoIntl = (basePrice: number) => {
+    const cambialMargin = 1 + (Number(intlConfig?.margin_percent) || 0) / 100;
+    const productMargin = 1 + ((intlMargemProduto ?? intlMargemGlobal) / 100);
+    const converted = exchange.convert(basePrice, currency) * cambialMargin * productMargin;
+    return exchange.format(converted, currency);
+  };
+
   const enviarWhatsApp = () => {
     if (!modelo) return;
     const imagemPrincipal = modelo.imagem_modelo || (imagensDisponiveis.length > 0 ? imagensDisponiveis[0] : null);
-    let mensagem = exibirPrecos
-      ? `Olá! Gostaria de saber mais sobre:\n\n${modelo.nome_modelo}\nR$ ${modelo.preco_base.toFixed(2)}`
-      : `Olá! Gostaria de saber mais sobre:\n\n${modelo.nome_modelo}`;
-    if (imagemPrincipal) {
-      mensagem += `\n\n${imagemPrincipal}`;
+    const nome = isInternacional ? (modelo.nome_modelo_en || modelo.nome_modelo) : modelo.nome_modelo;
+    let mensagem: string;
+    if (isInternacional) {
+      const priceStr = exibirPrecos ? formatPrecoIntl(modelo.preco_base) : '';
+      mensagem = exibirPrecos ? t.waMsg(nome, priceStr) : t.waMsgNoPrice(nome);
+    } else {
+      mensagem = exibirPrecos
+        ? `Olá! Gostaria de saber mais sobre:\n\n${nome}\nR$ ${modelo.preco_base.toFixed(2)}`
+        : `Olá! Gostaria de saber mais sobre:\n\n${nome}`;
     }
-    const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, '_blank');
+    if (imagemPrincipal) mensagem += `\n\n${imagemPrincipal}`;
+    const phone = isInternacional
+      ? (intlConfig?.contact_whatsapp || '5528999025695').replace(/\D/g, '')
+      : '5528999025695';
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(mensagem)}`, '_blank');
   };
 
   const videoUrl = modelo?.video_url;
