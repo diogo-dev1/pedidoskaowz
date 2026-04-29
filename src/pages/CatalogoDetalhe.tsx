@@ -354,7 +354,7 @@ export default function CatalogoDetalhe({ isRevendedor = false, isInternacional 
   const nomeExibido = isInternacional ? (modelo.nome_modelo_en || modelo.nome_modelo) : modelo.nome_modelo;
   const descricaoIntlHtml = isInternacional && modelo.descricao_html_en ? modelo.descricao_html_en : null;
 
-  const descriptionHtml = modelo.descricao_html
+  const descriptionHtml = descricaoIntlHtml || modelo.descricao_html
     || (modelo.apresentacao_venda && /Itens Inclusos|Especificações|Diferenciais|Características|Detalhes|[✔️📌🔪⚡✅]/i.test(modelo.apresentacao_venda)
       ? convertPlainToHtml(modelo.apresentacao_venda)
       : null);
