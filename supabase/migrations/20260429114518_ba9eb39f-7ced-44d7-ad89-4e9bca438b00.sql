@@ -1,0 +1,1 @@
+ALTER TABLE public.categorias_catalogo_visiveis ADD COLUMN IF NOT EXISTS nome_en text;

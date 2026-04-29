@@ -20,7 +20,7 @@ const ALL_CURRENCIES = ['USD', 'BRL', 'EUR', 'AED'] as const;
 const ALL_LANGUAGES = [{ code: 'pt', label: 'Português' }, { code: 'en', label: 'English' }] as const;
 
 interface CategoriaVisivel {
-  id: string; categoria: string; visivel: boolean; visivel_todas: boolean; visivel_kit: boolean;
+  id: string; categoria: string; nome_en: string | null; visivel: boolean; visivel_todas: boolean; visivel_kit: boolean;
   ordem: number; icone: string; categoria_pai_id: string | null;
 }
 interface ModeloCatalogo {
@@ -453,6 +453,32 @@ export default function ConfiguracoesCatalogoInternacional() {
               setBusca={setBuscaProdutoIntl}
               onRefresh={fetchModelos}
             />
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2"><Languages className="h-4 w-4" /> Tradução de Categorias</CardTitle>
+                <CardDescription className="text-xs">Defina o nome em inglês de cada categoria (ex: Cozinha → Kitchen).</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {categoriasVisiveis.map((cat) => (
+                  <div key={cat.id} className="grid grid-cols-2 gap-2 items-center">
+                    <div className="text-xs text-muted-foreground truncate">{cat.categoria}</div>
+                    <Input
+                      value={cat.nome_en || ''}
+                      placeholder="Name in English"
+                      className="h-8 text-xs"
+                      onChange={(e) => setCategoriasVisiveis(prev => prev.map(c => c.id === cat.id ? { ...c, nome_en: e.target.value } : c))}
+                      onBlur={async (e) => {
+                        const { error } = await supabase.from('categorias_catalogo_visiveis')
+                          .update({ nome_en: e.target.value || null } as any).eq('id', cat.id);
+                        if (error) toast.error('Erro ao salvar'); else toast.success('Salvo', { duration: 1200 });
+                      }}
+                    />
+                  </div>
+                ))}
+                {categoriasVisiveis.length === 0 && <p className="text-xs text-muted-foreground">Nenhuma categoria.</p>}
+              </CardContent>
+            </Card>
           </>)}
         </TabsContent>
 

@@ -166,6 +166,7 @@ interface Modelo {
 interface CategoriaVisivel {
   id: string;
   categoria: string;
+  nome_en: string | null;
   visivel: boolean;
   visivel_todas: boolean;
   ordem: number;
@@ -312,9 +313,10 @@ export default function CatalogoInternacional() {
     debounceRef.current = setTimeout(() => setFaixaPreco(v as [number, number]), 200);
   }, []);
 
+  const getNomeCategoria = (c: CategoriaVisivel) => lang === 'en' ? (c.nome_en || c.categoria) : c.categoria;
   const categorias = categoriasVisiveis.filter((c) => c.visivel);
   const categoriasVenda = categorias.map((cat) => ({
-    subtitulo: cat.categoria, categoria: cat.categoria, icon: getIconComponent(cat.icone),
+    subtitulo: getNomeCategoria(cat), categoria: cat.categoria, icon: getIconComponent(cat.icone),
   }));
 
   useEffect(() => {
@@ -754,16 +756,20 @@ export default function CatalogoInternacional() {
                         <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-accent border-accent' : 'border-zinc-500'}`}>
                           {isActive && <Check className="h-3 w-3 text-white" />}
                         </div>
-                        {cat.categoria}
+                        {getNomeCategoria(cat)}
                       </button>);
                   })}
                 </div>
                 {categoriasMultiplas.length > 0 &&
                   <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-zinc-700">
-                    {categoriasMultiplas.map((cat) =>
+                    {categoriasMultiplas.map((cat) => {
+                      const co = categoriasVisiveis.find((c) => c.categoria === cat);
+                      const label = co ? getNomeCategoria(co) : cat;
+                      return (
                       <Badge key={cat} className="bg-accent/20 text-accent border-accent/30 text-[10px] cursor-pointer hover:bg-accent/30 gap-1" onClick={() => toggleCategoriaFiltro(cat)}>
-                        {cat}<X className="h-2.5 w-2.5" />
-                      </Badge>)}
+                        {label}<X className="h-2.5 w-2.5" />
+                      </Badge>);
+                    })}
                     <button className="text-[10px] text-zinc-500 hover:text-zinc-300 underline" onClick={() => { setCategoriasMultiplas([]); setSearchParams({}); }}>{t.clear}</button>
                   </div>}
               </CollapsibleContent>
