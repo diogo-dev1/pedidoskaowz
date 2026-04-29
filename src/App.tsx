@@ -33,6 +33,7 @@ import CatalogoRevendedor from "./pages/CatalogoRevendedor";
 import ConfiguracoesCatalogoRevendedor from "./pages/admin/ConfiguracoesCatalogoRevendedor";
 import CatalogoInternacional from "./pages/CatalogoInternacional";
 import ConfiguracoesCatalogoInternacional from "./pages/admin/ConfiguracoesCatalogoInternacional";
+import ConfiguracoesCatalogoPublicoInternacional from "./pages/admin/ConfiguracoesCatalogoPublicoInternacional";
 import ConfiguracoesPreview from "./pages/admin/ConfiguracoesPreview";
 import BlingIntegration from "./pages/BlingIntegration";
 import Install from "./pages/Install";
@@ -133,6 +134,16 @@ const App = () => (
             <Route
               path="/catalogo/:id"
               element={<CatalogoDetalhe />}
+            />
+            <Route
+              path="/admin/catalogo-publico-internacional"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <ConfiguracoesCatalogoPublicoInternacional />
+                  </Layout>
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/catalogo-publico-internacional"

@@ -98,6 +98,7 @@ export function AppSidebar() {
     { title: 'Config. Catálogo', url: '/admin/catalogo', icon: Store },
     { title: 'Config. Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
     { title: 'Config. Internacional', url: '/admin/catalogo-internacional', icon: Globe },
+    { title: 'Config. Público Intl.', url: '/admin/catalogo-publico-internacional', icon: Globe },
     { title: 'Config. Preview', url: '/admin/preview', icon: Eye },
     { title: 'Bling', url: '/bling', icon: Link2 },
   ] : [];
