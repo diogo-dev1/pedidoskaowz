@@ -374,4 +374,4 @@ function ShareButton({ language }: { language: string }) {
   );
 }
 
-export default CatalogoInternacional;
+
