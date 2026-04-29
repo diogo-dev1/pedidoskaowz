@@ -310,16 +310,33 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     data.forEach((d: any) => { map[d.chave] = d.valor; });
     setLang('en');
     if (map.default_currency) setCurrency(map.default_currency);
+    if (map.base_currency) setBaseCurrency(map.base_currency);
     if (map.exchange_mode) setExchangeMode(map.exchange_mode === 'manual' ? 'manual' : 'auto');
-    if (map.margin_percent) setMarginGlobal(parseFloat(map.margin_percent) || 0);
+    if (map.margin_global) setMarginGlobal(parseFloat(map.margin_global) || 0);
+    else if (map.margin_percent) setMarginGlobal(parseFloat(map.margin_percent) || 0);
     if (map.show_language_selector) setShowLangSelector(map.show_language_selector === 'true');
     if (map.show_currency_selector) setShowCurrencySelector(map.show_currency_selector === 'true');
     if (isInternacional) setAvailableLanguages(['en']);
-    else if (map.available_languages) setAvailableLanguages(map.available_languages.split(',').map((s: string) => s.trim()).filter(Boolean));
-    if (map.available_currencies) setAvailableCurrencies(map.available_currencies.split(',').map((s: string) => s.trim()).filter(Boolean));
+    else if (map.available_languages) {
+      try {
+        const parsed = JSON.parse(map.available_languages);
+        setAvailableLanguages(Array.isArray(parsed) ? parsed : map.available_languages.split(',').map((s: string) => s.trim()).filter(Boolean));
+      } catch {
+        setAvailableLanguages(map.available_languages.split(',').map((s: string) => s.trim()).filter(Boolean));
+      }
+    }
+    if (map.available_currencies) {
+      try {
+        const parsed = JSON.parse(map.available_currencies);
+        setAvailableCurrencies(Array.isArray(parsed) ? parsed : map.available_currencies.split(',').map((s: string) => s.trim()).filter(Boolean));
+      } catch {
+        setAvailableCurrencies(map.available_currencies.split(',').map((s: string) => s.trim()).filter(Boolean));
+      }
+    }
     if (map.manual_rates) {
       try { setManualRates(JSON.parse(map.manual_rates)); } catch { /* noop */ }
     }
+    if (map.manual_rates_updated_at) setManualRatesUpdatedAt(map.manual_rates_updated_at);
   };
 
   const carregarMargensInternacional = async () => {
