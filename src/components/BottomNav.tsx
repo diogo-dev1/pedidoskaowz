@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   Calculator, FileText, Users, TrendingUp, MoreHorizontal,
   ShoppingBag, MessageSquare, BookOpen, Image, Eye, DollarSign,
-  CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User, Globe
+  CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User, Globe, Truck
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,7 @@ const moreItems: { label: string; items: NavItem[] }[] = [
     label: 'Vendas',
     items: [
       { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
+      { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
     ],
   },
   {

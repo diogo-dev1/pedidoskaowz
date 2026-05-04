@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Simulador from "./pages/Simulador";
 import Lote from "./pages/Lote";
 import AuxilioVendas from "./pages/AuxilioVendas";
+import CalcularFrete from "./pages/CalcularFrete";
 import Clientes from "./pages/Clientes";
 import CatalogoPublico from "./pages/CatalogoPublico";
 import CatalogoPublicoInternacional from "./pages/CatalogoPublicoInternacional";
@@ -181,6 +182,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Clientes />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calcular-frete"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CalcularFrete />
                   </Layout>
                 </ProtectedRoute>
               }
