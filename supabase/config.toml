@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.bling-api]
 verify_jwt = false
+
+[functions.calcular-frete]
+verify_jwt = false
