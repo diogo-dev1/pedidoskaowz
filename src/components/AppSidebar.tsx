@@ -3,7 +3,7 @@ import {
   Calculator, Settings, LogOut, User, MessageSquare, BookOpen,
   ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign,
   Users, Store, FileText, Image, TrendingUp, Eye, Link2, LayoutDashboard,
-  Globe
+  Globe, Truck
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -70,6 +70,7 @@ export function AppSidebar() {
     { title: 'Simulador', url: '/', icon: Calculator },
     { title: 'Orçamento', url: '/orcamento', icon: FileText },
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
+    { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
   ];
 
   const crmItems: MenuItem[] = [
