@@ -245,11 +245,17 @@ export default function ConfiguradorKit() {
         <div className="total-row">
           <span className="total-label">Total do Kit</span>
           {cfg.discountPercent > 0 && (
-            <span className="total-old">{BRL(beforeDiscount)}</span>
+            <div className="total-de">
+              <span className="total-de-label">De</span>
+              <span className="total-old">{BRL(beforeDiscount)}</span>
+            </div>
           )}
-          <span className="total-val">{BRL(total)}</span>
+          <div className="total-por">
+            {cfg.discountPercent > 0 && <span className="total-por-label">Por</span>}
+            <span className="total-val">{BRL(total)}</span>
+          </div>
           {cfg.discountPercent > 0 && (
-            <span className="total-discount">-{cfg.discountPercent}%</span>
+            <span className="total-discount">Economia de {BRL(discountValue)} · -{cfg.discountPercent}%</span>
           )}
         </div>
         {cfg.discountPercent > 0 && (
@@ -366,11 +372,15 @@ const css = `
 .ck-root .cta-block::before, .ck-root .cta-block::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); width: 40px; height: 1px; background: var(--yellow); }
 .ck-root .cta-block::before { top: -1px; }
 .ck-root .cta-block::after { bottom: -1px; }
-.ck-root .total-row { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; margin-bottom: 18px; }
+.ck-root .total-row { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; margin-bottom: 18px; }
 .ck-root .total-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
-.ck-root .total-old { font-family: 'Barlow', sans-serif; font-size: 22px; color: var(--dim); text-decoration: line-through; }
-.ck-root .total-val { font-family: 'Bebas Neue', sans-serif; font-size: 64px; letter-spacing: 2px; color: var(--yellow); line-height: 1; }
-.ck-root .total-discount { display: inline-block; margin-top: 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; background: var(--yellow); color: #000; padding: 3px 10px; border-radius: 2px; font-weight: 700; }
+.ck-root .total-de { display: inline-flex; align-items: baseline; gap: 8px; opacity: 0.85; }
+.ck-root .total-de-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.ck-root .total-old { font-family: 'Barlow', sans-serif; font-size: 28px; color: var(--dim); text-decoration: line-through; }
+.ck-root .total-por { display: inline-flex; align-items: baseline; gap: 10px; }
+.ck-root .total-por-label { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 3px; color: var(--yellow); text-transform: uppercase; }
+.ck-root .total-val { font-family: 'Bebas Neue', sans-serif; font-size: 84px; letter-spacing: 3px; color: var(--yellow); line-height: 1; text-shadow: 0 2px 24px rgba(255,193,7,0.25); }
+.ck-root .total-discount { display: inline-block; margin-top: 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; background: var(--yellow); color: #000; padding: 4px 12px; border-radius: 2px; font-weight: 700; }
 .ck-root .btn-cta {
   display: inline-block; background: var(--yellow); color: #000;
   border: none; border-radius: 3px; padding: 16px 48px;
@@ -401,11 +411,11 @@ const css = `
   .ck-root .header-config span { display: none; }
   .ck-root .hero { padding: 2.5rem 1rem 1.5rem; }
   .ck-root .config-grid { grid-template-columns: 1fr; padding: 0 1rem; gap: 14px; }
-  .ck-root .product-card { aspect-ratio: 4 / 3; }
+  .ck-root .product-card { aspect-ratio: 1 / 1; }
   .ck-root .cta-block { padding: 1.5rem 1rem; }
   .ck-root .btn-cta { padding: 14px 32px; font-size: 15px; width: 100%; }
-  .ck-root .total-val { font-size: 52px; }
-  .ck-root .total-old { font-size: 18px; }
+  .ck-root .total-val { font-size: 68px; }
+  .ck-root .total-old { font-size: 22px; }
   .ck-root .ref-section { padding: 0 1rem; margin-top: 2.5rem; }
 }
 `;
