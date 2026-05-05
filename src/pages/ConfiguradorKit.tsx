@@ -97,31 +97,41 @@ export default function ConfiguradorKit() {
       </section>
 
       <div className="config-grid">
-        {SIZES.map((s) => {
+        {SIZES.map((s, i) => {
           const sel = selections[s.key];
           const f = FINISHES.find((x) => x.key === sel)!;
+          const totalMm = s.bladeMm + s.gripMm;
+          const maxMm = SIZES[0].bladeMm + SIZES[0].gripMm;
+          const scale = totalMm / maxMm; // 1.00, 0.85, 0.70
           return (
-            <article className="col" key={s.key}>
+            <article className="col" key={s.key} data-size={s.key}>
               <div className="col-head">
-                <div className="col-index">0{SIZES.indexOf(s) + 1}</div>
-                <div>
+                <div className="col-index">0{i + 1}</div>
+                <div className="col-head-text">
                   <div className="col-model">{s.name}</div>
                   <div className="col-dims">
-                    {s.bladeMm.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}mm
-                    <span>/</span>
-                    {s.gripMm.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}mm
+                    Total {totalMm.toFixed(1).replace('.', ',')} mm
                   </div>
+                </div>
+                <div className="col-scale" aria-hidden>
+                  <span style={{ height: `${scale * 100}%` }} />
                 </div>
               </div>
 
-              <div className="product-card">
-                <img src={f.image} alt={`${s.name} ${f.name}`} />
-                <div className="product-card-overlay" />
-                <div className="product-card-tag">
-                  <span className={`finish-swatch ${f.swatchClass}`} />
-                  {f.name}
+              <div className="product-stage">
+                <div className="product-card" style={{ width: `${scale * 100}%` }}>
+                  <img src={f.image} alt={`${s.name} ${f.name}`} />
+                  <div className="product-card-overlay" />
+                  <div className="product-card-tag">
+                    <span className={`finish-swatch ${f.swatchClass}`} />
+                    {f.name}
+                  </div>
+                  <div className="product-card-price">{BRL(PRICES[s.key][f.key])}</div>
                 </div>
-                <div className="product-card-price">{BRL(PRICES[s.key][f.key])}</div>
+                <div className="ruler" aria-hidden>
+                  <span className="ruler-bar" style={{ width: `${scale * 100}%` }} />
+                  <span className="ruler-label">{totalMm.toFixed(1).replace('.', ',')} mm</span>
+                </div>
               </div>
 
               <div className="finish-options">
