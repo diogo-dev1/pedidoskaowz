@@ -76,6 +76,9 @@ export default function ConfiguradorKit() {
   const [bainhaExtras, setBainhaExtras] = useState<Record<SizeKey, boolean>>({
     standard: false, compact: false, micro: false,
   });
+  const [bainhaExtraTipo, setBainhaExtraTipo] = useState<Record<SizeKey, BainhaKey>>({
+    standard: 'multi', compact: 'multi', micro: 'multi',
+  });
 
   useEffect(() => {
     const onStorage = () => setCfg(loadKitConfig());
@@ -101,14 +104,16 @@ export default function ConfiguradorKit() {
       const fk = selections[s.key];
       const bk = bainhas[s.key];
       const bn = bk === 'velada' ? 'Velada' : 'Multifuncional';
-      const ex = bainhaExtras[s.key] ? ` + Bainha Extra (${BRL(cfg.bainhaExtraPrice)})` : '';
+      const ex = bainhaExtras[s.key]
+        ? ` + Bainha Extra ${bainhaExtraTipo[s.key] === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(cfg.bainhaExtraPrice)})`
+        : '';
       return `• ${s.name} — ${FINISH_NAMES[fk]} (${BRL(cfg.prices[s.key][fk])})\n   Bainha: ${bn}${ex}`;
     });
     const desc = cfg.discountPercent > 0 ? `\nDesconto: ${cfg.discountPercent}% (-${BRL(discountValue)})` : '';
     return encodeURIComponent(
       `Olá! Quero montar este Kit Push Dagger:\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`,
     );
-  }, [selections, bainhas, bainhaExtras, cfg, discountValue, total]);
+  }, [selections, bainhas, bainhaExtras, bainhaExtraTipo, cfg, discountValue, total]);
 
   return (
     <div className="ck-root">
@@ -210,6 +215,26 @@ export default function ConfiguradorKit() {
                   <span className="bainha-extra-title">Bainha Extra</span>
                   <span className="bainha-extra-price">+ {BRL(cfg.bainhaExtraPrice)}</span>
                 </label>
+                {bainhaExtras[s.key] && (
+                  <div className="finish-options bainha-options bainha-extra-tipo">
+                    {([
+                      { key: 'velada' as BainhaKey, name: 'Velada' },
+                      { key: 'multi' as BainhaKey, name: 'Multifuncional' },
+                    ]).map((b) => {
+                      const active = bainhaExtraTipo[s.key] === b.key;
+                      return (
+                        <button
+                          key={b.key}
+                          type="button"
+                          className={`finish-btn ${active ? 'active' : ''}`}
+                          onClick={() => setBainhaExtraTipo((st) => ({ ...st, [s.key]: b.key }))}
+                        >
+                          <span className="finish-name">{b.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </article>
           );
