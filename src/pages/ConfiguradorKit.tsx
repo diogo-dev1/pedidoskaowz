@@ -227,6 +227,9 @@ export default function ConfiguradorKit() {
             <span className="total-discount">-{cfg.discountPercent}%</span>
           )}
         </div>
+        {cfg.discountPercent > 0 && (
+          <div className="cupom-msg">🎟️ Resgate seu cupom de <strong>{cfg.discountPercent}%</strong> de desconto</div>
+        )}
         <a className="btn-cta" href={`https://wa.me/?text=${waMessage}`} target="_blank" rel="noopener noreferrer">
           Quero Comprar Agora
         </a>
@@ -353,6 +356,8 @@ const css = `
 .ck-root .btn-cta:hover { background: var(--yellow-l); transform: translateY(-2px); box-shadow: 0 6px 0 #b58800, 0 12px 28px rgba(255,193,7,0.3); }
 .ck-root .btn-cta:active { transform: translateY(2px); box-shadow: 0 2px 0 #b58800; }
 .ck-root .cta-note { margin-top: 14px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: var(--dim); text-transform: uppercase; }
+.ck-root .cupom-msg { margin: 1.25rem auto 1rem; padding: 10px 18px; display: inline-block; background: rgba(255,193,7,0.1); border: 1px dashed var(--yellow); color: var(--yellow); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 4px; }
+.ck-root .cupom-msg strong { color: #fff; font-weight: 700; }
 
 .ck-root .ref-section { max-width: 900px; margin: 4rem auto 0; padding: 0 1.75rem; }
 .ck-root .ref-section-head { text-align: center; margin-bottom: 1.75rem; }
