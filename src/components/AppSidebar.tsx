@@ -71,6 +71,7 @@ export function AppSidebar() {
     { title: 'Orçamento', url: '/orcamento', icon: FileText },
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
+    { title: 'Configurador de Kit', url: '/configurador-kit', icon: Layers },
   ];
 
   const crmItems: MenuItem[] = [
