@@ -87,7 +87,11 @@ export default function ConfiguradorKit() {
     () => SIZE_LIST.reduce((sum, s) => sum + cfg.prices[s.key][selections[s.key]], 0),
     [selections, cfg.prices],
   );
-  const extra = bainhaExtra ? cfg.bainhaExtraPrice : 0;
+  const extrasCount = useMemo(
+    () => SIZE_LIST.reduce((n, s) => n + (bainhaExtras[s.key] ? 1 : 0), 0),
+    [bainhaExtras],
+  );
+  const extra = extrasCount * cfg.bainhaExtraPrice;
   const beforeDiscount = subtotal + extra;
   const discountValue = Math.round(beforeDiscount * (cfg.discountPercent / 100));
   const total = beforeDiscount - discountValue;
@@ -95,14 +99,16 @@ export default function ConfiguradorKit() {
   const waMessage = useMemo(() => {
     const lines = SIZE_LIST.map((s) => {
       const fk = selections[s.key];
-      return `• ${s.name} — ${FINISH_NAMES[fk]} (${BRL(cfg.prices[s.key][fk])})`;
+      const bk = bainhas[s.key];
+      const bn = bk === 'velada' ? 'Velada' : 'Multifuncional';
+      const ex = bainhaExtras[s.key] ? ` + Bainha Extra (${BRL(cfg.bainhaExtraPrice)})` : '';
+      return `• ${s.name} — ${FINISH_NAMES[fk]} (${BRL(cfg.prices[s.key][fk])})\n   Bainha: ${bn}${ex}`;
     });
-    const bainhaLine = `Bainha: ${bainha === 'velada' ? 'Velada' : 'Multifuncional'}${bainhaExtra ? ' + Bainha Extra (' + BRL(cfg.bainhaExtraPrice) + ')' : ''}`;
     const desc = cfg.discountPercent > 0 ? `\nDesconto: ${cfg.discountPercent}% (-${BRL(discountValue)})` : '';
     return encodeURIComponent(
-      `Olá! Quero montar este Kit Push Dagger:\n${lines.join('\n')}\n${bainhaLine}${desc}\n\nTotal: ${BRL(total)}`,
+      `Olá! Quero montar este Kit Push Dagger:\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`,
     );
-  }, [selections, bainha, bainhaExtra, cfg, discountValue, total]);
+  }, [selections, bainhas, bainhaExtras, cfg, discountValue, total]);
 
   return (
     <div className="ck-root">
