@@ -209,6 +209,16 @@ const App = () => (
               }
             />
             <Route
+              path="/configurador-kit/configuracoes"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ConfiguradorKitConfig />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/mensagens"
               element={
                 <ProtectedRoute>
