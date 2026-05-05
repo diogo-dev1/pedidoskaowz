@@ -411,11 +411,11 @@ const css = `
   .ck-root .header-config span { display: none; }
   .ck-root .hero { padding: 2.5rem 1rem 1.5rem; }
   .ck-root .config-grid { grid-template-columns: 1fr; padding: 0 1rem; gap: 14px; }
-  .ck-root .product-card { aspect-ratio: 4 / 3; }
+  .ck-root .product-card { aspect-ratio: 1 / 1; }
   .ck-root .cta-block { padding: 1.5rem 1rem; }
   .ck-root .btn-cta { padding: 14px 32px; font-size: 15px; width: 100%; }
-  .ck-root .total-val { font-size: 52px; }
-  .ck-root .total-old { font-size: 18px; }
+  .ck-root .total-val { font-size: 68px; }
+  .ck-root .total-old { font-size: 22px; }
   .ck-root .ref-section { padding: 0 1rem; margin-top: 2.5rem; }
 }
 `;
