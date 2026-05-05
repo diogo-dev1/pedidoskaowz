@@ -150,18 +150,21 @@ export default function ConfiguradorKit() {
         })}
       </div>
 
-      <div className="summary">
-        <div className="summary-inner">
-          <div className="summary-total">
-            <div className="total-label">Total do Kit</div>
-            <div className="total-val">{BRL(total)}</div>
-          </div>
-          <a className="btn-wa" href={`https://wa.me/?text=${waMessage}`} target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20.5 3.5A11.9 11.9 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6A11.9 11.9 0 0 0 12 24c6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.5zM12 22c-1.9 0-3.7-.5-5.3-1.5l-.4-.2-3.7 1 1-3.6-.3-.4A9.9 9.9 0 0 1 2 12c0-5.5 4.5-10 10-10s10 4.5 10 10-4.5 10-10 10zm5.5-7.5c-.3-.2-1.8-.9-2-1s-.5-.2-.7.2-.8 1-1 1.2-.4.2-.7 0c-.3-.2-1.3-.5-2.5-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.4.5-.5.1-.2.2-.3.3-.5s0-.4 0-.5-.7-1.7-1-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.2 3.4 5.4 4.8.8.3 1.4.5 1.8.7.8.2 1.5.2 2 .1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.4z" />
-            </svg>
-            Pedir no WhatsApp
-          </a>
+      <div className="cta-block">
+        <div className="total-row">
+          <span className="total-label">Total do Kit</span>
+          <span className="total-val">{BRL(total)}</span>
+        </div>
+        <a className="btn-cta" href={`https://wa.me/?text=${waMessage}`} target="_blank" rel="noopener noreferrer">
+          Quero Comprar Agora!
+        </a>
+      </div>
+
+      <div className="ticker">
+        <div className="ticker-track">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <span key={i}>Lançamento <i>›</i> Kaowz Facas <i>›</i> </span>
+          ))}
         </div>
       </div>
 
