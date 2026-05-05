@@ -12,6 +12,7 @@ import Lote from "./pages/Lote";
 import AuxilioVendas from "./pages/AuxilioVendas";
 import CalcularFrete from "./pages/CalcularFrete";
 import ConfiguradorKit from "./pages/ConfiguradorKit";
+import ConfiguradorKitConfig from "./pages/ConfiguradorKitConfig";
 import Clientes from "./pages/Clientes";
 import CatalogoPublico from "./pages/CatalogoPublico";
 import CatalogoPublicoInternacional from "./pages/CatalogoPublicoInternacional";
@@ -203,6 +204,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <ConfiguradorKit />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/configurador-kit/configuracoes"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ConfiguradorKitConfig />
                   </Layout>
                 </ProtectedRoute>
               }
