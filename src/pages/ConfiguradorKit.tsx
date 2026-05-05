@@ -322,25 +322,17 @@ const css = `
 .ck-root .finish-name { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--muted); letter-spacing: 1.4px; text-transform: uppercase; line-height: 1; display: block; }
 .ck-root .finish-btn.active .finish-name { color: var(--yellow); font-weight: 600; }
 
-/* Bainha */
-.ck-root .bainha-block { max-width: 1100px; margin: 3rem auto 0; padding: 0 1.75rem; }
-.ck-root .bainha-head { text-align: center; margin-bottom: 1.25rem; }
-.ck-root .bainha-head h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(24px, 3.5vw, 32px); letter-spacing: 5px; margin: 6px 0 0; }
-.ck-root .bainha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.ck-root .bainha-card { background: var(--s1); border: 1px solid var(--border); border-radius: 3px; padding: 1.1rem 1.25rem; cursor: pointer; transition: all .2s; text-align: left; color: inherit; font-family: inherit; }
-.ck-root .bainha-card:hover { border-color: var(--border-m); }
-.ck-root .bainha-card.active { border-color: var(--yellow); background: rgba(255,193,7,0.06); }
-.ck-root .bainha-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 3px; }
-.ck-root .bainha-card.active .bainha-name { color: var(--yellow); }
-.ck-root .bainha-desc { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--muted); letter-spacing: 1.2px; text-transform: uppercase; margin-top: 4px; }
-.ck-root .bainha-extra { display: flex; align-items: center; gap: 14px; margin-top: 12px; padding: 14px 16px; background: var(--s1); border: 1px solid var(--border); border-radius: 3px; cursor: pointer; transition: all .2s; }
-.ck-root .bainha-extra:hover { border-color: var(--border-m); }
-.ck-root .bainha-extra.active { border-color: var(--yellow); background: rgba(255,193,7,0.06); }
-.ck-root .bainha-extra input { width: 18px; height: 18px; accent-color: var(--yellow); cursor: pointer; }
-.ck-root .bainha-extra-text { flex: 1; }
-.ck-root .bainha-extra-title { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px; }
-.ck-root .bainha-extra-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; color: var(--muted); letter-spacing: 1.2px; text-transform: uppercase; margin-top: 2px; }
-.ck-root .bainha-extra-price { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--yellow); letter-spacing: 1.5px; }
+.ck-root .opt-section { display: flex; flex-direction: column; gap: 6px; }
+.ck-root .opt-label { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.ck-root .bainha-options { grid-template-columns: 1fr 1fr; }
+
+.ck-root .bainha-extra { display: flex; align-items: center; gap: 10px; padding: 9px 11px; background: transparent; border: 1px dashed var(--border-m); border-radius: 2px; cursor: pointer; transition: all .15s; margin-top: 2px; }
+.ck-root .bainha-extra:hover { border-color: rgba(255,193,7,0.4); }
+.ck-root .bainha-extra.active { border-style: solid; border-color: var(--yellow); background: rgba(255,193,7,0.06); }
+.ck-root .bainha-extra input { width: 14px; height: 14px; accent-color: var(--yellow); cursor: pointer; flex-shrink: 0; }
+.ck-root .bainha-extra-title { flex: 1; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); }
+.ck-root .bainha-extra.active .bainha-extra-title { color: var(--text); font-weight: 600; }
+.ck-root .bainha-extra-price { font-family: 'Bebas Neue', sans-serif; font-size: 13px; color: var(--yellow); letter-spacing: 1px; }
 
 .ck-root .cta-block { max-width: 560px; margin: 3.5rem auto 0; padding: 2rem 1.5rem; text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; }
 .ck-root .cta-block::before, .ck-root .cta-block::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); width: 40px; height: 1px; background: var(--yellow); }
