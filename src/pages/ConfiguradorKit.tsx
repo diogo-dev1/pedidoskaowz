@@ -70,8 +70,12 @@ export default function ConfiguradorKit() {
   const [selections, setSelections] = useState<Record<SizeKey, FinishKey>>({
     standard: 'sw', compact: 'sw', micro: 'sw',
   });
-  const [bainha, setBainha] = useState<BainhaKey>('velada');
-  const [bainhaExtra, setBainhaExtra] = useState(false);
+  const [bainhas, setBainhas] = useState<Record<SizeKey, BainhaKey>>({
+    standard: 'velada', compact: 'velada', micro: 'velada',
+  });
+  const [bainhaExtras, setBainhaExtras] = useState<Record<SizeKey, boolean>>({
+    standard: false, compact: false, micro: false,
+  });
 
   useEffect(() => {
     const onStorage = () => setCfg(loadKitConfig());
