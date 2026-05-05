@@ -113,7 +113,7 @@ export default function ConfiguradorKit() {
     return encodeURIComponent(
       `Olá! Quero montar este Kit Push Dagger:\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`,
     );
-  }, [selections, bainhas, bainhaExtras, cfg, discountValue, total]);
+  }, [selections, bainhas, bainhaExtras, bainhaExtraTipo, cfg, discountValue, total]);
 
   return (
     <div className="ck-root">
