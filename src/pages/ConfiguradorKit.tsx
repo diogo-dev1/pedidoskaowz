@@ -245,11 +245,17 @@ export default function ConfiguradorKit() {
         <div className="total-row">
           <span className="total-label">Total do Kit</span>
           {cfg.discountPercent > 0 && (
-            <span className="total-old">{BRL(beforeDiscount)}</span>
+            <div className="total-de">
+              <span className="total-de-label">De</span>
+              <span className="total-old">{BRL(beforeDiscount)}</span>
+            </div>
           )}
-          <span className="total-val">{BRL(total)}</span>
+          <div className="total-por">
+            {cfg.discountPercent > 0 && <span className="total-por-label">Por</span>}
+            <span className="total-val">{BRL(total)}</span>
+          </div>
           {cfg.discountPercent > 0 && (
-            <span className="total-discount">-{cfg.discountPercent}%</span>
+            <span className="total-discount">Economia de {BRL(discountValue)} · -{cfg.discountPercent}%</span>
           )}
         </div>
         {cfg.discountPercent > 0 && (
