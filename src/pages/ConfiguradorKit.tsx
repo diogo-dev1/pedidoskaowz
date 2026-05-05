@@ -372,11 +372,15 @@ const css = `
 .ck-root .cta-block::before, .ck-root .cta-block::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); width: 40px; height: 1px; background: var(--yellow); }
 .ck-root .cta-block::before { top: -1px; }
 .ck-root .cta-block::after { bottom: -1px; }
-.ck-root .total-row { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; margin-bottom: 18px; }
+.ck-root .total-row { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; margin-bottom: 18px; }
 .ck-root .total-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
-.ck-root .total-old { font-family: 'Barlow', sans-serif; font-size: 22px; color: var(--dim); text-decoration: line-through; }
-.ck-root .total-val { font-family: 'Bebas Neue', sans-serif; font-size: 64px; letter-spacing: 2px; color: var(--yellow); line-height: 1; }
-.ck-root .total-discount { display: inline-block; margin-top: 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; background: var(--yellow); color: #000; padding: 3px 10px; border-radius: 2px; font-weight: 700; }
+.ck-root .total-de { display: inline-flex; align-items: baseline; gap: 8px; opacity: 0.85; }
+.ck-root .total-de-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.ck-root .total-old { font-family: 'Barlow', sans-serif; font-size: 28px; color: var(--dim); text-decoration: line-through; }
+.ck-root .total-por { display: inline-flex; align-items: baseline; gap: 10px; }
+.ck-root .total-por-label { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 3px; color: var(--yellow); text-transform: uppercase; }
+.ck-root .total-val { font-family: 'Bebas Neue', sans-serif; font-size: 84px; letter-spacing: 3px; color: var(--yellow); line-height: 1; text-shadow: 0 2px 24px rgba(255,193,7,0.25); }
+.ck-root .total-discount { display: inline-block; margin-top: 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; background: var(--yellow); color: #000; padding: 4px 12px; border-radius: 2px; font-weight: 700; }
 .ck-root .btn-cta {
   display: inline-block; background: var(--yellow); color: #000;
   border: none; border-radius: 3px; padding: 16px 48px;
