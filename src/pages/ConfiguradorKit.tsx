@@ -404,7 +404,8 @@ const css = `
   .ck-root .product-card { aspect-ratio: 4 / 3; }
   .ck-root .cta-block { padding: 1.5rem 1rem; }
   .ck-root .btn-cta { padding: 14px 32px; font-size: 15px; width: 100%; }
-  .ck-root .total-val { font-size: 42px; }
+  .ck-root .total-val { font-size: 52px; }
+  .ck-root .total-old { font-size: 18px; }
   .ck-root .ref-section { padding: 0 1rem; margin-top: 2.5rem; }
 }
 `;
