@@ -277,9 +277,9 @@ const css = `
 .ck-root .col-scale span { display: block; width: 100%; background: linear-gradient(180deg, var(--yellow) 0%, #b58800 100%); border-radius: 2px; }
 
 .ck-root .product-stage { position: relative; width: 100%; padding: 8px 0 4px; display: flex; flex-direction: column; align-items: center; }
-.ck-root .product-card { position: relative; aspect-ratio: 1 / 1; background: var(--s2); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; transition: width .35s ease; }
-.ck-root .product-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
-.ck-root .col:hover .product-card img { transform: scale(1.06); }
+.ck-root .product-card { position: relative; width: 100%; aspect-ratio: 1 / 1; background: var(--s2); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+.ck-root .product-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .18s ease-out; will-change: opacity; }
+.ck-root .product-img.is-active { opacity: 1; }
 .ck-root .product-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7) 100%); pointer-events: none; }
 .ck-root .product-card-tag { position: absolute; left: 8px; bottom: 8px; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.65); backdrop-filter: blur(8px); border: 1px solid var(--border-m); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; font-weight: 500; }
 .ck-root .product-card-price { position: absolute; right: 8px; top: 8px; background: var(--yellow); color: #000; font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 1.5px; padding: 3px 8px; border-radius: 2px; }
