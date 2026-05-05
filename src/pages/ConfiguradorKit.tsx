@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Settings } from 'lucide-react';
+import kaowzLogo from '@/assets/kaowz-logo.png';
 import kitCard from '@/assets/push-dagger-kit-card.jpeg';
 import imgAcetinada from '@/assets/push-dagger-acetinada.jpeg';
 import imgStoneWashed from '@/assets/push-dagger-stone-washed.jpeg';
