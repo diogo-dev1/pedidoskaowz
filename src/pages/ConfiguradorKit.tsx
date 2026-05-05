@@ -115,17 +115,9 @@ export default function ConfiguradorKit() {
       <style>{css}</style>
 
       <header className="ck-header">
-        <div className="logo">
-          <div className="logo-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#FFC107" strokeWidth="2.2">
-              <path d="M4 20 L12 4 L20 20 Z" />
-            </svg>
-          </div>
-          <div>
-            <div className="logo-name">KAOWZ</div>
-            <div className="logo-sub">Ferramentas de Corte</div>
-          </div>
-        </div>
+        <Link to="/configurador-kit" className="logo" aria-label="Kaowz">
+          <img src={kaowzLogo} alt="Kaowz - Ferramentas de Corte" className="logo-img" />
+        </Link>
         <Link to="/configurador-kit/configuracoes" className="header-config" aria-label="Configurações">
           <Settings size={16} />
           <span>Configurar</span>
