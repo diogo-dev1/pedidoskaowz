@@ -215,6 +215,26 @@ export default function ConfiguradorKit() {
                   <span className="bainha-extra-title">Bainha Extra</span>
                   <span className="bainha-extra-price">+ {BRL(cfg.bainhaExtraPrice)}</span>
                 </label>
+                {bainhaExtras[s.key] && (
+                  <div className="finish-options bainha-options bainha-extra-tipo">
+                    {([
+                      { key: 'velada' as BainhaKey, name: 'Velada' },
+                      { key: 'multi' as BainhaKey, name: 'Multifuncional' },
+                    ]).map((b) => {
+                      const active = bainhaExtraTipo[s.key] === b.key;
+                      return (
+                        <button
+                          key={b.key}
+                          type="button"
+                          className={`finish-btn ${active ? 'active' : ''}`}
+                          onClick={() => setBainhaExtraTipo((st) => ({ ...st, [s.key]: b.key }))}
+                        >
+                          <span className="finish-name">{b.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </article>
           );
