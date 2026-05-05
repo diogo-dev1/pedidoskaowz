@@ -104,7 +104,9 @@ export default function ConfiguradorKit() {
       const fk = selections[s.key];
       const bk = bainhas[s.key];
       const bn = bk === 'velada' ? 'Velada' : 'Multifuncional';
-      const ex = bainhaExtras[s.key] ? ` + Bainha Extra (${BRL(cfg.bainhaExtraPrice)})` : '';
+      const ex = bainhaExtras[s.key]
+        ? ` + Bainha Extra ${bainhaExtraTipo[s.key] === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(cfg.bainhaExtraPrice)})`
+        : '';
       return `• ${s.name} — ${FINISH_NAMES[fk]} (${BRL(cfg.prices[s.key][fk])})\n   Bainha: ${bn}${ex}`;
     });
     const desc = cfg.discountPercent > 0 ? `\nDesconto: ${cfg.discountPercent}% (-${BRL(discountValue)})` : '';
