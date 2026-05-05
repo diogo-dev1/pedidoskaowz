@@ -261,18 +261,27 @@ const css = `
 .ck-root .col::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,193,7,0.3), transparent); opacity: 0; transition: opacity .3s; }
 .ck-root .col:hover { border-color: rgba(255,193,7,0.25); transform: translateY(-2px); }
 .ck-root .col:hover::before { opacity: 1; }
-.ck-root .col-head { display: flex; align-items: center; gap: 12px; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+.ck-root .col-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
 .ck-root .col-index { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--yellow); line-height: 1; opacity: 0.85; }
 .ck-root .col-model { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 4px; line-height: 1; }
-.ck-root .col-dims { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; color: var(--muted); letter-spacing: 1.2px; margin-top: 3px; text-transform: uppercase; }
-.ck-root .col-dims span { color: var(--dim); margin: 0 5px; }
+.ck-root .col-dims { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; color: var(--muted); letter-spacing: 1.2px; margin-top: 4px; text-transform: uppercase; }
+.ck-root .col-scale { width: 6px; height: 36px; background: rgba(255,255,255,0.04); border-radius: 2px; display: flex; align-items: flex-end; overflow: hidden; }
+.ck-root .col-scale span { display: block; width: 100%; background: linear-gradient(180deg, var(--yellow) 0%, #b58800 100%); border-radius: 2px; }
 
-.ck-root .product-card { position: relative; width: 100%; aspect-ratio: 1 / 1; background: var(--s2); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+.ck-root .product-stage { position: relative; width: 100%; padding: 8px 0 4px; display: flex; flex-direction: column; align-items: center; }
+.ck-root .product-card { position: relative; aspect-ratio: 1 / 1; background: var(--s2); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; transition: width .35s ease; }
 .ck-root .product-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
 .ck-root .col:hover .product-card img { transform: scale(1.06); }
 .ck-root .product-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7) 100%); pointer-events: none; }
-.ck-root .product-card-tag { position: absolute; left: 10px; bottom: 10px; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.65); backdrop-filter: blur(8px); border: 1px solid var(--border-m); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 4px 9px; border-radius: 2px; font-weight: 500; }
-.ck-root .product-card-price { position: absolute; right: 10px; top: 10px; background: var(--yellow); color: #000; font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 1.5px; padding: 4px 9px; border-radius: 2px; }
+.ck-root .product-card-tag { position: absolute; left: 8px; bottom: 8px; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.65); backdrop-filter: blur(8px); border: 1px solid var(--border-m); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; font-weight: 500; }
+.ck-root .product-card-price { position: absolute; right: 8px; top: 8px; background: var(--yellow); color: #000; font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 1.5px; padding: 3px 8px; border-radius: 2px; }
+
+.ck-root .ruler { position: relative; width: 100%; margin-top: 14px; display: flex; flex-direction: column; align-items: center; }
+.ck-root .ruler-bar { position: relative; height: 2px; background: var(--yellow); border-radius: 2px; transition: width .35s ease; }
+.ck-root .ruler-bar::before, .ck-root .ruler-bar::after { content: ''; position: absolute; top: -4px; width: 2px; height: 10px; background: var(--yellow); }
+.ck-root .ruler-bar::before { left: 0; }
+.ck-root .ruler-bar::after { right: 0; }
+.ck-root .ruler-label { margin-top: 6px; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; color: var(--yellow); letter-spacing: 2px; text-transform: uppercase; }
 
 .ck-root .finish-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
 .ck-root .finish-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 9px 4px; border: 1px solid var(--border); border-radius: 2px; background: transparent; cursor: pointer; transition: all .15s ease; color: inherit; font-family: inherit; }
