@@ -113,20 +113,6 @@ export default function ConfiguradorKit() {
         </p>
       </section>
 
-      {/* Referência visual de tamanhos */}
-      <section className="size-ref">
-        <div className="size-ref-inner">
-          <img src={sizesRef} alt="Comparação Standard / Compact / Micro" />
-          <div className="size-ref-cap">Comparativo real entre Standard, Compact e Micro (medidas em mm)</div>
-        </div>
-      </section>
-
-      <div className="sep">
-        <div className="sep-line" />
-        <div className="sep-text">Selecione o acabamento de cada tamanho</div>
-        <div className="sep-line" />
-      </div>
-
       <div className="config-grid">
         {SIZES.map((s) => {
           const sel = selections[s.key];
@@ -137,24 +123,23 @@ export default function ConfiguradorKit() {
               <div className="col-head">
                 <div className="col-model">{s.name}</div>
                 <div className="col-dims">
-                  Lâmina {s.bladeMm.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} mm{' '}
-                  <span>·</span> Empunhadura {s.gripMm.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} mm
+                  {s.bladeMm.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span>·</span>{' '}
+                  {s.gripMm.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} mm
                 </div>
               </div>
 
-              <div className="dagger-stage">
+              <div className="dagger-stage" style={{ height: `${110 * s.scale + 30}px` }}>
                 {img ? (
                   <img
                     src={img}
                     alt={`${s.name} ${f.name}`}
-                    style={{ width: `${s.scale * 100}%`, height: `${s.scale * 100}%`, objectFit: 'contain' }}
+                    style={{ maxHeight: `${110 * s.scale}px`, maxWidth: `${85 * s.scale}%` }}
                   />
                 ) : (
-                  <div className="img-skel" style={{ width: `${s.scale * 100}%` }} />
+                  <div className="img-skel" style={{ height: `${90 * s.scale}px`, width: `${70 * s.scale}%` }} />
                 )}
               </div>
 
-              <div className="finish-label">Acabamento</div>
               <div className="finish-options">
                 {FINISHES.map((finish) => {
                   const active = sel === finish.key;
@@ -168,10 +153,8 @@ export default function ConfiguradorKit() {
                       <div className={`finish-swatch ${finish.swatchClass}`} />
                       <div className="finish-info">
                         <div className="finish-name">{finish.name}</div>
-                        <div className="finish-desc">{finish.desc}</div>
                       </div>
                       <div className="finish-price">{BRL(PRICES[s.key][finish.key])}</div>
-                      <div className="check"><div className="check-dot" /></div>
                     </button>
                   );
                 })}
@@ -181,10 +164,17 @@ export default function ConfiguradorKit() {
         })}
       </div>
 
-      {/* Visual do kit completo (cartão colecionador) */}
-      <section className="kit-visual">
-        <div className="kit-visual-eyebrow">Apresentação do Kit</div>
-        <img src={kitCard} alt="Push Daggers Collector Kit — apresentação" />
+      {/* Referência visual compacta */}
+      <section className="size-ref">
+        <button className="size-ref-toggle" onClick={() => {
+          const el = document.getElementById('size-ref-content');
+          if (el) el.classList.toggle('open');
+        }}>
+          Ver comparativo de tamanhos reais ↓
+        </button>
+        <div id="size-ref-content" className="size-ref-content">
+          <img src={sizesRef} alt="Comparação Standard / Compact / Micro" />
+        </div>
       </section>
 
       <div className="summary">
