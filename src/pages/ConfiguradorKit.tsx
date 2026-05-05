@@ -372,8 +372,6 @@ const css = `
   .ck-root .hero { padding: 2.5rem 1rem 1.5rem; }
   .ck-root .config-grid { grid-template-columns: 1fr; padding: 0 1rem; gap: 14px; }
   .ck-root .product-card { aspect-ratio: 4 / 3; }
-  .ck-root .bainha-block { padding: 0 1rem; }
-  .ck-root .bainha-grid { grid-template-columns: 1fr; }
   .ck-root .cta-block { padding: 1.5rem 1rem; }
   .ck-root .btn-cta { padding: 14px 32px; font-size: 15px; width: 100%; }
   .ck-root .total-val { font-size: 42px; }
