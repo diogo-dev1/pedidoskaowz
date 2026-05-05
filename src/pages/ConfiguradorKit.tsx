@@ -288,11 +288,8 @@ const css = `
   background: rgba(5,5,5,0.85); backdrop-filter: blur(12px);
   position: sticky; top: 0; z-index: 40;
 }
-.ck-root .logo { display: flex; align-items: center; gap: 12px; }
-.ck-root .logo-mark { width: 38px; height: 38px; border: 1.5px solid var(--yellow); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
-.ck-root .logo-mark svg { width: 20px; height: 20px; }
-.ck-root .logo-name { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 4px; line-height: 1; }
-.ck-root .logo-sub { font-size: 9px; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; margin-top: 2px; }
+.ck-root .logo { display: inline-flex; align-items: center; }
+.ck-root .logo-img { height: 38px; width: auto; display: block; }
 .ck-root .header-config { display: inline-flex; align-items: center; gap: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); border: 1px solid var(--border); padding: 7px 12px; border-radius: 3px; text-decoration: none; transition: all .2s; }
 .ck-root .header-config:hover { color: var(--yellow); border-color: rgba(255,193,7,0.35); }
 
