@@ -163,58 +163,58 @@ export default function ConfiguradorKit() {
                 </div>
               </div>
 
-              <div className="finish-options">
-                {FINISH_KEYS.map((fk) => (
-                  <button
-                    key={fk}
-                    type="button"
-                    className={`finish-btn ${sel === fk ? 'active' : ''}`}
-                    onClick={() => setSelections((st) => ({ ...st, [s.key]: fk }))}
-                  >
-                    <span className="finish-name">{FINISH_NAMES[fk]}</span>
-                  </button>
-                ))}
+              <div className="opt-section">
+                <div className="opt-label">Acabamento</div>
+                <div className="finish-options">
+                  {FINISH_KEYS.map((fk) => (
+                    <button
+                      key={fk}
+                      type="button"
+                      className={`finish-btn ${sel === fk ? 'active' : ''}`}
+                      onClick={() => setSelections((st) => ({ ...st, [s.key]: fk }))}
+                    >
+                      <span className="finish-name">{FINISH_NAMES[fk]}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="opt-section">
+                <div className="opt-label">Bainha</div>
+                <div className="finish-options bainha-options">
+                  {([
+                    { key: 'velada' as BainhaKey, name: 'Velada' },
+                    { key: 'multi' as BainhaKey, name: 'Multifuncional' },
+                  ]).map((b) => {
+                    const active = bainhas[s.key] === b.key;
+                    return (
+                      <button
+                        key={b.key}
+                        type="button"
+                        className={`finish-btn ${active ? 'active' : ''}`}
+                        onClick={() => setBainhas((st) => ({ ...st, [s.key]: b.key }))}
+                      >
+                        <span className="finish-name">{b.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <label className={`bainha-extra ${bainhaExtras[s.key] ? 'active' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={bainhaExtras[s.key]}
+                    onChange={(e) =>
+                      setBainhaExtras((st) => ({ ...st, [s.key]: e.target.checked }))
+                    }
+                  />
+                  <span className="bainha-extra-title">Bainha Extra</span>
+                  <span className="bainha-extra-price">+ {BRL(cfg.bainhaExtraPrice)}</span>
+                </label>
               </div>
             </article>
           );
         })}
       </div>
-
-      {/* Bainha */}
-      <section className="bainha-block">
-        <div className="bainha-head">
-          <div className="eyebrow">— Escolha a Bainha —</div>
-          <h2>Tipo de Bainha</h2>
-        </div>
-        <div className="bainha-grid">
-          {([
-            { key: 'velada' as BainhaKey, name: 'Velada', desc: 'Discreta · Porte oculto' },
-            { key: 'multi'  as BainhaKey, name: 'Multifuncional', desc: 'Versátil · Múltiplas posições' },
-          ]).map((b) => (
-            <button
-              key={b.key}
-              type="button"
-              className={`bainha-card ${bainha === b.key ? 'active' : ''}`}
-              onClick={() => setBainha(b.key)}
-            >
-              <div className="bainha-name">{b.name}</div>
-              <div className="bainha-desc">{b.desc}</div>
-            </button>
-          ))}
-        </div>
-        <label className={`bainha-extra ${bainhaExtra ? 'active' : ''}`}>
-          <input
-            type="checkbox"
-            checked={bainhaExtra}
-            onChange={(e) => setBainhaExtra(e.target.checked)}
-          />
-          <div className="bainha-extra-text">
-            <div className="bainha-extra-title">Adicionar Bainha Extra</div>
-            <div className="bainha-extra-sub">Inclua a segunda opção de bainha no kit</div>
-          </div>
-          <div className="bainha-extra-price">+ {BRL(cfg.bainhaExtraPrice)}</div>
-        </label>
-      </section>
 
       <div className="cta-block">
         <div className="total-row">
