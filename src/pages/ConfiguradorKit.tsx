@@ -227,6 +227,9 @@ export default function ConfiguradorKit() {
             <span className="total-discount">-{cfg.discountPercent}%</span>
           )}
         </div>
+        {cfg.discountPercent > 0 && (
+          <div className="cupom-msg">🎟️ Resgate seu cupom de <strong>{cfg.discountPercent}%</strong> de desconto</div>
+        )}
         <a className="btn-cta" href={`https://wa.me/?text=${waMessage}`} target="_blank" rel="noopener noreferrer">
           Quero Comprar Agora
         </a>
