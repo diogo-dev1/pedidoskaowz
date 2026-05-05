@@ -73,25 +73,23 @@ export default function ConfiguradorKit() {
       <header className="ck-header">
         <div className="logo">
           <div className="logo-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#C9A435" strokeWidth="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FFC107" strokeWidth="2.2">
               <path d="M4 20 L12 4 L20 20 Z" />
             </svg>
           </div>
           <div>
             <div className="logo-name">KAOWZ</div>
-            <div className="logo-sub">Facas</div>
+            <div className="logo-sub">Ferramentas de Corte</div>
           </div>
         </div>
-        <div className="header-tag">Configurador de Kit</div>
       </header>
 
       <section className="hero">
-        <div className="hero-eyebrow">Push Daggers Collector Kit</div>
         <h1 className="hero-title">
-          Monte seu <span>Kit Exclusivo</span>
+          PUSH DAGGER <span>KAOWZ</span>
         </h1>
         <p className="hero-desc">
-          Escolha o acabamento de cada tamanho e visualize seu kit completo antes de confirmar o pedido.
+          A Evolução de um Ícone da Defesa Pessoal. Monte seu Kit Exclusivo escolhendo o acabamento de cada tamanho.
         </p>
       </section>
 
@@ -152,18 +150,21 @@ export default function ConfiguradorKit() {
         })}
       </div>
 
-      <div className="summary">
-        <div className="summary-inner">
-          <div className="summary-total">
-            <div className="total-label">Total do Kit</div>
-            <div className="total-val">{BRL(total)}</div>
-          </div>
-          <a className="btn-wa" href={`https://wa.me/?text=${waMessage}`} target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20.5 3.5A11.9 11.9 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6A11.9 11.9 0 0 0 12 24c6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.5zM12 22c-1.9 0-3.7-.5-5.3-1.5l-.4-.2-3.7 1 1-3.6-.3-.4A9.9 9.9 0 0 1 2 12c0-5.5 4.5-10 10-10s10 4.5 10 10-4.5 10-10 10zm5.5-7.5c-.3-.2-1.8-.9-2-1s-.5-.2-.7.2-.8 1-1 1.2-.4.2-.7 0c-.3-.2-1.3-.5-2.5-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.4.5-.5.1-.2.2-.3.3-.5s0-.4 0-.5-.7-1.7-1-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.2 3.4 5.4 4.8.8.3 1.4.5 1.8.7.8.2 1.5.2 2 .1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.4z" />
-            </svg>
-            Pedir no WhatsApp
-          </a>
+      <div className="cta-block">
+        <div className="total-row">
+          <span className="total-label">Total do Kit</span>
+          <span className="total-val">{BRL(total)}</span>
+        </div>
+        <a className="btn-cta" href={`https://wa.me/?text=${waMessage}`} target="_blank" rel="noopener noreferrer">
+          Quero Comprar Agora!
+        </a>
+      </div>
+
+      <div className="ticker">
+        <div className="ticker-track">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <span key={i}>Lançamento <i>›</i> Kaowz Facas <i>›</i> </span>
+          ))}
         </div>
       </div>
 
@@ -178,16 +179,16 @@ export default function ConfiguradorKit() {
 
 const css = `
 .ck-root {
-  --bg: #090909;
-  --s1: #111113;
-  --s2: #19191C;
-  --border: rgba(255,255,255,0.07);
-  --border-m: rgba(255,255,255,0.14);
-  --gold: #C9A435;
-  --gold-l: #E2BC55;
-  --text: #ECEAE4;
-  --muted: #888884;
-  --dim: #444442;
+  --bg: #000000;
+  --s1: #0A0A0A;
+  --s2: #141414;
+  --border: rgba(255,255,255,0.08);
+  --border-m: rgba(255,255,255,0.16);
+  --yellow: #FFC107;
+  --yellow-l: #FFD54A;
+  --text: #FFFFFF;
+  --muted: #9A9A98;
+  --dim: #555553;
   background: var(--bg);
   color: var(--text);
   font-family: 'Barlow', sans-serif;
@@ -197,72 +198,82 @@ const css = `
 .ck-root * { box-sizing: border-box; }
 
 .ck-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--border);
   background: var(--bg); position: sticky; top: 0; z-index: 40;
 }
 .ck-root .logo { display: flex; align-items: center; gap: 12px; }
-.ck-root .logo-mark { width: 34px; height: 34px; border: 1.5px solid var(--gold); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
-.ck-root .logo-mark svg { width: 18px; height: 18px; }
-.ck-root .logo-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 3px; color: var(--text); line-height: 1; }
-.ck-root .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; }
-.ck-root .header-tag { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; border: 1px solid var(--border); padding: 4px 10px; border-radius: 4px; }
+.ck-root .logo-mark { width: 40px; height: 40px; border: 2px solid var(--yellow); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.ck-root .logo-mark svg { width: 22px; height: 22px; }
+.ck-root .logo-name { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 4px; color: var(--text); line-height: 1; font-weight: 700; }
+.ck-root .logo-sub { font-size: 9px; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; margin-top: 2px; }
 
-.ck-root .hero { padding: 2rem 1.5rem 1rem; text-align: center; max-width: 680px; margin: 0 auto; }
-.ck-root .hero-eyebrow { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; }
-.ck-root .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(28px, 5vw, 44px); letter-spacing: 4px; line-height: 1.05; margin-bottom: 8px; color: var(--text); }
-.ck-root .hero-title span { color: var(--gold); }
-.ck-root .hero-desc { font-size: 13px; color: var(--muted); font-weight: 300; line-height: 1.6; max-width: 460px; margin: 0 auto; }
+.ck-root .hero { padding: 3rem 1.5rem 1.5rem; text-align: center; max-width: 760px; margin: 0 auto; }
+.ck-root .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(40px, 7vw, 68px); letter-spacing: 3px; line-height: 1; margin-bottom: 18px; color: var(--text); font-weight: 700; }
+.ck-root .hero-title span { color: var(--yellow); }
+.ck-root .hero-desc { font-size: 15px; color: #D4D4D4; font-weight: 400; line-height: 1.55; max-width: 560px; margin: 0 auto; }
 
-.ck-root .ref-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 680px; margin: 1.5rem auto 0; padding: 0 1.5rem; }
+.ck-root .ref-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 760px; margin: 1.75rem auto 0; padding: 0 1.5rem; }
 .ck-root .ref-card { margin: 0; background: var(--s1); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-.ck-root .ref-card img { width: 100%; height: 140px; object-fit: cover; display: block; }
+.ck-root .ref-card img { width: 100%; height: 160px; object-fit: cover; display: block; }
 .ck-root .ref-card figcaption { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; text-align: center; padding: 8px; border-top: 1px solid var(--border); }
 
 .ck-root .config-grid { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 980px; margin: 1.5rem auto 0; gap: 12px; padding: 0 1.5rem; }
-.ck-root .col { background: var(--s1); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+.ck-root .col { background: var(--s1); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.85rem; transition: border-color .2s; }
+.ck-root .col:hover { border-color: rgba(255,193,7,0.3); }
 .ck-root .col-head { text-align: center; }
-.ck-root .col-model { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 4px; color: var(--text); line-height: 1; }
+.ck-root .col-model { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 4px; color: var(--text); line-height: 1; }
 .ck-root .col-dims { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-top: 4px; text-transform: uppercase; }
 .ck-root .col-dims span { color: var(--dim); margin: 0 4px; }
 
 .ck-root .product-card { position: relative; width: 100%; background: var(--s2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 .ck-root .product-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
 .ck-root .col:hover .product-card img { transform: scale(1.04); }
-.ck-root .product-card-tag { position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); color: var(--text); font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-m); }
+.ck-root .product-card-tag { position: absolute; left: 8px; bottom: 8px; background: rgba(255,193,7,0.95); color: #000; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; font-weight: 700; }
 
 .ck-root .finish-options { display: flex; flex-direction: column; gap: 4px; }
 .ck-root .finish-btn { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: transparent; cursor: pointer; transition: all .15s ease; text-align: left; width: 100%; color: inherit; font-family: inherit; }
 .ck-root .finish-btn:hover { border-color: var(--border-m); }
-.ck-root .finish-btn.active { border-color: var(--gold); background: rgba(201,164,53,0.06); }
+.ck-root .finish-btn.active { border-color: var(--yellow); background: rgba(255,193,7,0.08); }
 .ck-root .finish-swatch { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1); }
 .ck-root .swatch-satin { background: linear-gradient(135deg, #C8CDD2 0%, #9EA3A8 40%, #D4D8DC 60%, #A8ADB2 100%); }
 .ck-root .swatch-sw { background: linear-gradient(135deg, #7A7E82 0%, #606468 50%, #7C8084 100%); }
 .ck-root .swatch-tac { background: linear-gradient(135deg, #2A2E36 0%, #1A1E26 50%, #282C34 100%); }
 .ck-root .finish-name { flex: 1; font-size: 12px; color: var(--text); line-height: 1.2; }
 .ck-root .finish-price { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; color: var(--muted); font-weight: 500; white-space: nowrap; }
-.ck-root .finish-btn.active .finish-price { color: var(--gold-l); font-weight: 600; }
+.ck-root .finish-btn.active .finish-price { color: var(--yellow); font-weight: 700; }
 
-.ck-root .summary { position: sticky; bottom: 0; z-index: 30; background: rgba(9,9,9,0.95); backdrop-filter: blur(12px); border-top: 1px solid var(--border-m); padding: 0.85rem 1.5rem; margin-top: 1.5rem; }
-.ck-root .summary-inner { display: flex; align-items: center; gap: 1rem; max-width: 980px; margin: 0 auto; }
-.ck-root .summary-total { flex: 1; }
-.ck-root .total-label { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
-.ck-root .total-val { font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: 2px; color: var(--gold-l); line-height: 1; }
-.ck-root .btn-wa { display: inline-flex; align-items: center; gap: 8px; background: var(--gold); color: #000; border: none; border-radius: 8px; padding: 11px 20px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 1px; cursor: pointer; text-transform: uppercase; transition: all .2s; text-decoration: none; white-space: nowrap; }
-.ck-root .btn-wa:hover { background: var(--gold-l); }
-.ck-root .btn-wa svg { width: 16px; height: 16px; flex-shrink: 0; }
+.ck-root .cta-block { max-width: 760px; margin: 2rem auto 0; padding: 0 1.5rem; text-align: center; }
+.ck-root .total-row { display: flex; align-items: baseline; justify-content: center; gap: 14px; margin-bottom: 14px; }
+.ck-root .total-label { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.ck-root .total-val { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 2px; color: var(--yellow); line-height: 1; }
+.ck-root .btn-cta {
+  display: inline-block; background: var(--yellow); color: #000;
+  border: none; border-radius: 6px; padding: 18px 44px;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700;
+  letter-spacing: 1px; cursor: pointer; text-decoration: none;
+  transition: all .2s; box-shadow: 0 6px 0 #b58800, 0 10px 24px rgba(255,193,7,0.25);
+  text-transform: none;
+}
+.ck-root .btn-cta:hover { background: var(--yellow-l); transform: translateY(-2px); box-shadow: 0 8px 0 #b58800, 0 14px 28px rgba(255,193,7,0.35); }
+.ck-root .btn-cta:active { transform: translateY(2px); box-shadow: 0 3px 0 #b58800; }
 
-.ck-root .footer-note { text-align: center; padding: 1.5rem 1.5rem 4rem; font-size: 11px; color: var(--dim); line-height: 1.8; }
+.ck-root .ticker { margin-top: 3rem; background: var(--yellow); color: #000; overflow: hidden; padding: 12px 0; border-top: 1px solid #000; }
+.ck-root .ticker-track { display: flex; gap: 24px; white-space: nowrap; animation: ck-marquee 28s linear infinite; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 3px; }
+.ck-root .ticker-track span { display: inline-flex; align-items: center; gap: 14px; }
+.ck-root .ticker-track i { color: #000; opacity: 0.6; font-style: normal; }
+@keyframes ck-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.ck-root .footer-note { text-align: center; padding: 1.5rem 1.5rem 4rem; font-size: 11px; color: var(--dim); line-height: 1.8; background: var(--bg); }
 
 @media (max-width: 760px) {
   .ck-root .config-grid { grid-template-columns: 1fr; }
-  .ck-root .ref-card img { height: 120px; }
+  .ck-root .ref-card img { height: 130px; }
   .ck-root .product-card { aspect-ratio: 4 / 3 !important; }
   .ck-root .ck-header { padding: 0.85rem 1rem; }
-  .ck-root .hero { padding: 1.5rem 1rem 0.5rem; }
-  .ck-root .ref-row, .ck-root .config-grid { padding: 0 1rem; }
-  .ck-root .summary { padding: 0.75rem 1rem; }
-  .ck-root .total-val { font-size: 26px; }
-  .ck-root .btn-wa { padding: 10px 14px; font-size: 13px; }
+  .ck-root .hero { padding: 2rem 1rem 0.75rem; }
+  .ck-root .ref-row, .ck-root .config-grid, .ck-root .cta-block { padding: 0 1rem; }
+  .ck-root .btn-cta { padding: 16px 32px; font-size: 19px; width: 100%; }
+  .ck-root .total-val { font-size: 32px; }
 }
 `;
