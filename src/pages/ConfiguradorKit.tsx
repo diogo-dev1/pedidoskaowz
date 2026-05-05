@@ -76,6 +76,9 @@ export default function ConfiguradorKit() {
   const [bainhaExtras, setBainhaExtras] = useState<Record<SizeKey, boolean>>({
     standard: false, compact: false, micro: false,
   });
+  const [bainhaExtraTipo, setBainhaExtraTipo] = useState<Record<SizeKey, BainhaKey>>({
+    standard: 'multi', compact: 'multi', micro: 'multi',
+  });
 
   useEffect(() => {
     const onStorage = () => setCfg(loadKitConfig());
