@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Settings } from 'lucide-react';
+import kaowzLogo from '@/assets/kaowz-logo.png';
 import kitCard from '@/assets/push-dagger-kit-card.jpeg';
 import imgAcetinada from '@/assets/push-dagger-acetinada.jpeg';
 import imgStoneWashed from '@/assets/push-dagger-stone-washed.jpeg';
@@ -69,8 +70,12 @@ export default function ConfiguradorKit() {
   const [selections, setSelections] = useState<Record<SizeKey, FinishKey>>({
     standard: 'sw', compact: 'sw', micro: 'sw',
   });
-  const [bainha, setBainha] = useState<BainhaKey>('velada');
-  const [bainhaExtra, setBainhaExtra] = useState(false);
+  const [bainhas, setBainhas] = useState<Record<SizeKey, BainhaKey>>({
+    standard: 'velada', compact: 'velada', micro: 'velada',
+  });
+  const [bainhaExtras, setBainhaExtras] = useState<Record<SizeKey, boolean>>({
+    standard: false, compact: false, micro: false,
+  });
 
   useEffect(() => {
     const onStorage = () => setCfg(loadKitConfig());
@@ -82,7 +87,11 @@ export default function ConfiguradorKit() {
     () => SIZE_LIST.reduce((sum, s) => sum + cfg.prices[s.key][selections[s.key]], 0),
     [selections, cfg.prices],
   );
-  const extra = bainhaExtra ? cfg.bainhaExtraPrice : 0;
+  const extrasCount = useMemo(
+    () => SIZE_LIST.reduce((n, s) => n + (bainhaExtras[s.key] ? 1 : 0), 0),
+    [bainhaExtras],
+  );
+  const extra = extrasCount * cfg.bainhaExtraPrice;
   const beforeDiscount = subtotal + extra;
   const discountValue = Math.round(beforeDiscount * (cfg.discountPercent / 100));
   const total = beforeDiscount - discountValue;
@@ -90,31 +99,25 @@ export default function ConfiguradorKit() {
   const waMessage = useMemo(() => {
     const lines = SIZE_LIST.map((s) => {
       const fk = selections[s.key];
-      return `• ${s.name} — ${FINISH_NAMES[fk]} (${BRL(cfg.prices[s.key][fk])})`;
+      const bk = bainhas[s.key];
+      const bn = bk === 'velada' ? 'Velada' : 'Multifuncional';
+      const ex = bainhaExtras[s.key] ? ` + Bainha Extra (${BRL(cfg.bainhaExtraPrice)})` : '';
+      return `• ${s.name} — ${FINISH_NAMES[fk]} (${BRL(cfg.prices[s.key][fk])})\n   Bainha: ${bn}${ex}`;
     });
-    const bainhaLine = `Bainha: ${bainha === 'velada' ? 'Velada' : 'Multifuncional'}${bainhaExtra ? ' + Bainha Extra (' + BRL(cfg.bainhaExtraPrice) + ')' : ''}`;
     const desc = cfg.discountPercent > 0 ? `\nDesconto: ${cfg.discountPercent}% (-${BRL(discountValue)})` : '';
     return encodeURIComponent(
-      `Olá! Quero montar este Kit Push Dagger:\n${lines.join('\n')}\n${bainhaLine}${desc}\n\nTotal: ${BRL(total)}`,
+      `Olá! Quero montar este Kit Push Dagger:\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`,
     );
-  }, [selections, bainha, bainhaExtra, cfg, discountValue, total]);
+  }, [selections, bainhas, bainhaExtras, cfg, discountValue, total]);
 
   return (
     <div className="ck-root">
       <style>{css}</style>
 
       <header className="ck-header">
-        <div className="logo">
-          <div className="logo-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#FFC107" strokeWidth="2.2">
-              <path d="M4 20 L12 4 L20 20 Z" />
-            </svg>
-          </div>
-          <div>
-            <div className="logo-name">KAOWZ</div>
-            <div className="logo-sub">Ferramentas de Corte</div>
-          </div>
-        </div>
+        <Link to="/configurador-kit" className="logo" aria-label="Kaowz">
+          <img src={kaowzLogo} alt="Kaowz - Ferramentas de Corte" className="logo-img" />
+        </Link>
         <Link to="/configurador-kit/configuracoes" className="header-config" aria-label="Configurações">
           <Settings size={16} />
           <span>Configurar</span>
@@ -160,58 +163,58 @@ export default function ConfiguradorKit() {
                 </div>
               </div>
 
-              <div className="finish-options">
-                {FINISH_KEYS.map((fk) => (
-                  <button
-                    key={fk}
-                    type="button"
-                    className={`finish-btn ${sel === fk ? 'active' : ''}`}
-                    onClick={() => setSelections((st) => ({ ...st, [s.key]: fk }))}
-                  >
-                    <span className="finish-name">{FINISH_NAMES[fk]}</span>
-                  </button>
-                ))}
+              <div className="opt-section">
+                <div className="opt-label">Acabamento</div>
+                <div className="finish-options">
+                  {FINISH_KEYS.map((fk) => (
+                    <button
+                      key={fk}
+                      type="button"
+                      className={`finish-btn ${sel === fk ? 'active' : ''}`}
+                      onClick={() => setSelections((st) => ({ ...st, [s.key]: fk }))}
+                    >
+                      <span className="finish-name">{FINISH_NAMES[fk]}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="opt-section">
+                <div className="opt-label">Bainha</div>
+                <div className="finish-options bainha-options">
+                  {([
+                    { key: 'velada' as BainhaKey, name: 'Velada' },
+                    { key: 'multi' as BainhaKey, name: 'Multifuncional' },
+                  ]).map((b) => {
+                    const active = bainhas[s.key] === b.key;
+                    return (
+                      <button
+                        key={b.key}
+                        type="button"
+                        className={`finish-btn ${active ? 'active' : ''}`}
+                        onClick={() => setBainhas((st) => ({ ...st, [s.key]: b.key }))}
+                      >
+                        <span className="finish-name">{b.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <label className={`bainha-extra ${bainhaExtras[s.key] ? 'active' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={bainhaExtras[s.key]}
+                    onChange={(e) =>
+                      setBainhaExtras((st) => ({ ...st, [s.key]: e.target.checked }))
+                    }
+                  />
+                  <span className="bainha-extra-title">Bainha Extra</span>
+                  <span className="bainha-extra-price">+ {BRL(cfg.bainhaExtraPrice)}</span>
+                </label>
               </div>
             </article>
           );
         })}
       </div>
-
-      {/* Bainha */}
-      <section className="bainha-block">
-        <div className="bainha-head">
-          <div className="eyebrow">— Escolha a Bainha —</div>
-          <h2>Tipo de Bainha</h2>
-        </div>
-        <div className="bainha-grid">
-          {([
-            { key: 'velada' as BainhaKey, name: 'Velada', desc: 'Discreta · Porte oculto' },
-            { key: 'multi'  as BainhaKey, name: 'Multifuncional', desc: 'Versátil · Múltiplas posições' },
-          ]).map((b) => (
-            <button
-              key={b.key}
-              type="button"
-              className={`bainha-card ${bainha === b.key ? 'active' : ''}`}
-              onClick={() => setBainha(b.key)}
-            >
-              <div className="bainha-name">{b.name}</div>
-              <div className="bainha-desc">{b.desc}</div>
-            </button>
-          ))}
-        </div>
-        <label className={`bainha-extra ${bainhaExtra ? 'active' : ''}`}>
-          <input
-            type="checkbox"
-            checked={bainhaExtra}
-            onChange={(e) => setBainhaExtra(e.target.checked)}
-          />
-          <div className="bainha-extra-text">
-            <div className="bainha-extra-title">Adicionar Bainha Extra</div>
-            <div className="bainha-extra-sub">Inclua a segunda opção de bainha no kit</div>
-          </div>
-          <div className="bainha-extra-price">+ {BRL(cfg.bainhaExtraPrice)}</div>
-        </label>
-      </section>
 
       <div className="cta-block">
         <div className="total-row">
@@ -285,11 +288,8 @@ const css = `
   background: rgba(5,5,5,0.85); backdrop-filter: blur(12px);
   position: sticky; top: 0; z-index: 40;
 }
-.ck-root .logo { display: flex; align-items: center; gap: 12px; }
-.ck-root .logo-mark { width: 38px; height: 38px; border: 1.5px solid var(--yellow); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
-.ck-root .logo-mark svg { width: 20px; height: 20px; }
-.ck-root .logo-name { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 4px; line-height: 1; }
-.ck-root .logo-sub { font-size: 9px; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; margin-top: 2px; }
+.ck-root .logo { display: inline-flex; align-items: center; }
+.ck-root .logo-img { height: 38px; width: auto; display: block; }
 .ck-root .header-config { display: inline-flex; align-items: center; gap: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); border: 1px solid var(--border); padding: 7px 12px; border-radius: 3px; text-decoration: none; transition: all .2s; }
 .ck-root .header-config:hover { color: var(--yellow); border-color: rgba(255,193,7,0.35); }
 
@@ -322,25 +322,17 @@ const css = `
 .ck-root .finish-name { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--muted); letter-spacing: 1.4px; text-transform: uppercase; line-height: 1; display: block; }
 .ck-root .finish-btn.active .finish-name { color: var(--yellow); font-weight: 600; }
 
-/* Bainha */
-.ck-root .bainha-block { max-width: 1100px; margin: 3rem auto 0; padding: 0 1.75rem; }
-.ck-root .bainha-head { text-align: center; margin-bottom: 1.25rem; }
-.ck-root .bainha-head h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(24px, 3.5vw, 32px); letter-spacing: 5px; margin: 6px 0 0; }
-.ck-root .bainha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.ck-root .bainha-card { background: var(--s1); border: 1px solid var(--border); border-radius: 3px; padding: 1.1rem 1.25rem; cursor: pointer; transition: all .2s; text-align: left; color: inherit; font-family: inherit; }
-.ck-root .bainha-card:hover { border-color: var(--border-m); }
-.ck-root .bainha-card.active { border-color: var(--yellow); background: rgba(255,193,7,0.06); }
-.ck-root .bainha-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 3px; }
-.ck-root .bainha-card.active .bainha-name { color: var(--yellow); }
-.ck-root .bainha-desc { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--muted); letter-spacing: 1.2px; text-transform: uppercase; margin-top: 4px; }
-.ck-root .bainha-extra { display: flex; align-items: center; gap: 14px; margin-top: 12px; padding: 14px 16px; background: var(--s1); border: 1px solid var(--border); border-radius: 3px; cursor: pointer; transition: all .2s; }
-.ck-root .bainha-extra:hover { border-color: var(--border-m); }
-.ck-root .bainha-extra.active { border-color: var(--yellow); background: rgba(255,193,7,0.06); }
-.ck-root .bainha-extra input { width: 18px; height: 18px; accent-color: var(--yellow); cursor: pointer; }
-.ck-root .bainha-extra-text { flex: 1; }
-.ck-root .bainha-extra-title { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px; }
-.ck-root .bainha-extra-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; color: var(--muted); letter-spacing: 1.2px; text-transform: uppercase; margin-top: 2px; }
-.ck-root .bainha-extra-price { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--yellow); letter-spacing: 1.5px; }
+.ck-root .opt-section { display: flex; flex-direction: column; gap: 6px; }
+.ck-root .opt-label { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.ck-root .bainha-options { grid-template-columns: 1fr 1fr; }
+
+.ck-root .bainha-extra { display: flex; align-items: center; gap: 10px; padding: 9px 11px; background: transparent; border: 1px dashed var(--border-m); border-radius: 2px; cursor: pointer; transition: all .15s; margin-top: 2px; }
+.ck-root .bainha-extra:hover { border-color: rgba(255,193,7,0.4); }
+.ck-root .bainha-extra.active { border-style: solid; border-color: var(--yellow); background: rgba(255,193,7,0.06); }
+.ck-root .bainha-extra input { width: 14px; height: 14px; accent-color: var(--yellow); cursor: pointer; flex-shrink: 0; }
+.ck-root .bainha-extra-title { flex: 1; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); }
+.ck-root .bainha-extra.active .bainha-extra-title { color: var(--text); font-weight: 600; }
+.ck-root .bainha-extra-price { font-family: 'Bebas Neue', sans-serif; font-size: 13px; color: var(--yellow); letter-spacing: 1px; }
 
 .ck-root .cta-block { max-width: 560px; margin: 3.5rem auto 0; padding: 2rem 1.5rem; text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; }
 .ck-root .cta-block::before, .ck-root .cta-block::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); width: 40px; height: 1px; background: var(--yellow); }
@@ -380,8 +372,6 @@ const css = `
   .ck-root .hero { padding: 2.5rem 1rem 1.5rem; }
   .ck-root .config-grid { grid-template-columns: 1fr; padding: 0 1rem; gap: 14px; }
   .ck-root .product-card { aspect-ratio: 4 / 3; }
-  .ck-root .bainha-block { padding: 0 1rem; }
-  .ck-root .bainha-grid { grid-template-columns: 1fr; }
   .ck-root .cta-block { padding: 1.5rem 1rem; }
   .ck-root .btn-cta { padding: 14px 32px; font-size: 15px; width: 100%; }
   .ck-root .total-val { font-size: 42px; }
