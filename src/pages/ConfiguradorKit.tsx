@@ -73,25 +73,23 @@ export default function ConfiguradorKit() {
       <header className="ck-header">
         <div className="logo">
           <div className="logo-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#C9A435" strokeWidth="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FFC107" strokeWidth="2.2">
               <path d="M4 20 L12 4 L20 20 Z" />
             </svg>
           </div>
           <div>
             <div className="logo-name">KAOWZ</div>
-            <div className="logo-sub">Facas</div>
+            <div className="logo-sub">Ferramentas de Corte</div>
           </div>
         </div>
-        <div className="header-tag">Configurador de Kit</div>
       </header>
 
       <section className="hero">
-        <div className="hero-eyebrow">Push Daggers Collector Kit</div>
         <h1 className="hero-title">
-          Monte seu <span>Kit Exclusivo</span>
+          PUSH DAGGER <span>KAOWZ</span>
         </h1>
         <p className="hero-desc">
-          Escolha o acabamento de cada tamanho e visualize seu kit completo antes de confirmar o pedido.
+          A Evolução de um Ícone da Defesa Pessoal. Monte seu Kit Exclusivo escolhendo o acabamento de cada tamanho.
         </p>
       </section>
 
