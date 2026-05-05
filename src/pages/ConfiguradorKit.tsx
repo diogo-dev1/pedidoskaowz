@@ -119,8 +119,16 @@ export default function ConfiguradorKit() {
               </div>
 
               <div className="product-stage">
-                <div className="product-card" style={{ width: `${scale * 100}%` }}>
-                  <img src={f.image} alt={`${s.name} ${f.name}`} />
+                <div className="product-card">
+                  {FINISHES.map((finish) => (
+                    <img
+                      key={finish.key}
+                      src={finish.image}
+                      alt={`${s.name} ${finish.name}`}
+                      className={`product-img ${sel === finish.key ? 'is-active' : ''}`}
+                      loading="eager"
+                    />
+                  ))}
                   <div className="product-card-overlay" />
                   <div className="product-card-tag">
                     <span className={`finish-swatch ${f.swatchClass}`} />
