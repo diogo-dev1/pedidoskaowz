@@ -368,8 +368,8 @@ const css = `
 .ck-root .cta-block::after { bottom: -1px; }
 .ck-root .total-row { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; margin-bottom: 18px; }
 .ck-root .total-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
-.ck-root .total-old { font-family: 'Barlow', sans-serif; font-size: 14px; color: var(--dim); text-decoration: line-through; }
-.ck-root .total-val { font-family: 'Bebas Neue', sans-serif; font-size: 52px; letter-spacing: 2px; color: var(--yellow); line-height: 1; }
+.ck-root .total-old { font-family: 'Barlow', sans-serif; font-size: 22px; color: var(--dim); text-decoration: line-through; }
+.ck-root .total-val { font-family: 'Bebas Neue', sans-serif; font-size: 64px; letter-spacing: 2px; color: var(--yellow); line-height: 1; }
 .ck-root .total-discount { display: inline-block; margin-top: 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; background: var(--yellow); color: #000; padding: 3px 10px; border-radius: 2px; font-weight: 700; }
 .ck-root .btn-cta {
   display: inline-block; background: var(--yellow); color: #000;
