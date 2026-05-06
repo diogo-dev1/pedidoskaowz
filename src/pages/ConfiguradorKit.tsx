@@ -214,8 +214,15 @@ function mergeVersion(base: VersionConfig, p: any): VersionConfig {
 }
 
 function mergeConfig(p: any): KitConfig {
+  // Migra desconto antigo (que estava por versão) para o global, usando o do "standard" se existir
+  const legacyDisc = p?.versions?.standard?.discountByQty;
   return {
     whatsappPhone: p?.whatsappPhone || WHATSAPP_PHONE_DEFAULT,
+    discountByQty: {
+      ...DEFAULT_CONFIG.discountByQty,
+      ...(legacyDisc || {}),
+      ...(p?.discountByQty || {}),
+    },
     versions: {
       standard: mergeVersion(DEFAULT_CONFIG.versions.standard, p?.versions?.standard),
       nonmetallic: mergeVersion(DEFAULT_CONFIG.versions.nonmetallic, p?.versions?.nonmetallic),
