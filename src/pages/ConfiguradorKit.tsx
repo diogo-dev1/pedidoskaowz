@@ -507,6 +507,23 @@ export default function ConfiguradorKit() {
             <span className="ref-sub">{baseV.texts.refSub}</span>
           </figcaption>
         </figure>
+        {(cfg.discountByQty[3] || 0) > 0 && (
+          <button
+            type="button"
+            className="btn-cta ref-cta"
+            onClick={() => {
+              setUnits([
+                { version: 'standard', size: 'standard', finish: 'sw', bainha: 'velada', bainhaExtra: false, bainhaExtraTipo: 'multi' },
+                { version: 'standard', size: 'compact', finish: 'sw', bainha: 'velada', bainhaExtra: false, bainhaExtraTipo: 'multi' },
+                { version: 'standard', size: 'micro', finish: 'sw', bainha: 'velada', bainhaExtra: false, bainhaExtraTipo: 'multi' },
+              ]);
+              setQty(3);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            Monte o Kit Completo com {cfg.discountByQty[3]}% de desconto
+          </button>
+        )}
       </section>
 
       <div className="footer-note">
