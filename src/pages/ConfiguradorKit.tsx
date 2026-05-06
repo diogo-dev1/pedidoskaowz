@@ -64,6 +64,8 @@ export interface VersionConfig {
 
 export interface KitConfig {
   whatsappPhone: string;
+  /** Descontos globais (%) aplicados a todo o pedido por quantidade total de unidades */
+  discountByQty: Record<QtyKey, number>;
   versions: Record<VersionKey, VersionConfig>;
 }
 
@@ -109,6 +111,7 @@ const buildVersion = (over: Partial<VersionConfig> & { texts: VersionTexts }): V
 
 export const DEFAULT_CONFIG: KitConfig = {
   whatsappPhone: WHATSAPP_PHONE_DEFAULT,
+  discountByQty: { 1: 0, 2: 5, 3: 10 },
   versions: {
     standard: buildVersion({ texts: baseTexts({ tabLabel: 'Aço Sandvik 14C28N' }) }),
     nonmetallic: buildVersion({
@@ -180,6 +183,7 @@ export function loadKitConfig(): KitConfig {
       };
       return {
         whatsappPhone: p?.whatsappPhone || WHATSAPP_PHONE_DEFAULT,
+        discountByQty: { ...DEFAULT_CONFIG.discountByQty, ...(p?.discountByQty || {}) },
         versions: { ...DEFAULT_CONFIG.versions, standard: std },
       };
     }
@@ -210,8 +214,15 @@ function mergeVersion(base: VersionConfig, p: any): VersionConfig {
 }
 
 function mergeConfig(p: any): KitConfig {
+  // Migra desconto antigo (que estava por versão) para o global, usando o do "standard" se existir
+  const legacyDisc = p?.versions?.standard?.discountByQty;
   return {
     whatsappPhone: p?.whatsappPhone || WHATSAPP_PHONE_DEFAULT,
+    discountByQty: {
+      ...DEFAULT_CONFIG.discountByQty,
+      ...(legacyDisc || {}),
+      ...(p?.discountByQty || {}),
+    },
     versions: {
       standard: mergeVersion(DEFAULT_CONFIG.versions.standard, p?.versions?.standard),
       nonmetallic: mergeVersion(DEFAULT_CONFIG.versions.nonmetallic, p?.versions?.nonmetallic),
@@ -276,7 +287,7 @@ export default function ConfiguradorKit() {
     [activeUnits, cfg],
   );
   const beforeDiscount = subtotal + extra;
-  const discountPct = baseV.discountByQty[qty] || 0;
+  const discountPct = cfg.discountByQty[qty] || 0;
   const discountValue = Math.round(beforeDiscount * (discountPct / 100));
   const total = beforeDiscount - discountValue;
 
@@ -324,7 +335,7 @@ export default function ConfiguradorKit() {
 
       <div className="qty-tabs" role="tablist" aria-label="Quantidade">
         {([1, 2, 3] as QtyKey[]).map((q) => {
-          const d = baseV.discountByQty[q] || 0;
+          const d = cfg.discountByQty[q] || 0;
           return (
             <button
               key={q}

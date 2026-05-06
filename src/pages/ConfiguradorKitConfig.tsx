@@ -76,9 +76,10 @@ export default function ConfiguradorKitConfig() {
   };
 
   const setDiscount = (q: QtyKey, val: number) => {
-    updateVersion({
-      discountByQty: { ...v.discountByQty, [q]: Math.max(0, Math.min(100, val || 0)) },
-    });
+    setCfg((c) => ({
+      ...c,
+      discountByQty: { ...c.discountByQty, [q]: Math.max(0, Math.min(100, val || 0)) },
+    }));
   };
 
   const save = () => {
@@ -318,9 +319,12 @@ export default function ConfiguradorKitConfig() {
         </div>
       </section>
 
-      {/* Descontos por quantidade */}
+      {/* Descontos por quantidade — GLOBAIS */}
       <section className="border border-border rounded-lg p-5 bg-card">
-        <h2 className="font-semibold mb-4">Descontos por Quantidade (%) — {v.texts.tabLabel}</h2>
+        <h2 className="font-semibold mb-1">Descontos por Quantidade (%) — Globais</h2>
+        <p className="text-xs text-muted-foreground mb-4">
+          Aplicados a todo o pedido (vale para qualquer versão e combinação).
+        </p>
         <div className="grid sm:grid-cols-3 gap-4">
           {([1, 2, 3] as QtyKey[]).map((q) => (
             <label key={q} className="block">
@@ -331,7 +335,7 @@ export default function ConfiguradorKitConfig() {
                 type="number"
                 min={0}
                 max={100}
-                value={v.discountByQty[q]}
+                value={cfg.discountByQty[q]}
                 onChange={(e) => setDiscount(q, Number(e.target.value))}
                 className="mt-1 w-full h-10 px-3 rounded border border-border bg-background"
               />
