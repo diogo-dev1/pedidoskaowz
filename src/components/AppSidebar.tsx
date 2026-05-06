@@ -103,6 +103,7 @@ export function AppSidebar() {
     { title: 'Config. Catálogo Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
     { title: 'Config. Catálogo Revendedor Internacional', url: '/admin/catalogo-internacional', icon: Globe },
     { title: 'Config. Preview', url: '/admin/preview', icon: Eye },
+    { title: 'Config. Configurador Kit', url: '/admin/configurador-kit', icon: Layers },
     { title: 'Bling', url: '/bling', icon: Link2 },
   ] : [];
 
