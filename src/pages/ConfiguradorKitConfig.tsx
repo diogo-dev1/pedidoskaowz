@@ -76,9 +76,10 @@ export default function ConfiguradorKitConfig() {
   };
 
   const setDiscount = (q: QtyKey, val: number) => {
-    updateVersion({
-      discountByQty: { ...v.discountByQty, [q]: Math.max(0, Math.min(100, val || 0)) },
-    });
+    setCfg((c) => ({
+      ...c,
+      discountByQty: { ...c.discountByQty, [q]: Math.max(0, Math.min(100, val || 0)) },
+    }));
   };
 
   const save = () => {
