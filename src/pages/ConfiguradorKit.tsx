@@ -517,7 +517,12 @@ export default function ConfiguradorKit() {
           </div>
         </div>
         {discountPct > 0 && (
-          <div className="cupom-msg">Resgate seu cupom de <strong>{discountPct}%</strong> de desconto</div>
+          <div
+            className="cupom-msg"
+            dangerouslySetInnerHTML={{
+              __html: (cfg.cupomMessage || '').replace(/\{pct\}/g, `<strong>${discountPct}%</strong>`),
+            }}
+          />
         )}
         <a className="btn-cta" href={waUrl} target="_blank" rel="noopener noreferrer">
           {baseV.texts.ctaText}
