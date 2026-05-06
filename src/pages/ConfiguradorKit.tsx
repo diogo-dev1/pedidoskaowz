@@ -483,9 +483,6 @@ export default function ConfiguradorKit() {
             {discountPct > 0 && <span className="total-por-label">Por</span>}
             <span className="total-val">{BRL(total)}</span>
           </div>
-          {discountPct > 0 && (
-            <span className="total-discount">Economia de {BRL(discountValue)} · -{discountPct}%</span>
-          )}
         </div>
         {discountPct > 0 && (
           <div className="cupom-msg">Resgate seu cupom de <strong>{discountPct}%</strong> de desconto</div>
@@ -510,6 +507,23 @@ export default function ConfiguradorKit() {
             <span className="ref-sub">{baseV.texts.refSub}</span>
           </figcaption>
         </figure>
+        {(cfg.discountByQty[3] || 0) > 0 && (
+          <button
+            type="button"
+            className="btn-cta ref-cta"
+            onClick={() => {
+              setUnits([
+                { version: 'standard', size: 'standard', finish: 'sw', bainha: 'velada', bainhaExtra: false, bainhaExtraTipo: 'multi' },
+                { version: 'standard', size: 'compact', finish: 'sw', bainha: 'velada', bainhaExtra: false, bainhaExtraTipo: 'multi' },
+                { version: 'standard', size: 'micro', finish: 'sw', bainha: 'velada', bainhaExtra: false, bainhaExtraTipo: 'multi' },
+              ]);
+              setQty(3);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            Monte o Kit Completo com {cfg.discountByQty[3]}% de desconto
+          </button>
+        )}
       </section>
 
       <div className="footer-note">
@@ -637,6 +651,7 @@ const css = `
 .ck-root .ref-card figcaption { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--border); }
 .ck-root .ref-label { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 3px; color: var(--text); }
 .ck-root .ref-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
+.ck-root .ref-cta { display: block; width: 100%; max-width: 560px; margin: 1.75rem auto 0; text-align: center; }
 
 .ck-root .footer-note { text-align: center; padding: 2rem 1.5rem 4rem; font-size: 11px; color: var(--dim); line-height: 1.9; letter-spacing: 0.5px; }
 
