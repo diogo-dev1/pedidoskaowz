@@ -271,6 +271,23 @@ export default function ConfiguradorKit() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
+  // Pré-carrega todas as imagens das versões/tamanhos/acabamentos para troca instantânea
+  useEffect(() => {
+    const urls = new Set<string>();
+    Object.values(cfg.versions).forEach((ver) => {
+      (['standard', 'compact', 'micro'] as SizeKey[]).forEach((sk) => {
+        Object.values(ver.imagesBySize[sk] || {}).forEach((u) => {
+          if (u) urls.add(u);
+        });
+      });
+    });
+    urls.forEach((src) => {
+      const im = new Image();
+      im.decoding = 'async';
+      im.src = src;
+    });
+  }, [cfg]);
+
   // Versão usada para textos gerais (hero/cta/ref/footer) e tabela de desconto por qty
   const baseV = cfg.versions.standard;
   const activeUnits = units.slice(0, qty);
