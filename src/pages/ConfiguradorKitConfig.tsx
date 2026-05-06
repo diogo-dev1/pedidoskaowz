@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Save, RotateCcw, Upload } from 'lucide-react';
+import { Save, RotateCcw, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   CONFIG_STORAGE_KEY,
   DEFAULT_CONFIG,
   KitConfig,
   loadKitConfig,
+  WHATSAPP_PHONE_DEFAULT,
 } from './ConfiguradorKit';
 
 type FinishKey = 'satin' | 'sw' | 'tac';
 type SizeKey = 'standard' | 'compact' | 'micro';
+type QtyKey = 1 | 2 | 3;
 
 const FINISHES: { key: FinishKey; name: string }[] = [
   { key: 'satin', name: 'Acetinada' },
@@ -41,25 +42,37 @@ export default function ConfiguradorKitConfig() {
     }));
   };
 
-  const handleImage = async (finish: FinishKey | 'kit', file: File | null) => {
+  const handleImage = async (size: SizeKey | 'kit', finish: FinishKey | null, file: File | null) => {
     if (!file) return;
     if (file.size > 4 * 1024 * 1024) {
       toast.error('Imagem muito grande (máx 4MB)');
       return;
     }
     const dataUrl = await fileToDataUrl(file);
-    setCfg((c) =>
-      finish === 'kit'
-        ? { ...c, kitImage: dataUrl }
-        : { ...c, images: { ...c.images, [finish]: dataUrl } },
-    );
+    setCfg((c) => {
+      if (size === 'kit') return { ...c, kitImage: dataUrl };
+      return {
+        ...c,
+        imagesBySize: {
+          ...c.imagesBySize,
+          [size]: { ...c.imagesBySize[size], [finish!]: dataUrl },
+        },
+      };
+    });
+  };
+
+  const setDiscount = (q: QtyKey, val: number) => {
+    setCfg((c) => ({
+      ...c,
+      discountByQty: { ...c.discountByQty, [q]: Math.max(0, Math.min(100, val || 0)) },
+    }));
   };
 
   const save = () => {
     try {
       localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(cfg));
       toast.success('Configurações salvas');
-    } catch (e) {
+    } catch {
       toast.error('Erro ao salvar (talvez imagens muito grandes)');
     }
   };
@@ -72,14 +85,14 @@ export default function ConfiguradorKitConfig() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <Link
-          to="/configurador-kit"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft size={16} /> Voltar ao Configurador
-        </Link>
+        <div>
+          <h1 className="text-2xl font-bold">Configurador Push Dagger</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Edite valores, descontos por quantidade, WhatsApp e imagens da landpage pública.
+          </p>
+        </div>
         <div className="flex gap-2">
           <button
             onClick={reset}
@@ -94,13 +107,6 @@ export default function ConfiguradorKitConfig() {
             <Save size={14} /> Salvar
           </button>
         </div>
-      </div>
-
-      <div>
-        <h1 className="text-2xl font-bold">Configurações do Kit</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Edite valores, desconto e imagens do Configurador de Kit Push Dagger.
-        </p>
       </div>
 
       {/* Preços */}
@@ -138,24 +144,30 @@ export default function ConfiguradorKitConfig() {
         </div>
       </section>
 
-      {/* Desconto + bainha extra */}
-      <section className="grid sm:grid-cols-2 gap-4">
-        <div className="border border-border rounded-lg p-5 bg-card">
-          <label className="font-semibold block mb-2">Desconto do Kit (%)</label>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={cfg.discountPercent}
-            onChange={(e) =>
-              setCfg((c) => ({ ...c, discountPercent: Math.max(0, Math.min(100, Number(e.target.value) || 0)) }))
-            }
-            className="w-full h-10 px-3 rounded border border-border bg-background"
-          />
-          <p className="text-xs text-muted-foreground mt-2">
-            Aplicado sobre o subtotal (acabamentos + bainha extra).
-          </p>
+      {/* Descontos por quantidade */}
+      <section className="border border-border rounded-lg p-5 bg-card">
+        <h2 className="font-semibold mb-4">Descontos por Quantidade (%)</h2>
+        <div className="grid sm:grid-cols-3 gap-4">
+          {([1, 2, 3] as QtyKey[]).map((q) => (
+            <label key={q} className="block">
+              <span className="text-sm font-medium">
+                {q} {q === 1 ? 'Unidade' : 'Unidades'}
+              </span>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={cfg.discountByQty[q]}
+                onChange={(e) => setDiscount(q, Number(e.target.value))}
+                className="mt-1 w-full h-10 px-3 rounded border border-border bg-background"
+              />
+            </label>
+          ))}
         </div>
+      </section>
+
+      {/* Bainha extra + WhatsApp */}
+      <section className="grid sm:grid-cols-2 gap-4">
         <div className="border border-border rounded-lg p-5 bg-card">
           <label className="font-semibold block mb-2">Valor da Bainha Extra (R$)</label>
           <input
@@ -166,29 +178,54 @@ export default function ConfiguradorKitConfig() {
             className="w-full h-10 px-3 rounded border border-border bg-background"
           />
         </div>
+        <div className="border border-border rounded-lg p-5 bg-card">
+          <label className="font-semibold block mb-2">WhatsApp da empresa</label>
+          <input
+            type="text"
+            value={cfg.whatsappPhone}
+            onChange={(e) => setCfg((c) => ({ ...c, whatsappPhone: e.target.value.replace(/\D/g, '') }))}
+            placeholder={WHATSAPP_PHONE_DEFAULT}
+            className="w-full h-10 px-3 rounded border border-border bg-background"
+          />
+          <p className="text-xs text-muted-foreground mt-2">Formato: 55 + DDD + número (apenas dígitos).</p>
+        </div>
       </section>
 
-      {/* Imagens */}
+      {/* Imagens por tamanho × acabamento */}
       <section className="border border-border rounded-lg p-5 bg-card">
-        <h2 className="font-semibold mb-4">Imagens</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FINISHES.map((f) => (
-            <ImageUploader
-              key={f.key}
-              label={f.name}
-              src={cfg.images[f.key]}
-              onPick={(file) => handleImage(f.key, file)}
-            />
+        <h2 className="font-semibold mb-1">Imagens por Tamanho × Acabamento</h2>
+        <p className="text-xs text-muted-foreground mb-4">
+          Faça upload de uma imagem para cada combinação (9 no total). Imagens são salvas localmente neste navegador (máx ~4MB cada).
+        </p>
+        <div className="space-y-6">
+          {SIZES.map((s) => (
+            <div key={s.key}>
+              <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider text-muted-foreground">{s.name}</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {FINISHES.map((f) => (
+                  <ImageUploader
+                    key={f.key}
+                    label={f.name}
+                    src={cfg.imagesBySize[s.key][f.key]}
+                    onPick={(file) => handleImage(s.key, f.key, file)}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
+        </div>
+      </section>
+
+      {/* Imagem do Kit (referência) */}
+      <section className="border border-border rounded-lg p-5 bg-card">
+        <h2 className="font-semibold mb-3">Imagem de Referência (rodapé)</h2>
+        <div className="max-w-xs">
           <ImageUploader
-            label="Kit Completo"
+            label="Kit / Linha completa"
             src={cfg.kitImage}
-            onPick={(file) => handleImage('kit', file)}
+            onPick={(file) => handleImage('kit', null, file)}
           />
         </div>
-        <p className="text-xs text-muted-foreground mt-3">
-          Imagens são salvas localmente neste navegador (máx ~4MB cada).
-        </p>
       </section>
     </div>
   );

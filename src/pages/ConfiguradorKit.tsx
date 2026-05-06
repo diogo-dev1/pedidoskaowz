@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Settings } from 'lucide-react';
 import kaowzLogo from '@/assets/kaowz-logo.png';
 import kitCard from '@/assets/push-dagger-kit-card.jpeg';
 import imgAcetinada from '@/assets/push-dagger-acetinada.jpeg';
@@ -10,6 +8,7 @@ import imgTactical from '@/assets/push-dagger-tactical.jpeg';
 type FinishKey = 'satin' | 'sw' | 'tac';
 type SizeKey = 'standard' | 'compact' | 'micro';
 type BainhaKey = 'velada' | 'multi';
+type QtyKey = 1 | 2 | 3;
 
 const FINISH_NAMES: Record<FinishKey, string> = {
   satin: 'Acetinada',
@@ -24,13 +23,24 @@ const SIZE_LIST: { key: SizeKey; name: string; bladeMm: number; gripMm: number }
   { key: 'micro',    name: 'MICRO',    bladeMm: 37.16, gripMm: 68.51 },
 ];
 
+export const WHATSAPP_PHONE_DEFAULT = '5528999025695';
+
 export interface KitConfig {
   prices: Record<SizeKey, Record<FinishKey, number>>;
-  images: Record<FinishKey, string>;
+  /** Imagens por tamanho × acabamento */
+  imagesBySize: Record<SizeKey, Record<FinishKey, string>>;
   kitImage: string;
-  discountPercent: number;
+  /** Desconto separado por quantidade do kit (1, 2 ou 3 unidades) */
+  discountByQty: Record<QtyKey, number>;
   bainhaExtraPrice: number;
+  whatsappPhone: string;
 }
+
+const defaultImgsForSize = (): Record<FinishKey, string> => ({
+  satin: imgAcetinada,
+  sw: imgStoneWashed,
+  tac: imgTactical,
+});
 
 export const DEFAULT_CONFIG: KitConfig = {
   prices: {
@@ -38,47 +48,86 @@ export const DEFAULT_CONFIG: KitConfig = {
     compact:  { satin: 645, sw: 665, tac: 755 },
     micro:    { satin: 515, sw: 535, tac: 625 },
   },
-  images: { satin: imgAcetinada, sw: imgStoneWashed, tac: imgTactical },
+  imagesBySize: {
+    standard: defaultImgsForSize(),
+    compact: defaultImgsForSize(),
+    micro: defaultImgsForSize(),
+  },
   kitImage: kitCard,
-  discountPercent: 0,
+  discountByQty: { 1: 0, 2: 5, 3: 10 },
   bainhaExtraPrice: 180,
+  whatsappPhone: WHATSAPP_PHONE_DEFAULT,
 };
 
-export const CONFIG_STORAGE_KEY = 'configurador-kit-config-v1';
+export const CONFIG_STORAGE_KEY = 'configurador-kit-config-v2';
+const LEGACY_KEY = 'configurador-kit-config-v1';
 
 export function loadKitConfig(): KitConfig {
   try {
     const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
-    if (!raw) return DEFAULT_CONFIG;
-    const parsed = JSON.parse(raw);
-    return {
-      ...DEFAULT_CONFIG,
-      ...parsed,
-      prices: { ...DEFAULT_CONFIG.prices, ...(parsed.prices || {}) },
-      images: { ...DEFAULT_CONFIG.images, ...(parsed.images || {}) },
-    };
-  } catch {
-    return DEFAULT_CONFIG;
-  }
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return mergeConfig(parsed);
+    }
+    // Migra do v1 (compat)
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    if (legacy) {
+      const p = JSON.parse(legacy);
+      const flatImgs = p.images || {};
+      return mergeConfig({
+        prices: p.prices,
+        kitImage: p.kitImage,
+        bainhaExtraPrice: p.bainhaExtraPrice,
+        discountByQty: { 1: 0, 2: p.discountPercent || 0, 3: p.discountPercent || 0 },
+        imagesBySize: {
+          standard: { ...defaultImgsForSize(), ...flatImgs },
+          compact: { ...defaultImgsForSize(), ...flatImgs },
+          micro: { ...defaultImgsForSize(), ...flatImgs },
+        },
+      });
+    }
+  } catch {}
+  return DEFAULT_CONFIG;
+}
+
+function mergeConfig(p: any): KitConfig {
+  return {
+    ...DEFAULT_CONFIG,
+    ...p,
+    prices: { ...DEFAULT_CONFIG.prices, ...(p?.prices || {}) },
+    imagesBySize: {
+      standard: { ...defaultImgsForSize(), ...(p?.imagesBySize?.standard || {}) },
+      compact: { ...defaultImgsForSize(), ...(p?.imagesBySize?.compact || {}) },
+      micro: { ...defaultImgsForSize(), ...(p?.imagesBySize?.micro || {}) },
+    },
+    discountByQty: { ...DEFAULT_CONFIG.discountByQty, ...(p?.discountByQty || {}) },
+    whatsappPhone: p?.whatsappPhone || WHATSAPP_PHONE_DEFAULT,
+  };
 }
 
 const BRL = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
+interface UnitConfig {
+  size: SizeKey;
+  finish: FinishKey;
+  bainha: BainhaKey;
+  bainhaExtra: boolean;
+  bainhaExtraTipo: BainhaKey;
+}
+
+const newUnit = (): UnitConfig => ({
+  size: 'standard',
+  finish: 'sw',
+  bainha: 'velada',
+  bainhaExtra: false,
+  bainhaExtraTipo: 'multi',
+});
+
 export default function ConfiguradorKit() {
   const [cfg, setCfg] = useState<KitConfig>(() => loadKitConfig());
-  const [selections, setSelections] = useState<Record<SizeKey, FinishKey>>({
-    standard: 'sw', compact: 'sw', micro: 'sw',
-  });
-  const [bainhas, setBainhas] = useState<Record<SizeKey, BainhaKey>>({
-    standard: 'velada', compact: 'velada', micro: 'velada',
-  });
-  const [bainhaExtras, setBainhaExtras] = useState<Record<SizeKey, boolean>>({
-    standard: false, compact: false, micro: false,
-  });
-  const [bainhaExtraTipo, setBainhaExtraTipo] = useState<Record<SizeKey, BainhaKey>>({
-    standard: 'multi', compact: 'multi', micro: 'multi',
-  });
+  const [qty, setQty] = useState<QtyKey>(1);
+  const [units, setUnits] = useState<UnitConfig[]>([newUnit(), newUnit(), newUnit()]);
 
   useEffect(() => {
     const onStorage = () => setCfg(loadKitConfig());
@@ -86,85 +135,113 @@ export default function ConfiguradorKit() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
+  const activeUnits = units.slice(0, qty);
+
   const subtotal = useMemo(
-    () => SIZE_LIST.reduce((sum, s) => sum + cfg.prices[s.key][selections[s.key]], 0),
-    [selections, cfg.prices],
+    () => activeUnits.reduce((s, u) => s + cfg.prices[u.size][u.finish], 0),
+    [activeUnits, cfg.prices],
   );
-  const extrasCount = useMemo(
-    () => SIZE_LIST.reduce((n, s) => n + (bainhaExtras[s.key] ? 1 : 0), 0),
-    [bainhaExtras],
-  );
+  const extrasCount = activeUnits.filter((u) => u.bainhaExtra).length;
   const extra = extrasCount * cfg.bainhaExtraPrice;
   const beforeDiscount = subtotal + extra;
-  const discountValue = Math.round(beforeDiscount * (cfg.discountPercent / 100));
+  const discountPct = cfg.discountByQty[qty] || 0;
+  const discountValue = Math.round(beforeDiscount * (discountPct / 100));
   const total = beforeDiscount - discountValue;
 
+  const updateUnit = (idx: number, patch: Partial<UnitConfig>) => {
+    setUnits((arr) => arr.map((u, i) => (i === idx ? { ...u, ...patch } : u)));
+  };
+
   const waMessage = useMemo(() => {
-    const lines = SIZE_LIST.map((s) => {
-      const fk = selections[s.key];
-      const bk = bainhas[s.key];
-      const bn = bk === 'velada' ? 'Velada' : 'Multifuncional';
-      const ex = bainhaExtras[s.key]
-        ? ` + Bainha Extra ${bainhaExtraTipo[s.key] === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(cfg.bainhaExtraPrice)})`
+    const header = qty === 1 ? 'Quero esta Push Dagger:' : `Quero montar este Kit Push Dagger (${qty} unidades):`;
+    const lines = activeUnits.map((u, i) => {
+      const bn = u.bainha === 'velada' ? 'Velada' : 'Multifuncional';
+      const ex = u.bainhaExtra
+        ? ` + Bainha Extra ${u.bainhaExtraTipo === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(cfg.bainhaExtraPrice)})`
         : '';
-      return `• ${s.name} — ${FINISH_NAMES[fk]} (${BRL(cfg.prices[s.key][fk])})\n   Bainha: ${bn}${ex}`;
+      const sizeName = SIZE_LIST.find((s) => s.key === u.size)!.name;
+      return `• Unidade ${i + 1}: ${sizeName} — ${FINISH_NAMES[u.finish]} (${BRL(cfg.prices[u.size][u.finish])})\n   Bainha: ${bn}${ex}`;
     });
-    const desc = cfg.discountPercent > 0 ? `\nDesconto: ${cfg.discountPercent}% (-${BRL(discountValue)})` : '';
-    return encodeURIComponent(
-      `Olá! Quero montar este Kit Push Dagger:\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`,
-    );
-  }, [selections, bainhas, bainhaExtras, bainhaExtraTipo, cfg, discountValue, total]);
+    const desc = discountPct > 0 ? `\nDesconto: ${discountPct}% (-${BRL(discountValue)})` : '';
+    return encodeURIComponent(`${header}\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`);
+  }, [activeUnits, qty, cfg, discountPct, discountValue, total]);
+
+  const waUrl = `https://wa.me/${cfg.whatsappPhone}?text=${waMessage}`;
 
   return (
     <div className="ck-root">
       <style>{css}</style>
 
       <header className="ck-header">
-        <Link to="/configurador-kit" className="logo" aria-label="Kaowz">
+        <a href="/configurador-kit" className="logo" aria-label="Kaowz">
           <img src={kaowzLogo} alt="Kaowz - Ferramentas de Corte" className="logo-img" />
-        </Link>
-        <Link to="/configurador-kit/configuracoes" className="header-config" aria-label="Configurações">
-          <Settings size={16} />
-          <span>Configurar</span>
-        </Link>
+        </a>
       </header>
 
       <section className="hero">
         <div className="eyebrow">— Push Dagger Series —</div>
         <h1 className="hero-title">MONTE SEU <span>KIT</span></h1>
         <p className="hero-desc">
-          A evolução de um ícone da defesa pessoal. Escolha o acabamento de cada tamanho e configure o seu kit exclusivo.
+          A evolução de um ícone da defesa pessoal. Escolha quantas unidades quer e configure cada uma.
         </p>
       </section>
 
-      <div className="config-grid">
-        {SIZE_LIST.map((s, i) => {
-          const sel = selections[s.key];
-          const totalMm = s.bladeMm + s.gripMm;
+      <div className="qty-tabs" role="tablist" aria-label="Quantidade">
+        {([1, 2, 3] as QtyKey[]).map((q) => {
+          const d = cfg.discountByQty[q] || 0;
           return (
-            <article className="col" key={s.key}>
+            <button
+              key={q}
+              role="tab"
+              aria-selected={qty === q}
+              className={`qty-tab ${qty === q ? 'active' : ''}`}
+              onClick={() => setQty(q)}
+            >
+              <span className="qty-num">{q}</span>
+              <span className="qty-label">{q === 1 ? 'Unidade' : 'Unidades'}</span>
+              {d > 0 && <span className="qty-disc">-{d}%</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className={`config-grid grid-${qty}`}>
+        {activeUnits.map((u, idx) => {
+          const sizeMeta = SIZE_LIST.find((s) => s.key === u.size)!;
+          const totalMm = sizeMeta.bladeMm + sizeMeta.gripMm;
+          const img = cfg.imagesBySize[u.size][u.finish];
+          return (
+            <article className="col" key={idx}>
               <div className="col-head">
-                <div className="col-index">0{i + 1}</div>
+                <div className="col-index">0{idx + 1}</div>
                 <div className="col-head-text">
-                  <div className="col-model">{s.name}</div>
+                  <div className="col-model">{sizeMeta.name}</div>
                   <div className="col-dims">Total {totalMm.toFixed(1).replace('.', ',')} mm</div>
                 </div>
               </div>
 
               <div className="product-stage">
                 <div className="product-card">
-                  {FINISH_KEYS.map((fk) => (
-                    <img
-                      key={fk}
-                      src={cfg.images[fk]}
-                      alt={`${s.name} ${FINISH_NAMES[fk]}`}
-                      className={`product-img ${sel === fk ? 'is-active' : ''}`}
-                      loading="eager"
-                    />
-                  ))}
+                  <img src={img} alt={`${sizeMeta.name} ${FINISH_NAMES[u.finish]}`} className="product-img is-active" />
                   <div className="product-card-overlay" />
-                  <div className="product-card-tag">{FINISH_NAMES[sel]}</div>
-                  <div className="product-card-price">{BRL(cfg.prices[s.key][sel])}</div>
+                  <div className="product-card-tag">{FINISH_NAMES[u.finish]}</div>
+                  <div className="product-card-price">{BRL(cfg.prices[u.size][u.finish])}</div>
+                </div>
+              </div>
+
+              <div className="opt-section">
+                <div className="opt-label">Tamanho</div>
+                <div className="finish-options">
+                  {SIZE_LIST.map((s) => (
+                    <button
+                      key={s.key}
+                      type="button"
+                      className={`finish-btn ${u.size === s.key ? 'active' : ''}`}
+                      onClick={() => updateUnit(idx, { size: s.key })}
+                    >
+                      <span className="finish-name">{s.name}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -175,8 +252,8 @@ export default function ConfiguradorKit() {
                     <button
                       key={fk}
                       type="button"
-                      className={`finish-btn ${sel === fk ? 'active' : ''}`}
-                      onClick={() => setSelections((st) => ({ ...st, [s.key]: fk }))}
+                      className={`finish-btn ${u.finish === fk ? 'active' : ''}`}
+                      onClick={() => updateUnit(idx, { finish: fk })}
                     >
                       <span className="finish-name">{FINISH_NAMES[fk]}</span>
                     </button>
@@ -187,52 +264,38 @@ export default function ConfiguradorKit() {
               <div className="opt-section">
                 <div className="opt-label">Bainha</div>
                 <div className="finish-options bainha-options">
-                  {([
-                    { key: 'velada' as BainhaKey, name: 'Velada' },
-                    { key: 'multi' as BainhaKey, name: 'Multifuncional' },
-                  ]).map((b) => {
-                    const active = bainhas[s.key] === b.key;
-                    return (
-                      <button
-                        key={b.key}
-                        type="button"
-                        className={`finish-btn ${active ? 'active' : ''}`}
-                        onClick={() => setBainhas((st) => ({ ...st, [s.key]: b.key }))}
-                      >
-                        <span className="finish-name">{b.name}</span>
-                      </button>
-                    );
-                  })}
+                  {(['velada', 'multi'] as BainhaKey[]).map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      className={`finish-btn ${u.bainha === b ? 'active' : ''}`}
+                      onClick={() => updateUnit(idx, { bainha: b })}
+                    >
+                      <span className="finish-name">{b === 'velada' ? 'Velada' : 'Multifuncional'}</span>
+                    </button>
+                  ))}
                 </div>
-                <label className={`bainha-extra ${bainhaExtras[s.key] ? 'active' : ''}`}>
+                <label className={`bainha-extra ${u.bainhaExtra ? 'active' : ''}`}>
                   <input
                     type="checkbox"
-                    checked={bainhaExtras[s.key]}
-                    onChange={(e) =>
-                      setBainhaExtras((st) => ({ ...st, [s.key]: e.target.checked }))
-                    }
+                    checked={u.bainhaExtra}
+                    onChange={(e) => updateUnit(idx, { bainhaExtra: e.target.checked })}
                   />
                   <span className="bainha-extra-title">Bainha Extra</span>
                   <span className="bainha-extra-price">+ {BRL(cfg.bainhaExtraPrice)}</span>
                 </label>
-                {bainhaExtras[s.key] && (
+                {u.bainhaExtra && (
                   <div className="finish-options bainha-options bainha-extra-tipo">
-                    {([
-                      { key: 'velada' as BainhaKey, name: 'Velada' },
-                      { key: 'multi' as BainhaKey, name: 'Multifuncional' },
-                    ]).map((b) => {
-                      const active = bainhaExtraTipo[s.key] === b.key;
-                      return (
-                        <button
-                          key={b.key}
-                          type="button"
-                          className={`finish-btn ${active ? 'active' : ''}`}
-                          onClick={() => setBainhaExtraTipo((st) => ({ ...st, [s.key]: b.key }))}
-                        >
-                          <span className="finish-name">{b.name}</span>
-                        </button>
-                      );
-                    })}
+                    {(['velada', 'multi'] as BainhaKey[]).map((b) => (
+                      <button
+                        key={b}
+                        type="button"
+                        className={`finish-btn ${u.bainhaExtraTipo === b ? 'active' : ''}`}
+                        onClick={() => updateUnit(idx, { bainhaExtraTipo: b })}
+                      >
+                        <span className="finish-name">{b === 'velada' ? 'Velada' : 'Multifuncional'}</span>
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -243,43 +306,42 @@ export default function ConfiguradorKit() {
 
       <div className="cta-block">
         <div className="total-row">
-          <span className="total-label">Total do Kit</span>
-          {cfg.discountPercent > 0 && (
+          <span className="total-label">{qty === 1 ? 'Total' : `Total do Kit (${qty} un.)`}</span>
+          {discountPct > 0 && (
             <div className="total-de">
               <span className="total-de-label">De</span>
               <span className="total-old">{BRL(beforeDiscount)}</span>
             </div>
           )}
           <div className="total-por">
-            {cfg.discountPercent > 0 && <span className="total-por-label">Por</span>}
+            {discountPct > 0 && <span className="total-por-label">Por</span>}
             <span className="total-val">{BRL(total)}</span>
           </div>
-          {cfg.discountPercent > 0 && (
-            <span className="total-discount">Economia de {BRL(discountValue)} · -{cfg.discountPercent}%</span>
+          {discountPct > 0 && (
+            <span className="total-discount">Economia de {BRL(discountValue)} · -{discountPct}%</span>
           )}
         </div>
-        {cfg.discountPercent > 0 && (
-          <div className="cupom-msg">Resgate seu cupom de <strong>{cfg.discountPercent}%</strong> de desconto</div>
+        {discountPct > 0 && (
+          <div className="cupom-msg">Resgate seu cupom de <strong>{discountPct}%</strong> de desconto</div>
         )}
-        <a className="btn-cta" href={`https://wa.me/?text=${waMessage}`} target="_blank" rel="noopener noreferrer">
+        <a className="btn-cta" href={waUrl} target="_blank" rel="noopener noreferrer">
           Quero Comprar Agora
         </a>
-        <div className="cta-note">Pagamento seguro</div>
+        <div className="cta-note">Atendimento via WhatsApp</div>
       </div>
 
-      {/* Referência visual: somente o kit completo */}
       <section className="ref-section">
         <div className="ref-section-head">
           <div className="eyebrow">— Referência Visual —</div>
-          <h2>O Kit por Inteiro</h2>
+          <h2>Linha Push Dagger</h2>
         </div>
         <figure className="ref-card">
           <div className="ref-img-wrap">
-            <img src={cfg.kitImage} alt="Kit Push Dagger completo" />
+            <img src={cfg.kitImage} alt="Push Dagger" />
           </div>
           <figcaption>
-            <span className="ref-label">Kit Completo</span>
-            <span className="ref-sub">Standard · Compact · Micro</span>
+            <span className="ref-label">Standard · Compact · Micro</span>
+            <span className="ref-sub">Acetinada · Stone Washed · Tactical</span>
           </figcaption>
         </figure>
       </section>
@@ -309,7 +371,6 @@ const css = `
   color: var(--text);
   font-family: 'Barlow', sans-serif;
   min-height: 100vh;
-  margin: -1.5rem;
   background-image:
     radial-gradient(ellipse at top, rgba(255,193,7,0.04), transparent 50%),
     repeating-linear-gradient(45deg, transparent 0 12px, rgba(255,255,255,0.012) 12px 13px);
@@ -317,40 +378,48 @@ const css = `
 .ck-root * { box-sizing: border-box; }
 
 .ck-header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: center;
   padding: 1rem 1.75rem; border-bottom: 1px solid var(--border);
   background: rgba(5,5,5,0.85); backdrop-filter: blur(12px);
   position: sticky; top: 0; z-index: 40;
 }
 .ck-root .logo { display: inline-flex; align-items: center; }
 .ck-root .logo-img { height: 38px; width: auto; display: block; }
-.ck-root .header-config { display: inline-flex; align-items: center; gap: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); border: 1px solid var(--border); padding: 7px 12px; border-radius: 3px; text-decoration: none; transition: all .2s; }
-.ck-root .header-config:hover { color: var(--yellow); border-color: rgba(255,193,7,0.35); }
 
-.ck-root .hero { padding: 4rem 1.5rem 2.5rem; text-align: center; max-width: 760px; margin: 0 auto; }
+.ck-root .hero { padding: 4rem 1.5rem 2rem; text-align: center; max-width: 760px; margin: 0 auto; }
 .ck-root .eyebrow { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 4px; color: var(--yellow); text-transform: uppercase; margin-bottom: 18px; }
 .ck-root .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 8vw, 80px); letter-spacing: 6px; line-height: 0.95; margin-bottom: 22px; font-weight: 700; }
 .ck-root .hero-title span { color: var(--yellow); font-style: italic; }
 .ck-root .hero-desc { font-size: 14px; color: #B5B5B3; line-height: 1.7; max-width: 520px; margin: 0 auto; letter-spacing: 0.3px; }
 
-.ck-root .config-grid { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 1100px; margin: 1rem auto 0; gap: 18px; padding: 0 1.75rem; }
-.ck-root .col { background: linear-gradient(180deg, var(--s1) 0%, #070707 100%); border: 1px solid var(--border); border-radius: 4px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; transition: all .3s; position: relative; }
+.ck-root .qty-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 720px; margin: 0 auto 1.75rem; padding: 0 1.5rem; }
+.ck-root .qty-tab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 12px; background: var(--s1); border: 1px solid var(--border); border-radius: 4px; color: var(--muted); cursor: pointer; transition: all .2s; }
+.ck-root .qty-tab:hover { border-color: var(--border-m); color: var(--text); }
+.ck-root .qty-tab.active { border-color: var(--yellow); background: rgba(255,193,7,0.07); color: var(--text); }
+.ck-root .qty-num { font-family: 'Bebas Neue', sans-serif; font-size: 36px; line-height: 1; color: var(--yellow); }
+.ck-root .qty-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+.ck-root .qty-disc { position: absolute; top: 6px; right: 6px; background: var(--yellow); color: #000; font-family: 'Bebas Neue', sans-serif; font-size: 12px; padding: 2px 6px; border-radius: 2px; letter-spacing: 1px; }
+
+.ck-root .config-grid { display: grid; max-width: 1100px; margin: 0 auto; gap: 18px; padding: 0 1.75rem; }
+.ck-root .config-grid.grid-1 { grid-template-columns: minmax(0, 480px); justify-content: center; }
+.ck-root .config-grid.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.ck-root .config-grid.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.ck-root .col { background: linear-gradient(180deg, var(--s1) 0%, #070707 100%); border: 1px solid var(--border); border-radius: 4px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; transition: all .3s; }
 .ck-root .col:hover { border-color: rgba(255,193,7,0.25); transform: translateY(-2px); }
 .ck-root .col-head { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
 .ck-root .col-index { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--yellow); line-height: 1; opacity: 0.85; }
 .ck-root .col-model { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 4px; line-height: 1; }
 .ck-root .col-dims { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; color: var(--muted); letter-spacing: 1.2px; margin-top: 4px; text-transform: uppercase; }
 
-.ck-root .product-stage { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
+.ck-root .product-stage { position: relative; width: 100%; }
 .ck-root .product-card { position: relative; width: 100%; aspect-ratio: 1 / 1; background: var(--s2); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
-.ck-root .product-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .18s ease-out; will-change: opacity; }
-.ck-root .product-img.is-active { opacity: 1; }
+.ck-root .product-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .ck-root .product-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7) 100%); pointer-events: none; }
 .ck-root .product-card-tag { position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,0.65); backdrop-filter: blur(8px); border: 1px solid var(--border-m); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 4px 10px; border-radius: 2px; font-weight: 500; }
 .ck-root .product-card-price { position: absolute; right: 8px; top: 8px; background: var(--yellow); color: #000; font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 1.5px; padding: 3px 8px; border-radius: 2px; }
 
 .ck-root .finish-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-.ck-root .finish-btn { padding: 11px 4px; border: 1px solid var(--border); border-radius: 2px; background: transparent; cursor: pointer; transition: all .15s ease; color: inherit; font-family: inherit; }
+.ck-root .finish-btn { padding: 11px 4px; border: 1px solid var(--border); border-radius: 2px; background: transparent; cursor: pointer; transition: all .15s; color: inherit; font-family: inherit; }
 .ck-root .finish-btn:hover { border-color: var(--border-m); background: rgba(255,255,255,0.02); }
 .ck-root .finish-btn.active { border-color: var(--yellow); background: rgba(255,193,7,0.06); }
 .ck-root .finish-name { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--muted); letter-spacing: 1.4px; text-transform: uppercase; line-height: 1; display: block; }
@@ -368,11 +437,11 @@ const css = `
 .ck-root .bainha-extra.active .bainha-extra-title { color: var(--text); font-weight: 600; }
 .ck-root .bainha-extra-price { font-family: 'Bebas Neue', sans-serif; font-size: 13px; color: var(--yellow); letter-spacing: 1px; }
 
-.ck-root .cta-block { max-width: 560px; margin: 3.5rem auto 0; padding: 2rem 1.5rem; text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; }
+.ck-root .cta-block { max-width: 560px; margin: 3rem auto 0; padding: 2rem 1.5rem; text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; }
 .ck-root .cta-block::before, .ck-root .cta-block::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); width: 40px; height: 1px; background: var(--yellow); }
 .ck-root .cta-block::before { top: -1px; }
 .ck-root .cta-block::after { bottom: -1px; }
-.ck-root .total-row { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; margin-bottom: 18px; }
+.ck-root .total-row { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 18px; }
 .ck-root .total-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
 .ck-root .total-de { display: inline-flex; align-items: baseline; gap: 8px; opacity: 0.85; }
 .ck-root .total-de-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
@@ -381,13 +450,7 @@ const css = `
 .ck-root .total-por-label { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 3px; color: var(--yellow); text-transform: uppercase; }
 .ck-root .total-val { font-family: 'Bebas Neue', sans-serif; font-size: 84px; letter-spacing: 3px; color: var(--yellow); line-height: 1; text-shadow: 0 2px 24px rgba(255,193,7,0.25); }
 .ck-root .total-discount { display: inline-block; margin-top: 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; background: var(--yellow); color: #000; padding: 4px 12px; border-radius: 2px; font-weight: 700; }
-.ck-root .btn-cta {
-  display: inline-block; background: var(--yellow); color: #000;
-  border: none; border-radius: 3px; padding: 16px 48px;
-  font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700;
-  letter-spacing: 3px; cursor: pointer; text-decoration: none; text-transform: uppercase;
-  transition: all .25s; box-shadow: 0 4px 0 #b58800, 0 8px 24px rgba(255,193,7,0.2);
-}
+.ck-root .btn-cta { display: inline-block; background: var(--yellow); color: #000; border: none; border-radius: 3px; padding: 16px 48px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 3px; cursor: pointer; text-decoration: none; text-transform: uppercase; transition: all .25s; box-shadow: 0 4px 0 #b58800, 0 8px 24px rgba(255,193,7,0.2); }
 .ck-root .btn-cta:hover { background: var(--yellow-l); transform: translateY(-2px); box-shadow: 0 6px 0 #b58800, 0 12px 28px rgba(255,193,7,0.3); }
 .ck-root .btn-cta:active { transform: translateY(2px); box-shadow: 0 2px 0 #b58800; }
 .ck-root .cta-note { margin-top: 14px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: var(--dim); text-transform: uppercase; }
@@ -408,10 +471,10 @@ const css = `
 
 @media (max-width: 760px) {
   .ck-root .ck-header { padding: 0.85rem 1rem; }
-  .ck-root .header-config span { display: none; }
   .ck-root .hero { padding: 2.5rem 1rem 1.5rem; }
-  .ck-root .config-grid { grid-template-columns: 1fr; padding: 0 1rem; gap: 14px; }
-  .ck-root .product-card { aspect-ratio: 1 / 1; }
+  .ck-root .qty-tabs { padding: 0 1rem; gap: 6px; }
+  .ck-root .qty-num { font-size: 28px; }
+  .ck-root .config-grid { grid-template-columns: 1fr !important; padding: 0 1rem; gap: 14px; }
   .ck-root .cta-block { padding: 1.5rem 1rem; }
   .ck-root .btn-cta { padding: 14px 32px; font-size: 15px; width: 100%; }
   .ck-root .total-val { font-size: 68px; }
