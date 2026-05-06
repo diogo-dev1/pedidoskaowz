@@ -294,19 +294,7 @@ export default function ConfiguradorKit() {
         </a>
       </header>
 
-      <div className="version-tabs" role="tablist" aria-label="Versão">
-        {VERSION_LIST.map((vl) => (
-          <button
-            key={vl.key}
-            role="tab"
-            aria-selected={version === vl.key}
-            className={`version-tab ${version === vl.key ? 'active' : ''}`}
-            onClick={() => setVersion(vl.key)}
-          >
-            {cfg.versions[vl.key].texts.tabLabel || vl.label}
-          </button>
-        ))}
-      </div>
+      {/* Versão é selecionada por unidade abaixo */}
 
       <section className="hero">
         <div className="eyebrow">{baseV.texts.eyebrow}</div>
