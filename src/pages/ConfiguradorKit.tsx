@@ -183,6 +183,7 @@ export function loadKitConfig(): KitConfig {
       };
       return {
         whatsappPhone: p?.whatsappPhone || WHATSAPP_PHONE_DEFAULT,
+        discountByQty: { ...DEFAULT_CONFIG.discountByQty, ...(p?.discountByQty || {}) },
         versions: { ...DEFAULT_CONFIG.versions, standard: std },
       };
     }
