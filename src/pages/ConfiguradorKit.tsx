@@ -657,7 +657,7 @@ const css = `
 .ck-root .product-stage { position: relative; width: 100%; }
 .ck-root .product-card { position: relative; width: 100%; aspect-ratio: 1 / 1; background: var(--s2); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; transition: all .3s ease; }
 .ck-root .product-card:hover { border-color: var(--border-m); }
-.ck-root .product-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ck-root .product-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
 .ck-root .product-card:hover .product-img { transform: scale(1.04); }
 .ck-root .product-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7) 100%); pointer-events: none; }
 .ck-root .product-card-tag { position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,0.65); backdrop-filter: blur(8px); border: 1px solid var(--border-m); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 4px 10px; border-radius: 3px; font-weight: 500; }
