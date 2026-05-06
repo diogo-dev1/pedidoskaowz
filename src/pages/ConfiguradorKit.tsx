@@ -66,8 +66,12 @@ export interface KitConfig {
   whatsappPhone: string;
   /** Descontos globais (%) aplicados a todo o pedido por quantidade total de unidades */
   discountByQty: Record<QtyKey, number>;
+  /** Mensagem do cupom exibida quando há desconto. Use {pct} como placeholder. */
+  cupomMessage: string;
   versions: Record<VersionKey, VersionConfig>;
 }
+
+export const DEFAULT_CUPOM_MESSAGE = 'Aproveite {pct}% de desconto nas configurações Micro e Compact';
 
 const defaultImgsForSize = (): Record<FinishKey, string> => ({
   satin: imgAcetinada,
@@ -112,6 +116,7 @@ const buildVersion = (over: Partial<VersionConfig> & { texts: VersionTexts }): V
 export const DEFAULT_CONFIG: KitConfig = {
   whatsappPhone: WHATSAPP_PHONE_DEFAULT,
   discountByQty: { 1: 0, 2: 5, 3: 10 },
+  cupomMessage: DEFAULT_CUPOM_MESSAGE,
   versions: {
     standard: buildVersion({ texts: baseTexts({ tabLabel: 'Aço Sandvik 14C28N' }) }),
     nonmetallic: buildVersion({
@@ -184,6 +189,7 @@ export function loadKitConfig(): KitConfig {
       return {
         whatsappPhone: p?.whatsappPhone || WHATSAPP_PHONE_DEFAULT,
         discountByQty: { ...DEFAULT_CONFIG.discountByQty, ...(p?.discountByQty || {}) },
+        cupomMessage: p?.cupomMessage || DEFAULT_CUPOM_MESSAGE,
         versions: { ...DEFAULT_CONFIG.versions, standard: std },
       };
     }
@@ -223,6 +229,7 @@ function mergeConfig(p: any): KitConfig {
       ...(legacyDisc || {}),
       ...(p?.discountByQty || {}),
     },
+    cupomMessage: p?.cupomMessage || DEFAULT_CUPOM_MESSAGE,
     versions: {
       standard: mergeVersion(DEFAULT_CONFIG.versions.standard, p?.versions?.standard),
       nonmetallic: mergeVersion(DEFAULT_CONFIG.versions.nonmetallic, p?.versions?.nonmetallic),
@@ -510,7 +517,12 @@ export default function ConfiguradorKit() {
           </div>
         </div>
         {discountPct > 0 && (
-          <div className="cupom-msg">Resgate seu cupom de <strong>{discountPct}%</strong> de desconto</div>
+          <div
+            className="cupom-msg"
+            dangerouslySetInnerHTML={{
+              __html: (cfg.cupomMessage || '').replace(/\{pct\}/g, `<strong>${discountPct}%</strong>`),
+            }}
+          />
         )}
         <a className="btn-cta" href={waUrl} target="_blank" rel="noopener noreferrer">
           {baseV.texts.ctaText}
