@@ -364,16 +364,27 @@ export default function ConfiguradorKitConfig() {
           const dataUrl = await fileToDataUrl(file);
           setCfg((c) => {
             const cur = c.versions[vl.key];
-            const next: VersionConfig =
-              size === 'kit'
-                ? { ...cur, kitImage: dataUrl }
-                : {
-                    ...cur,
-                    imagesBySize: {
-                      ...cur.imagesBySize,
-                      [size]: { ...cur.imagesBySize[size], [finish!]: dataUrl },
-                    },
-                  };
+            let next: VersionConfig;
+            if (size === 'kit') {
+              next = { ...cur, kitImage: dataUrl };
+            } else if (!cur.hasFinishes) {
+              // Aplica a mesma imagem aos 3 acabamentos (não usados na UI pública)
+              next = {
+                ...cur,
+                imagesBySize: {
+                  ...cur.imagesBySize,
+                  [size]: { satin: dataUrl, sw: dataUrl, tac: dataUrl },
+                },
+              };
+            } else {
+              next = {
+                ...cur,
+                imagesBySize: {
+                  ...cur.imagesBySize,
+                  [size]: { ...cur.imagesBySize[size], [finish!]: dataUrl },
+                },
+              };
+            }
             return { ...c, versions: { ...c.versions, [vl.key]: next } };
           });
         };
@@ -381,21 +392,31 @@ export default function ConfiguradorKitConfig() {
           <section key={vl.key} className="border border-border rounded-lg p-5 bg-card">
             <h2 className="font-semibold mb-1">Imagens — {ver.texts.tabLabel}</h2>
             <p className="text-xs text-muted-foreground mb-4">
-              9 combinações (3 tamanhos × 3 acabamentos) + imagem de referência. Máx ~4MB cada.
+              {ver.hasFinishes
+                ? '9 combinações (3 tamanhos × 3 acabamentos) + imagem de referência. Máx ~4MB cada.'
+                : '1 imagem por tamanho + imagem de referência. Máx ~4MB cada.'}
             </p>
             <div className="space-y-6">
               {SIZES.map((s) => (
                 <div key={s.key}>
                   <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider text-muted-foreground">{s.name}</h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    {FINISHES.map((f) => (
+                  <div className={`grid gap-3 ${ver.hasFinishes ? 'grid-cols-3' : 'grid-cols-1 max-w-xs'}`}>
+                    {ver.hasFinishes ? (
+                      FINISHES.map((f) => (
+                        <ImageUploader
+                          key={f.key}
+                          label={f.name}
+                          src={ver.imagesBySize[s.key][f.key]}
+                          onPick={(file) => handleImg(s.key, f.key, file)}
+                        />
+                      ))
+                    ) : (
                       <ImageUploader
-                        key={f.key}
-                        label={f.name}
-                        src={ver.imagesBySize[s.key][f.key]}
-                        onPick={(file) => handleImg(s.key, f.key, file)}
+                        label={s.name}
+                        src={ver.imagesBySize[s.key].satin}
+                        onPick={(file) => handleImg(s.key, 'satin', file)}
                       />
-                    ))}
+                    )}
                   </div>
                 </div>
               ))}
