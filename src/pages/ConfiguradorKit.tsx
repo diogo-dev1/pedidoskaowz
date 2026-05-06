@@ -393,21 +393,23 @@ export default function ConfiguradorKit() {
                 </div>
               </div>
 
-              <div className="opt-section">
-                <div className="opt-label">Acabamento</div>
-                <div className="finish-options">
-                  {FINISH_KEYS.map((fk) => (
-                    <button
-                      key={fk}
-                      type="button"
-                      className={`finish-btn ${u.finish === fk ? 'active' : ''}`}
-                      onClick={() => updateUnit(idx, { finish: fk })}
-                    >
-                      <span className="finish-name">{FINISH_NAMES[fk]}</span>
-                    </button>
-                  ))}
+              {ver.hasFinishes && (
+                <div className="opt-section">
+                  <div className="opt-label">Acabamento</div>
+                  <div className="finish-options">
+                    {FINISH_KEYS.map((fk) => (
+                      <button
+                        key={fk}
+                        type="button"
+                        className={`finish-btn ${u.finish === fk ? 'active' : ''}`}
+                        onClick={() => updateUnit(idx, { finish: fk })}
+                      >
+                        <span className="finish-name">{FINISH_NAMES[fk]}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="opt-section">
                 <div className="opt-label">Bainha</div>
