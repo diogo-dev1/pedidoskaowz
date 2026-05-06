@@ -387,7 +387,7 @@ export default function ConfiguradorKit() {
 
               <div className="product-stage">
                 <div className="product-card">
-                  <img src={img} alt={`${sizeMeta.name} ${FINISH_NAMES[u.finish]}`} className="product-img is-active" />
+                  <img src={img} alt={`${sizeMeta.name} ${FINISH_NAMES[u.finish]}`} className="product-img is-active" loading="eager" decoding="sync" fetchPriority="high" />
                   <div className="product-card-overlay" />
                   {ver.hasFinishes && <div className="product-card-tag">{FINISH_NAMES[u.finish]}</div>}
                   <div className="product-card-price">{BRL(ver.prices[u.size][u.finish])}</div>
