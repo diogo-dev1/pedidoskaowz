@@ -335,7 +335,7 @@ export default function ConfiguradorKit() {
 
       <div className="qty-tabs" role="tablist" aria-label="Quantidade">
         {([1, 2, 3] as QtyKey[]).map((q) => {
-          const d = baseV.discountByQty[q] || 0;
+          const d = cfg.discountByQty[q] || 0;
           return (
             <button
               key={q}
