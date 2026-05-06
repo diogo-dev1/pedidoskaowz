@@ -347,6 +347,22 @@ export default function ConfiguradorKit() {
               </div>
 
               <div className="opt-section">
+                <div className="opt-label">Versão</div>
+                <div className="finish-options version-options">
+                  {VERSION_LIST.map((vl) => (
+                    <button
+                      key={vl.key}
+                      type="button"
+                      className={`finish-btn ${u.version === vl.key ? 'active' : ''}`}
+                      onClick={() => updateUnit(idx, { version: vl.key })}
+                    >
+                      <span className="finish-name">{cfg.versions[vl.key].texts.tabLabel || vl.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="opt-section">
                 <div className="opt-label">Tamanho</div>
                 <div className="finish-options">
                   {SIZE_LIST.map((s) => (
