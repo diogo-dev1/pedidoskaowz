@@ -287,7 +287,7 @@ export default function ConfiguradorKit() {
     [activeUnits, cfg],
   );
   const beforeDiscount = subtotal + extra;
-  const discountPct = baseV.discountByQty[qty] || 0;
+  const discountPct = cfg.discountByQty[qty] || 0;
   const discountValue = Math.round(beforeDiscount * (discountPct / 100));
   const total = beforeDiscount - discountValue;
 
