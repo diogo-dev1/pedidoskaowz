@@ -229,6 +229,7 @@ function mergeConfig(p: any): KitConfig {
       ...(legacyDisc || {}),
       ...(p?.discountByQty || {}),
     },
+    cupomMessage: p?.cupomMessage || DEFAULT_CUPOM_MESSAGE,
     versions: {
       standard: mergeVersion(DEFAULT_CONFIG.versions.standard, p?.versions?.standard),
       nonmetallic: mergeVersion(DEFAULT_CONFIG.versions.nonmetallic, p?.versions?.nonmetallic),
