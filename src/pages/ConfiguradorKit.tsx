@@ -205,6 +205,7 @@ const BRL = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 interface UnitConfig {
+  version: VersionKey;
   size: SizeKey;
   finish: FinishKey;
   bainha: BainhaKey;
@@ -213,6 +214,7 @@ interface UnitConfig {
 }
 
 const newUnit = (): UnitConfig => ({
+  version: 'standard',
   size: 'standard',
   finish: 'sw',
   bainha: 'velada',
