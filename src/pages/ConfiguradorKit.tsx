@@ -291,7 +291,8 @@ export default function ConfiguradorKit() {
         ? ` + Bainha Extra ${u.bainhaExtraTipo === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(ver.bainhaExtraPrice)})`
         : '';
       const sizeName = SIZE_LIST.find((s) => s.key === u.size)!.name;
-      return `• Unidade ${i + 1}: ${ver.texts.tabLabel} — ${sizeName} — ${FINISH_NAMES[u.finish]} (${BRL(ver.prices[u.size][u.finish])})\n   Bainha: ${bn}${ex}`;
+      const finishPart = ver.hasFinishes ? ` — ${FINISH_NAMES[u.finish]}` : '';
+      return `• Unidade ${i + 1}: ${ver.texts.tabLabel} — ${sizeName}${finishPart} (${BRL(ver.prices[u.size][u.finish])})\n   Bainha: ${bn}${ex}`;
     });
     const desc = discountPct > 0 ? `\nDesconto: ${discountPct}% (-${BRL(discountValue)})` : '';
     return encodeURIComponent(`${header}\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`);
