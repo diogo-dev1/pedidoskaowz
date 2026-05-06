@@ -53,6 +53,8 @@ export interface VersionTexts {
 
 export interface VersionConfig {
   texts: VersionTexts;
+  /** Se true, mostra os 3 acabamentos (Acetinada/SW/Tactical). Se false, apenas tamanho. */
+  hasFinishes: boolean;
   prices: Record<SizeKey, Record<FinishKey, number>>;
   imagesBySize: Record<SizeKey, Record<FinishKey, string>>;
   kitImage: string;
@@ -88,6 +90,7 @@ const baseTexts = (over: Partial<VersionTexts>): VersionTexts => ({
 });
 
 const buildVersion = (over: Partial<VersionConfig> & { texts: VersionTexts }): VersionConfig => ({
+  hasFinishes: true,
   prices: {
     standard: { satin: 935, sw: 985, tac: 1090 },
     compact:  { satin: 645, sw: 665, tac: 755 },
@@ -109,6 +112,12 @@ export const DEFAULT_CONFIG: KitConfig = {
   versions: {
     standard: buildVersion({ texts: baseTexts({ tabLabel: 'Aço Sandvik 14C28N' }) }),
     nonmetallic: buildVersion({
+      hasFinishes: false,
+      prices: {
+        standard: { satin: 290, sw: 290, tac: 290 },
+        compact:  { satin: 240, sw: 240, tac: 240 },
+        micro:    { satin: 200, sw: 200, tac: 200 },
+      },
       texts: baseTexts({
         tabLabel: 'Non Metallic',
         eyebrow: '— Push Dagger Non Metallic —',
@@ -121,6 +130,12 @@ export const DEFAULT_CONFIG: KitConfig = {
       }),
     }),
     blue: buildVersion({
+      hasFinishes: false,
+      prices: {
+        standard: { satin: 180, sw: 180, tac: 180 },
+        compact:  { satin: 150, sw: 150, tac: 150 },
+        micro:    { satin: 130, sw: 130, tac: 130 },
+      },
       texts: baseTexts({
         tabLabel: 'Blue (Treino)',
         eyebrow: '— Push Dagger Blue —',
@@ -135,7 +150,8 @@ export const DEFAULT_CONFIG: KitConfig = {
   },
 };
 
-export const CONFIG_STORAGE_KEY = 'configurador-kit-config-v3';
+export const CONFIG_STORAGE_KEY = 'configurador-kit-config-v4';
+const LEGACY_V3 = 'configurador-kit-config-v3';
 const LEGACY_V2 = 'configurador-kit-config-v2';
 const LEGACY_V1 = 'configurador-kit-config-v1';
 
@@ -143,6 +159,9 @@ export function loadKitConfig(): KitConfig {
   try {
     const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
     if (raw) return mergeConfig(JSON.parse(raw));
+    // Migra v3 → v4 (apenas relê)
+    const v3 = localStorage.getItem(LEGACY_V3);
+    if (v3) return mergeConfig(JSON.parse(v3));
     // Migra v2 (versão única) → standard
     const v2 = localStorage.getItem(LEGACY_V2);
     if (v2) {
@@ -276,7 +295,8 @@ export default function ConfiguradorKit() {
         ? ` + Bainha Extra ${u.bainhaExtraTipo === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(ver.bainhaExtraPrice)})`
         : '';
       const sizeName = SIZE_LIST.find((s) => s.key === u.size)!.name;
-      return `• Unidade ${i + 1}: ${ver.texts.tabLabel} — ${sizeName} — ${FINISH_NAMES[u.finish]} (${BRL(ver.prices[u.size][u.finish])})\n   Bainha: ${bn}${ex}`;
+      const finishPart = ver.hasFinishes ? ` — ${FINISH_NAMES[u.finish]}` : '';
+      return `• Unidade ${i + 1}: ${ver.texts.tabLabel} — ${sizeName}${finishPart} (${BRL(ver.prices[u.size][u.finish])})\n   Bainha: ${bn}${ex}`;
     });
     const desc = discountPct > 0 ? `\nDesconto: ${discountPct}% (-${BRL(discountValue)})` : '';
     return encodeURIComponent(`${header}\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`);
@@ -341,7 +361,7 @@ export default function ConfiguradorKit() {
                 <div className="product-card">
                   <img src={img} alt={`${sizeMeta.name} ${FINISH_NAMES[u.finish]}`} className="product-img is-active" />
                   <div className="product-card-overlay" />
-                  <div className="product-card-tag">{FINISH_NAMES[u.finish]}</div>
+                  {ver.hasFinishes && <div className="product-card-tag">{FINISH_NAMES[u.finish]}</div>}
                   <div className="product-card-price">{BRL(ver.prices[u.size][u.finish])}</div>
                 </div>
               </div>
@@ -378,21 +398,23 @@ export default function ConfiguradorKit() {
                 </div>
               </div>
 
-              <div className="opt-section">
-                <div className="opt-label">Acabamento</div>
-                <div className="finish-options">
-                  {FINISH_KEYS.map((fk) => (
-                    <button
-                      key={fk}
-                      type="button"
-                      className={`finish-btn ${u.finish === fk ? 'active' : ''}`}
-                      onClick={() => updateUnit(idx, { finish: fk })}
-                    >
-                      <span className="finish-name">{FINISH_NAMES[fk]}</span>
-                    </button>
-                  ))}
+              {ver.hasFinishes && (
+                <div className="opt-section">
+                  <div className="opt-label">Acabamento</div>
+                  <div className="finish-options">
+                    {FINISH_KEYS.map((fk) => (
+                      <button
+                        key={fk}
+                        type="button"
+                        className={`finish-btn ${u.finish === fk ? 'active' : ''}`}
+                        onClick={() => updateUnit(idx, { finish: fk })}
+                      >
+                        <span className="finish-name">{FINISH_NAMES[fk]}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="opt-section">
                 <div className="opt-label">Bainha</div>

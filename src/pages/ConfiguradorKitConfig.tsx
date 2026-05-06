@@ -241,6 +241,24 @@ export default function ConfiguradorKitConfig() {
         </Field>
       </section>
 
+      {/* Acabamentos toggle */}
+      <section className="border border-border rounded-lg p-5 bg-card">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={v.hasFinishes}
+            onChange={(e) => updateVersion({ hasFinishes: e.target.checked })}
+            className="mt-1 w-4 h-4 accent-primary"
+          />
+          <span>
+            <span className="font-semibold block">Esta versão tem acabamentos diferentes?</span>
+            <span className="text-xs text-muted-foreground">
+              Marque se houver Acetinada / Stone Washed / Tactical. Desmarque para Non Metallic / Blue (apenas tamanho).
+            </span>
+          </span>
+        </label>
+      </section>
+
       {/* Preços */}
       <section className="border border-border rounded-lg p-5 bg-card">
         <h2 className="font-semibold mb-4">Valores (R$) — {v.texts.tabLabel}</h2>
@@ -249,26 +267,50 @@ export default function ConfiguradorKitConfig() {
             <thead>
               <tr className="text-left text-muted-foreground">
                 <th className="py-2 pr-3 font-medium">Tamanho</th>
-                {FINISHES.map((f) => (
-                  <th key={f.key} className="py-2 px-2 font-medium">{f.name}</th>
-                ))}
+                {v.hasFinishes ? (
+                  FINISHES.map((f) => (
+                    <th key={f.key} className="py-2 px-2 font-medium">{f.name}</th>
+                  ))
+                ) : (
+                  <th className="py-2 px-2 font-medium">Preço</th>
+                )}
               </tr>
             </thead>
             <tbody>
               {SIZES.map((s) => (
                 <tr key={s.key} className="border-t border-border">
                   <td className="py-2 pr-3 font-medium">{s.name}</td>
-                  {FINISHES.map((f) => (
-                    <td key={f.key} className="py-2 px-2">
+                  {v.hasFinishes ? (
+                    FINISHES.map((f) => (
+                      <td key={f.key} className="py-2 px-2">
+                        <input
+                          type="number"
+                          min={0}
+                          value={v.prices[s.key][f.key]}
+                          onChange={(e) => setPrice(s.key, f.key, Number(e.target.value) || 0)}
+                          className="w-28 h-9 px-2 rounded border border-border bg-background"
+                        />
+                      </td>
+                    ))
+                  ) : (
+                    <td className="py-2 px-2">
                       <input
                         type="number"
                         min={0}
-                        value={v.prices[s.key][f.key]}
-                        onChange={(e) => setPrice(s.key, f.key, Number(e.target.value) || 0)}
+                        value={v.prices[s.key].satin}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          updateVersion({
+                            prices: {
+                              ...v.prices,
+                              [s.key]: { satin: val, sw: val, tac: val },
+                            },
+                          });
+                        }}
                         className="w-28 h-9 px-2 rounded border border-border bg-background"
                       />
                     </td>
-                  ))}
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -322,16 +364,27 @@ export default function ConfiguradorKitConfig() {
           const dataUrl = await fileToDataUrl(file);
           setCfg((c) => {
             const cur = c.versions[vl.key];
-            const next: VersionConfig =
-              size === 'kit'
-                ? { ...cur, kitImage: dataUrl }
-                : {
-                    ...cur,
-                    imagesBySize: {
-                      ...cur.imagesBySize,
-                      [size]: { ...cur.imagesBySize[size], [finish!]: dataUrl },
-                    },
-                  };
+            let next: VersionConfig;
+            if (size === 'kit') {
+              next = { ...cur, kitImage: dataUrl };
+            } else if (!cur.hasFinishes) {
+              // Aplica a mesma imagem aos 3 acabamentos (não usados na UI pública)
+              next = {
+                ...cur,
+                imagesBySize: {
+                  ...cur.imagesBySize,
+                  [size]: { satin: dataUrl, sw: dataUrl, tac: dataUrl },
+                },
+              };
+            } else {
+              next = {
+                ...cur,
+                imagesBySize: {
+                  ...cur.imagesBySize,
+                  [size]: { ...cur.imagesBySize[size], [finish!]: dataUrl },
+                },
+              };
+            }
             return { ...c, versions: { ...c.versions, [vl.key]: next } };
           });
         };
@@ -339,21 +392,31 @@ export default function ConfiguradorKitConfig() {
           <section key={vl.key} className="border border-border rounded-lg p-5 bg-card">
             <h2 className="font-semibold mb-1">Imagens — {ver.texts.tabLabel}</h2>
             <p className="text-xs text-muted-foreground mb-4">
-              9 combinações (3 tamanhos × 3 acabamentos) + imagem de referência. Máx ~4MB cada.
+              {ver.hasFinishes
+                ? '9 combinações (3 tamanhos × 3 acabamentos) + imagem de referência. Máx ~4MB cada.'
+                : '1 imagem por tamanho + imagem de referência. Máx ~4MB cada.'}
             </p>
             <div className="space-y-6">
               {SIZES.map((s) => (
                 <div key={s.key}>
                   <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider text-muted-foreground">{s.name}</h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    {FINISHES.map((f) => (
+                  <div className={`grid gap-3 ${ver.hasFinishes ? 'grid-cols-3' : 'grid-cols-1 max-w-xs'}`}>
+                    {ver.hasFinishes ? (
+                      FINISHES.map((f) => (
+                        <ImageUploader
+                          key={f.key}
+                          label={f.name}
+                          src={ver.imagesBySize[s.key][f.key]}
+                          onPick={(file) => handleImg(s.key, f.key, file)}
+                        />
+                      ))
+                    ) : (
                       <ImageUploader
-                        key={f.key}
-                        label={f.name}
-                        src={ver.imagesBySize[s.key][f.key]}
-                        onPick={(file) => handleImg(s.key, f.key, file)}
+                        label={s.name}
+                        src={ver.imagesBySize[s.key].satin}
+                        onPick={(file) => handleImg(s.key, 'satin', file)}
                       />
-                    ))}
+                    )}
                   </div>
                 </div>
               ))}
