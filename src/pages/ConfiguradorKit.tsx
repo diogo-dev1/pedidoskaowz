@@ -66,8 +66,12 @@ export interface KitConfig {
   whatsappPhone: string;
   /** Descontos globais (%) aplicados a todo o pedido por quantidade total de unidades */
   discountByQty: Record<QtyKey, number>;
+  /** Mensagem do cupom exibida quando há desconto. Use {pct} como placeholder. */
+  cupomMessage: string;
   versions: Record<VersionKey, VersionConfig>;
 }
+
+export const DEFAULT_CUPOM_MESSAGE = 'Aproveite {pct}% de desconto nas configurações Micro e Compact';
 
 const defaultImgsForSize = (): Record<FinishKey, string> => ({
   satin: imgAcetinada,
