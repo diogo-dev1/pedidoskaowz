@@ -356,6 +356,21 @@ export default function ConfiguradorKitConfig() {
             </label>
           ))}
         </div>
+        <div className="mt-5">
+          <label className="text-sm font-medium block mb-1">
+            Mensagem do cupom (use <code className="px-1 rounded bg-secondary">{'{pct}'}</code> para inserir o % de desconto)
+          </label>
+          <input
+            type="text"
+            value={cfg.cupomMessage ?? ''}
+            onChange={(e) => setCfg((c) => ({ ...c, cupomMessage: e.target.value }))}
+            placeholder="Ex.: Aproveite {pct}% de desconto nas configurações Micro e Compact"
+            className="w-full h-10 px-3 rounded border border-border bg-background"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Exibida na página pública sempre que houver desconto aplicável.
+          </p>
+        </div>
       </section>
 
       {/* Bainha extra */}
