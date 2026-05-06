@@ -71,7 +71,7 @@ export function AppSidebar() {
     { title: 'Orçamento', url: '/orcamento', icon: FileText },
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
-    { title: 'Configurador de Kit', url: '/configurador-kit', icon: Layers },
+    { title: 'Push Dagger Kaowz', url: '/push-dagger-kaowz', icon: Layers },
   ];
 
   const crmItems: MenuItem[] = [
@@ -103,7 +103,7 @@ export function AppSidebar() {
     { title: 'Config. Catálogo Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
     { title: 'Config. Catálogo Revendedor Internacional', url: '/admin/catalogo-internacional', icon: Globe },
     { title: 'Config. Preview', url: '/admin/preview', icon: Eye },
-    { title: 'Config. Configurador Kit', url: '/admin/configurador-kit', icon: Layers },
+    { title: 'Config. Push Dagger Kaowz', url: '/admin/push-dagger-kaowz', icon: Layers },
     { title: 'Bling', url: '/bling', icon: Link2 },
   ] : [];
 

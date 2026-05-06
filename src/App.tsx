@@ -198,9 +198,11 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/push-dagger-kaowz" element={<ConfiguradorKit />} />
+            {/* Compat: rota antiga */}
             <Route path="/configurador-kit" element={<ConfiguradorKit />} />
             <Route
-              path="/admin/configurador-kit"
+              path="/admin/push-dagger-kaowz"
               element={
                 <ProtectedRoute requireAdmin>
                   <Layout>
