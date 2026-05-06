@@ -159,6 +159,9 @@ export function loadKitConfig(): KitConfig {
   try {
     const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
     if (raw) return mergeConfig(JSON.parse(raw));
+    // Migra v3 → v4 (apenas relê)
+    const v3 = localStorage.getItem(LEGACY_V3);
+    if (v3) return mergeConfig(JSON.parse(v3));
     // Migra v2 (versão única) → standard
     const v2 = localStorage.getItem(LEGACY_V2);
     if (v2) {
