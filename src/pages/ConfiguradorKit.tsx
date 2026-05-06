@@ -415,7 +415,7 @@ export default function ConfiguradorKit() {
                     onChange={(e) => updateUnit(idx, { bainhaExtra: e.target.checked })}
                   />
                   <span className="bainha-extra-title">Bainha Extra</span>
-                  <span className="bainha-extra-price">+ {BRL(v.bainhaExtraPrice)}</span>
+                  <span className="bainha-extra-price">+ {BRL(ver.bainhaExtraPrice)}</span>
                 </label>
                 {u.bainhaExtra && (
                   <div className="finish-options bainha-options bainha-extra-tipo">
@@ -458,29 +458,29 @@ export default function ConfiguradorKit() {
           <div className="cupom-msg">Resgate seu cupom de <strong>{discountPct}%</strong> de desconto</div>
         )}
         <a className="btn-cta" href={waUrl} target="_blank" rel="noopener noreferrer">
-          {v.texts.ctaText}
+          {baseV.texts.ctaText}
         </a>
         <div className="cta-note">Atendimento via WhatsApp</div>
       </div>
 
       <section className="ref-section">
         <div className="ref-section-head">
-          <div className="eyebrow">{v.texts.refEyebrow}</div>
-          <h2>{v.texts.refTitle}</h2>
+          <div className="eyebrow">{baseV.texts.refEyebrow}</div>
+          <h2>{baseV.texts.refTitle}</h2>
         </div>
         <figure className="ref-card">
           <div className="ref-img-wrap">
-            <img src={v.kitImage} alt={v.texts.refTitle} />
+            <img src={baseV.kitImage} alt={baseV.texts.refTitle} />
           </div>
           <figcaption>
-            <span className="ref-label">{v.texts.refLabel}</span>
-            <span className="ref-sub">{v.texts.refSub}</span>
+            <span className="ref-label">{baseV.texts.refLabel}</span>
+            <span className="ref-sub">{baseV.texts.refSub}</span>
           </figcaption>
         </figure>
       </section>
 
       <div className="footer-note">
-        {v.texts.footerNote.split('\n').map((l, i) => (
+        {baseV.texts.footerNote.split('\n').map((l, i) => (
           <span key={i}>{l}<br /></span>
         ))}
       </div>
