@@ -309,14 +309,14 @@ export default function ConfiguradorKit() {
       </div>
 
       <section className="hero">
-        <div className="eyebrow">{v.texts.eyebrow}</div>
-        <h1 className="hero-title">{renderHeroTitle(v.texts.heroTitle)}</h1>
-        <p className="hero-desc">{v.texts.heroDesc}</p>
+        <div className="eyebrow">{baseV.texts.eyebrow}</div>
+        <h1 className="hero-title">{renderHeroTitle(baseV.texts.heroTitle)}</h1>
+        <p className="hero-desc">{baseV.texts.heroDesc}</p>
       </section>
 
       <div className="qty-tabs" role="tablist" aria-label="Quantidade">
         {([1, 2, 3] as QtyKey[]).map((q) => {
-          const d = v.discountByQty[q] || 0;
+          const d = baseV.discountByQty[q] || 0;
           return (
             <button
               key={q}
@@ -335,9 +335,10 @@ export default function ConfiguradorKit() {
 
       <div className={`config-grid grid-${qty}`}>
         {activeUnits.map((u, idx) => {
+          const ver = cfg.versions[u.version];
           const sizeMeta = SIZE_LIST.find((s) => s.key === u.size)!;
           const totalMm = sizeMeta.bladeMm + sizeMeta.gripMm;
-          const img = v.imagesBySize[u.size][u.finish];
+          const img = ver.imagesBySize[u.size][u.finish];
           return (
             <article className="col" key={idx}>
               <div className="col-head">
