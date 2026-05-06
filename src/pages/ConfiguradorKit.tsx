@@ -9,6 +9,7 @@ type FinishKey = 'satin' | 'sw' | 'tac';
 type SizeKey = 'standard' | 'compact' | 'micro';
 type BainhaKey = 'velada' | 'multi';
 type QtyKey = 1 | 2 | 3;
+export type VersionKey = 'standard' | 'nonmetallic' | 'blue';
 
 const FINISH_NAMES: Record<FinishKey, string> = {
   satin: 'Acetinada',
@@ -24,16 +25,44 @@ const SIZE_LIST: { key: SizeKey; name: string; bladeMm: number; gripMm: number }
 ];
 
 export const WHATSAPP_PHONE_DEFAULT = '5528999025695';
+export const VERSION_LIST: { key: VersionKey; label: string }[] = [
+  { key: 'standard', label: 'Original' },
+  { key: 'nonmetallic', label: 'Non Metallic' },
+  { key: 'blue', label: 'Blue (Treino)' },
+];
 
-export interface KitConfig {
+export interface VersionTexts {
+  /** Nome curto exibido na aba de versão */
+  tabLabel: string;
+  /** Linha pequena acima do título */
+  eyebrow: string;
+  /** Título principal (use {KIT} para destacar em amarelo) */
+  heroTitle: string;
+  /** Descrição abaixo do título */
+  heroDesc: string;
+  /** Texto do botão CTA */
+  ctaText: string;
+  /** Bloco de referência (rodapé) */
+  refEyebrow: string;
+  refTitle: string;
+  refLabel: string;
+  refSub: string;
+  /** Nota final */
+  footerNote: string;
+}
+
+export interface VersionConfig {
+  texts: VersionTexts;
   prices: Record<SizeKey, Record<FinishKey, number>>;
-  /** Imagens por tamanho × acabamento */
   imagesBySize: Record<SizeKey, Record<FinishKey, string>>;
   kitImage: string;
-  /** Desconto separado por quantidade do kit (1, 2 ou 3 unidades) */
   discountByQty: Record<QtyKey, number>;
   bainhaExtraPrice: number;
+}
+
+export interface KitConfig {
   whatsappPhone: string;
+  versions: Record<VersionKey, VersionConfig>;
 }
 
 const defaultImgsForSize = (): Record<FinishKey, string> => ({
@@ -42,7 +71,23 @@ const defaultImgsForSize = (): Record<FinishKey, string> => ({
   tac: imgTactical,
 });
 
-export const DEFAULT_CONFIG: KitConfig = {
+const baseTexts = (over: Partial<VersionTexts>): VersionTexts => ({
+  tabLabel: 'Original',
+  eyebrow: '— Push Dagger Series —',
+  heroTitle: 'MONTE SEU {KIT}',
+  heroDesc:
+    'A evolução de um ícone da defesa pessoal. Escolha quantas unidades quer e configure cada uma.',
+  ctaText: 'Quero Comprar Agora',
+  refEyebrow: '— Referência Visual —',
+  refTitle: 'Linha Push Dagger',
+  refLabel: 'Standard · Compact · Micro',
+  refSub: 'Acetinada · Stone Washed · Tactical',
+  footerNote:
+    'Garantia vitalícia · Afiação vitalícia gratuita · Certificado oficial · Cartão premium gravado a laser\nVenda exclusiva para maiores de 18 anos.',
+  ...over,
+});
+
+const buildVersion = (over: Partial<VersionConfig> & { texts: VersionTexts }): VersionConfig => ({
   prices: {
     standard: { satin: 935, sw: 985, tac: 1090 },
     compact:  { satin: 645, sw: 665, tac: 755 },
@@ -56,52 +101,103 @@ export const DEFAULT_CONFIG: KitConfig = {
   kitImage: kitCard,
   discountByQty: { 1: 0, 2: 5, 3: 10 },
   bainhaExtraPrice: 180,
+  ...over,
+});
+
+export const DEFAULT_CONFIG: KitConfig = {
   whatsappPhone: WHATSAPP_PHONE_DEFAULT,
+  versions: {
+    standard: buildVersion({ texts: baseTexts({ tabLabel: 'Original' }) }),
+    nonmetallic: buildVersion({
+      texts: baseTexts({
+        tabLabel: 'Non Metallic',
+        eyebrow: '— Push Dagger Non Metallic —',
+        heroTitle: 'PUSH DAGGER {NON METALLIC}',
+        heroDesc:
+          'Versão totalmente não metálica — leve, discreta e indetectável a sensores. Perfeita para o porte diário.',
+        refTitle: 'Linha Non Metallic',
+        refLabel: 'Standard · Compact · Micro',
+        refSub: 'Polímero técnico de alta resistência',
+      }),
+    }),
+    blue: buildVersion({
+      texts: baseTexts({
+        tabLabel: 'Blue (Treino)',
+        eyebrow: '— Push Dagger Blue —',
+        heroTitle: 'PUSH DAGGER {BLUE TREINO}',
+        heroDesc:
+          'Lâmina de treino em polímero azul — segura, resistente e fiel à ergonomia da Push Dagger original.',
+        refTitle: 'Linha Blue · Treino',
+        refLabel: 'Standard · Compact · Micro',
+        refSub: 'Polímero azul de treinamento',
+      }),
+    }),
+  },
 };
 
-export const CONFIG_STORAGE_KEY = 'configurador-kit-config-v2';
-const LEGACY_KEY = 'configurador-kit-config-v1';
+export const CONFIG_STORAGE_KEY = 'configurador-kit-config-v3';
+const LEGACY_V2 = 'configurador-kit-config-v2';
+const LEGACY_V1 = 'configurador-kit-config-v1';
 
 export function loadKitConfig(): KitConfig {
   try {
     const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return mergeConfig(parsed);
-    }
-    // Migra do v1 (compat)
-    const legacy = localStorage.getItem(LEGACY_KEY);
-    if (legacy) {
-      const p = JSON.parse(legacy);
-      const flatImgs = p.images || {};
-      return mergeConfig({
-        prices: p.prices,
-        kitImage: p.kitImage,
-        bainhaExtraPrice: p.bainhaExtraPrice,
-        discountByQty: { 1: 0, 2: p.discountPercent || 0, 3: p.discountPercent || 0 },
+    if (raw) return mergeConfig(JSON.parse(raw));
+    // Migra v2 (versão única) → standard
+    const v2 = localStorage.getItem(LEGACY_V2);
+    if (v2) {
+      const p = JSON.parse(v2);
+      const std: VersionConfig = {
+        ...DEFAULT_CONFIG.versions.standard,
+        prices: { ...DEFAULT_CONFIG.versions.standard.prices, ...(p?.prices || {}) },
         imagesBySize: {
-          standard: { ...defaultImgsForSize(), ...flatImgs },
-          compact: { ...defaultImgsForSize(), ...flatImgs },
-          micro: { ...defaultImgsForSize(), ...flatImgs },
+          standard: { ...defaultImgsForSize(), ...(p?.imagesBySize?.standard || {}) },
+          compact: { ...defaultImgsForSize(), ...(p?.imagesBySize?.compact || {}) },
+          micro: { ...defaultImgsForSize(), ...(p?.imagesBySize?.micro || {}) },
         },
-      });
+        kitImage: p?.kitImage || kitCard,
+        discountByQty: { ...DEFAULT_CONFIG.versions.standard.discountByQty, ...(p?.discountByQty || {}) },
+        bainhaExtraPrice: p?.bainhaExtraPrice ?? 180,
+      };
+      return {
+        whatsappPhone: p?.whatsappPhone || WHATSAPP_PHONE_DEFAULT,
+        versions: { ...DEFAULT_CONFIG.versions, standard: std },
+      };
     }
+    // v1 fica como default (raro)
+    if (localStorage.getItem(LEGACY_V1)) return DEFAULT_CONFIG;
   } catch {}
   return DEFAULT_CONFIG;
 }
 
+function mergeVersion(base: VersionConfig, p: any): VersionConfig {
+  if (!p) return base;
+  return {
+    ...base,
+    ...p,
+    texts: { ...base.texts, ...(p.texts || {}) },
+    prices: {
+      standard: { ...base.prices.standard, ...(p?.prices?.standard || {}) },
+      compact: { ...base.prices.compact, ...(p?.prices?.compact || {}) },
+      micro: { ...base.prices.micro, ...(p?.prices?.micro || {}) },
+    },
+    imagesBySize: {
+      standard: { ...base.imagesBySize.standard, ...(p?.imagesBySize?.standard || {}) },
+      compact: { ...base.imagesBySize.compact, ...(p?.imagesBySize?.compact || {}) },
+      micro: { ...base.imagesBySize.micro, ...(p?.imagesBySize?.micro || {}) },
+    },
+    discountByQty: { ...base.discountByQty, ...(p?.discountByQty || {}) },
+  };
+}
+
 function mergeConfig(p: any): KitConfig {
   return {
-    ...DEFAULT_CONFIG,
-    ...p,
-    prices: { ...DEFAULT_CONFIG.prices, ...(p?.prices || {}) },
-    imagesBySize: {
-      standard: { ...defaultImgsForSize(), ...(p?.imagesBySize?.standard || {}) },
-      compact: { ...defaultImgsForSize(), ...(p?.imagesBySize?.compact || {}) },
-      micro: { ...defaultImgsForSize(), ...(p?.imagesBySize?.micro || {}) },
-    },
-    discountByQty: { ...DEFAULT_CONFIG.discountByQty, ...(p?.discountByQty || {}) },
     whatsappPhone: p?.whatsappPhone || WHATSAPP_PHONE_DEFAULT,
+    versions: {
+      standard: mergeVersion(DEFAULT_CONFIG.versions.standard, p?.versions?.standard),
+      nonmetallic: mergeVersion(DEFAULT_CONFIG.versions.nonmetallic, p?.versions?.nonmetallic),
+      blue: mergeVersion(DEFAULT_CONFIG.versions.blue, p?.versions?.blue),
+    },
   };
 }
 
@@ -124,8 +220,17 @@ const newUnit = (): UnitConfig => ({
   bainhaExtraTipo: 'multi',
 });
 
+/** Renderiza heroTitle: trecho entre {chaves} fica destacado em amarelo itálico */
+function renderHeroTitle(t: string) {
+  const parts = t.split(/\{([^}]+)\}/g);
+  return parts.map((p, i) =>
+    i % 2 === 1 ? <span key={i}>{p}</span> : <span key={i}>{p}</span>,
+  );
+}
+
 export default function ConfiguradorKit() {
   const [cfg, setCfg] = useState<KitConfig>(() => loadKitConfig());
+  const [version, setVersion] = useState<VersionKey>('standard');
   const [qty, setQty] = useState<QtyKey>(1);
   const [units, setUnits] = useState<UnitConfig[]>([newUnit(), newUnit(), newUnit()]);
 
@@ -135,16 +240,17 @@ export default function ConfiguradorKit() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
+  const v = cfg.versions[version];
   const activeUnits = units.slice(0, qty);
 
   const subtotal = useMemo(
-    () => activeUnits.reduce((s, u) => s + cfg.prices[u.size][u.finish], 0),
-    [activeUnits, cfg.prices],
+    () => activeUnits.reduce((s, u) => s + v.prices[u.size][u.finish], 0),
+    [activeUnits, v.prices],
   );
   const extrasCount = activeUnits.filter((u) => u.bainhaExtra).length;
-  const extra = extrasCount * cfg.bainhaExtraPrice;
+  const extra = extrasCount * v.bainhaExtraPrice;
   const beforeDiscount = subtotal + extra;
-  const discountPct = cfg.discountByQty[qty] || 0;
+  const discountPct = v.discountByQty[qty] || 0;
   const discountValue = Math.round(beforeDiscount * (discountPct / 100));
   const total = beforeDiscount - discountValue;
 
@@ -153,18 +259,21 @@ export default function ConfiguradorKit() {
   };
 
   const waMessage = useMemo(() => {
-    const header = qty === 1 ? 'Quero esta Push Dagger:' : `Quero montar este Kit Push Dagger (${qty} unidades):`;
+    const versionLabel = v.texts.tabLabel;
+    const header = qty === 1
+      ? `Quero esta Push Dagger ${versionLabel}:`
+      : `Quero montar este Kit Push Dagger ${versionLabel} (${qty} unidades):`;
     const lines = activeUnits.map((u, i) => {
       const bn = u.bainha === 'velada' ? 'Velada' : 'Multifuncional';
       const ex = u.bainhaExtra
-        ? ` + Bainha Extra ${u.bainhaExtraTipo === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(cfg.bainhaExtraPrice)})`
+        ? ` + Bainha Extra ${u.bainhaExtraTipo === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(v.bainhaExtraPrice)})`
         : '';
       const sizeName = SIZE_LIST.find((s) => s.key === u.size)!.name;
-      return `• Unidade ${i + 1}: ${sizeName} — ${FINISH_NAMES[u.finish]} (${BRL(cfg.prices[u.size][u.finish])})\n   Bainha: ${bn}${ex}`;
+      return `• Unidade ${i + 1}: ${sizeName} — ${FINISH_NAMES[u.finish]} (${BRL(v.prices[u.size][u.finish])})\n   Bainha: ${bn}${ex}`;
     });
     const desc = discountPct > 0 ? `\nDesconto: ${discountPct}% (-${BRL(discountValue)})` : '';
     return encodeURIComponent(`${header}\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`);
-  }, [activeUnits, qty, cfg, discountPct, discountValue, total]);
+  }, [activeUnits, qty, v, discountPct, discountValue, total]);
 
   const waUrl = `https://wa.me/${cfg.whatsappPhone}?text=${waMessage}`;
 
@@ -173,22 +282,34 @@ export default function ConfiguradorKit() {
       <style>{css}</style>
 
       <header className="ck-header">
-        <a href="/configurador-kit" className="logo" aria-label="Kaowz">
+        <a href="/push-dagger-kaowz" className="logo" aria-label="Kaowz">
           <img src={kaowzLogo} alt="Kaowz - Ferramentas de Corte" className="logo-img" />
         </a>
       </header>
 
+      <div className="version-tabs" role="tablist" aria-label="Versão">
+        {VERSION_LIST.map((vl) => (
+          <button
+            key={vl.key}
+            role="tab"
+            aria-selected={version === vl.key}
+            className={`version-tab ${version === vl.key ? 'active' : ''}`}
+            onClick={() => setVersion(vl.key)}
+          >
+            {cfg.versions[vl.key].texts.tabLabel || vl.label}
+          </button>
+        ))}
+      </div>
+
       <section className="hero">
-        <div className="eyebrow">— Push Dagger Series —</div>
-        <h1 className="hero-title">MONTE SEU <span>KIT</span></h1>
-        <p className="hero-desc">
-          A evolução de um ícone da defesa pessoal. Escolha quantas unidades quer e configure cada uma.
-        </p>
+        <div className="eyebrow">{v.texts.eyebrow}</div>
+        <h1 className="hero-title">{renderHeroTitle(v.texts.heroTitle)}</h1>
+        <p className="hero-desc">{v.texts.heroDesc}</p>
       </section>
 
       <div className="qty-tabs" role="tablist" aria-label="Quantidade">
         {([1, 2, 3] as QtyKey[]).map((q) => {
-          const d = cfg.discountByQty[q] || 0;
+          const d = v.discountByQty[q] || 0;
           return (
             <button
               key={q}
@@ -209,7 +330,7 @@ export default function ConfiguradorKit() {
         {activeUnits.map((u, idx) => {
           const sizeMeta = SIZE_LIST.find((s) => s.key === u.size)!;
           const totalMm = sizeMeta.bladeMm + sizeMeta.gripMm;
-          const img = cfg.imagesBySize[u.size][u.finish];
+          const img = v.imagesBySize[u.size][u.finish];
           return (
             <article className="col" key={idx}>
               <div className="col-head">
@@ -225,7 +346,7 @@ export default function ConfiguradorKit() {
                   <img src={img} alt={`${sizeMeta.name} ${FINISH_NAMES[u.finish]}`} className="product-img is-active" />
                   <div className="product-card-overlay" />
                   <div className="product-card-tag">{FINISH_NAMES[u.finish]}</div>
-                  <div className="product-card-price">{BRL(cfg.prices[u.size][u.finish])}</div>
+                  <div className="product-card-price">{BRL(v.prices[u.size][u.finish])}</div>
                 </div>
               </div>
 
@@ -282,7 +403,7 @@ export default function ConfiguradorKit() {
                     onChange={(e) => updateUnit(idx, { bainhaExtra: e.target.checked })}
                   />
                   <span className="bainha-extra-title">Bainha Extra</span>
-                  <span className="bainha-extra-price">+ {BRL(cfg.bainhaExtraPrice)}</span>
+                  <span className="bainha-extra-price">+ {BRL(v.bainhaExtraPrice)}</span>
                 </label>
                 {u.bainhaExtra && (
                   <div className="finish-options bainha-options bainha-extra-tipo">
@@ -325,31 +446,31 @@ export default function ConfiguradorKit() {
           <div className="cupom-msg">Resgate seu cupom de <strong>{discountPct}%</strong> de desconto</div>
         )}
         <a className="btn-cta" href={waUrl} target="_blank" rel="noopener noreferrer">
-          Quero Comprar Agora
+          {v.texts.ctaText}
         </a>
         <div className="cta-note">Atendimento via WhatsApp</div>
       </div>
 
       <section className="ref-section">
         <div className="ref-section-head">
-          <div className="eyebrow">— Referência Visual —</div>
-          <h2>Linha Push Dagger</h2>
+          <div className="eyebrow">{v.texts.refEyebrow}</div>
+          <h2>{v.texts.refTitle}</h2>
         </div>
         <figure className="ref-card">
           <div className="ref-img-wrap">
-            <img src={cfg.kitImage} alt="Push Dagger" />
+            <img src={v.kitImage} alt={v.texts.refTitle} />
           </div>
           <figcaption>
-            <span className="ref-label">Standard · Compact · Micro</span>
-            <span className="ref-sub">Acetinada · Stone Washed · Tactical</span>
+            <span className="ref-label">{v.texts.refLabel}</span>
+            <span className="ref-sub">{v.texts.refSub}</span>
           </figcaption>
         </figure>
       </section>
 
       <div className="footer-note">
-        Garantia vitalícia · Afiação vitalícia gratuita · Certificado oficial · Cartão premium gravado a laser
-        <br />
-        Venda exclusiva para maiores de 18 anos.
+        {v.texts.footerNote.split('\n').map((l, i) => (
+          <span key={i}>{l}<br /></span>
+        ))}
       </div>
     </div>
   );
@@ -386,10 +507,15 @@ const css = `
 .ck-root .logo { display: inline-flex; align-items: center; }
 .ck-root .logo-img { height: 38px; width: auto; display: block; }
 
-.ck-root .hero { padding: 4rem 1.5rem 2rem; text-align: center; max-width: 760px; margin: 0 auto; }
+.ck-root .version-tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 1.25rem 1rem 0; max-width: 760px; margin: 0 auto; }
+.ck-root .version-tab { padding: 8px 16px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; background: var(--s1); border: 1px solid var(--border); border-radius: 999px; color: var(--muted); cursor: pointer; transition: all .2s; }
+.ck-root .version-tab:hover { color: var(--text); border-color: var(--border-m); }
+.ck-root .version-tab.active { background: var(--yellow); color: #000; border-color: var(--yellow); font-weight: 700; }
+
+.ck-root .hero { padding: 2.5rem 1.5rem 2rem; text-align: center; max-width: 760px; margin: 0 auto; }
 .ck-root .eyebrow { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 4px; color: var(--yellow); text-transform: uppercase; margin-bottom: 18px; }
 .ck-root .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 8vw, 80px); letter-spacing: 6px; line-height: 0.95; margin-bottom: 22px; font-weight: 700; }
-.ck-root .hero-title span { color: var(--yellow); font-style: italic; }
+.ck-root .hero-title span:nth-child(even) { color: var(--yellow); font-style: italic; }
 .ck-root .hero-desc { font-size: 14px; color: #B5B5B3; line-height: 1.7; max-width: 520px; margin: 0 auto; letter-spacing: 0.3px; }
 
 .ck-root .qty-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 720px; margin: 0 auto 1.75rem; padding: 0 1.5rem; }
@@ -471,7 +597,7 @@ const css = `
 
 @media (max-width: 760px) {
   .ck-root .ck-header { padding: 0.85rem 1rem; }
-  .ck-root .hero { padding: 2.5rem 1rem 1.5rem; }
+  .ck-root .hero { padding: 2rem 1rem 1.5rem; }
   .ck-root .qty-tabs { padding: 0 1rem; gap: 6px; }
   .ck-root .qty-num { font-size: 28px; }
   .ck-root .config-grid { grid-template-columns: 1fr !important; padding: 0 1rem; gap: 14px; }

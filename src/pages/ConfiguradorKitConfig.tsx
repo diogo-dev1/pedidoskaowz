@@ -5,6 +5,9 @@ import {
   CONFIG_STORAGE_KEY,
   DEFAULT_CONFIG,
   KitConfig,
+  VersionConfig,
+  VersionKey,
+  VERSION_LIST,
   loadKitConfig,
   WHATSAPP_PHONE_DEFAULT,
 } from './ConfiguradorKit';
@@ -34,12 +37,23 @@ const fileToDataUrl = (file: File): Promise<string> =>
 
 export default function ConfiguradorKitConfig() {
   const [cfg, setCfg] = useState<KitConfig>(() => loadKitConfig());
+  const [versionKey, setVersionKey] = useState<VersionKey>('standard');
 
-  const setPrice = (size: SizeKey, finish: FinishKey, val: number) => {
+  const v = cfg.versions[versionKey];
+
+  const updateVersion = (patch: Partial<VersionConfig>) =>
     setCfg((c) => ({
       ...c,
-      prices: { ...c.prices, [size]: { ...c.prices[size], [finish]: val } },
+      versions: { ...c.versions, [versionKey]: { ...c.versions[versionKey], ...patch } },
     }));
+
+  const updateTexts = (patch: Partial<VersionConfig['texts']>) =>
+    updateVersion({ texts: { ...v.texts, ...patch } });
+
+  const setPrice = (size: SizeKey, finish: FinishKey, val: number) => {
+    updateVersion({
+      prices: { ...v.prices, [size]: { ...v.prices[size], [finish]: val } },
+    });
   };
 
   const handleImage = async (size: SizeKey | 'kit', finish: FinishKey | null, file: File | null) => {
@@ -49,23 +63,22 @@ export default function ConfiguradorKitConfig() {
       return;
     }
     const dataUrl = await fileToDataUrl(file);
-    setCfg((c) => {
-      if (size === 'kit') return { ...c, kitImage: dataUrl };
-      return {
-        ...c,
+    if (size === 'kit') {
+      updateVersion({ kitImage: dataUrl });
+    } else {
+      updateVersion({
         imagesBySize: {
-          ...c.imagesBySize,
-          [size]: { ...c.imagesBySize[size], [finish!]: dataUrl },
+          ...v.imagesBySize,
+          [size]: { ...v.imagesBySize[size], [finish!]: dataUrl },
         },
-      };
-    });
+      });
+    }
   };
 
   const setDiscount = (q: QtyKey, val: number) => {
-    setCfg((c) => ({
-      ...c,
-      discountByQty: { ...c.discountByQty, [q]: Math.max(0, Math.min(100, val || 0)) },
-    }));
+    updateVersion({
+      discountByQty: { ...v.discountByQty, [q]: Math.max(0, Math.min(100, val || 0)) },
+    });
   };
 
   const save = () => {
@@ -78,7 +91,7 @@ export default function ConfiguradorKitConfig() {
   };
 
   const reset = () => {
-    if (!confirm('Restaurar configurações padrão?')) return;
+    if (!confirm('Restaurar configurações padrão de TODAS as versões?')) return;
     localStorage.removeItem(CONFIG_STORAGE_KEY);
     setCfg(DEFAULT_CONFIG);
     toast.success('Configurações restauradas');
@@ -88,9 +101,9 @@ export default function ConfiguradorKitConfig() {
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold">Configurador Push Dagger</h1>
+          <h1 className="text-2xl font-bold">Push Dagger Kaowz</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Edite valores, descontos por quantidade, WhatsApp e imagens da landpage pública.
+            Edite textos, blocos, valores, descontos e imagens de cada versão da landpage pública.
           </p>
         </div>
         <div className="flex gap-2">
@@ -109,9 +122,128 @@ export default function ConfiguradorKitConfig() {
         </div>
       </div>
 
+      {/* WhatsApp (global) */}
+      <section className="border border-border rounded-lg p-5 bg-card">
+        <label className="font-semibold block mb-2">WhatsApp da empresa (todas as versões)</label>
+        <input
+          type="text"
+          value={cfg.whatsappPhone}
+          onChange={(e) => setCfg((c) => ({ ...c, whatsappPhone: e.target.value.replace(/\D/g, '') }))}
+          placeholder={WHATSAPP_PHONE_DEFAULT}
+          className="w-full sm:max-w-xs h-10 px-3 rounded border border-border bg-background"
+        />
+        <p className="text-xs text-muted-foreground mt-2">Formato: 55 + DDD + número (apenas dígitos).</p>
+      </section>
+
+      {/* Seletor de versão */}
+      <div className="flex flex-wrap gap-2 border-b border-border pb-3">
+        {VERSION_LIST.map((vl) => (
+          <button
+            key={vl.key}
+            onClick={() => setVersionKey(vl.key)}
+            className={`px-4 py-2 text-sm rounded-md border transition ${
+              versionKey === vl.key
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-card border-border hover:bg-secondary'
+            }`}
+          >
+            {cfg.versions[vl.key].texts.tabLabel || vl.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Textos / blocos da versão */}
+      <section className="border border-border rounded-lg p-5 bg-card space-y-4">
+        <h2 className="font-semibold">Textos & Blocos — {v.texts.tabLabel}</h2>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Nome da aba (versão)">
+            <input
+              type="text"
+              value={v.texts.tabLabel}
+              onChange={(e) => updateTexts({ tabLabel: e.target.value })}
+              className="w-full h-10 px-3 rounded border border-border bg-background"
+            />
+          </Field>
+          <Field label="Eyebrow (acima do título)">
+            <input
+              type="text"
+              value={v.texts.eyebrow}
+              onChange={(e) => updateTexts({ eyebrow: e.target.value })}
+              className="w-full h-10 px-3 rounded border border-border bg-background"
+            />
+          </Field>
+        </div>
+        <Field label="Título principal (use {} para destacar em amarelo. Ex: MONTE SEU {KIT})">
+          <input
+            type="text"
+            value={v.texts.heroTitle}
+            onChange={(e) => updateTexts({ heroTitle: e.target.value })}
+            className="w-full h-10 px-3 rounded border border-border bg-background"
+          />
+        </Field>
+        <Field label="Descrição (parágrafo do hero)">
+          <textarea
+            rows={3}
+            value={v.texts.heroDesc}
+            onChange={(e) => updateTexts({ heroDesc: e.target.value })}
+            className="w-full p-3 rounded border border-border bg-background"
+          />
+        </Field>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Texto do botão (CTA)">
+            <input
+              type="text"
+              value={v.texts.ctaText}
+              onChange={(e) => updateTexts({ ctaText: e.target.value })}
+              className="w-full h-10 px-3 rounded border border-border bg-background"
+            />
+          </Field>
+          <Field label="Eyebrow do bloco de referência">
+            <input
+              type="text"
+              value={v.texts.refEyebrow}
+              onChange={(e) => updateTexts({ refEyebrow: e.target.value })}
+              className="w-full h-10 px-3 rounded border border-border bg-background"
+            />
+          </Field>
+          <Field label="Título do bloco de referência">
+            <input
+              type="text"
+              value={v.texts.refTitle}
+              onChange={(e) => updateTexts({ refTitle: e.target.value })}
+              className="w-full h-10 px-3 rounded border border-border bg-background"
+            />
+          </Field>
+          <Field label="Subtítulo (legenda esquerda)">
+            <input
+              type="text"
+              value={v.texts.refLabel}
+              onChange={(e) => updateTexts({ refLabel: e.target.value })}
+              className="w-full h-10 px-3 rounded border border-border bg-background"
+            />
+          </Field>
+          <Field label="Subtítulo (legenda direita)">
+            <input
+              type="text"
+              value={v.texts.refSub}
+              onChange={(e) => updateTexts({ refSub: e.target.value })}
+              className="w-full h-10 px-3 rounded border border-border bg-background"
+            />
+          </Field>
+        </div>
+        <Field label="Nota do rodapé (use Enter para nova linha)">
+          <textarea
+            rows={3}
+            value={v.texts.footerNote}
+            onChange={(e) => updateTexts({ footerNote: e.target.value })}
+            className="w-full p-3 rounded border border-border bg-background"
+          />
+        </Field>
+      </section>
+
       {/* Preços */}
       <section className="border border-border rounded-lg p-5 bg-card">
-        <h2 className="font-semibold mb-4">Valores por Tamanho × Acabamento (R$)</h2>
+        <h2 className="font-semibold mb-4">Valores (R$) — {v.texts.tabLabel}</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -131,7 +263,7 @@ export default function ConfiguradorKitConfig() {
                       <input
                         type="number"
                         min={0}
-                        value={cfg.prices[s.key][f.key]}
+                        value={v.prices[s.key][f.key]}
                         onChange={(e) => setPrice(s.key, f.key, Number(e.target.value) || 0)}
                         className="w-28 h-9 px-2 rounded border border-border bg-background"
                       />
@@ -146,7 +278,7 @@ export default function ConfiguradorKitConfig() {
 
       {/* Descontos por quantidade */}
       <section className="border border-border rounded-lg p-5 bg-card">
-        <h2 className="font-semibold mb-4">Descontos por Quantidade (%)</h2>
+        <h2 className="font-semibold mb-4">Descontos por Quantidade (%) — {v.texts.tabLabel}</h2>
         <div className="grid sm:grid-cols-3 gap-4">
           {([1, 2, 3] as QtyKey[]).map((q) => (
             <label key={q} className="block">
@@ -157,7 +289,7 @@ export default function ConfiguradorKitConfig() {
                 type="number"
                 min={0}
                 max={100}
-                value={cfg.discountByQty[q]}
+                value={v.discountByQty[q]}
                 onChange={(e) => setDiscount(q, Number(e.target.value))}
                 className="mt-1 w-full h-10 px-3 rounded border border-border bg-background"
               />
@@ -166,36 +298,23 @@ export default function ConfiguradorKitConfig() {
         </div>
       </section>
 
-      {/* Bainha extra + WhatsApp */}
-      <section className="grid sm:grid-cols-2 gap-4">
-        <div className="border border-border rounded-lg p-5 bg-card">
-          <label className="font-semibold block mb-2">Valor da Bainha Extra (R$)</label>
-          <input
-            type="number"
-            min={0}
-            value={cfg.bainhaExtraPrice}
-            onChange={(e) => setCfg((c) => ({ ...c, bainhaExtraPrice: Number(e.target.value) || 0 }))}
-            className="w-full h-10 px-3 rounded border border-border bg-background"
-          />
-        </div>
-        <div className="border border-border rounded-lg p-5 bg-card">
-          <label className="font-semibold block mb-2">WhatsApp da empresa</label>
-          <input
-            type="text"
-            value={cfg.whatsappPhone}
-            onChange={(e) => setCfg((c) => ({ ...c, whatsappPhone: e.target.value.replace(/\D/g, '') }))}
-            placeholder={WHATSAPP_PHONE_DEFAULT}
-            className="w-full h-10 px-3 rounded border border-border bg-background"
-          />
-          <p className="text-xs text-muted-foreground mt-2">Formato: 55 + DDD + número (apenas dígitos).</p>
-        </div>
+      {/* Bainha extra */}
+      <section className="border border-border rounded-lg p-5 bg-card">
+        <label className="font-semibold block mb-2">Valor da Bainha Extra (R$) — {v.texts.tabLabel}</label>
+        <input
+          type="number"
+          min={0}
+          value={v.bainhaExtraPrice}
+          onChange={(e) => updateVersion({ bainhaExtraPrice: Number(e.target.value) || 0 })}
+          className="w-full sm:max-w-xs h-10 px-3 rounded border border-border bg-background"
+        />
       </section>
 
       {/* Imagens por tamanho × acabamento */}
       <section className="border border-border rounded-lg p-5 bg-card">
-        <h2 className="font-semibold mb-1">Imagens por Tamanho × Acabamento</h2>
+        <h2 className="font-semibold mb-1">Imagens — {v.texts.tabLabel}</h2>
         <p className="text-xs text-muted-foreground mb-4">
-          Faça upload de uma imagem para cada combinação (9 no total). Imagens são salvas localmente neste navegador (máx ~4MB cada).
+          Faça upload de uma imagem para cada combinação (9 no total). Salvas localmente neste navegador (máx ~4MB cada).
         </p>
         <div className="space-y-6">
           {SIZES.map((s) => (
@@ -206,7 +325,7 @@ export default function ConfiguradorKitConfig() {
                   <ImageUploader
                     key={f.key}
                     label={f.name}
-                    src={cfg.imagesBySize[s.key][f.key]}
+                    src={v.imagesBySize[s.key][f.key]}
                     onPick={(file) => handleImage(s.key, f.key, file)}
                   />
                 ))}
@@ -216,18 +335,27 @@ export default function ConfiguradorKitConfig() {
         </div>
       </section>
 
-      {/* Imagem do Kit (referência) */}
+      {/* Imagem de referência */}
       <section className="border border-border rounded-lg p-5 bg-card">
-        <h2 className="font-semibold mb-3">Imagem de Referência (rodapé)</h2>
+        <h2 className="font-semibold mb-3">Imagem de Referência (rodapé) — {v.texts.tabLabel}</h2>
         <div className="max-w-xs">
           <ImageUploader
-            label="Kit / Linha completa"
-            src={cfg.kitImage}
+            label="Linha completa"
+            src={v.kitImage}
             onPick={(file) => handleImage('kit', null, file)}
           />
         </div>
       </section>
     </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="text-xs font-medium text-muted-foreground block mb-1.5">{label}</span>
+      {children}
+    </label>
   );
 }
 
