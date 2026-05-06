@@ -26,7 +26,7 @@ const SIZE_LIST: { key: SizeKey; name: string; bladeMm: number; gripMm: number }
 
 export const WHATSAPP_PHONE_DEFAULT = '5528999025695';
 export const VERSION_LIST: { key: VersionKey; label: string }[] = [
-  { key: 'standard', label: 'Original' },
+  { key: 'standard', label: 'Aço Sandvik 14C28N' },
   { key: 'nonmetallic', label: 'Non Metallic' },
   { key: 'blue', label: 'Blue (Treino)' },
 ];
