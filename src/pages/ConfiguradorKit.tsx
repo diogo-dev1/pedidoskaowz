@@ -189,6 +189,7 @@ export function loadKitConfig(): KitConfig {
       return {
         whatsappPhone: p?.whatsappPhone || WHATSAPP_PHONE_DEFAULT,
         discountByQty: { ...DEFAULT_CONFIG.discountByQty, ...(p?.discountByQty || {}) },
+        cupomMessage: p?.cupomMessage || DEFAULT_CUPOM_MESSAGE,
         versions: { ...DEFAULT_CONFIG.versions, standard: std },
       };
     }
