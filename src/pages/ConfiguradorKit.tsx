@@ -483,9 +483,6 @@ export default function ConfiguradorKit() {
             {discountPct > 0 && <span className="total-por-label">Por</span>}
             <span className="total-val">{BRL(total)}</span>
           </div>
-          {discountPct > 0 && (
-            <span className="total-discount">Economia de {BRL(discountValue)} · -{discountPct}%</span>
-          )}
         </div>
         {discountPct > 0 && (
           <div className="cupom-msg">Resgate seu cupom de <strong>{discountPct}%</strong> de desconto</div>
