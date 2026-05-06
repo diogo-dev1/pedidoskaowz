@@ -232,7 +232,6 @@ function renderHeroTitle(t: string) {
 
 export default function ConfiguradorKit() {
   const [cfg, setCfg] = useState<KitConfig>(() => loadKitConfig());
-  const [version, setVersion] = useState<VersionKey>('standard');
   const [qty, setQty] = useState<QtyKey>(1);
   const [units, setUnits] = useState<UnitConfig[]>([newUnit(), newUnit(), newUnit()]);
 
@@ -242,17 +241,23 @@ export default function ConfiguradorKit() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  const v = cfg.versions[version];
+  // Versão usada para textos gerais (hero/cta/ref/footer) e tabela de desconto por qty
+  const baseV = cfg.versions.standard;
   const activeUnits = units.slice(0, qty);
 
+  const unitPrice = (u: UnitConfig) => cfg.versions[u.version].prices[u.size][u.finish];
+  const unitExtraPrice = (u: UnitConfig) => cfg.versions[u.version].bainhaExtraPrice;
+
   const subtotal = useMemo(
-    () => activeUnits.reduce((s, u) => s + v.prices[u.size][u.finish], 0),
-    [activeUnits, v.prices],
+    () => activeUnits.reduce((s, u) => s + unitPrice(u), 0),
+    [activeUnits, cfg],
   );
-  const extrasCount = activeUnits.filter((u) => u.bainhaExtra).length;
-  const extra = extrasCount * v.bainhaExtraPrice;
+  const extra = useMemo(
+    () => activeUnits.reduce((s, u) => s + (u.bainhaExtra ? unitExtraPrice(u) : 0), 0),
+    [activeUnits, cfg],
+  );
   const beforeDiscount = subtotal + extra;
-  const discountPct = v.discountByQty[qty] || 0;
+  const discountPct = baseV.discountByQty[qty] || 0;
   const discountValue = Math.round(beforeDiscount * (discountPct / 100));
   const total = beforeDiscount - discountValue;
 
@@ -261,21 +266,21 @@ export default function ConfiguradorKit() {
   };
 
   const waMessage = useMemo(() => {
-    const versionLabel = v.texts.tabLabel;
     const header = qty === 1
-      ? `Quero esta Push Dagger ${versionLabel}:`
-      : `Quero montar este Kit Push Dagger ${versionLabel} (${qty} unidades):`;
+      ? `Quero esta Push Dagger:`
+      : `Quero montar este Kit Push Dagger (${qty} unidades):`;
     const lines = activeUnits.map((u, i) => {
+      const ver = cfg.versions[u.version];
       const bn = u.bainha === 'velada' ? 'Velada' : 'Multifuncional';
       const ex = u.bainhaExtra
-        ? ` + Bainha Extra ${u.bainhaExtraTipo === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(v.bainhaExtraPrice)})`
+        ? ` + Bainha Extra ${u.bainhaExtraTipo === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(ver.bainhaExtraPrice)})`
         : '';
       const sizeName = SIZE_LIST.find((s) => s.key === u.size)!.name;
-      return `• Unidade ${i + 1}: ${sizeName} — ${FINISH_NAMES[u.finish]} (${BRL(v.prices[u.size][u.finish])})\n   Bainha: ${bn}${ex}`;
+      return `• Unidade ${i + 1}: ${ver.texts.tabLabel} — ${sizeName} — ${FINISH_NAMES[u.finish]} (${BRL(ver.prices[u.size][u.finish])})\n   Bainha: ${bn}${ex}`;
     });
     const desc = discountPct > 0 ? `\nDesconto: ${discountPct}% (-${BRL(discountValue)})` : '';
     return encodeURIComponent(`${header}\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`);
-  }, [activeUnits, qty, v, discountPct, discountValue, total]);
+  }, [activeUnits, qty, cfg, discountPct, discountValue, total]);
 
   const waUrl = `https://wa.me/${cfg.whatsappPhone}?text=${waMessage}`;
 
