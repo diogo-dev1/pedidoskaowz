@@ -305,7 +305,15 @@ export default function ConfiguradorKit() {
   );
   const beforeDiscount = subtotal + extra;
   const discountPct = cfg.discountByQty[qty] || 0;
-  const discountValue = Math.round(beforeDiscount * (discountPct / 100));
+  // Desconto aplica somente em Compact e Micro. Standard mantém preço cheio.
+  const discountableBase = useMemo(
+    () => activeUnits.reduce((s, u) => {
+      if (u.size === 'standard') return s;
+      return s + unitPrice(u) + (u.bainhaExtra ? unitExtraPrice(u) : 0);
+    }, 0),
+    [activeUnits, cfg],
+  );
+  const discountValue = Math.round(discountableBase * (discountPct / 100));
   const total = beforeDiscount - discountValue;
 
   const updateUnit = (idx: number, patch: Partial<UnitConfig>) => {
