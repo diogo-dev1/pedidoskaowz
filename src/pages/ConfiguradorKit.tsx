@@ -559,10 +559,9 @@ const css = `
   --s2: #161616;
   --border: rgba(255,255,255,0.06);
   --border-m: rgba(255,255,255,0.14);
-  --yellow: #C4A44A;
-  --yellow-l: #D4B86A;
-  --olive: #556B2F;
-  --olive-glow: #6B8E23;
+  --yellow: #FFC107;
+  --yellow-l: #FFD54A;
+  --yellow-dim: #b58800;
   --text: #FFFFFF;
   --muted: #8A8A88;
   --dim: #4A4A48;
@@ -571,7 +570,7 @@ const css = `
   font-family: 'Barlow', sans-serif;
   min-height: 100vh;
   background-image:
-    radial-gradient(ellipse at top, rgba(107,142,35,0.05), transparent 55%),
+    radial-gradient(ellipse at top, rgba(255,193,7,0.04), transparent 55%),
     repeating-linear-gradient(0deg, transparent 0 40px, rgba(255,255,255,0.015) 40px 41px),
     repeating-linear-gradient(90deg, transparent 0 40px, rgba(255,255,255,0.015) 40px 41px),
     repeating-linear-gradient(45deg, transparent 0 12px, rgba(255,255,255,0.012) 12px 13px);
@@ -592,8 +591,8 @@ const css = `
   position: absolute;
   top: -1px; left: -1px;
   width: 14px; height: 14px;
-  border-top: 2px solid var(--olive);
-  border-left: 2px solid var(--olive);
+  border-top: 2px solid var(--yellow);
+  border-left: 2px solid var(--yellow);
   border-top-left-radius: 2px;
   pointer-events: none;
   z-index: 2;
@@ -605,8 +604,8 @@ const css = `
   position: absolute;
   bottom: -1px; right: -1px;
   width: 14px; height: 14px;
-  border-bottom: 2px solid var(--olive);
-  border-right: 2px solid var(--olive);
+  border-bottom: 2px solid var(--yellow);
+  border-right: 2px solid var(--yellow);
   border-bottom-right-radius: 2px;
   pointer-events: none;
   z-index: 2;
@@ -625,10 +624,10 @@ const css = `
 .ck-root .version-tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 1.25rem 1rem 0; max-width: 760px; margin: 0 auto; }
 .ck-root .version-tab { padding: 8px 16px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; background: var(--s1); border: 1px solid var(--border); border-radius: 999px; color: var(--muted); cursor: pointer; transition: all .25s ease; }
 .ck-root .version-tab:hover { color: var(--text); border-color: var(--border-m); transform: translateY(-1px); }
-.ck-root .version-tab.active { background: var(--olive); color: #fff; border-color: var(--olive); font-weight: 700; box-shadow: 0 0 12px rgba(107,142,35,0.25); }
+.ck-root .version-tab.active { background: var(--yellow); color: #000; border-color: var(--yellow); font-weight: 700; box-shadow: 0 0 12px rgba(255,193,7,0.25); }
 
 .ck-root .hero { padding: 2.5rem 1.5rem 2rem; text-align: center; max-width: 760px; margin: 0 auto; animation: fadeInUp 0.6s ease-out both; }
-.ck-root .eyebrow { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 4px; color: var(--olive); text-transform: uppercase; margin-bottom: 18px; }
+.ck-root .eyebrow { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 4px; color: var(--yellow); text-transform: uppercase; margin-bottom: 18px; }
 .ck-root .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 8vw, 80px); letter-spacing: 6px; line-height: 0.95; margin-bottom: 22px; font-weight: 700; }
 .ck-root .hero-title span:nth-child(even) { color: var(--yellow); font-style: italic; }
 .ck-root .hero-desc { font-size: 14px; color: #B5B5B3; line-height: 1.7; max-width: 520px; margin: 0 auto; letter-spacing: 0.3px; }
@@ -636,10 +635,10 @@ const css = `
 .ck-root .qty-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 720px; margin: 0 auto 1.75rem; padding: 0 1.5rem; animation: fadeInUp 0.6s 0.15s ease-out both; }
 .ck-root .qty-tab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 12px; background: var(--s1); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); cursor: pointer; transition: all .25s ease; }
 .ck-root .qty-tab:hover { border-color: var(--border-m); color: var(--text); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
-.ck-root .qty-tab.active { border-color: var(--olive); background: rgba(107,142,35,0.07); color: var(--text); box-shadow: 0 0 16px rgba(107,142,35,0.12); }
+.ck-root .qty-tab.active { border-color: var(--yellow); background: rgba(255,193,7,0.07); color: var(--text); box-shadow: 0 0 16px rgba(255,193,7,0.12); }
 .ck-root .qty-num { font-family: 'Bebas Neue', sans-serif; font-size: 36px; line-height: 1; color: var(--yellow); }
 .ck-root .qty-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
-.ck-root .qty-disc { position: absolute; top: 6px; right: 6px; background: var(--olive); color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 12px; padding: 2px 6px; border-radius: 3px; letter-spacing: 1px; }
+.ck-root .qty-disc { position: absolute; top: 6px; right: 6px; background: var(--yellow); color: #000; font-family: 'Bebas Neue', sans-serif; font-size: 12px; padding: 2px 6px; border-radius: 3px; letter-spacing: 1px; }
 
 .ck-root .config-grid { display: grid; max-width: 1100px; margin: 0 auto; gap: 18px; padding: 0 1.75rem; }
 .ck-root .config-grid.grid-1 { grid-template-columns: minmax(0, 480px); justify-content: center; }
@@ -649,9 +648,9 @@ const css = `
 .ck-root .col:nth-child(1) { animation-delay: 0.1s; }
 .ck-root .col:nth-child(2) { animation-delay: 0.2s; }
 .ck-root .col:nth-child(3) { animation-delay: 0.3s; }
-.ck-root .col:hover { border-color: rgba(107,142,35,0.35); transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.ck-root .col:hover { border-color: rgba(255,193,7,0.3); transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
 .ck-root .col-head { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
-.ck-root .col-index { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--olive); line-height: 1; opacity: 0.85; }
+.ck-root .col-index { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--yellow); line-height: 1; opacity: 0.85; }
 .ck-root .col-model { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 4px; line-height: 1; }
 .ck-root .col-dims { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; color: var(--muted); letter-spacing: 1.2px; margin-top: 4px; text-transform: uppercase; }
 
@@ -662,29 +661,29 @@ const css = `
 .ck-root .product-card:hover .product-img { transform: scale(1.04); }
 .ck-root .product-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7) 100%); pointer-events: none; }
 .ck-root .product-card-tag { position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,0.65); backdrop-filter: blur(8px); border: 1px solid var(--border-m); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 4px 10px; border-radius: 3px; font-weight: 500; }
-.ck-root .product-card-price { position: absolute; right: 8px; top: 8px; background: var(--olive); color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 1.5px; padding: 3px 8px; border-radius: 3px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.ck-root .product-card-price { position: absolute; right: 8px; top: 8px; background: var(--yellow); color: #000; font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 1.5px; padding: 3px 8px; border-radius: 3px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
 .ck-root .finish-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
 .ck-root .finish-btn { padding: 11px 4px; border: 1px solid var(--border); border-radius: 4px; background: transparent; cursor: pointer; transition: all .2s ease; color: inherit; font-family: inherit; }
 .ck-root .finish-btn:hover { border-color: var(--border-m); background: rgba(255,255,255,0.03); transform: translateY(-1px); }
-.ck-root .finish-btn.active { border-color: var(--olive); background: rgba(107,142,35,0.08); box-shadow: 0 0 10px rgba(107,142,35,0.1); }
+.ck-root .finish-btn.active { border-color: var(--yellow); background: rgba(255,193,7,0.07); box-shadow: 0 0 10px rgba(255,193,7,0.1); }
 .ck-root .finish-name { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--muted); letter-spacing: 1.4px; text-transform: uppercase; line-height: 1; display: block; transition: color .2s ease; }
-.ck-root .finish-btn.active .finish-name { color: var(--olive-glow); font-weight: 600; }
+.ck-root .finish-btn.active .finish-name { color: var(--yellow); font-weight: 600; }
 
 .ck-root .opt-section { display: flex; flex-direction: column; gap: 6px; }
 .ck-root .opt-label { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
 .ck-root .bainha-options { grid-template-columns: 1fr 1fr; }
 
 .ck-root .bainha-extra { display: flex; align-items: center; gap: 10px; padding: 9px 11px; background: transparent; border: 1px dashed var(--border-m); border-radius: 4px; cursor: pointer; transition: all .2s ease; margin-top: 2px; }
-.ck-root .bainha-extra:hover { border-color: rgba(107,142,35,0.4); }
-.ck-root .bainha-extra.active { border-style: solid; border-color: var(--olive); background: rgba(107,142,35,0.06); }
-.ck-root .bainha-extra input { width: 14px; height: 14px; accent-color: var(--olive); cursor: pointer; flex-shrink: 0; }
+.ck-root .bainha-extra:hover { border-color: rgba(255,193,7,0.4); }
+.ck-root .bainha-extra.active { border-style: solid; border-color: var(--yellow); background: rgba(255,193,7,0.06); }
+.ck-root .bainha-extra input { width: 14px; height: 14px; accent-color: var(--yellow); cursor: pointer; flex-shrink: 0; }
 .ck-root .bainha-extra-title { flex: 1; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); transition: color .2s ease; }
 .ck-root .bainha-extra.active .bainha-extra-title { color: var(--text); font-weight: 600; }
 .ck-root .bainha-extra-price { font-family: 'Bebas Neue', sans-serif; font-size: 13px; color: var(--yellow); letter-spacing: 1px; }
 
 .ck-root .cta-block { max-width: 560px; margin: 3rem auto 0; padding: 2rem 1.5rem; text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; animation: fadeInUp 0.6s 0.2s ease-out both; }
-.ck-root .cta-block::before, .ck-root .cta-block::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); width: 40px; height: 1px; background: var(--olive); }
+.ck-root .cta-block::before, .ck-root .cta-block::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); width: 40px; height: 1px; background: var(--yellow); }
 .ck-root .cta-block::before { top: -1px; }
 .ck-root .cta-block::after { bottom: -1px; }
 .ck-root .total-row { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 18px; }
@@ -694,20 +693,20 @@ const css = `
 .ck-root .total-old { font-family: 'Barlow', sans-serif; font-size: 28px; color: var(--dim); text-decoration: line-through; }
 .ck-root .total-por { display: inline-flex; align-items: baseline; gap: 10px; }
 .ck-root .total-por-label { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 3px; color: var(--yellow); text-transform: uppercase; }
-.ck-root .total-val { font-family: 'Bebas Neue', sans-serif; font-size: 84px; letter-spacing: 3px; color: var(--yellow); line-height: 1; text-shadow: 0 2px 24px rgba(196,164,74,0.25); transition: all .3s ease; }
-.ck-root .total-discount { display: inline-block; margin-top: 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; background: var(--olive); color: #fff; padding: 4px 12px; border-radius: 3px; font-weight: 700; }
-.ck-root .btn-cta { display: inline-block; background: var(--olive); color: #fff; border: none; border-radius: 6px; padding: 16px 48px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 3px; cursor: pointer; text-decoration: none; text-transform: uppercase; transition: all .25s ease; box-shadow: 0 4px 0 #3A4A1E, 0 8px 24px rgba(107,142,35,0.25); }
-.ck-root .btn-cta:hover { background: var(--olive-glow); transform: translateY(-2px); box-shadow: 0 6px 0 #3A4A1E, 0 12px 28px rgba(107,142,35,0.35); }
-.ck-root .btn-cta:active { transform: translateY(2px); box-shadow: 0 2px 0 #3A4A1E; }
+.ck-root .total-val { font-family: 'Bebas Neue', sans-serif; font-size: 84px; letter-spacing: 3px; color: var(--yellow); line-height: 1; text-shadow: 0 2px 24px rgba(255,193,7,0.25); transition: all .3s ease; }
+.ck-root .total-discount { display: inline-block; margin-top: 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; background: var(--yellow); color: #000; padding: 4px 12px; border-radius: 3px; font-weight: 700; }
+.ck-root .btn-cta { display: inline-block; background: var(--yellow); color: #000; border: none; border-radius: 6px; padding: 16px 48px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 3px; cursor: pointer; text-decoration: none; text-transform: uppercase; transition: all .25s ease; box-shadow: 0 4px 0 var(--yellow-dim), 0 8px 24px rgba(255,193,7,0.2); }
+.ck-root .btn-cta:hover { background: var(--yellow-l); transform: translateY(-2px); box-shadow: 0 6px 0 var(--yellow-dim), 0 12px 28px rgba(255,193,7,0.3); }
+.ck-root .btn-cta:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--yellow-dim); }
 .ck-root .cta-note { margin-top: 14px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: var(--dim); text-transform: uppercase; }
-.ck-root .cupom-msg { margin: 1.25rem auto 1rem; padding: 10px 18px; display: inline-block; background: rgba(107,142,35,0.1); border: 1px dashed var(--olive); color: var(--olive-glow); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 4px; }
+.ck-root .cupom-msg { margin: 1.25rem auto 1rem; padding: 10px 18px; display: inline-block; background: rgba(255,193,7,0.1); border: 1px dashed var(--yellow); color: var(--yellow-l); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 4px; }
 .ck-root .cupom-msg strong { color: #fff; font-weight: 700; }
 
 .ck-root .ref-section { max-width: 900px; margin: 4rem auto 0; padding: 0 1.75rem; animation: fadeInUp 0.6s 0.25s ease-out both; }
 .ck-root .ref-section-head { text-align: center; margin-bottom: 1.75rem; }
 .ck-root .ref-section-head h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(28px, 4vw, 38px); letter-spacing: 5px; margin: 6px 0 0; }
 .ck-root .ref-card { margin: 0; background: var(--s1); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; transition: all .3s ease; }
-.ck-root .ref-card:hover { border-color: rgba(107,142,35,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.35); }
+.ck-root .ref-card:hover { border-color: rgba(255,193,7,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.35); }
 .ck-root .ref-img-wrap { position: relative; width: 100%; background: #000; aspect-ratio: 16/9; }
 .ck-root .ref-img-wrap img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
 .ck-root .ref-card:hover .ref-img-wrap img { transform: scale(1.03); }
