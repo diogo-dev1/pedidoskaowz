@@ -26,7 +26,7 @@ const SIZE_LIST: { key: SizeKey; name: string; bladeMm: number; gripMm: number }
 
 export const WHATSAPP_PHONE_DEFAULT = '5528999025695';
 export const VERSION_LIST: { key: VersionKey; label: string }[] = [
-  { key: 'standard', label: 'Original' },
+  { key: 'standard', label: 'Aço Sandvik 14C28N' },
   { key: 'nonmetallic', label: 'Non Metallic' },
   { key: 'blue', label: 'Blue (Treino)' },
 ];
@@ -107,7 +107,7 @@ const buildVersion = (over: Partial<VersionConfig> & { texts: VersionTexts }): V
 export const DEFAULT_CONFIG: KitConfig = {
   whatsappPhone: WHATSAPP_PHONE_DEFAULT,
   versions: {
-    standard: buildVersion({ texts: baseTexts({ tabLabel: 'Original' }) }),
+    standard: buildVersion({ texts: baseTexts({ tabLabel: 'Aço Sandvik 14C28N' }) }),
     nonmetallic: buildVersion({
       texts: baseTexts({
         tabLabel: 'Non Metallic',
@@ -205,6 +205,7 @@ const BRL = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 interface UnitConfig {
+  version: VersionKey;
   size: SizeKey;
   finish: FinishKey;
   bainha: BainhaKey;
@@ -213,6 +214,7 @@ interface UnitConfig {
 }
 
 const newUnit = (): UnitConfig => ({
+  version: 'standard',
   size: 'standard',
   finish: 'sw',
   bainha: 'velada',
@@ -230,7 +232,6 @@ function renderHeroTitle(t: string) {
 
 export default function ConfiguradorKit() {
   const [cfg, setCfg] = useState<KitConfig>(() => loadKitConfig());
-  const [version, setVersion] = useState<VersionKey>('standard');
   const [qty, setQty] = useState<QtyKey>(1);
   const [units, setUnits] = useState<UnitConfig[]>([newUnit(), newUnit(), newUnit()]);
 
@@ -240,17 +241,23 @@ export default function ConfiguradorKit() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  const v = cfg.versions[version];
+  // Versão usada para textos gerais (hero/cta/ref/footer) e tabela de desconto por qty
+  const baseV = cfg.versions.standard;
   const activeUnits = units.slice(0, qty);
 
+  const unitPrice = (u: UnitConfig) => cfg.versions[u.version].prices[u.size][u.finish];
+  const unitExtraPrice = (u: UnitConfig) => cfg.versions[u.version].bainhaExtraPrice;
+
   const subtotal = useMemo(
-    () => activeUnits.reduce((s, u) => s + v.prices[u.size][u.finish], 0),
-    [activeUnits, v.prices],
+    () => activeUnits.reduce((s, u) => s + unitPrice(u), 0),
+    [activeUnits, cfg],
   );
-  const extrasCount = activeUnits.filter((u) => u.bainhaExtra).length;
-  const extra = extrasCount * v.bainhaExtraPrice;
+  const extra = useMemo(
+    () => activeUnits.reduce((s, u) => s + (u.bainhaExtra ? unitExtraPrice(u) : 0), 0),
+    [activeUnits, cfg],
+  );
   const beforeDiscount = subtotal + extra;
-  const discountPct = v.discountByQty[qty] || 0;
+  const discountPct = baseV.discountByQty[qty] || 0;
   const discountValue = Math.round(beforeDiscount * (discountPct / 100));
   const total = beforeDiscount - discountValue;
 
@@ -259,21 +266,21 @@ export default function ConfiguradorKit() {
   };
 
   const waMessage = useMemo(() => {
-    const versionLabel = v.texts.tabLabel;
     const header = qty === 1
-      ? `Quero esta Push Dagger ${versionLabel}:`
-      : `Quero montar este Kit Push Dagger ${versionLabel} (${qty} unidades):`;
+      ? `Quero esta Push Dagger:`
+      : `Quero montar este Kit Push Dagger (${qty} unidades):`;
     const lines = activeUnits.map((u, i) => {
+      const ver = cfg.versions[u.version];
       const bn = u.bainha === 'velada' ? 'Velada' : 'Multifuncional';
       const ex = u.bainhaExtra
-        ? ` + Bainha Extra ${u.bainhaExtraTipo === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(v.bainhaExtraPrice)})`
+        ? ` + Bainha Extra ${u.bainhaExtraTipo === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(ver.bainhaExtraPrice)})`
         : '';
       const sizeName = SIZE_LIST.find((s) => s.key === u.size)!.name;
-      return `• Unidade ${i + 1}: ${sizeName} — ${FINISH_NAMES[u.finish]} (${BRL(v.prices[u.size][u.finish])})\n   Bainha: ${bn}${ex}`;
+      return `• Unidade ${i + 1}: ${ver.texts.tabLabel} — ${sizeName} — ${FINISH_NAMES[u.finish]} (${BRL(ver.prices[u.size][u.finish])})\n   Bainha: ${bn}${ex}`;
     });
     const desc = discountPct > 0 ? `\nDesconto: ${discountPct}% (-${BRL(discountValue)})` : '';
     return encodeURIComponent(`${header}\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`);
-  }, [activeUnits, qty, v, discountPct, discountValue, total]);
+  }, [activeUnits, qty, cfg, discountPct, discountValue, total]);
 
   const waUrl = `https://wa.me/${cfg.whatsappPhone}?text=${waMessage}`;
 
@@ -287,29 +294,17 @@ export default function ConfiguradorKit() {
         </a>
       </header>
 
-      <div className="version-tabs" role="tablist" aria-label="Versão">
-        {VERSION_LIST.map((vl) => (
-          <button
-            key={vl.key}
-            role="tab"
-            aria-selected={version === vl.key}
-            className={`version-tab ${version === vl.key ? 'active' : ''}`}
-            onClick={() => setVersion(vl.key)}
-          >
-            {cfg.versions[vl.key].texts.tabLabel || vl.label}
-          </button>
-        ))}
-      </div>
+      {/* Versão é selecionada por unidade abaixo */}
 
       <section className="hero">
-        <div className="eyebrow">{v.texts.eyebrow}</div>
-        <h1 className="hero-title">{renderHeroTitle(v.texts.heroTitle)}</h1>
-        <p className="hero-desc">{v.texts.heroDesc}</p>
+        <div className="eyebrow">{baseV.texts.eyebrow}</div>
+        <h1 className="hero-title">{renderHeroTitle(baseV.texts.heroTitle)}</h1>
+        <p className="hero-desc">{baseV.texts.heroDesc}</p>
       </section>
 
       <div className="qty-tabs" role="tablist" aria-label="Quantidade">
         {([1, 2, 3] as QtyKey[]).map((q) => {
-          const d = v.discountByQty[q] || 0;
+          const d = baseV.discountByQty[q] || 0;
           return (
             <button
               key={q}
@@ -328,9 +323,10 @@ export default function ConfiguradorKit() {
 
       <div className={`config-grid grid-${qty}`}>
         {activeUnits.map((u, idx) => {
+          const ver = cfg.versions[u.version];
           const sizeMeta = SIZE_LIST.find((s) => s.key === u.size)!;
           const totalMm = sizeMeta.bladeMm + sizeMeta.gripMm;
-          const img = v.imagesBySize[u.size][u.finish];
+          const img = ver.imagesBySize[u.size][u.finish];
           return (
             <article className="col" key={idx}>
               <div className="col-head">
@@ -346,7 +342,23 @@ export default function ConfiguradorKit() {
                   <img src={img} alt={`${sizeMeta.name} ${FINISH_NAMES[u.finish]}`} className="product-img is-active" />
                   <div className="product-card-overlay" />
                   <div className="product-card-tag">{FINISH_NAMES[u.finish]}</div>
-                  <div className="product-card-price">{BRL(v.prices[u.size][u.finish])}</div>
+                  <div className="product-card-price">{BRL(ver.prices[u.size][u.finish])}</div>
+                </div>
+              </div>
+
+              <div className="opt-section">
+                <div className="opt-label">Versão</div>
+                <div className="finish-options version-options">
+                  {VERSION_LIST.map((vl) => (
+                    <button
+                      key={vl.key}
+                      type="button"
+                      className={`finish-btn ${u.version === vl.key ? 'active' : ''}`}
+                      onClick={() => updateUnit(idx, { version: vl.key })}
+                    >
+                      <span className="finish-name">{cfg.versions[vl.key].texts.tabLabel || vl.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -403,7 +415,7 @@ export default function ConfiguradorKit() {
                     onChange={(e) => updateUnit(idx, { bainhaExtra: e.target.checked })}
                   />
                   <span className="bainha-extra-title">Bainha Extra</span>
-                  <span className="bainha-extra-price">+ {BRL(v.bainhaExtraPrice)}</span>
+                  <span className="bainha-extra-price">+ {BRL(ver.bainhaExtraPrice)}</span>
                 </label>
                 {u.bainhaExtra && (
                   <div className="finish-options bainha-options bainha-extra-tipo">
@@ -446,29 +458,29 @@ export default function ConfiguradorKit() {
           <div className="cupom-msg">Resgate seu cupom de <strong>{discountPct}%</strong> de desconto</div>
         )}
         <a className="btn-cta" href={waUrl} target="_blank" rel="noopener noreferrer">
-          {v.texts.ctaText}
+          {baseV.texts.ctaText}
         </a>
         <div className="cta-note">Atendimento via WhatsApp</div>
       </div>
 
       <section className="ref-section">
         <div className="ref-section-head">
-          <div className="eyebrow">{v.texts.refEyebrow}</div>
-          <h2>{v.texts.refTitle}</h2>
+          <div className="eyebrow">{baseV.texts.refEyebrow}</div>
+          <h2>{baseV.texts.refTitle}</h2>
         </div>
         <figure className="ref-card">
           <div className="ref-img-wrap">
-            <img src={v.kitImage} alt={v.texts.refTitle} />
+            <img src={baseV.kitImage} alt={baseV.texts.refTitle} />
           </div>
           <figcaption>
-            <span className="ref-label">{v.texts.refLabel}</span>
-            <span className="ref-sub">{v.texts.refSub}</span>
+            <span className="ref-label">{baseV.texts.refLabel}</span>
+            <span className="ref-sub">{baseV.texts.refSub}</span>
           </figcaption>
         </figure>
       </section>
 
       <div className="footer-note">
-        {v.texts.footerNote.split('\n').map((l, i) => (
+        {baseV.texts.footerNote.split('\n').map((l, i) => (
           <span key={i}>{l}<br /></span>
         ))}
       </div>
