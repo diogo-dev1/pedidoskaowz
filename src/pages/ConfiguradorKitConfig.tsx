@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, RotateCcw, Upload } from 'lucide-react';
+import { Save, RotateCcw, Upload, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   CONFIG_STORAGE_KEY,
@@ -107,7 +107,21 @@ export default function ConfiguradorKitConfig() {
             Edite textos, blocos, valores, descontos e imagens de cada versão da landpage pública.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={async () => {
+              const url = `${window.location.origin}/push-dagger-kaowz`;
+              try {
+                await navigator.clipboard.writeText(url);
+                toast.success('Link copiado!', { description: url });
+              } catch {
+                toast.error('Não foi possível copiar', { description: url });
+              }
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-border rounded hover:bg-secondary"
+          >
+            <Link2 size={14} /> Copiar link
+          </button>
           <button
             onClick={reset}
             className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-border rounded hover:bg-secondary"
