@@ -111,6 +111,7 @@ const buildVersion = (over: Partial<VersionConfig> & { texts: VersionTexts }): V
 
 export const DEFAULT_CONFIG: KitConfig = {
   whatsappPhone: WHATSAPP_PHONE_DEFAULT,
+  discountByQty: { 1: 0, 2: 5, 3: 10 },
   versions: {
     standard: buildVersion({ texts: baseTexts({ tabLabel: 'Aço Sandvik 14C28N' }) }),
     nonmetallic: buildVersion({
