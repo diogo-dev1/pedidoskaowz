@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, RotateCcw, Upload } from 'lucide-react';
+import { Save, RotateCcw, Upload, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   CONFIG_STORAGE_KEY,
