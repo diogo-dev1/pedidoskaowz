@@ -64,6 +64,8 @@ export interface VersionConfig {
 
 export interface KitConfig {
   whatsappPhone: string;
+  /** Descontos globais (%) aplicados a todo o pedido por quantidade total de unidades */
+  discountByQty: Record<QtyKey, number>;
   versions: Record<VersionKey, VersionConfig>;
 }
 
