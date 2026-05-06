@@ -198,20 +198,11 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/configurador-kit" element={<ConfiguradorKit />} />
             <Route
-              path="/configurador-kit"
+              path="/admin/configurador-kit"
               element={
-                <ProtectedRoute>
-                  <Layout>
-                    <ConfiguradorKit />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/configurador-kit/configuracoes"
-              element={
-                <ProtectedRoute>
+                <ProtectedRoute requireAdmin>
                   <Layout>
                     <ConfiguradorKitConfig />
                   </Layout>
