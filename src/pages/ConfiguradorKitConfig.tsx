@@ -310,42 +310,67 @@ export default function ConfiguradorKitConfig() {
         />
       </section>
 
-      {/* Imagens por tamanho × acabamento */}
-      <section className="border border-border rounded-lg p-5 bg-card">
-        <h2 className="font-semibold mb-1">Imagens — {v.texts.tabLabel}</h2>
-        <p className="text-xs text-muted-foreground mb-4">
-          Faça upload de uma imagem para cada combinação (9 no total). Salvas localmente neste navegador (máx ~4MB cada).
-        </p>
-        <div className="space-y-6">
-          {SIZES.map((s) => (
-            <div key={s.key}>
-              <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider text-muted-foreground">{s.name}</h3>
-              <div className="grid grid-cols-3 gap-3">
-                {FINISHES.map((f) => (
+      {/* Imagens por versão × tamanho × acabamento (todas as versões visíveis) */}
+      {VERSION_LIST.map((vl) => {
+        const ver = cfg.versions[vl.key];
+        const handleImg = async (size: SizeKey | 'kit', finish: FinishKey | null, file: File | null) => {
+          if (!file) return;
+          if (file.size > 4 * 1024 * 1024) {
+            toast.error('Imagem muito grande (máx 4MB)');
+            return;
+          }
+          const dataUrl = await fileToDataUrl(file);
+          setCfg((c) => {
+            const cur = c.versions[vl.key];
+            const next: VersionConfig =
+              size === 'kit'
+                ? { ...cur, kitImage: dataUrl }
+                : {
+                    ...cur,
+                    imagesBySize: {
+                      ...cur.imagesBySize,
+                      [size]: { ...cur.imagesBySize[size], [finish!]: dataUrl },
+                    },
+                  };
+            return { ...c, versions: { ...c.versions, [vl.key]: next } };
+          });
+        };
+        return (
+          <section key={vl.key} className="border border-border rounded-lg p-5 bg-card">
+            <h2 className="font-semibold mb-1">Imagens — {ver.texts.tabLabel}</h2>
+            <p className="text-xs text-muted-foreground mb-4">
+              9 combinações (3 tamanhos × 3 acabamentos) + imagem de referência. Máx ~4MB cada.
+            </p>
+            <div className="space-y-6">
+              {SIZES.map((s) => (
+                <div key={s.key}>
+                  <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider text-muted-foreground">{s.name}</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    {FINISHES.map((f) => (
+                      <ImageUploader
+                        key={f.key}
+                        label={f.name}
+                        src={ver.imagesBySize[s.key][f.key]}
+                        onPick={(file) => handleImg(s.key, f.key, file)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <div>
+                <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider text-muted-foreground">Referência (rodapé)</h3>
+                <div className="max-w-xs">
                   <ImageUploader
-                    key={f.key}
-                    label={f.name}
-                    src={v.imagesBySize[s.key][f.key]}
-                    onPick={(file) => handleImage(s.key, f.key, file)}
+                    label="Linha completa"
+                    src={ver.kitImage}
+                    onPick={(file) => handleImg('kit', null, file)}
                   />
-                ))}
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Imagem de referência */}
-      <section className="border border-border rounded-lg p-5 bg-card">
-        <h2 className="font-semibold mb-3">Imagem de Referência (rodapé) — {v.texts.tabLabel}</h2>
-        <div className="max-w-xs">
-          <ImageUploader
-            label="Linha completa"
-            src={v.kitImage}
-            onPick={(file) => handleImage('kit', null, file)}
-          />
-        </div>
-      </section>
+          </section>
+        );
+      })}
     </div>
   );
 }
