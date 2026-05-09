@@ -427,11 +427,17 @@ export default function ConfiguradorKitConfig() {
         const ver = cfg.versions[vl.key];
         const handleImg = async (size: SizeKey | 'kit', finish: FinishKey | null, file: File | null) => {
           if (!file) return;
-          if (file.size > 4 * 1024 * 1024) {
-            toast.error('Imagem muito grande (máx 4MB)');
+          if (file.size > 15 * 1024 * 1024) {
+            toast.error('Imagem muito grande (máx 15MB)');
             return;
           }
-          const dataUrl = await fileToDataUrl(file);
+          let dataUrl: string;
+          try {
+            dataUrl = await compressImage(file);
+          } catch {
+            toast.error('Não foi possível processar a imagem');
+            return;
+          }
           setCfg((c) => {
             const cur = c.versions[vl.key];
             let next: VersionConfig;
@@ -463,8 +469,8 @@ export default function ConfiguradorKitConfig() {
             <h2 className="font-semibold mb-1">Imagens — {ver.texts.tabLabel}</h2>
             <p className="text-xs text-muted-foreground mb-4">
               {ver.hasFinishes
-                ? '9 combinações (3 tamanhos × 3 acabamentos) + imagem de referência. Máx ~4MB cada.'
-                : '1 imagem por tamanho + imagem de referência. Máx ~4MB cada.'}
+                ? '9 combinações (3 tamanhos × 3 acabamentos) + imagem de referência. Otimizadas automaticamente.'
+                : '1 imagem por tamanho + imagem de referência. Otimizadas automaticamente.'}
             </p>
             <div className="space-y-6">
               {SIZES.map((s) => (
