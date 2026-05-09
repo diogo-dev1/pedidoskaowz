@@ -384,6 +384,16 @@ export default function ConfiguradorKit() {
         })}
       </div>
 
+      {qty > 1 && (
+        <div className="qty-hint" role="status" aria-live="polite">
+          <span className="qty-hint-line" />
+          <span className="qty-hint-text">
+            Monte seu Kit com <strong>{qty}</strong> Configurações da Push Dagger
+          </span>
+          <span className="qty-hint-line" />
+        </div>
+      )}
+
       <div className={`config-grid grid-${qty}`}>
         {activeUnits.map((u, idx) => {
           const ver = cfg.versions[u.version];
