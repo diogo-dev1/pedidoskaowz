@@ -357,6 +357,17 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/cases-patola" element={<CasesPatola />} />
+            <Route
+              path="/admin/cases-patola"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CasesPatolaAdmin />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
