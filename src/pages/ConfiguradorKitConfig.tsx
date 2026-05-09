@@ -91,20 +91,24 @@ export default function ConfiguradorKitConfig() {
 
   const handleImage = async (size: SizeKey | 'kit', finish: FinishKey | null, file: File | null) => {
     if (!file) return;
-    if (file.size > 4 * 1024 * 1024) {
-      toast.error('Imagem muito grande (máx 4MB)');
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Imagem muito grande (máx 15MB)');
       return;
     }
-    const dataUrl = await fileToDataUrl(file);
-    if (size === 'kit') {
-      updateVersion({ kitImage: dataUrl });
-    } else {
-      updateVersion({
-        imagesBySize: {
-          ...v.imagesBySize,
-          [size]: { ...v.imagesBySize[size], [finish!]: dataUrl },
-        },
-      });
+    try {
+      const dataUrl = await compressImage(file);
+      if (size === 'kit') {
+        updateVersion({ kitImage: dataUrl });
+      } else {
+        updateVersion({
+          imagesBySize: {
+            ...v.imagesBySize,
+            [size]: { ...v.imagesBySize[size], [finish!]: dataUrl },
+          },
+        });
+      }
+    } catch {
+      toast.error('Não foi possível processar a imagem');
     }
   };
 
