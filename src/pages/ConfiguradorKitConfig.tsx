@@ -27,13 +27,46 @@ const SIZES: { key: SizeKey; name: string }[] = [
   { key: 'micro', name: 'Micro' },
 ];
 
-const fileToDataUrl = (file: File): Promise<string> =>
+const fileToDataUrl = (file: File | Blob): Promise<string> =>
   new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(r.result as string);
     r.onerror = reject;
     r.readAsDataURL(file);
   });
+
+// Compresses image client-side to avoid localStorage quota errors.
+// Resizes longest side to maxDim and re-encodes as JPEG.
+const compressImage = async (file: File, maxDim = 1400, quality = 0.82): Promise<string> => {
+  // SVGs and small files: keep as-is (data URL)
+  if (file.type === 'image/svg+xml') return fileToDataUrl(file);
+
+  const dataUrl = await fileToDataUrl(file);
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = reject;
+    i.src = dataUrl;
+  });
+
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+  const w = Math.round(img.width * scale);
+  const h = Math.round(img.height * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return dataUrl;
+  // Fill white for transparent PNGs converted to JPEG
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const out = canvas.toDataURL('image/jpeg', quality);
+  // If output is somehow larger than the original data URL, prefer the smaller one
+  return out.length < dataUrl.length ? out : dataUrl;
+};
 
 export default function ConfiguradorKitConfig() {
   const [cfg, setCfg] = useState<KitConfig>(() => loadKitConfig());
