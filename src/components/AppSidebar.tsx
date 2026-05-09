@@ -3,7 +3,7 @@ import {
   Calculator, Settings, LogOut, User, MessageSquare, BookOpen,
   ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign,
   Users, Store, FileText, Image, TrendingUp, Eye, Link2, LayoutDashboard,
-  Globe, Truck
+  Globe, Truck, Briefcase
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -72,6 +72,7 @@ export function AppSidebar() {
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
     { title: 'Push Dagger Kaowz', url: '/push-dagger-kaowz', icon: Layers },
+    { title: 'Cases Patola', url: '/admin/cases-patola', icon: Briefcase },
   ];
 
   const crmItems: MenuItem[] = [
