@@ -27,13 +27,46 @@ const SIZES: { key: SizeKey; name: string }[] = [
   { key: 'micro', name: 'Micro' },
 ];
 
-const fileToDataUrl = (file: File): Promise<string> =>
+const fileToDataUrl = (file: File | Blob): Promise<string> =>
   new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(r.result as string);
     r.onerror = reject;
     r.readAsDataURL(file);
   });
+
+// Compresses image client-side to avoid localStorage quota errors.
+// Resizes longest side to maxDim and re-encodes as JPEG.
+const compressImage = async (file: File, maxDim = 1400, quality = 0.82): Promise<string> => {
+  // SVGs and small files: keep as-is (data URL)
+  if (file.type === 'image/svg+xml') return fileToDataUrl(file);
+
+  const dataUrl = await fileToDataUrl(file);
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = reject;
+    i.src = dataUrl;
+  });
+
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+  const w = Math.round(img.width * scale);
+  const h = Math.round(img.height * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return dataUrl;
+  // Fill white for transparent PNGs converted to JPEG
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const out = canvas.toDataURL('image/jpeg', quality);
+  // If output is somehow larger than the original data URL, prefer the smaller one
+  return out.length < dataUrl.length ? out : dataUrl;
+};
 
 export default function ConfiguradorKitConfig() {
   const [cfg, setCfg] = useState<KitConfig>(() => loadKitConfig());
@@ -58,20 +91,24 @@ export default function ConfiguradorKitConfig() {
 
   const handleImage = async (size: SizeKey | 'kit', finish: FinishKey | null, file: File | null) => {
     if (!file) return;
-    if (file.size > 4 * 1024 * 1024) {
-      toast.error('Imagem muito grande (máx 4MB)');
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Imagem muito grande (máx 15MB)');
       return;
     }
-    const dataUrl = await fileToDataUrl(file);
-    if (size === 'kit') {
-      updateVersion({ kitImage: dataUrl });
-    } else {
-      updateVersion({
-        imagesBySize: {
-          ...v.imagesBySize,
-          [size]: { ...v.imagesBySize[size], [finish!]: dataUrl },
-        },
-      });
+    try {
+      const dataUrl = await compressImage(file);
+      if (size === 'kit') {
+        updateVersion({ kitImage: dataUrl });
+      } else {
+        updateVersion({
+          imagesBySize: {
+            ...v.imagesBySize,
+            [size]: { ...v.imagesBySize[size], [finish!]: dataUrl },
+          },
+        });
+      }
+    } catch {
+      toast.error('Não foi possível processar a imagem');
     }
   };
 
@@ -390,11 +427,17 @@ export default function ConfiguradorKitConfig() {
         const ver = cfg.versions[vl.key];
         const handleImg = async (size: SizeKey | 'kit', finish: FinishKey | null, file: File | null) => {
           if (!file) return;
-          if (file.size > 4 * 1024 * 1024) {
-            toast.error('Imagem muito grande (máx 4MB)');
+          if (file.size > 15 * 1024 * 1024) {
+            toast.error('Imagem muito grande (máx 15MB)');
             return;
           }
-          const dataUrl = await fileToDataUrl(file);
+          let dataUrl: string;
+          try {
+            dataUrl = await compressImage(file);
+          } catch {
+            toast.error('Não foi possível processar a imagem');
+            return;
+          }
           setCfg((c) => {
             const cur = c.versions[vl.key];
             let next: VersionConfig;
@@ -426,8 +469,8 @@ export default function ConfiguradorKitConfig() {
             <h2 className="font-semibold mb-1">Imagens — {ver.texts.tabLabel}</h2>
             <p className="text-xs text-muted-foreground mb-4">
               {ver.hasFinishes
-                ? '9 combinações (3 tamanhos × 3 acabamentos) + imagem de referência. Máx ~4MB cada.'
-                : '1 imagem por tamanho + imagem de referência. Máx ~4MB cada.'}
+                ? '9 combinações (3 tamanhos × 3 acabamentos) + imagem de referência. Otimizadas automaticamente.'
+                : '1 imagem por tamanho + imagem de referência. Otimizadas automaticamente.'}
             </p>
             <div className="space-y-6">
               {SIZES.map((s) => (
