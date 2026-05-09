@@ -230,6 +230,117 @@ export type Database = {
         }
         Relationships: []
       }
+      cases_patola_config: {
+        Row: {
+          chave: string
+          id: string
+          updated_at: string
+          valor: string | null
+        }
+        Insert: {
+          chave: string
+          id?: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Update: {
+          chave?: string
+          id?: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Relationships: []
+      }
+      cases_patola_modelos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          horizontal_cm: number | null
+          id: string
+          imagem_url: string | null
+          nome: string
+          ordem: number
+          updated_at: string
+          vertical_cm: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          horizontal_cm?: number | null
+          id?: string
+          imagem_url?: string | null
+          nome: string
+          ordem?: number
+          updated_at?: string
+          vertical_cm?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          horizontal_cm?: number | null
+          id?: string
+          imagem_url?: string | null
+          nome?: string
+          ordem?: number
+          updated_at?: string
+          vertical_cm?: number | null
+        }
+        Relationships: []
+      }
+      cases_patola_solicitacoes: {
+        Row: {
+          calibre: string | null
+          created_at: string
+          customizacoes: string | null
+          fabricante: string | null
+          foto_arma_url: string | null
+          foto_carregador_url: string | null
+          fotos_extras: Json
+          id: string
+          modelo_arma: string | null
+          nome: string
+          observacoes: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          calibre?: string | null
+          created_at?: string
+          customizacoes?: string | null
+          fabricante?: string | null
+          foto_arma_url?: string | null
+          foto_carregador_url?: string | null
+          fotos_extras?: Json
+          id?: string
+          modelo_arma?: string | null
+          nome: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          calibre?: string | null
+          created_at?: string
+          customizacoes?: string | null
+          fabricante?: string | null
+          foto_arma_url?: string | null
+          foto_carregador_url?: string | null
+          fotos_extras?: Json
+          id?: string
+          modelo_arma?: string | null
+          nome?: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       catalogo_modelos: {
         Row: {
           apresentacao_venda: string | null
