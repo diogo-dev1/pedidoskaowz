@@ -40,6 +40,8 @@ import ConfiguracoesCatalogoPublicoInternacional from "./pages/admin/Configuraco
 import ConfiguracoesPreview from "./pages/admin/ConfiguracoesPreview";
 import BlingIntegration from "./pages/BlingIntegration";
 import Install from "./pages/Install";
+import CasesPatola from "./pages/CasesPatola";
+import CasesPatolaAdmin from "./pages/admin/CasesPatolaAdmin";
 import NotFound from "./pages/NotFound";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
