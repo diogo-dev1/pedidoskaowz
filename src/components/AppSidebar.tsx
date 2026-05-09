@@ -72,6 +72,7 @@ export function AppSidebar() {
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
     { title: 'Push Dagger Kaowz', url: '/push-dagger-kaowz', icon: Layers },
+    { title: 'Cases Patola', url: '/admin/cases-patola', icon: Briefcase },
   ];
 
   const crmItems: MenuItem[] = [
