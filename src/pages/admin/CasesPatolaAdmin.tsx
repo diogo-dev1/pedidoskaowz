@@ -113,7 +113,7 @@ export default function CasesPatolaAdmin() {
           <div className="flex justify-end">
             <Button onClick={async () => {
               const { error } = await supabase.from('cases_patola_modelos').insert({
-                nome: 'Novo modelo', ordem: (modelos.at(-1)?.ordem ?? 0) + 1,
+                nome: 'Novo modelo', ordem: (modelos[modelos.length - 1]?.ordem ?? 0) + 1,
               });
               if (error) toast.error(error.message); else load();
             }}><Plus className="w-4 h-4 mr-1" /> Novo modelo</Button>
