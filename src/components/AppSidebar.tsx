@@ -3,7 +3,7 @@ import {
   Calculator, Settings, LogOut, User, MessageSquare, BookOpen,
   ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign,
   Users, Store, FileText, Image, TrendingUp, Eye, Link2, LayoutDashboard,
-  Globe, Truck
+  Globe, Truck, Briefcase
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
