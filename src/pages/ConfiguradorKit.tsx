@@ -384,6 +384,16 @@ export default function ConfiguradorKit() {
         })}
       </div>
 
+      {qty > 1 && (
+        <div className="qty-hint" role="status" aria-live="polite">
+          <span className="qty-hint-line" />
+          <span className="qty-hint-text">
+            Monte seu Kit com <strong>{qty}</strong> Configurações da Push Dagger
+          </span>
+          <span className="qty-hint-line" />
+        </div>
+      )}
+
       <div className={`config-grid grid-${qty}`}>
         {activeUnits.map((u, idx) => {
           const ver = cfg.versions[u.version];
@@ -659,6 +669,11 @@ const css = `
 .ck-root .qty-num { font-family: 'Bebas Neue', sans-serif; font-size: 36px; line-height: 1; color: var(--yellow); }
 .ck-root .qty-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
 .ck-root .qty-disc { position: absolute; top: 6px; right: 6px; background: var(--yellow); color: #000; font-family: 'Bebas Neue', sans-serif; font-size: 12px; padding: 2px 6px; border-radius: 3px; letter-spacing: 1px; }
+.ck-root .qty-hint { display: flex; align-items: center; gap: 12px; max-width: 720px; margin: -0.5rem auto 1.75rem; padding: 0 1.5rem; animation: fadeInUp 0.4s ease-out both; }
+.ck-root .qty-hint-line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--border-m), transparent); }
+.ck-root .qty-hint-text { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.ck-root .qty-hint-text strong { color: var(--yellow); font-weight: 600; }
+@media (max-width: 640px) { .ck-root .qty-hint { padding: 0 1rem; gap: 8px; } .ck-root .qty-hint-text { font-size: 10px; letter-spacing: 1.5px; white-space: normal; text-align: center; } }
 
 .ck-root .config-grid { display: grid; max-width: 1100px; margin: 0 auto; gap: 18px; padding: 0 1.75rem; }
 .ck-root .config-grid.grid-1 { grid-template-columns: minmax(0, 480px); justify-content: center; }
