@@ -119,12 +119,14 @@ export function AppSidebar() {
       <SidebarContent className="bg-sidebar-background overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="space-y-1 py-2">
           <MenuSection label="Vendas" items={vendaItems} isCollapsed={isCollapsed} />
+          <MenuSection label="Catálogos" items={catalogoItems} isCollapsed={isCollapsed} />
           <MenuSection label="CRM" items={crmItems} isCollapsed={isCollapsed} />
-          <MenuSection label="Conteúdo" items={conteudoItems} isCollapsed={isCollapsed} />
-          {adminItems.length > 0 && (
+          <MenuSection label="Comunicação" items={comunicacaoItems} isCollapsed={isCollapsed} />
+          {isAdmin && (
             <>
               <Separator className="mx-3 my-2 bg-sidebar-border/50" />
-              <MenuSection label="Administração" items={adminItems} isCollapsed={isCollapsed} />
+              <MenuSection label="Administração" items={adminProdutoItems} isCollapsed={isCollapsed} />
+              <MenuSection label="Config. Catálogos" items={adminCatalogoItems} isCollapsed={isCollapsed} />
             </>
           )}
         </div>
