@@ -71,8 +71,15 @@ export function AppSidebar() {
     { title: 'Orçamento', url: '/orcamento', icon: FileText },
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
+  ];
+
+  const catalogoItems: MenuItem[] = [
+    { title: 'Catálogo Público', url: '/catalogo', icon: ShoppingBag },
+    { title: 'Catálogo Público Internacional', url: '/catalogo-publico-internacional', icon: Globe },
+    { title: 'Catálogo Revendedor', url: '/catalogo-revendedor', icon: Store },
+    { title: 'Catálogo Revendedor Internacional', url: '/catalogo-internacional', icon: Globe },
     { title: 'Push Dagger Kaowz', url: '/push-dagger-kaowz', icon: Layers },
-    { title: 'Cases Patola', url: '/admin/cases-patola', icon: Briefcase },
+    { title: 'Preview', url: '/preview', icon: Eye },
   ];
 
   const crmItems: MenuItem[] = [
@@ -81,31 +88,30 @@ export function AppSidebar() {
     { title: 'Tarefas', url: '/tarefas', icon: CheckSquare },
   ];
 
-  const conteudoItems: MenuItem[] = [
-    { title: 'Catálogo Público', url: '/catalogo', icon: ShoppingBag },
-    { title: 'Catálogo Público Internacional', url: '/catalogo-publico-internacional', icon: Globe },
-    { title: 'Catálogo Revendedor', url: '/catalogo-revendedor', icon: Store },
-    { title: 'Catálogo Revendedor Internacional', url: '/catalogo-internacional', icon: Globe },
+  const comunicacaoItems: MenuItem[] = [
     { title: 'Auxílio de Vendas', url: '/auxilio-vendas', icon: BookOpen },
     { title: 'Mensagens', url: '/mensagens', icon: MessageSquare },
     { title: 'Mídia', url: '/midia', icon: Image },
-    { title: 'Preview', url: '/preview', icon: Eye },
   ];
 
   const isAdmin = profile?.cargo === 'admin' || profile?.cargo === 'vendedor';
 
-  const adminItems: MenuItem[] = isAdmin ? [
+  const adminProdutoItems: MenuItem[] = isAdmin ? [
+    { title: 'Cases Patola', url: '/admin/cases-patola', icon: Briefcase },
     { title: 'Modelos', url: '/admin/modelos', icon: Layers },
     { title: 'Componentes', url: '/admin/componentes', icon: Package },
     { title: 'Configurações', url: '/admin/configuracoes', icon: Settings },
     { title: 'Informativos', url: '/admin/informativos', icon: Info },
-    { title: 'Config. Catálogo Público', url: '/admin/catalogo', icon: Store },
+    { title: 'Bling', url: '/bling', icon: Link2 },
+  ] : [];
+
+  const adminCatalogoItems: MenuItem[] = isAdmin ? [
+    { title: 'Config. Catálogo Público', url: '/admin/catalogo', icon: ShoppingBag },
     { title: 'Config. Catálogo Público Internacional', url: '/admin/catalogo-publico-internacional', icon: Globe },
-    { title: 'Config. Catálogo Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
+    { title: 'Config. Catálogo Revendedor', url: '/admin/catalogo-revendedor', icon: Store },
     { title: 'Config. Catálogo Revendedor Internacional', url: '/admin/catalogo-internacional', icon: Globe },
     { title: 'Config. Preview', url: '/admin/preview', icon: Eye },
     { title: 'Config. Push Dagger Kaowz', url: '/admin/push-dagger-kaowz', icon: Layers },
-    { title: 'Bling', url: '/bling', icon: Link2 },
   ] : [];
 
   return (
