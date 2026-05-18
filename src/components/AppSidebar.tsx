@@ -3,7 +3,7 @@ import {
   Calculator, Settings, LogOut, User, MessageSquare, BookOpen,
   ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign,
   Users, Store, FileText, Image, TrendingUp, Eye, Link2, LayoutDashboard,
-  Globe, Truck, Briefcase
+  Globe, Truck, Briefcase, Download
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -146,6 +146,17 @@ export function AppSidebar() {
             </div>
           </div>
         )}
+        <Button
+          asChild
+          variant="ghost"
+          className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          size="sm"
+        >
+          <a href="/downloads/kaowz.apk" download>
+            <Download className="h-4 w-4" />
+            {!isCollapsed && <span className="text-sm">Baixar APK</span>}
+          </a>
+        </Button>
         <Button
           onClick={signOut}
           variant="ghost"
