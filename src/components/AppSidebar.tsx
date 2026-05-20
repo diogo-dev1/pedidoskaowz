@@ -151,10 +151,10 @@ export function AppSidebar() {
           className="w-full justify-start gap-3 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 shadow-sm"
           size="sm"
         >
-          <a href="/downloads/kaowz.apk" download>
+          <NavLink to="/install">
             <Download className="h-4 w-4" />
-            {!isCollapsed && <span className="text-sm font-medium">Baixar APK</span>}
-          </a>
+            {!isCollapsed && <span className="text-sm font-medium">Instalar App</span>}
+          </NavLink>
         </Button>
         <Button
           onClick={signOut}
