@@ -148,13 +148,12 @@ export function AppSidebar() {
         )}
         <Button
           asChild
-          variant="ghost"
-          className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          className="w-full justify-start gap-3 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 shadow-sm"
           size="sm"
         >
           <a href="/downloads/kaowz.apk" download>
             <Download className="h-4 w-4" />
-            {!isCollapsed && <span className="text-sm">Baixar APK</span>}
+            {!isCollapsed && <span className="text-sm font-medium">Baixar APK</span>}
           </a>
         </Button>
         <Button
