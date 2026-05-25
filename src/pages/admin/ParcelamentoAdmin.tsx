@@ -193,6 +193,18 @@ export default function ParcelamentoAdmin() {
                 </div>
               </div>
               <div className="space-y-1">
+                <Label>WhatsApp para receber a escolha (com DDD)</Label>
+                <Input
+                  inputMode="tel"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  placeholder="Ex: 11999998888"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Quando o cliente escolher uma parcela, será enviada uma mensagem para esse número.
+                </p>
+              </div>
+              <div className="space-y-1">
                 <Label>Observação (opcional)</Label>
                 <Textarea
                   value={observacao}
