@@ -28,9 +28,13 @@ interface Orcamento {
   parcelas_sem_juros_max: number;
   parcelas_max: number;
   observacao: string | null;
+  whatsapp: string | null;
   ativo: boolean;
   created_at: string;
 }
+
+// Base URL pública para compartilhar (sem domínio de preview)
+const PUBLIC_BASE = 'https://pedidoskaowz.lovable.app';
 
 function makeSlug() {
   return Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
@@ -47,6 +51,7 @@ export default function ParcelamentoAdmin() {
   const [semJurosMax, setSemJurosMax] = useState('0');
   const [parcelasMax, setParcelasMax] = useState('12');
   const [observacao, setObservacao] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [creating, setCreating] = useState(false);
 
   async function load() {
@@ -89,6 +94,7 @@ export default function ParcelamentoAdmin() {
         parcelas_sem_juros_max: parseInt(semJurosMax) || 0,
         parcelas_max: parseInt(parcelasMax) || 12,
         observacao: observacao.trim() || null,
+        whatsapp: whatsapp.replace(/\D/g, '') || null,
         created_by: user?.id,
       })
       .select()
@@ -98,20 +104,20 @@ export default function ParcelamentoAdmin() {
       toast.error('Erro ao criar orçamento');
       return;
     }
-    setDescricao(''); setValor(''); setObservacao(''); setSemJurosMax('0');
+    setDescricao(''); setValor(''); setObservacao(''); setSemJurosMax('0'); setWhatsapp('');
     await load();
     copyLink((data as Orcamento).slug);
     toast.success('Orçamento criado! Link copiado.');
   }
 
   function copyLink(slug: string) {
-    const url = `${window.location.origin}/p/${slug}`;
+    const url = `${PUBLIC_BASE}/p/${slug}`;
     navigator.clipboard.writeText(url);
     toast.success('Link copiado');
   }
 
   function shareWhatsApp(o: Orcamento) {
-    const url = `${window.location.origin}/p/${o.slug}`;
+    const url = `${PUBLIC_BASE}/p/${o.slug}`;
     const msg = `Olá! Aqui está sua simulação de parcelamento para *${o.descricao}*:\n\n${url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   }
@@ -185,6 +191,18 @@ export default function ParcelamentoAdmin() {
                     onChange={(e) => setParcelasMax(e.target.value)}
                   />
                 </div>
+              </div>
+              <div className="space-y-1">
+                <Label>WhatsApp para receber a escolha (com DDD)</Label>
+                <Input
+                  inputMode="tel"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  placeholder="Ex: 11999998888"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Quando o cliente escolher uma parcela, será enviada uma mensagem para esse número.
+                </p>
               </div>
               <div className="space-y-1">
                 <Label>Observação (opcional)</Label>
