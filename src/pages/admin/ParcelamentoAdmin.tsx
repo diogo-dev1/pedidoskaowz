@@ -51,6 +51,7 @@ export default function ParcelamentoAdmin() {
   const [semJurosMax, setSemJurosMax] = useState('0');
   const [parcelasMax, setParcelasMax] = useState('12');
   const [observacao, setObservacao] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [creating, setCreating] = useState(false);
 
   async function load() {
