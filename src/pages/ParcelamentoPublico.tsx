@@ -163,18 +163,36 @@ export default function ParcelamentoPublico() {
           })}
         </div>
 
-        {selecionada !== null && (
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center space-y-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Sua escolha</p>
-            <p className="text-base font-semibold text-foreground">
-              {opcoes.find((o) => o.parcelas === selecionada)?.parcelas}x de{' '}
-              {fmt(opcoes.find((o) => o.parcelas === selecionada)!.valorParcela)}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Entre em contato com o vendedor para finalizar.
-            </p>
-          </div>
-        )}
+        {selecionada !== null && (() => {
+          const op = opcoes.find((o) => o.parcelas === selecionada)!;
+          const msg =
+            `Olá! Quero seguir com a compra de *${orc.descricao}* (${fmt(Number(orc.valor))}).\n\n` +
+            `Forma de pagamento escolhida: *${op.parcelas}x de ${fmt(op.valorParcela)}*` +
+            (op.semJuros ? ' (sem juros)' : '') + '.';
+          const numero = (orc.whatsapp || '').replace(/\D/g, '');
+          const waUrl = numero
+            ? `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`
+            : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+          return (
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center space-y-3 sticky bottom-3">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Sua escolha</p>
+                <p className="text-base font-semibold text-foreground">
+                  {op.parcelas}x de {fmt(op.valorParcela)}
+                </p>
+              </div>
+              <a
+                href={waUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg px-4 py-3 transition-colors"
+              >
+                <MessageCircle className="h-5 w-5" />
+                Confirmar pelo WhatsApp
+              </a>
+            </div>
+          );
+        })()}
 
         <p className="text-[10px] text-center text-muted-foreground pt-4 pb-6">
           Valores sujeitos à confirmação no momento do pagamento.
