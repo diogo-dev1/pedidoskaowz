@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Check, Loader2, AlertCircle } from 'lucide-react';
+import { Check, Loader2, AlertCircle, MessageCircle } from 'lucide-react';
 
 interface Orcamento {
   descricao: string;
@@ -9,6 +9,7 @@ interface Orcamento {
   parcelas_sem_juros_max: number;
   parcelas_max: number;
   observacao: string | null;
+  whatsapp: string | null;
   ativo: boolean;
 }
 
