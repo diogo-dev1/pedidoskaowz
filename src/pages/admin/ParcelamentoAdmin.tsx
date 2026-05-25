@@ -28,9 +28,13 @@ interface Orcamento {
   parcelas_sem_juros_max: number;
   parcelas_max: number;
   observacao: string | null;
+  whatsapp: string | null;
   ativo: boolean;
   created_at: string;
 }
+
+// Base URL pública para compartilhar (sem domínio de preview)
+const PUBLIC_BASE = 'https://pedidoskaowz.lovable.app';
 
 function makeSlug() {
   return Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
