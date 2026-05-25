@@ -42,6 +42,8 @@ import BlingIntegration from "./pages/BlingIntegration";
 import Install from "./pages/Install";
 import CasesPatola from "./pages/CasesPatola";
 import CasesPatolaAdmin from "./pages/admin/CasesPatolaAdmin";
+import ParcelamentoAdmin from "./pages/admin/ParcelamentoAdmin";
+import ParcelamentoPublico from "./pages/ParcelamentoPublico";
 import NotFound from "./pages/NotFound";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
@@ -368,6 +370,17 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/parcelamento"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ParcelamentoAdmin />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/p/:slug" element={<ParcelamentoPublico />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

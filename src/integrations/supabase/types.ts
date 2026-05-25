@@ -1144,6 +1144,81 @@ export type Database = {
           },
         ]
       }
+      parcelamento_orcamentos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          descricao: string
+          id: string
+          observacao: string | null
+          parcelas_max: number
+          parcelas_sem_juros_max: number
+          slug: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao: string
+          id?: string
+          observacao?: string | null
+          parcelas_max?: number
+          parcelas_sem_juros_max?: number
+          slug: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          id?: string
+          observacao?: string | null
+          parcelas_max?: number
+          parcelas_sem_juros_max?: number
+          slug?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
+      }
+      parcelamento_taxas: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          ordem: number
+          parcelas: number
+          rotulo: string | null
+          taxa_percentual: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          ordem?: number
+          parcelas: number
+          rotulo?: string | null
+          taxa_percentual?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          ordem?: number
+          parcelas?: number
+          rotulo?: string | null
+          taxa_percentual?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       preview_config: {
         Row: {
           created_at: string
