@@ -123,6 +123,7 @@ export default function ParcelamentoPublico() {
 
           {opcoes.map((op) => {
             const sel = selecionada === op.parcelas;
+            const total = op.valorParcela * op.parcelas;
             return (
               <button
                 key={op.parcelas}
@@ -149,6 +150,9 @@ export default function ParcelamentoPublico() {
                     <p className="text-lg font-bold text-foreground mt-0.5">
                       {fmt(op.valorParcela)}
                     </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Total: <span className="font-medium text-foreground/80">{fmt(total)}</span>
+                    </p>
                   </div>
                   <div
                     className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
@@ -165,10 +169,11 @@ export default function ParcelamentoPublico() {
 
         {selecionada !== null && (() => {
           const op = opcoes.find((o) => o.parcelas === selecionada)!;
+          const total = op.valorParcela * op.parcelas;
           const msg =
             `Olá! Quero seguir com a compra de *${orc.descricao}* (${fmt(Number(orc.valor))}).\n\n` +
             `Forma de pagamento escolhida: *${op.parcelas}x de ${fmt(op.valorParcela)}*` +
-            (op.semJuros ? ' (sem juros)' : '') + '.';
+            (op.semJuros ? ' (sem juros)' : ` (total ${fmt(total)})`) + '.';
           const numero = (orc.whatsapp || '').replace(/\D/g, '');
           const waUrl = numero
             ? `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`
@@ -179,6 +184,9 @@ export default function ParcelamentoPublico() {
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Sua escolha</p>
                 <p className="text-base font-semibold text-foreground">
                   {op.parcelas}x de {fmt(op.valorParcela)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Total: <span className="font-medium text-foreground/90">{fmt(total)}</span>
                 </p>
               </div>
               <a
