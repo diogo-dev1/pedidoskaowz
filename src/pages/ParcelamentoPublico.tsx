@@ -123,6 +123,7 @@ export default function ParcelamentoPublico() {
 
           {opcoes.map((op) => {
             const sel = selecionada === op.parcelas;
+            const total = op.valorParcela * op.parcelas;
             return (
               <button
                 key={op.parcelas}
@@ -148,6 +149,9 @@ export default function ParcelamentoPublico() {
                     </p>
                     <p className="text-lg font-bold text-foreground mt-0.5">
                       {fmt(op.valorParcela)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Total: <span className="font-medium text-foreground/80">{fmt(total)}</span>
                     </p>
                   </div>
                   <div
