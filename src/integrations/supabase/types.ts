@@ -1157,6 +1157,7 @@ export type Database = {
           slug: string
           updated_at: string
           valor: number
+          whatsapp: string | null
         }
         Insert: {
           ativo?: boolean
@@ -1170,6 +1171,7 @@ export type Database = {
           slug: string
           updated_at?: string
           valor: number
+          whatsapp?: string | null
         }
         Update: {
           ativo?: boolean
@@ -1183,6 +1185,7 @@ export type Database = {
           slug?: string
           updated_at?: string
           valor?: number
+          whatsapp?: string | null
         }
         Relationships: []
       }
