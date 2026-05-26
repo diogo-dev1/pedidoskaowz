@@ -44,6 +44,8 @@ import CasesPatola from "./pages/CasesPatola";
 import CasesPatolaAdmin from "./pages/admin/CasesPatolaAdmin";
 import ParcelamentoAdmin from "./pages/admin/ParcelamentoAdmin";
 import ParcelamentoPublico from "./pages/ParcelamentoPublico";
+import MonteSeuKitLaminas from "./pages/MonteSeuKitLaminas";
+import MonteSeuKitLaminasAdmin from "./pages/admin/MonteSeuKitLaminasAdmin";
 import NotFound from "./pages/NotFound";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
@@ -381,6 +383,17 @@ const App = () => (
               }
             />
             <Route path="/p/:slug" element={<ParcelamentoPublico />} />
+            <Route path="/monte-seu-kit" element={<MonteSeuKitLaminas />} />
+            <Route
+              path="/admin/monte-seu-kit"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <MonteSeuKitLaminasAdmin />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
