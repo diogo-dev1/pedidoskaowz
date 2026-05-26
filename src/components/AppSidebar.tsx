@@ -80,6 +80,7 @@ export function AppSidebar() {
     { title: 'Catálogo Revendedor', url: '/catalogo-revendedor', icon: Store },
     { title: 'Catálogo Revendedor Internacional', url: '/catalogo-internacional', icon: Globe },
     { title: 'Push Dagger Kaowz', url: '/push-dagger-kaowz', icon: Layers },
+    { title: 'Monte seu Kit', url: '/monte-seu-kit', icon: Layers },
     { title: 'Preview', url: '/preview', icon: Eye },
   ];
 
@@ -113,6 +114,7 @@ export function AppSidebar() {
     { title: 'Config. Catálogo Revendedor Internacional', url: '/admin/catalogo-internacional', icon: Globe },
     { title: 'Config. Preview', url: '/admin/preview', icon: Eye },
     { title: 'Config. Push Dagger Kaowz', url: '/admin/push-dagger-kaowz', icon: Layers },
+    { title: 'Config. Monte seu Kit', url: '/admin/monte-seu-kit', icon: Layers },
   ] : [];
 
   return (

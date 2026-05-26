@@ -708,6 +708,69 @@ export type Database = {
         }
         Relationships: []
       }
+      kit_laminas_combos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          desconto_percentual: number
+          descricao: string | null
+          id: string
+          imagem_url: string | null
+          modelo_ids: string[]
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          desconto_percentual?: number
+          descricao?: string | null
+          id?: string
+          imagem_url?: string | null
+          modelo_ids?: string[]
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          desconto_percentual?: number
+          descricao?: string | null
+          id?: string
+          imagem_url?: string | null
+          modelo_ids?: string[]
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kit_laminas_config: {
+        Row: {
+          chave: string
+          created_at: string
+          id: string
+          updated_at: string
+          valor: string | null
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           created_at: string
