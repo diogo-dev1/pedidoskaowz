@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Check, MessageCircle, ChevronLeft, Loader2, Sparkles, Plus, Shield, Crosshair, Package } from 'lucide-react';
+import { Check, MessageCircle, ChevronLeft, Loader2, Plus, Shield, Package } from 'lucide-react';
 import kaowzLogo from '@/assets/kaowz-logo.png';
 
 interface KitCatalogo {
