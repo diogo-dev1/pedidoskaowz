@@ -424,8 +424,73 @@ export default function MonteSeuKitLaminas() {
         </section>
       )}
 
-      <section className="max-w-3xl mx-auto px-4 mt-12 text-center text-xs text-zinc-500">
-        Garantia vitalícia · Afiação vitalícia gratuita · Cupom de desconto confirmado pelo WhatsApp
+      {/* Kits do Catálogo (vindos do site) */}
+      {kitsCatalogo.length > 0 && (
+        <section className="max-w-5xl mx-auto px-4 mt-12">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-amber-400/40" />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-amber-400/30 bg-amber-400/5">
+              <Crosshair size={12} className="text-amber-400" />
+              <span className="text-[11px] text-amber-300 font-bold tracking-[0.2em]">KITS DA LINHA OFICIAL</span>
+            </div>
+            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-400/40" />
+          </div>
+          <p className="text-center text-xs text-zinc-500 mb-5 max-w-md mx-auto">
+            Combinações já consagradas — prontas para você adquirir direto pelo WhatsApp.
+          </p>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+            {kitsCatalogo.map((k) => {
+              const msg = `Olá! Tenho interesse no *${k.nome_modelo}* (${BRL(k.preco_base)}). Pode me passar mais detalhes?`;
+              return (
+                <a
+                  key={k.id}
+                  href={`https://wa.me/${cfg.whatsapp_phone}?text=${encodeURIComponent(msg)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group relative rounded-xl border border-zinc-800 hover:border-amber-400 bg-zinc-900 overflow-hidden text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(251,191,36,0.35)]"
+                >
+                  {/* Corner brackets (tactical) */}
+                  <span className="pointer-events-none absolute top-1.5 left-1.5 w-3 h-3 border-t border-l border-amber-400/60 z-10" />
+                  <span className="pointer-events-none absolute top-1.5 right-1.5 w-3 h-3 border-t border-r border-amber-400/60 z-10" />
+                  <span className="pointer-events-none absolute bottom-1.5 left-1.5 w-3 h-3 border-b border-l border-amber-400/60 z-10" />
+                  <span className="pointer-events-none absolute bottom-1.5 right-1.5 w-3 h-3 border-b border-r border-amber-400/60 z-10" />
+
+                  <div className="relative aspect-square bg-zinc-950">
+                    {k.imagem_modelo ? (
+                      <img src={k.imagem_modelo} alt={k.nome_modelo} className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 grid place-items-center text-zinc-700">
+                        <Package size={40} />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
+                    {k.categoria && (
+                      <div className="absolute top-2.5 left-2.5 px-1.5 py-0.5 rounded bg-zinc-950/80 border border-zinc-700 text-[9px] tracking-widest font-bold text-zinc-300 uppercase font-mono">
+                        {k.categoria}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2.5 sm:p-3">
+                    <div className="font-bold text-xs sm:text-sm leading-tight line-clamp-2 min-h-[2.5em]">{k.nome_modelo}</div>
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-dashed border-zinc-800">
+                      <span className="text-amber-400 font-black text-sm sm:text-base">{BRL(k.preco_base)}</span>
+                      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-semibold opacity-80 group-hover:opacity-100">
+                        <MessageCircle size={11} /> Quero
+                      </span>
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <section className="max-w-3xl mx-auto px-4 mt-12 text-center">
+        <div className="inline-flex items-center gap-2 text-xs text-zinc-500">
+          <Shield size={12} className="text-amber-400/70" />
+          Garantia vitalícia · Afiação vitalícia gratuita · Cupom confirmado pelo WhatsApp
+        </div>
       </section>
     </div>
   );
