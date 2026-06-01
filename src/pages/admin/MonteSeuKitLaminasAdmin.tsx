@@ -94,6 +94,7 @@ export default function MonteSeuKitLaminasAdmin() {
       { chave: 'hero_eyebrow', valor: cfg.hero_eyebrow },
       { chave: 'hero_title', valor: cfg.hero_title },
       { chave: 'hero_desc', valor: cfg.hero_desc },
+      { chave: 'featured_kit_ids', valor: JSON.stringify(cfg.featured_kit_ids || []) },
     ];
     for (const e of entries) {
       await supabase.from('kit_laminas_config').upsert(e, { onConflict: 'chave' });
