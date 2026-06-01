@@ -53,6 +53,7 @@ export default function MonteSeuKitLaminasAdmin() {
   const [combos, setCombos] = useState<Combo[]>([]);
   const [saving, setSaving] = useState(false);
   const [pickerComboIdx, setPickerComboIdx] = useState<number | null>(null);
+  const [pickerFeaturedOpen, setPickerFeaturedOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
