@@ -30,6 +30,7 @@ interface Cfg {
   hero_eyebrow: string;
   hero_title: string;
   hero_desc: string;
+  featured_kit_ids: string[];
 }
 
 const DEFAULT_CFG: Cfg = {
@@ -40,7 +41,9 @@ const DEFAULT_CFG: Cfg = {
   hero_eyebrow: '— Kaowz Ferramentas de Corte —',
   hero_title: 'MONTE SEU {KIT}',
   hero_desc: 'Escolha quantas lâminas quer no seu Kit e ganhe descontos progressivos.',
+  featured_kit_ids: [],
 };
+
 
 const BRL = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
@@ -50,6 +53,7 @@ export default function MonteSeuKitLaminasAdmin() {
   const [combos, setCombos] = useState<Combo[]>([]);
   const [saving, setSaving] = useState(false);
   const [pickerComboIdx, setPickerComboIdx] = useState<number | null>(null);
+  const [pickerFeaturedOpen, setPickerFeaturedOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -65,12 +69,15 @@ export default function MonteSeuKitLaminasAdmin() {
         for (const r of cRes.data) {
           if (r.chave === 'discount_by_qty') {
             try { map.discount_by_qty = JSON.parse(r.valor || '{}'); } catch {}
+          } else if (r.chave === 'featured_kit_ids') {
+            try { map.featured_kit_ids = JSON.parse(r.valor || '[]'); } catch {}
           } else { map[r.chave] = r.valor; }
         }
         setCfg(map);
       }
     })();
   }, []);
+
 
   const modeloById = useMemo(() => {
     const m: Record<string, Modelo> = {};
@@ -88,6 +95,7 @@ export default function MonteSeuKitLaminasAdmin() {
       { chave: 'hero_eyebrow', valor: cfg.hero_eyebrow },
       { chave: 'hero_title', valor: cfg.hero_title },
       { chave: 'hero_desc', valor: cfg.hero_desc },
+      { chave: 'featured_kit_ids', valor: JSON.stringify(cfg.featured_kit_ids || []) },
     ];
     for (const e of entries) {
       await supabase.from('kit_laminas_config').upsert(e, { onConflict: 'chave' });
@@ -307,6 +315,48 @@ export default function MonteSeuKitLaminasAdmin() {
         </div>
       </section>
 
+      {/* Kits em destaque (vindos do catálogo) */}
+      <section className="border border-border rounded-lg p-5 bg-card">
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <div>
+            <h2 className="font-semibold">Kits da Linha Oficial (destaques)</h2>
+            <p className="text-xs text-muted-foreground">Escolha quais produtos do catálogo aparecem na seção "Kits da Linha Oficial" no fim da página. Se vazio, mostra automaticamente os produtos da categoria "Kits".</p>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setPickerFeaturedOpen(true)} className="text-sm px-3 py-1.5 border border-border rounded hover:bg-secondary inline-flex items-center gap-1">
+              <Plus size={14} /> Selecionar produtos
+            </button>
+            <button onClick={saveConfig} disabled={saving} className="text-sm px-3 py-1.5 bg-primary text-primary-foreground rounded hover:bg-primary/80 inline-flex items-center gap-1 disabled:opacity-50">
+              <Save size={14} /> Salvar
+            </button>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {cfg.featured_kit_ids.length === 0 && (
+            <span className="text-xs text-muted-foreground">Nenhum destaque selecionado — usando fallback por categoria "Kits".</span>
+          )}
+          {cfg.featured_kit_ids.map((id) => {
+            const m = modeloById[id];
+            if (!m) return (
+              <span key={id} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-muted text-xs text-muted-foreground">
+                (produto removido)
+                <button onClick={() => setCfg({ ...cfg, featured_kit_ids: cfg.featured_kit_ids.filter((x) => x !== id) })} className="hover:text-destructive">
+                  <X size={10} />
+                </button>
+              </span>
+            );
+            return (
+              <span key={id} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-secondary text-xs">
+                {m.nome_modelo} <span className="text-muted-foreground">{BRL(m.preco_base)}</span>
+                <button onClick={() => setCfg({ ...cfg, featured_kit_ids: cfg.featured_kit_ids.filter((x) => x !== id) })} className="ml-1 hover:text-destructive">
+                  <X size={11} />
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      </section>
+
       {pickerComboIdx !== null && (
         <ModeloPickerModal
           modelos={modelos}
@@ -315,9 +365,19 @@ export default function MonteSeuKitLaminasAdmin() {
           onConfirm={(ids) => { updateCombo(pickerComboIdx, { modelo_ids: ids }); setPickerComboIdx(null); }}
         />
       )}
+
+      {pickerFeaturedOpen && (
+        <ModeloPickerModal
+          modelos={modelos}
+          selected={cfg.featured_kit_ids}
+          onClose={() => setPickerFeaturedOpen(false)}
+          onConfirm={(ids) => { setCfg({ ...cfg, featured_kit_ids: ids }); setPickerFeaturedOpen(false); }}
+        />
+      )}
     </div>
   );
 }
+
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

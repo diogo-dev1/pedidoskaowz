@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Check, MessageCircle, ChevronLeft, Loader2, Sparkles, Plus, Shield, Crosshair, Package } from 'lucide-react';
+import { Check, MessageCircle, ChevronLeft, Loader2, Plus, Shield, Package } from 'lucide-react';
 import kaowzLogo from '@/assets/kaowz-logo.png';
 
 interface KitCatalogo {
@@ -39,6 +39,7 @@ interface ConfigMap {
   hero_eyebrow: string;
   hero_title: string;
   hero_desc: string;
+  featured_kit_ids: string[];
 }
 
 const BRL = (n: number) =>
@@ -71,36 +72,62 @@ export default function MonteSeuKitLaminas() {
     hero_eyebrow: '— Kaowz Ferramentas de Corte —',
     hero_title: 'MONTE SEU {KIT}',
     hero_desc: 'Escolha quantas lâminas quer no seu Kit e ganhe descontos progressivos.',
+    featured_kit_ids: [],
   });
   const [mode, setMode] = useState<Mode>({ kind: 'home' });
   const [pickerIdx, setPickerIdx] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
-      const [mRes, cRes, kRes, kcRes] = await Promise.all([
+      const [mRes, cRes, kRes] = await Promise.all([
         supabase.from('catalogo_modelos').select('id, nome_modelo, preco_base, imagem_modelo, categoria').eq('visivel_catalogo', true).order('ordem_catalogo'),
         supabase.from('kit_laminas_config').select('chave, valor'),
         supabase.from('kit_laminas_combos').select('*').eq('ativo', true).order('ordem'),
-        supabase.from('catalogo_modelos').select('id, nome_modelo, preco_base, imagem_modelo, categoria, apresentacao_venda').eq('visivel_catalogo', true).contains('categorias', ['Kits']).order('ordem_catalogo'),
       ]);
       if (mRes.data) setModelos(mRes.data as any);
       if (kRes.data) setCombos(kRes.data as any);
-      if (kcRes.data) setKitsCatalogo(kcRes.data as any);
+
+      let featuredIds: string[] = [];
+      const map: any = { ...cfg };
       if (cRes.data) {
-        const map: any = { ...cfg };
         for (const r of cRes.data) {
           if (r.chave === 'discount_by_qty') {
             try { map.discount_by_qty = JSON.parse(r.valor || '{}'); } catch {}
+          } else if (r.chave === 'featured_kit_ids') {
+            try { featuredIds = JSON.parse(r.valor || '[]'); } catch {}
+            map.featured_kit_ids = featuredIds;
           } else {
             map[r.chave] = r.valor;
           }
         }
         setCfg(map);
       }
+
+      // Featured kits: usar lista explícita; fallback para categoria 'Kits'
+      let kitsQuery = supabase.from('catalogo_modelos')
+        .select('id, nome_modelo, preco_base, imagem_modelo, categoria, apresentacao_venda')
+        .eq('visivel_catalogo', true);
+      if (featuredIds.length > 0) {
+        kitsQuery = kitsQuery.in('id', featuredIds);
+      } else {
+        kitsQuery = kitsQuery.contains('categorias', ['Kits']);
+      }
+      const kcRes = await kitsQuery.order('ordem_catalogo');
+      if (kcRes.data) {
+        if (featuredIds.length > 0) {
+          // preservar ordem definida pelo admin
+          const order: Record<string, number> = {};
+          featuredIds.forEach((id, i) => (order[id] = i));
+          setKitsCatalogo([...kcRes.data].sort((a, b) => (order[a.id] ?? 999) - (order[b.id] ?? 999)) as any);
+        } else {
+          setKitsCatalogo(kcRes.data as any);
+        }
+      }
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const modeloById = useMemo(() => {
     const m: Record<string, Modelo> = {};
@@ -323,36 +350,28 @@ export default function MonteSeuKitLaminas() {
 
   // ===== HOME =====
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-12">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-16">
       <Header />
-      <section className="max-w-5xl mx-auto px-4 pt-8 pb-6 text-center">
-        <div className="text-xs sm:text-sm tracking-widest text-zinc-500">{cfg.hero_eyebrow}</div>
-        <h1 className="text-3xl sm:text-5xl font-black mt-2">{renderTitle(cfg.hero_title)}</h1>
-        <p className="text-zinc-400 mt-3 max-w-xl mx-auto text-sm sm:text-base">{cfg.hero_desc}</p>
+      <section className="max-w-3xl mx-auto px-4 pt-12 pb-8 text-center">
+        <h1 className="text-3xl sm:text-5xl font-light tracking-tight">{renderTitle(cfg.hero_title)}</h1>
+        <p className="text-zinc-500 mt-4 max-w-md mx-auto text-sm">{cfg.hero_desc}</p>
       </section>
 
       {/* Ofertas por quantidade */}
-      <section className="max-w-5xl mx-auto px-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="h-px flex-1 bg-zinc-800" />
-          <span className="text-xs text-zinc-500 tracking-widest">OFERTAS PROGRESSIVAS</span>
-          <div className="h-px flex-1 bg-zinc-800" />
+      <section className="max-w-4xl mx-auto px-4">
+        <div className="mb-4">
+          <span className="text-[10px] text-zinc-600 tracking-[0.25em] uppercase">Escolha a quantidade</span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {qtyOptions.map(({ qty, discount }) => (
             <button
               key={qty}
               onClick={() => setMode({ kind: 'qty', qty, discount, slots: Array(qty).fill(null) })}
-              className="group relative rounded-2xl border border-zinc-800 hover:border-amber-400/60 bg-gradient-to-b from-zinc-900 to-zinc-950 p-4 text-left transition"
+              className="group relative rounded-lg border border-zinc-800 hover:border-amber-400/60 bg-zinc-900/40 p-5 text-left transition"
             >
-              <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-amber-400 text-zinc-950 text-[10px] font-black">
-                -{discount}%
-              </div>
-              <Sparkles size={18} className="text-amber-400" />
-              <div className="mt-3 text-3xl font-black">{qty}x</div>
-              <div className="text-sm text-zinc-300 font-medium">Lâminas</div>
-              <div className="text-xs text-emerald-400 mt-2 font-semibold">Economize {discount}%</div>
-              <div className="text-[10px] text-zinc-500 mt-3 group-hover:text-amber-400">Montar agora →</div>
+              <div className="text-4xl font-light">{qty}<span className="text-zinc-600 text-2xl">×</span></div>
+              <div className="text-[11px] text-zinc-500 mt-1 uppercase tracking-wider">Lâminas</div>
+              <div className="text-xs text-amber-400 mt-3 font-medium">−{discount}% OFF</div>
             </button>
           ))}
 
@@ -361,26 +380,22 @@ export default function MonteSeuKitLaminas() {
             href={waUrl(cfg.custom_kit_message)}
             target="_blank"
             rel="noreferrer"
-            className="group relative rounded-2xl border border-emerald-500/40 hover:border-emerald-400 bg-gradient-to-b from-emerald-500/10 to-zinc-950 p-4 text-left transition"
+            className="group relative rounded-lg border border-zinc-800 hover:border-emerald-400/60 bg-zinc-900/40 p-5 text-left transition"
           >
-            <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-emerald-500 text-zinc-950 text-[10px] font-black">
-              4+
+            <div className="text-4xl font-light text-emerald-400">4<span className="text-zinc-600 text-2xl">+</span></div>
+            <div className="text-[11px] text-zinc-500 mt-1 uppercase tracking-wider">Personalizado</div>
+            <div className="text-xs text-emerald-400 mt-3 font-medium inline-flex items-center gap-1">
+              <MessageCircle size={11} /> WhatsApp
             </div>
-            <MessageCircle size={18} className="text-emerald-400" />
-            <div className="mt-3 text-xl font-black leading-tight">Kit<br />personalizado</div>
-            <div className="text-xs text-zinc-400 mt-2">4 ou mais lâminas — desconto sob medida</div>
-            <div className="text-[10px] text-emerald-400 mt-3 font-semibold">Falar no WhatsApp →</div>
           </a>
         </div>
       </section>
 
       {/* Combos prontos */}
       {combos.length > 0 && (
-        <section className="max-w-5xl mx-auto px-4 mt-10">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-px flex-1 bg-zinc-800" />
-            <span className="text-xs text-zinc-500 tracking-widest">KITS PRONTOS</span>
-            <div className="h-px flex-1 bg-zinc-800" />
+        <section className="max-w-4xl mx-auto px-4 mt-14">
+          <div className="mb-4">
+            <span className="text-[10px] text-zinc-600 tracking-[0.25em] uppercase">Kits prontos</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {combos.map((c) => {
@@ -391,30 +406,30 @@ export default function MonteSeuKitLaminas() {
                 <button
                   key={c.id}
                   onClick={() => setMode({ kind: 'combo', comboId: c.id })}
-                  className="group relative rounded-2xl border border-zinc-800 hover:border-amber-400/60 bg-zinc-900 overflow-hidden text-left transition"
+                  className="group relative rounded-lg border border-zinc-800 hover:border-amber-400/60 bg-zinc-900/40 overflow-hidden text-left transition"
                 >
                   <div className="relative aspect-[16/10] bg-zinc-950">
                     {c.imagem_url ? (
                       <img src={c.imagem_url} alt={c.nome} className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
-                      <div className="absolute inset-0 grid grid-cols-3 gap-0.5 p-2">
+                      <div className="absolute inset-0 grid grid-cols-3 gap-0.5 p-1.5">
                         {items.slice(0, 3).map((m, i) => (
-                          <div key={i} className="bg-zinc-900 overflow-hidden rounded">
+                          <div key={i} className="bg-zinc-900 overflow-hidden rounded-sm">
                             {m.imagem_modelo && <img src={m.imagem_modelo} alt="" className="w-full h-full object-cover" />}
                           </div>
                         ))}
                       </div>
                     )}
-                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-amber-400 text-zinc-950 text-[10px] font-black">
-                      -{c.desconto_percentual}%
+                    <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] font-medium text-amber-400 border border-amber-400/40 bg-zinc-950/70 rounded">
+                      −{c.desconto_percentual}%
                     </div>
                   </div>
                   <div className="p-3">
-                    <div className="font-bold">{c.nome}</div>
-                    {c.descricao && <div className="text-xs text-zinc-400 mt-1 line-clamp-2">{c.descricao}</div>}
+                    <div className="font-medium text-sm">{c.nome}</div>
+                    {c.descricao && <div className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{c.descricao}</div>}
                     <div className="flex items-baseline gap-2 mt-2">
-                      <span className="text-xs text-zinc-500 line-through">{BRL(subtotal)}</span>
-                      <span className="text-amber-400 font-bold">{BRL(total)}</span>
+                      <span className="text-[11px] text-zinc-600 line-through">{BRL(subtotal)}</span>
+                      <span className="text-amber-400 text-sm font-medium">{BRL(total)}</span>
                     </div>
                   </div>
                 </button>
@@ -424,21 +439,13 @@ export default function MonteSeuKitLaminas() {
         </section>
       )}
 
-      {/* Kits do Catálogo (vindos do site) */}
+      {/* Kits do Catálogo (selecionados na admin) */}
       {kitsCatalogo.length > 0 && (
-        <section className="max-w-5xl mx-auto px-4 mt-12">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-amber-400/40" />
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-amber-400/30 bg-amber-400/5">
-              <Crosshair size={12} className="text-amber-400" />
-              <span className="text-[11px] text-amber-300 font-bold tracking-[0.2em]">KITS DA LINHA OFICIAL</span>
-            </div>
-            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-400/40" />
+        <section className="max-w-4xl mx-auto px-4 mt-14">
+          <div className="mb-4">
+            <span className="text-[10px] text-zinc-600 tracking-[0.25em] uppercase">Kits da linha oficial</span>
           </div>
-          <p className="text-center text-xs text-zinc-500 mb-5 max-w-md mx-auto">
-            Combinações já consagradas — prontas para você adquirir direto pelo WhatsApp.
-          </p>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
             {kitsCatalogo.map((k) => {
               const msg = `Olá! Tenho interesse no *${k.nome_modelo}* (${BRL(k.preco_base)}). Pode me passar mais detalhes?`;
               return (
@@ -447,36 +454,22 @@ export default function MonteSeuKitLaminas() {
                   href={`https://wa.me/${cfg.whatsapp_phone}?text=${encodeURIComponent(msg)}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="group relative rounded-xl border border-zinc-800 hover:border-amber-400 bg-zinc-900 overflow-hidden text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(251,191,36,0.35)]"
+                  className="group relative rounded-lg border border-zinc-800 hover:border-amber-400/60 bg-zinc-900/40 overflow-hidden text-left transition"
                 >
-                  {/* Corner brackets (tactical) */}
-                  <span className="pointer-events-none absolute top-1.5 left-1.5 w-3 h-3 border-t border-l border-amber-400/60 z-10" />
-                  <span className="pointer-events-none absolute top-1.5 right-1.5 w-3 h-3 border-t border-r border-amber-400/60 z-10" />
-                  <span className="pointer-events-none absolute bottom-1.5 left-1.5 w-3 h-3 border-b border-l border-amber-400/60 z-10" />
-                  <span className="pointer-events-none absolute bottom-1.5 right-1.5 w-3 h-3 border-b border-r border-amber-400/60 z-10" />
-
                   <div className="relative aspect-square bg-zinc-950">
                     {k.imagem_modelo ? (
                       <img src={k.imagem_modelo} alt={k.nome_modelo} className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
                       <div className="absolute inset-0 grid place-items-center text-zinc-700">
-                        <Package size={40} />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
-                    {k.categoria && (
-                      <div className="absolute top-2.5 left-2.5 px-1.5 py-0.5 rounded bg-zinc-950/80 border border-zinc-700 text-[9px] tracking-widest font-bold text-zinc-300 uppercase font-mono">
-                        {k.categoria}
+                        <Package size={36} strokeWidth={1} />
                       </div>
                     )}
                   </div>
                   <div className="p-2.5 sm:p-3">
-                    <div className="font-bold text-xs sm:text-sm leading-tight line-clamp-2 min-h-[2.5em]">{k.nome_modelo}</div>
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-dashed border-zinc-800">
-                      <span className="text-amber-400 font-black text-sm sm:text-base">{BRL(k.preco_base)}</span>
-                      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-semibold opacity-80 group-hover:opacity-100">
-                        <MessageCircle size={11} /> Quero
-                      </span>
+                    <div className="font-medium text-xs sm:text-sm leading-tight line-clamp-2 min-h-[2.4em]">{k.nome_modelo}</div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-amber-400 text-sm font-medium">{BRL(k.preco_base)}</span>
+                      <MessageCircle size={12} className="text-zinc-500 group-hover:text-emerald-400 transition" />
                     </div>
                   </div>
                 </a>
@@ -486,15 +479,16 @@ export default function MonteSeuKitLaminas() {
         </section>
       )}
 
-      <section className="max-w-3xl mx-auto px-4 mt-12 text-center">
-        <div className="inline-flex items-center gap-2 text-xs text-zinc-500">
-          <Shield size={12} className="text-amber-400/70" />
-          Garantia vitalícia · Afiação vitalícia gratuita · Cupom confirmado pelo WhatsApp
+      <section className="max-w-3xl mx-auto px-4 mt-14 text-center">
+        <div className="inline-flex items-center gap-2 text-[11px] text-zinc-600">
+          <Shield size={11} className="text-amber-400/60" strokeWidth={1.5} />
+          Garantia vitalícia · Afiação gratuita · Cupom confirmado pelo WhatsApp
         </div>
       </section>
     </div>
   );
 }
+
 
 function Header() {
   return (
