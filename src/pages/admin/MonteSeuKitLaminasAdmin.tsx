@@ -68,12 +68,15 @@ export default function MonteSeuKitLaminasAdmin() {
         for (const r of cRes.data) {
           if (r.chave === 'discount_by_qty') {
             try { map.discount_by_qty = JSON.parse(r.valor || '{}'); } catch {}
+          } else if (r.chave === 'featured_kit_ids') {
+            try { map.featured_kit_ids = JSON.parse(r.valor || '[]'); } catch {}
           } else { map[r.chave] = r.valor; }
         }
         setCfg(map);
       }
     })();
   }, []);
+
 
   const modeloById = useMemo(() => {
     const m: Record<string, Modelo> = {};
