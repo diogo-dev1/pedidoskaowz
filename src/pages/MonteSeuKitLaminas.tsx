@@ -62,6 +62,7 @@ export default function MonteSeuKitLaminas() {
   const [loading, setLoading] = useState(true);
   const [modelos, setModelos] = useState<Modelo[]>([]);
   const [combos, setCombos] = useState<Combo[]>([]);
+  const [kitsCatalogo, setKitsCatalogo] = useState<KitCatalogo[]>([]);
   const [cfg, setCfg] = useState<ConfigMap>({
     whatsapp_phone: '5528999025695',
     discount_by_qty: { '2': 10, '3': 15 },
@@ -76,13 +77,15 @@ export default function MonteSeuKitLaminas() {
 
   useEffect(() => {
     (async () => {
-      const [mRes, cRes, kRes] = await Promise.all([
+      const [mRes, cRes, kRes, kcRes] = await Promise.all([
         supabase.from('catalogo_modelos').select('id, nome_modelo, preco_base, imagem_modelo, categoria').eq('visivel_catalogo', true).order('ordem_catalogo'),
         supabase.from('kit_laminas_config').select('chave, valor'),
         supabase.from('kit_laminas_combos').select('*').eq('ativo', true).order('ordem'),
+        supabase.from('catalogo_modelos').select('id, nome_modelo, preco_base, imagem_modelo, categoria, apresentacao_venda').eq('visivel_catalogo', true).contains('categorias', ['Kits']).order('ordem_catalogo'),
       ]);
       if (mRes.data) setModelos(mRes.data as any);
       if (kRes.data) setCombos(kRes.data as any);
+      if (kcRes.data) setKitsCatalogo(kcRes.data as any);
       if (cRes.data) {
         const map: any = { ...cfg };
         for (const r of cRes.data) {
