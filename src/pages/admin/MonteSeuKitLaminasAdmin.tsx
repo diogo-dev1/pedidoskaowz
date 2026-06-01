@@ -30,6 +30,7 @@ interface Cfg {
   hero_eyebrow: string;
   hero_title: string;
   hero_desc: string;
+  featured_kit_ids: string[];
 }
 
 const DEFAULT_CFG: Cfg = {
@@ -40,7 +41,9 @@ const DEFAULT_CFG: Cfg = {
   hero_eyebrow: '— Kaowz Ferramentas de Corte —',
   hero_title: 'MONTE SEU {KIT}',
   hero_desc: 'Escolha quantas lâminas quer no seu Kit e ganhe descontos progressivos.',
+  featured_kit_ids: [],
 };
+
 
 const BRL = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
