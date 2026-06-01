@@ -39,6 +39,7 @@ interface ConfigMap {
   hero_eyebrow: string;
   hero_title: string;
   hero_desc: string;
+  featured_kit_ids: string[];
 }
 
 const BRL = (n: number) =>
@@ -71,36 +72,62 @@ export default function MonteSeuKitLaminas() {
     hero_eyebrow: '— Kaowz Ferramentas de Corte —',
     hero_title: 'MONTE SEU {KIT}',
     hero_desc: 'Escolha quantas lâminas quer no seu Kit e ganhe descontos progressivos.',
+    featured_kit_ids: [],
   });
   const [mode, setMode] = useState<Mode>({ kind: 'home' });
   const [pickerIdx, setPickerIdx] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
-      const [mRes, cRes, kRes, kcRes] = await Promise.all([
+      const [mRes, cRes, kRes] = await Promise.all([
         supabase.from('catalogo_modelos').select('id, nome_modelo, preco_base, imagem_modelo, categoria').eq('visivel_catalogo', true).order('ordem_catalogo'),
         supabase.from('kit_laminas_config').select('chave, valor'),
         supabase.from('kit_laminas_combos').select('*').eq('ativo', true).order('ordem'),
-        supabase.from('catalogo_modelos').select('id, nome_modelo, preco_base, imagem_modelo, categoria, apresentacao_venda').eq('visivel_catalogo', true).contains('categorias', ['Kits']).order('ordem_catalogo'),
       ]);
       if (mRes.data) setModelos(mRes.data as any);
       if (kRes.data) setCombos(kRes.data as any);
-      if (kcRes.data) setKitsCatalogo(kcRes.data as any);
+
+      let featuredIds: string[] = [];
+      const map: any = { ...cfg };
       if (cRes.data) {
-        const map: any = { ...cfg };
         for (const r of cRes.data) {
           if (r.chave === 'discount_by_qty') {
             try { map.discount_by_qty = JSON.parse(r.valor || '{}'); } catch {}
+          } else if (r.chave === 'featured_kit_ids') {
+            try { featuredIds = JSON.parse(r.valor || '[]'); } catch {}
+            map.featured_kit_ids = featuredIds;
           } else {
             map[r.chave] = r.valor;
           }
         }
         setCfg(map);
       }
+
+      // Featured kits: usar lista explícita; fallback para categoria 'Kits'
+      let kitsQuery = supabase.from('catalogo_modelos')
+        .select('id, nome_modelo, preco_base, imagem_modelo, categoria, apresentacao_venda')
+        .eq('visivel_catalogo', true);
+      if (featuredIds.length > 0) {
+        kitsQuery = kitsQuery.in('id', featuredIds);
+      } else {
+        kitsQuery = kitsQuery.contains('categorias', ['Kits']);
+      }
+      const kcRes = await kitsQuery.order('ordem_catalogo');
+      if (kcRes.data) {
+        if (featuredIds.length > 0) {
+          // preservar ordem definida pelo admin
+          const order: Record<string, number> = {};
+          featuredIds.forEach((id, i) => (order[id] = i));
+          setKitsCatalogo([...kcRes.data].sort((a, b) => (order[a.id] ?? 999) - (order[b.id] ?? 999)) as any);
+        } else {
+          setKitsCatalogo(kcRes.data as any);
+        }
+      }
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const modeloById = useMemo(() => {
     const m: Record<string, Modelo> = {};
