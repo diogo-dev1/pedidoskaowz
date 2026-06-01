@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Check, MessageCircle, ChevronLeft, Loader2, Sparkles, Plus } from 'lucide-react';
+import { Check, MessageCircle, ChevronLeft, Loader2, Sparkles, Plus, Shield, Crosshair, Package } from 'lucide-react';
 import kaowzLogo from '@/assets/kaowz-logo.png';
+
+interface KitCatalogo {
+  id: string;
+  nome_modelo: string;
+  preco_base: number;
+  imagem_modelo: string | null;
+  categoria: string | null;
+  apresentacao_venda: string | null;
+}
 
 interface Modelo {
   id: string;
