@@ -315,6 +315,48 @@ export default function MonteSeuKitLaminasAdmin() {
         </div>
       </section>
 
+      {/* Kits em destaque (vindos do catálogo) */}
+      <section className="border border-border rounded-lg p-5 bg-card">
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <div>
+            <h2 className="font-semibold">Kits da Linha Oficial (destaques)</h2>
+            <p className="text-xs text-muted-foreground">Escolha quais produtos do catálogo aparecem na seção "Kits da Linha Oficial" no fim da página. Se vazio, mostra automaticamente os produtos da categoria "Kits".</p>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setPickerFeaturedOpen(true)} className="text-sm px-3 py-1.5 border border-border rounded hover:bg-secondary inline-flex items-center gap-1">
+              <Plus size={14} /> Selecionar produtos
+            </button>
+            <button onClick={saveConfig} disabled={saving} className="text-sm px-3 py-1.5 bg-primary text-primary-foreground rounded hover:bg-primary/80 inline-flex items-center gap-1 disabled:opacity-50">
+              <Save size={14} /> Salvar
+            </button>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {cfg.featured_kit_ids.length === 0 && (
+            <span className="text-xs text-muted-foreground">Nenhum destaque selecionado — usando fallback por categoria "Kits".</span>
+          )}
+          {cfg.featured_kit_ids.map((id) => {
+            const m = modeloById[id];
+            if (!m) return (
+              <span key={id} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-muted text-xs text-muted-foreground">
+                (produto removido)
+                <button onClick={() => setCfg({ ...cfg, featured_kit_ids: cfg.featured_kit_ids.filter((x) => x !== id) })} className="hover:text-destructive">
+                  <X size={10} />
+                </button>
+              </span>
+            );
+            return (
+              <span key={id} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-secondary text-xs">
+                {m.nome_modelo} <span className="text-muted-foreground">{BRL(m.preco_base)}</span>
+                <button onClick={() => setCfg({ ...cfg, featured_kit_ids: cfg.featured_kit_ids.filter((x) => x !== id) })} className="ml-1 hover:text-destructive">
+                  <X size={11} />
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      </section>
+
       {pickerComboIdx !== null && (
         <ModeloPickerModal
           modelos={modelos}
@@ -323,9 +365,19 @@ export default function MonteSeuKitLaminasAdmin() {
           onConfirm={(ids) => { updateCombo(pickerComboIdx, { modelo_ids: ids }); setPickerComboIdx(null); }}
         />
       )}
+
+      {pickerFeaturedOpen && (
+        <ModeloPickerModal
+          modelos={modelos}
+          selected={cfg.featured_kit_ids}
+          onClose={() => setPickerFeaturedOpen(false)}
+          onConfirm={(ids) => { setCfg({ ...cfg, featured_kit_ids: ids }); setPickerFeaturedOpen(false); }}
+        />
+      )}
     </div>
   );
 }
+
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
