@@ -237,6 +237,22 @@ export default function MonteSeuKitLaminasAdmin() {
         </div>
       </div>
 
+      {/* Exibição de desconto */}
+      <section className="border border-border rounded-lg p-5 bg-card">
+        <label className="flex items-center justify-between gap-4 cursor-pointer">
+          <div>
+            <h2 className="font-semibold">Mostrar desconto</h2>
+            <p className="text-xs text-muted-foreground mt-1">Quando desligado, oculta percentual de desconto, "Subtotal" riscado e linha de desconto no fechamento do pedido. O cliente vê apenas o total.</p>
+          </div>
+          <input
+            type="checkbox"
+            checked={cfg.show_discount}
+            onChange={(e) => setCfg({ ...cfg, show_discount: e.target.checked })}
+            className="w-11 h-6 appearance-none rounded-full bg-muted checked:bg-primary relative cursor-pointer transition-colors before:absolute before:left-0.5 before:top-0.5 before:w-5 before:h-5 before:rounded-full before:bg-background before:transition-transform checked:before:translate-x-5"
+          />
+        </label>
+      </section>
+
       {/* Textos / hero */}
       <section className="border border-border rounded-lg p-5 bg-card space-y-3">
         <h2 className="font-semibold">Textos da página</h2>
@@ -260,6 +276,30 @@ export default function MonteSeuKitLaminasAdmin() {
         <Field label="Mensagem WhatsApp do Kit Personalizado">
           <textarea rows={2} value={cfg.custom_kit_message} onChange={(e) => setCfg({ ...cfg, custom_kit_message: e.target.value })} className="w-full p-3 rounded border border-border bg-background" />
         </Field>
+
+        <div className="pt-4 mt-2 border-t border-border">
+          <h3 className="text-sm font-semibold mb-3">Rótulos das seções e botões</h3>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Field label="Título seção quantidade"><input value={cfg.qty_eyebrow} onChange={(e) => setCfg({ ...cfg, qty_eyebrow: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Unidade (ex: Lâminas)"><input value={cfg.qty_unit_label} onChange={(e) => setCfg({ ...cfg, qty_unit_label: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Personalizado — número (ex: 5+)"><input value={cfg.personalizado_qty_label} onChange={(e) => setCfg({ ...cfg, personalizado_qty_label: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Personalizado — rótulo"><input value={cfg.personalizado_sub_label} onChange={(e) => setCfg({ ...cfg, personalizado_sub_label: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Título seção Kits prontos"><input value={cfg.combos_eyebrow} onChange={(e) => setCfg({ ...cfg, combos_eyebrow: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Título seção Linha oficial"><input value={cfg.catalogo_eyebrow} onChange={(e) => setCfg({ ...cfg, catalogo_eyebrow: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Rodapé (garantia / informações)"><input value={cfg.footer_text} onChange={(e) => setCfg({ ...cfg, footer_text: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Botão Voltar"><input value={cfg.voltar_label} onChange={(e) => setCfg({ ...cfg, voltar_label: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Rótulo CTA (cupom WhatsApp)"><input value={cfg.cta_cupom_label} onChange={(e) => setCfg({ ...cfg, cta_cupom_label: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Rótulo CTA quando faltam lâminas (use {n})"><input value={cfg.cta_cupom_falta_label} onChange={(e) => setCfg({ ...cfg, cta_cupom_falta_label: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Slot vazio (ex: Add lâmina)"><input value={cfg.slot_empty_label} onChange={(e) => setCfg({ ...cfg, slot_empty_label: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Rótulo Subtotal"><input value={cfg.subtotal_label} onChange={(e) => setCfg({ ...cfg, subtotal_label: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Rótulo Desconto"><input value={cfg.desconto_label} onChange={(e) => setCfg({ ...cfg, desconto_label: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Rótulo Total"><input value={cfg.total_label} onChange={(e) => setCfg({ ...cfg, total_label: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Rótulo Total sticky (rodapé fixo)"><input value={cfg.total_sticky_label} onChange={(e) => setCfg({ ...cfg, total_sticky_label: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Eyebrow Kit personalizado (página interna)"><input value={cfg.qty_kit_eyebrow} onChange={(e) => setCfg({ ...cfg, qty_kit_eyebrow: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Título Kit personalizado (use {qty})"><input value={cfg.qty_kit_title} onChange={(e) => setCfg({ ...cfg, qty_kit_title: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+            <Field label="Eyebrow Kit pronto"><input value={cfg.combo_eyebrow} onChange={(e) => setCfg({ ...cfg, combo_eyebrow: e.target.value })} className="w-full h-10 px-3 rounded border border-border bg-background" /></Field>
+          </div>
+        </div>
       </section>
 
       {/* Descontos por quantidade */}
