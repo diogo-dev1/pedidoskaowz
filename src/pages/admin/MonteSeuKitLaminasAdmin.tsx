@@ -31,17 +31,55 @@ interface Cfg {
   hero_title: string;
   hero_desc: string;
   featured_kit_ids: string[];
+  show_discount: boolean;
+  qty_eyebrow: string;
+  qty_unit_label: string;
+  personalizado_qty_label: string;
+  personalizado_sub_label: string;
+  combos_eyebrow: string;
+  catalogo_eyebrow: string;
+  footer_text: string;
+  cta_cupom_label: string;
+  cta_cupom_falta_label: string;
+  slot_empty_label: string;
+  subtotal_label: string;
+  desconto_label: string;
+  total_label: string;
+  total_sticky_label: string;
+  qty_kit_title: string;
+  qty_kit_eyebrow: string;
+  combo_eyebrow: string;
+  voltar_label: string;
 }
 
 const DEFAULT_CFG: Cfg = {
   whatsapp_phone: '5528999025695',
-  discount_by_qty: { '2': 10, '3': 15 },
+  discount_by_qty: { '2': 10, '3': 15, '4': 20 },
   cupom_message: 'Aproveite {pct}% de desconto montando seu Kit',
   custom_kit_message: 'Olá! Quero montar um Kit personalizado de lâminas.',
   hero_eyebrow: '— Kaowz Ferramentas de Corte —',
   hero_title: 'MONTE SEU {KIT}',
   hero_desc: 'Escolha quantas lâminas quer no seu Kit e ganhe descontos progressivos.',
   featured_kit_ids: [],
+  show_discount: true,
+  qty_eyebrow: 'Escolha a quantidade',
+  qty_unit_label: 'Lâminas',
+  personalizado_qty_label: '5+',
+  personalizado_sub_label: 'Personalizado',
+  combos_eyebrow: 'Kits prontos',
+  catalogo_eyebrow: 'Kits da linha oficial',
+  footer_text: 'Garantia vitalícia · Afiação gratuita · Cupom confirmado pelo WhatsApp',
+  cta_cupom_label: 'Resgatar cupom no WhatsApp',
+  cta_cupom_falta_label: 'Faltam {n} lâmina(s)',
+  slot_empty_label: 'Add lâmina',
+  subtotal_label: 'Subtotal',
+  desconto_label: 'Desconto',
+  total_label: 'Total',
+  total_sticky_label: 'Total com desconto',
+  qty_kit_title: 'Monte seu Kit com {qty} lâminas',
+  qty_kit_eyebrow: '— Kit personalizado —',
+  combo_eyebrow: '— Kit pronto —',
+  voltar_label: 'Voltar',
 };
 
 
@@ -71,6 +109,8 @@ export default function MonteSeuKitLaminasAdmin() {
             try { map.discount_by_qty = JSON.parse(r.valor || '{}'); } catch {}
           } else if (r.chave === 'featured_kit_ids') {
             try { map.featured_kit_ids = JSON.parse(r.valor || '[]'); } catch {}
+          } else if (r.chave === 'show_discount') {
+            map.show_discount = r.valor !== 'false';
           } else { map[r.chave] = r.valor; }
         }
         setCfg(map);
