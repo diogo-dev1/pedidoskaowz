@@ -127,15 +127,20 @@ export default function MonteSeuKitLaminasAdmin() {
 
   const saveConfig = async () => {
     setSaving(true);
+    const textKeys: (keyof Cfg)[] = [
+      'whatsapp_phone', 'cupom_message', 'custom_kit_message',
+      'hero_eyebrow', 'hero_title', 'hero_desc',
+      'qty_eyebrow', 'qty_unit_label', 'personalizado_qty_label', 'personalizado_sub_label',
+      'combos_eyebrow', 'catalogo_eyebrow', 'footer_text',
+      'cta_cupom_label', 'cta_cupom_falta_label', 'slot_empty_label',
+      'subtotal_label', 'desconto_label', 'total_label', 'total_sticky_label',
+      'qty_kit_title', 'qty_kit_eyebrow', 'combo_eyebrow', 'voltar_label',
+    ];
     const entries: { chave: string; valor: string }[] = [
-      { chave: 'whatsapp_phone', valor: cfg.whatsapp_phone },
+      ...textKeys.map((k) => ({ chave: k as string, valor: String(cfg[k] ?? '') })),
       { chave: 'discount_by_qty', valor: JSON.stringify(cfg.discount_by_qty) },
-      { chave: 'cupom_message', valor: cfg.cupom_message },
-      { chave: 'custom_kit_message', valor: cfg.custom_kit_message },
-      { chave: 'hero_eyebrow', valor: cfg.hero_eyebrow },
-      { chave: 'hero_title', valor: cfg.hero_title },
-      { chave: 'hero_desc', valor: cfg.hero_desc },
       { chave: 'featured_kit_ids', valor: JSON.stringify(cfg.featured_kit_ids || []) },
+      { chave: 'show_discount', valor: cfg.show_discount ? 'true' : 'false' },
     ];
     for (const e of entries) {
       await supabase.from('kit_laminas_config').upsert(e, { onConflict: 'chave' });
