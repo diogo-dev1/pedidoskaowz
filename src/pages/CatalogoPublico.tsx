@@ -111,7 +111,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
   const [searchParams, setSearchParams] = useSearchParams();
   const STORAGE_KEY = isInternacional ? SELECAO_INTL_STORAGE_KEY : SELECAO_STORAGE_KEY;
   const detailRoute = isInternacional ? '/catalogo-publico-internacional' : '/catalogo';
-  const kitRoute = isInternacional ? '/catalogo-publico-internacional/montar-kit' : '/catalogo/montar-kit';
+  const kitRoute = isInternacional ? '/catalogo-publico-internacional/montar-kit' : '/monte-seu-kit';
 
   // International config state
   const [lang, setLang] = useState<'pt' | 'en'>('en');
