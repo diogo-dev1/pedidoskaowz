@@ -71,7 +71,7 @@ export interface KitConfig {
   versions: Record<VersionKey, VersionConfig>;
 }
 
-export const DEFAULT_CUPOM_MESSAGE = 'Aproveite {pct}% de desconto nas configurações Micro e Compact';
+export const DEFAULT_CUPOM_MESSAGE = 'LANÇAMENTO 11/06 · 10% OFF + 10× sem juros nas configurações Micro e Compact (Sandvik 14C28N · G10 Black)';
 
 const defaultImgsForSize = (): Record<FinishKey, string> => ({
   satin: imgAcetinada,
@@ -99,8 +99,9 @@ const buildVersion = (over: Partial<VersionConfig> & { texts: VersionTexts }): V
   hasFinishes: true,
   prices: {
     standard: { satin: 935, sw: 985, tac: 1090 },
-    compact:  { satin: 645, sw: 665, tac: 755 },
-    micro:    { satin: 515, sw: 535, tac: 625 },
+    // Preços de LANÇAMENTO (Sandvik 14C28N + G10 Black) — 11/06 18h, grupo exclusivo
+    compact:  { satin: 580, sw: 600, tac: 680 },
+    micro:    { satin: 465, sw: 480, tac: 560 },
   },
   imagesBySize: {
     standard: defaultImgsForSize(),
@@ -158,7 +159,8 @@ export const DEFAULT_CONFIG: KitConfig = {
   },
 };
 
-export const CONFIG_STORAGE_KEY = 'configurador-kit-config-v4';
+export const CONFIG_STORAGE_KEY = 'configurador-kit-config-v5';
+const LEGACY_V4 = 'configurador-kit-config-v4';
 const LEGACY_V3 = 'configurador-kit-config-v3';
 const LEGACY_V2 = 'configurador-kit-config-v2';
 const LEGACY_V1 = 'configurador-kit-config-v1';
