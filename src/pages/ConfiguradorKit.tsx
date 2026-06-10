@@ -159,7 +159,8 @@ export const DEFAULT_CONFIG: KitConfig = {
   },
 };
 
-export const CONFIG_STORAGE_KEY = 'configurador-kit-config-v4';
+export const CONFIG_STORAGE_KEY = 'configurador-kit-config-v5';
+const LEGACY_V4 = 'configurador-kit-config-v4';
 const LEGACY_V3 = 'configurador-kit-config-v3';
 const LEGACY_V2 = 'configurador-kit-config-v2';
 const LEGACY_V1 = 'configurador-kit-config-v1';
