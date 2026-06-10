@@ -584,6 +584,82 @@ export default function ConfiguradorKit() {
           <span key={i}>{l}<br /></span>
         ))}
       </div>
+
+      {showTable && (
+        <div className="price-modal" role="dialog" aria-modal="true" onClick={() => setShowTable(false)}>
+          <div className="price-modal-card" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="price-modal-close" onClick={() => setShowTable(false)} aria-label="Fechar">×</button>
+            <div className="price-modal-head">
+              <div className="eyebrow">— Tabela de Preços —</div>
+              <h2>Push Dagger · Todas as Configurações</h2>
+              <p className="price-modal-sub">Valores por unidade. Bainha Velada inclusa.</p>
+            </div>
+
+            {VERSION_LIST.map((vl) => {
+              const ver = cfg.versions[vl.key];
+              return (
+                <div key={vl.key} className="price-version">
+                  <div className="price-version-title">
+                    <span className="price-version-name">{ver.texts.tabLabel || vl.label}</span>
+                    {!ver.hasFinishes && <span className="price-version-tag">Único acabamento</span>}
+                  </div>
+                  <div className="price-table-wrap">
+                    <table className="price-table">
+                      <thead>
+                        <tr>
+                          <th>Tamanho</th>
+                          {ver.hasFinishes
+                            ? FINISH_KEYS.map((fk) => <th key={fk}>{FINISH_NAMES[fk]}</th>)
+                            : <th>Preço</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {SIZE_LIST.map((s) => (
+                          <tr key={s.key}>
+                            <td>
+                              <div className="price-size-name">{s.name}</div>
+                              <div className="price-size-dim">{(s.bladeMm + s.gripMm).toFixed(1).replace('.', ',')} mm</div>
+                            </td>
+                            {ver.hasFinishes
+                              ? FINISH_KEYS.map((fk) => (
+                                  <td key={fk} className="price-cell">{BRL(ver.prices[s.key][fk])}</td>
+                                ))
+                              : <td className="price-cell">{BRL(ver.prices[s.key].satin)}</td>}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="price-extra">
+                    <span>Bainha Extra</span>
+                    <strong>+ {BRL(ver.bainhaExtraPrice)}</strong>
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="price-discounts">
+              <div className="price-discounts-title">Descontos por quantidade</div>
+              <div className="price-discounts-grid">
+                {([1, 2, 3] as QtyKey[]).map((q) => {
+                  const d = cfg.discountByQty[q] || 0;
+                  return (
+                    <div key={q} className={`price-disc-item ${d > 0 ? 'on' : ''}`}>
+                      <span className="price-disc-qty">{q} un.</span>
+                      <span className="price-disc-val">{d > 0 ? `-${d}%` : '—'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="price-disc-note">Desconto aplicado apenas em Compact e Micro.</p>
+            </div>
+
+            <button type="button" className="btn-cta price-modal-cta" onClick={() => setShowTable(false)}>
+              Fechar e configurar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
