@@ -618,7 +618,11 @@ export default function ConfiguradorKit() {
                           <tr key={s.key}>
                             <td>
                               <div className="price-size-name">{s.name}</div>
-                              <div className="price-size-dim">{(s.bladeMm + s.gripMm).toFixed(1).replace('.', ',')} mm</div>
+                              <div className="price-size-dim">
+                                <span>Lâmina <strong>{s.bladeMm.toFixed(2).replace('.', ',')} mm</strong></span>
+                                <span>Empunhadura <strong>{s.gripMm.toFixed(2).replace('.', ',')} mm</strong></span>
+                                <span className="price-size-total">Total {(s.bladeMm + s.gripMm).toFixed(2).replace('.', ',')} mm</span>
+                              </div>
                             </td>
                             {ver.hasFinishes
                               ? FINISH_KEYS.map((fk) => (
@@ -879,7 +883,9 @@ const css = `
 .ck-root .price-table tbody tr:last-child td { border-bottom: none; }
 .ck-root .price-table tbody tr:hover { background: rgba(255,193,7,0.04); }
 .ck-root .price-size-name { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 2px; color: var(--text); text-align: left; padding-left: 4px; }
-.ck-root .price-size-dim { font-family: 'Barlow Condensed', sans-serif; font-size: 9px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; text-align: left; padding-left: 4px; margin-top: 2px; }
+.ck-root .price-size-dim { display: flex; flex-direction: column; gap: 2px; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 0.8px; color: var(--muted); text-transform: uppercase; text-align: left; padding-left: 4px; margin-top: 4px; }
+.ck-root .price-size-dim strong { color: var(--text); font-weight: 600; letter-spacing: 1px; }
+.ck-root .price-size-total { color: var(--yellow) !important; font-weight: 600; margin-top: 2px; }
 .ck-root .price-cell { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 1px; color: var(--yellow); }
 .ck-root .price-extra { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 8px 12px; border: 1px dashed var(--border-m); border-radius: 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
 .ck-root .price-extra strong { font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: var(--yellow); letter-spacing: 1px; font-weight: 400; }
