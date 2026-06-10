@@ -618,7 +618,11 @@ export default function ConfiguradorKit() {
                           <tr key={s.key}>
                             <td>
                               <div className="price-size-name">{s.name}</div>
-                              <div className="price-size-dim">{(s.bladeMm + s.gripMm).toFixed(1).replace('.', ',')} mm</div>
+                              <div className="price-size-dim">
+                                <span>Lâmina <strong>{s.bladeMm.toFixed(2).replace('.', ',')} mm</strong></span>
+                                <span>Empunhadura <strong>{s.gripMm.toFixed(2).replace('.', ',')} mm</strong></span>
+                                <span className="price-size-total">Total {(s.bladeMm + s.gripMm).toFixed(2).replace('.', ',')} mm</span>
+                              </div>
                             </td>
                             {ver.hasFinishes
                               ? FINISH_KEYS.map((fk) => (
