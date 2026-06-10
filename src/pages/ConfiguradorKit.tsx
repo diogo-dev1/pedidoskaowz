@@ -273,6 +273,7 @@ export default function ConfiguradorKit() {
   const [cfg, setCfg] = useState<KitConfig>(() => loadKitConfig());
   const [qty, setQty] = useState<QtyKey>(1);
   const [units, setUnits] = useState<UnitConfig[]>([newUnit(), newUnit(), newUnit()]);
+  const [showTable, setShowTable] = useState(false);
 
   useEffect(() => {
     const onStorage = () => setCfg(loadKitConfig());
