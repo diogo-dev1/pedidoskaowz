@@ -99,8 +99,9 @@ const buildVersion = (over: Partial<VersionConfig> & { texts: VersionTexts }): V
   hasFinishes: true,
   prices: {
     standard: { satin: 935, sw: 985, tac: 1090 },
-    compact:  { satin: 645, sw: 665, tac: 755 },
-    micro:    { satin: 515, sw: 535, tac: 625 },
+    // Preços de LANÇAMENTO (Sandvik 14C28N + G10 Black) — 11/06 18h, grupo exclusivo
+    compact:  { satin: 580, sw: 600, tac: 680 },
+    micro:    { satin: 465, sw: 480, tac: 560 },
   },
   imagesBySize: {
     standard: defaultImgsForSize(),
