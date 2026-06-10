@@ -851,4 +851,56 @@ const css = `
   .ck-root .total-old { font-size: 22px; }
   .ck-root .ref-section { padding: 0 1rem; margin-top: 2.5rem; }
 }
+
+/* See prices button */
+.ck-root .see-prices-btn { margin-top: 22px; display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; background: transparent; border: 1px solid var(--yellow); color: var(--yellow); font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase; border-radius: 4px; cursor: pointer; transition: all .25s ease; }
+.ck-root .see-prices-btn:hover { background: rgba(255,193,7,0.1); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(255,193,7,0.18); }
+
+/* Price modal */
+.ck-root .price-modal { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; animation: fadeInUp 0.25s ease-out; }
+.ck-root .price-modal-card { position: relative; width: 100%; max-width: 720px; background: linear-gradient(180deg, var(--s1) 0%, #070707 100%); border: 1px solid var(--border-m); border-radius: 8px; padding: 1.5rem 1.25rem 2rem; }
+.ck-root .price-modal-card::before { content: ''; position: absolute; top: -1px; left: -1px; width: 18px; height: 18px; border-top: 2px solid var(--yellow); border-left: 2px solid var(--yellow); border-top-left-radius: 2px; }
+.ck-root .price-modal-card::after { content: ''; position: absolute; bottom: -1px; right: -1px; width: 18px; height: 18px; border-bottom: 2px solid var(--yellow); border-right: 2px solid var(--yellow); border-bottom-right-radius: 2px; }
+.ck-root .price-modal-close { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; background: transparent; border: 1px solid var(--border-m); color: var(--text); font-size: 20px; line-height: 1; border-radius: 50%; cursor: pointer; transition: all .2s ease; display: flex; align-items: center; justify-content: center; }
+.ck-root .price-modal-close:hover { background: var(--yellow); color: #000; border-color: var(--yellow); }
+.ck-root .price-modal-head { text-align: center; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+.ck-root .price-modal-head h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(22px, 4vw, 30px); letter-spacing: 3px; margin: 6px 0 8px; }
+.ck-root .price-modal-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin: 0; }
+
+.ck-root .price-version { margin-bottom: 1.5rem; }
+.ck-root .price-version-title { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(255,193,7,0.06); border-left: 3px solid var(--yellow); border-radius: 2px; margin-bottom: 8px; }
+.ck-root .price-version-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 3px; color: var(--text); }
+.ck-root .price-version-tag { margin-left: auto; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; color: var(--yellow); text-transform: uppercase; }
+.ck-root .price-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 4px; }
+.ck-root .price-table { width: 100%; border-collapse: collapse; min-width: 360px; }
+.ck-root .price-table th { background: var(--s2); padding: 10px 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; text-align: center; font-weight: 600; border-bottom: 1px solid var(--border); }
+.ck-root .price-table th:first-child { text-align: left; padding-left: 12px; }
+.ck-root .price-table td { padding: 10px 8px; text-align: center; border-bottom: 1px solid var(--border); }
+.ck-root .price-table tbody tr:last-child td { border-bottom: none; }
+.ck-root .price-table tbody tr:hover { background: rgba(255,193,7,0.04); }
+.ck-root .price-size-name { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 2px; color: var(--text); text-align: left; padding-left: 4px; }
+.ck-root .price-size-dim { font-family: 'Barlow Condensed', sans-serif; font-size: 9px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; text-align: left; padding-left: 4px; margin-top: 2px; }
+.ck-root .price-cell { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 1px; color: var(--yellow); }
+.ck-root .price-extra { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 8px 12px; border: 1px dashed var(--border-m); border-radius: 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
+.ck-root .price-extra strong { font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: var(--yellow); letter-spacing: 1px; font-weight: 400; }
+
+.ck-root .price-discounts { margin-top: 1.5rem; padding: 1rem; background: var(--s2); border-radius: 4px; border: 1px solid var(--border); }
+.ck-root .price-discounts-title { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; text-align: center; margin-bottom: 10px; }
+.ck-root .price-discounts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ck-root .price-disc-item { display: flex; flex-direction: column; align-items: center; padding: 10px 6px; background: var(--s1); border: 1px solid var(--border); border-radius: 4px; }
+.ck-root .price-disc-item.on { border-color: var(--yellow); background: rgba(255,193,7,0.07); }
+.ck-root .price-disc-qty { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
+.ck-root .price-disc-val { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--yellow); letter-spacing: 1px; margin-top: 2px; }
+.ck-root .price-disc-item:not(.on) .price-disc-val { color: var(--dim); }
+.ck-root .price-disc-note { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1px; color: var(--muted); text-align: center; margin: 10px 0 0; text-transform: uppercase; }
+
+.ck-root .price-modal-cta { display: block; width: 100%; margin: 1.5rem auto 0; text-align: center; }
+
+@media (max-width: 520px) {
+  .ck-root .price-modal { padding: 1rem 0.5rem; }
+  .ck-root .price-modal-card { padding: 1.25rem 0.85rem 1.5rem; }
+  .ck-root .price-cell { font-size: 14px; }
+  .ck-root .price-size-name { font-size: 13px; letter-spacing: 1.5px; }
+  .ck-root .price-table th, .ck-root .price-table td { padding: 8px 4px; }
+}
 `;
