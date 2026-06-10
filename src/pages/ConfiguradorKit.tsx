@@ -71,7 +71,7 @@ export interface KitConfig {
   versions: Record<VersionKey, VersionConfig>;
 }
 
-export const DEFAULT_CUPOM_MESSAGE = 'Aproveite {pct}% de desconto nas configurações Micro e Compact';
+export const DEFAULT_CUPOM_MESSAGE = 'LANÇAMENTO 11/06 · 10% OFF + 10× sem juros nas configurações Micro e Compact (Sandvik 14C28N · G10 Black)';
 
 const defaultImgsForSize = (): Record<FinishKey, string> => ({
   satin: imgAcetinada,
