@@ -366,6 +366,9 @@ export default function ConfiguradorKit() {
         <div className="eyebrow">{baseV.texts.eyebrow}</div>
         <h1 className="hero-title">{renderHeroTitle(baseV.texts.heroTitle)}</h1>
         <p className="hero-desc">{baseV.texts.heroDesc}</p>
+        <button type="button" className="see-prices-btn" onClick={() => setShowTable(true)}>
+          Ver tabela completa de preços
+        </button>
       </section>
 
       <div className="qty-tabs" role="tablist" aria-label="Quantidade">
