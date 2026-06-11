@@ -47,7 +47,6 @@ export default function Auth() {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold">Kaowz</CardTitle>
-          <CardDescription>Sistema de Simulação de Preços para Cutelaria</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
