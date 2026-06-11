@@ -1425,6 +1425,24 @@ export type Database = {
         }
         Relationships: []
       }
+      push_dagger_config: {
+        Row: {
+          chave: string
+          updated_at: string
+          valor: string | null
+        }
+        Insert: {
+          chave: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Update: {
+          chave?: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Relationships: []
+      }
       situacoes_leads: {
         Row: {
           cor: string
