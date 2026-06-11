@@ -21,7 +21,7 @@ import {
 } from './ConfiguradorKit';
 import type { AcoEmpunhaduraImages } from './ConfiguradorKit';
 
-const IMAGE_BUCKET = 'push-dagger-kaowz';
+const IMAGE_BUCKET = 'modelo-imagens';
 
 type FinishKey = 'satin' | 'sw' | 'tac';
 type SizeKey = 'standard' | 'compact' | 'micro';
