@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import kaowzLogo from '@/assets/kaowz-logo.png';
 import kitCard from '@/assets/push-dagger-kit-card.jpeg';
 import imgAcetinada from '@/assets/push-dagger-acetinada.jpeg';
@@ -7,9 +8,10 @@ import imgTactical from '@/assets/push-dagger-tactical.jpeg';
 
 type FinishKey = 'satin' | 'sw' | 'tac';
 type SizeKey = 'standard' | 'compact' | 'micro';
-type BainhaKey = 'velada' | 'multi';
 type QtyKey = 1 | 2 | 3;
 export type VersionKey = 'standard' | 'nonmetallic' | 'blue';
+export type AcoKey = 'sandvik' | 'inox';
+export type EmpunhaduraKey = 'g10' | 'micarta';
 
 const FINISH_NAMES: Record<FinishKey, string> = {
   satin: 'Acetinada',
@@ -18,15 +20,73 @@ const FINISH_NAMES: Record<FinishKey, string> = {
 };
 const FINISH_KEYS: FinishKey[] = ['satin', 'sw', 'tac'];
 
+export const ACO_NAMES: Record<AcoKey, string> = {
+  sandvik: 'Sandvik 14C28N',
+  inox: 'Inox AISI 420',
+};
+export const ACO_KEYS: AcoKey[] = ['sandvik', 'inox'];
+
+export const EMPUNHADURA_NAMES: Record<EmpunhaduraKey, string> = {
+  g10: 'G10 Black',
+  micarta: 'Micarta Grafite',
+};
+export const EMPUNHADURA_KEYS: EmpunhaduraKey[] = ['g10', 'micarta'];
+
+export type BainhaExtraKey = 'velada' | 'multi';
+export const BAINHA_EXTRA_NAMES: Record<BainhaExtraKey, string> = {
+  velada: 'Velada',
+  multi: 'Multifuncional',
+};
+export const BAINHA_EXTRA_KEYS: BainhaExtraKey[] = ['velada', 'multi'];
+
 const SIZE_LIST: { key: SizeKey; name: string; bladeMm: number; gripMm: number }[] = [
   { key: 'standard', name: 'STANDARD', bladeMm: 62.49, gripMm: 87.97 },
   { key: 'compact',  name: 'COMPACT',  bladeMm: 52.74, gripMm: 73.84 },
   { key: 'micro',    name: 'MICRO',    bladeMm: 37.16, gripMm: 68.51 },
 ];
 
+/** Matriz de preços de LANÇAMENTO (11/06) por tamanho × aço × empunhadura × acabamento — versão Standard. */
+export type AcoEmpunhaduraPrices = Record<SizeKey, Record<AcoKey, Record<EmpunhaduraKey, Record<FinishKey, number>>>>;
+
+/** Matriz de imagens por tamanho × aço × empunhadura × acabamento — usada na versão Metálica. */
+export type AcoEmpunhaduraImages = Record<SizeKey, Record<AcoKey, Record<EmpunhaduraKey, Record<FinishKey, string>>>>;
+
+const STANDARD_PRICES_BY_CONFIG: AcoEmpunhaduraPrices = {
+  micro: {
+    sandvik: {
+      g10: { satin: 465, sw: 480, tac: 560 },
+      micarta: { satin: 360, sw: 380, tac: 460 },
+    },
+    inox: {
+      g10: { satin: 410, sw: 430, tac: 510 },
+      micarta: { satin: 305, sw: 325, tac: 405 },
+    },
+  },
+  compact: {
+    sandvik: {
+      g10: { satin: 580, sw: 600, tac: 680 },
+      micarta: { satin: 475, sw: 495, tac: 575 },
+    },
+    inox: {
+      g10: { satin: 525, sw: 545, tac: 625 },
+      micarta: { satin: 425, sw: 440, tac: 520 },
+    },
+  },
+  standard: {
+    sandvik: {
+      g10: { satin: 705, sw: 750, tac: 845 },
+      micarta: { satin: 605, sw: 650, tac: 740 },
+    },
+    inox: {
+      g10: { satin: 650, sw: 700, tac: 790 },
+      micarta: { satin: 550, sw: 595, tac: 690 },
+    },
+  },
+};
+
 export const WHATSAPP_PHONE_DEFAULT = '5528999025695';
 export const VERSION_LIST: { key: VersionKey; label: string }[] = [
-  { key: 'standard', label: 'Aço Sandvik 14C28N' },
+  { key: 'standard', label: 'Metálica' },
   { key: 'nonmetallic', label: 'Non Metallic' },
   { key: 'blue', label: 'Blue (Treino)' },
 ];
@@ -56,7 +116,13 @@ export interface VersionConfig {
   /** Se true, mostra os 3 acabamentos (Acetinada/SW/Tactical). Se false, apenas tamanho. */
   hasFinishes: boolean;
   prices: Record<SizeKey, Record<FinishKey, number>>;
+  /** Se true, mostra seletores de Aço e Empunhadura, com preços vindos de pricesByConfig. */
+  hasAcoEmpunhadura?: boolean;
+  /** Matriz de preços por tamanho × aço × empunhadura × acabamento (somente quando hasAcoEmpunhadura). */
+  pricesByConfig?: AcoEmpunhaduraPrices;
   imagesBySize: Record<SizeKey, Record<FinishKey, string>>;
+  /** Matriz de imagens por tamanho × aço × empunhadura × acabamento (somente quando hasAcoEmpunhadura). */
+  imagesByConfig?: AcoEmpunhaduraImages;
   kitImage: string;
   discountByQty: Record<QtyKey, number>;
   bainhaExtraPrice: number;
@@ -79,6 +145,22 @@ const defaultImgsForSize = (): Record<FinishKey, string> => ({
   tac: imgTactical,
 });
 
+/** Imagens padrão (placeholder) para a matriz tamanho × aço × empunhadura × acabamento. */
+const defaultImagesByConfig = (): AcoEmpunhaduraImages => {
+  const sizes: SizeKey[] = ['standard', 'compact', 'micro'];
+  const result = {} as AcoEmpunhaduraImages;
+  sizes.forEach((sk) => {
+    result[sk] = {} as AcoEmpunhaduraImages[SizeKey];
+    ACO_KEYS.forEach((ak) => {
+      result[sk][ak] = {} as AcoEmpunhaduraImages[SizeKey][AcoKey];
+      EMPUNHADURA_KEYS.forEach((ek) => {
+        result[sk][ak][ek] = defaultImgsForSize();
+      });
+    });
+  });
+  return result;
+};
+
 const baseTexts = (over: Partial<VersionTexts>): VersionTexts => ({
   tabLabel: 'Original',
   eyebrow: '— Push Dagger Series —',
@@ -97,9 +179,9 @@ const baseTexts = (over: Partial<VersionTexts>): VersionTexts => ({
 
 const buildVersion = (over: Partial<VersionConfig> & { texts: VersionTexts }): VersionConfig => ({
   hasFinishes: true,
+  // Preços de LANÇAMENTO (Sandvik 14C28N + G10 Black) — 11/06 18h
   prices: {
-    standard: { satin: 935, sw: 985, tac: 1090 },
-    // Preços de LANÇAMENTO (Sandvik 14C28N + G10 Black) — 11/06 18h, grupo exclusivo
+    standard: { satin: 705, sw: 750, tac: 845 },
     compact:  { satin: 580, sw: 600, tac: 680 },
     micro:    { satin: 465, sw: 480, tac: 560 },
   },
@@ -109,23 +191,28 @@ const buildVersion = (over: Partial<VersionConfig> & { texts: VersionTexts }): V
     micro: defaultImgsForSize(),
   },
   kitImage: kitCard,
-  discountByQty: { 1: 0, 2: 5, 3: 10 },
+  discountByQty: { 1: 0, 2: 0, 3: 0 },
   bainhaExtraPrice: 180,
   ...over,
 });
 
 export const DEFAULT_CONFIG: KitConfig = {
   whatsappPhone: WHATSAPP_PHONE_DEFAULT,
-  discountByQty: { 1: 0, 2: 5, 3: 10 },
+  discountByQty: { 1: 0, 2: 0, 3: 0 },
   cupomMessage: DEFAULT_CUPOM_MESSAGE,
   versions: {
-    standard: buildVersion({ texts: baseTexts({ tabLabel: 'Aço Sandvik 14C28N' }) }),
+    standard: buildVersion({
+      texts: baseTexts({ tabLabel: 'Metálica' }),
+      hasAcoEmpunhadura: true,
+      pricesByConfig: STANDARD_PRICES_BY_CONFIG,
+      imagesByConfig: defaultImagesByConfig(),
+    }),
     nonmetallic: buildVersion({
       hasFinishes: false,
       prices: {
-        standard: { satin: 290, sw: 290, tac: 290 },
-        compact:  { satin: 240, sw: 240, tac: 240 },
-        micro:    { satin: 200, sw: 200, tac: 200 },
+        standard: { satin: 395, sw: 395, tac: 395 },
+        compact:  { satin: 345, sw: 345, tac: 345 },
+        micro:    { satin: 290, sw: 290, tac: 290 },
       },
       texts: baseTexts({
         tabLabel: 'Non Metallic',
@@ -141,9 +228,9 @@ export const DEFAULT_CONFIG: KitConfig = {
     blue: buildVersion({
       hasFinishes: false,
       prices: {
-        standard: { satin: 180, sw: 180, tac: 180 },
-        compact:  { satin: 150, sw: 150, tac: 150 },
-        micro:    { satin: 130, sw: 130, tac: 130 },
+        standard: { satin: 300, sw: 300, tac: 300 },
+        compact:  { satin: 275, sw: 275, tac: 275 },
+        micro:    { satin: 250, sw: 250, tac: 250 },
       },
       texts: baseTexts({
         tabLabel: 'Blue (Treino)',
@@ -159,46 +246,98 @@ export const DEFAULT_CONFIG: KitConfig = {
   },
 };
 
-export const CONFIG_STORAGE_KEY = 'configurador-kit-config-v5';
-const LEGACY_V4 = 'configurador-kit-config-v4';
-const LEGACY_V3 = 'configurador-kit-config-v3';
-const LEGACY_V2 = 'configurador-kit-config-v2';
-const LEGACY_V1 = 'configurador-kit-config-v1';
+/** Tabela chave/valor no Supabase usada para persistir a config (textos, preços, imagens, descontos). */
+export const CONFIG_TABLE = 'push_dagger_config' as const;
 
-export function loadKitConfig(): KitConfig {
+/** Carrega a config salva no Supabase, mesclando com os padrões para campos ausentes. */
+export async function loadKitConfig(): Promise<KitConfig> {
   try {
-    const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
-    if (raw) return mergeConfig(JSON.parse(raw));
-    // Migra v3 → v4 (apenas relê)
-    const v3 = localStorage.getItem(LEGACY_V3);
-    if (v3) return mergeConfig(JSON.parse(v3));
-    // Migra v2 (versão única) → standard
-    const v2 = localStorage.getItem(LEGACY_V2);
-    if (v2) {
-      const p = JSON.parse(v2);
-      const std: VersionConfig = {
-        ...DEFAULT_CONFIG.versions.standard,
-        prices: { ...DEFAULT_CONFIG.versions.standard.prices, ...(p?.prices || {}) },
-        imagesBySize: {
-          standard: { ...defaultImgsForSize(), ...(p?.imagesBySize?.standard || {}) },
-          compact: { ...defaultImgsForSize(), ...(p?.imagesBySize?.compact || {}) },
-          micro: { ...defaultImgsForSize(), ...(p?.imagesBySize?.micro || {}) },
-        },
-        kitImage: p?.kitImage || kitCard,
-        discountByQty: { ...DEFAULT_CONFIG.versions.standard.discountByQty, ...(p?.discountByQty || {}) },
-        bainhaExtraPrice: p?.bainhaExtraPrice ?? 180,
-      };
-      return {
-        whatsappPhone: p?.whatsappPhone || WHATSAPP_PHONE_DEFAULT,
-        discountByQty: { ...DEFAULT_CONFIG.discountByQty, ...(p?.discountByQty || {}) },
-        cupomMessage: p?.cupomMessage || DEFAULT_CUPOM_MESSAGE,
-        versions: { ...DEFAULT_CONFIG.versions, standard: std },
-      };
-    }
-    // v1 fica como default (raro)
-    if (localStorage.getItem(LEGACY_V1)) return DEFAULT_CONFIG;
-  } catch {}
-  return DEFAULT_CONFIG;
+    const { data, error } = await supabase.from(CONFIG_TABLE).select('chave, valor');
+    if (error || !data) return DEFAULT_CONFIG;
+    const map: Record<string, string> = {};
+    data.forEach((r) => {
+      if (r.valor != null) map[r.chave] = r.valor;
+    });
+    const parseJson = (key: string) => {
+      try {
+        return map[key] ? JSON.parse(map[key]) : undefined;
+      } catch {
+        return undefined;
+      }
+    };
+    return mergeConfig({
+      whatsappPhone: map.whatsapp_phone,
+      cupomMessage: map.cupom_message,
+      discountByQty: parseJson('discount_by_qty'),
+      versions: {
+        standard: parseJson('version_standard'),
+        nonmetallic: parseJson('version_nonmetallic'),
+        blue: parseJson('version_blue'),
+      },
+    });
+  } catch {
+    return DEFAULT_CONFIG;
+  }
+}
+
+/** Salva a config no Supabase, persistindo para todos os visitantes/dispositivos. */
+export async function saveKitConfig(cfg: KitConfig): Promise<void> {
+  const rows = [
+    { chave: 'whatsapp_phone', valor: cfg.whatsappPhone },
+    { chave: 'discount_by_qty', valor: JSON.stringify(cfg.discountByQty) },
+    { chave: 'cupom_message', valor: cfg.cupomMessage },
+    { chave: 'version_standard', valor: JSON.stringify(cfg.versions.standard) },
+    { chave: 'version_nonmetallic', valor: JSON.stringify(cfg.versions.nonmetallic) },
+    { chave: 'version_blue', valor: JSON.stringify(cfg.versions.blue) },
+  ];
+  const { error } = await supabase.from(CONFIG_TABLE).upsert(rows, { onConflict: 'chave' });
+  if (error) throw error;
+}
+
+/** Mescla a matriz de preços tamanho × aço × empunhadura × acabamento, mantendo defaults para combos ausentes. */
+function mergeAcoEmpunhaduraPrices(
+  base: AcoEmpunhaduraPrices | undefined,
+  p: any,
+): AcoEmpunhaduraPrices | undefined {
+  if (!base) return undefined;
+  const sizes: SizeKey[] = ['standard', 'compact', 'micro'];
+  const result = {} as AcoEmpunhaduraPrices;
+  sizes.forEach((sk) => {
+    result[sk] = {} as AcoEmpunhaduraPrices[SizeKey];
+    ACO_KEYS.forEach((ak) => {
+      result[sk][ak] = {} as AcoEmpunhaduraPrices[SizeKey][AcoKey];
+      EMPUNHADURA_KEYS.forEach((ek) => {
+        result[sk][ak][ek] = {
+          ...base[sk][ak][ek],
+          ...(p?.[sk]?.[ak]?.[ek] || {}),
+        };
+      });
+    });
+  });
+  return result;
+}
+
+/** Mescla a matriz de imagens tamanho × aço × empunhadura × acabamento, mantendo defaults para combos ausentes. */
+function mergeImagesByConfig(
+  base: AcoEmpunhaduraImages | undefined,
+  p: any,
+): AcoEmpunhaduraImages | undefined {
+  if (!base) return undefined;
+  const sizes: SizeKey[] = ['standard', 'compact', 'micro'];
+  const result = {} as AcoEmpunhaduraImages;
+  sizes.forEach((sk) => {
+    result[sk] = {} as AcoEmpunhaduraImages[SizeKey];
+    ACO_KEYS.forEach((ak) => {
+      result[sk][ak] = {} as AcoEmpunhaduraImages[SizeKey][AcoKey];
+      EMPUNHADURA_KEYS.forEach((ek) => {
+        result[sk][ak][ek] = {
+          ...base[sk][ak][ek],
+          ...(p?.[sk]?.[ak]?.[ek] || {}),
+        };
+      });
+    });
+  });
+  return result;
 }
 
 function mergeVersion(base: VersionConfig, p: any): VersionConfig {
@@ -212,6 +351,8 @@ function mergeVersion(base: VersionConfig, p: any): VersionConfig {
       compact: { ...base.prices.compact, ...(p?.prices?.compact || {}) },
       micro: { ...base.prices.micro, ...(p?.prices?.micro || {}) },
     },
+    pricesByConfig: mergeAcoEmpunhaduraPrices(base.pricesByConfig, p?.pricesByConfig),
+    imagesByConfig: mergeImagesByConfig(base.imagesByConfig, p?.imagesByConfig),
     imagesBySize: {
       standard: { ...base.imagesBySize.standard, ...(p?.imagesBySize?.standard || {}) },
       compact: { ...base.imagesBySize.compact, ...(p?.imagesBySize?.compact || {}) },
@@ -247,18 +388,20 @@ interface UnitConfig {
   version: VersionKey;
   size: SizeKey;
   finish: FinishKey;
-  bainha: BainhaKey;
   bainhaExtra: boolean;
-  bainhaExtraTipo: BainhaKey;
+  bainhaExtraTipo: BainhaExtraKey;
+  aco: AcoKey;
+  empunhadura: EmpunhaduraKey;
 }
 
 const newUnit = (): UnitConfig => ({
   version: 'standard',
   size: 'standard',
   finish: 'sw',
-  bainha: 'velada',
   bainhaExtra: false,
   bainhaExtraTipo: 'multi',
+  aco: 'sandvik',
+  empunhadura: 'g10',
 });
 
 /** Renderiza heroTitle: trecho entre {chaves} fica destacado em amarelo itálico */
@@ -270,15 +413,19 @@ function renderHeroTitle(t: string) {
 }
 
 export default function ConfiguradorKit() {
-  const [cfg, setCfg] = useState<KitConfig>(() => loadKitConfig());
+  const [cfg, setCfg] = useState<KitConfig>(DEFAULT_CONFIG);
   const [qty, setQty] = useState<QtyKey>(1);
   const [units, setUnits] = useState<UnitConfig[]>([newUnit(), newUnit(), newUnit()]);
   const [showTable, setShowTable] = useState(false);
 
   useEffect(() => {
-    const onStorage = () => setCfg(loadKitConfig());
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    let active = true;
+    loadKitConfig().then((c) => {
+      if (active) setCfg(c);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Pré-carrega todas as imagens das versões/tamanhos/acabamentos para troca instantânea
@@ -289,6 +436,15 @@ export default function ConfiguradorKit() {
         Object.values(ver.imagesBySize[sk] || {}).forEach((u) => {
           if (u) urls.add(u);
         });
+        if (ver.imagesByConfig) {
+          ACO_KEYS.forEach((ak) => {
+            EMPUNHADURA_KEYS.forEach((ek) => {
+              Object.values(ver.imagesByConfig![sk][ak][ek] || {}).forEach((u) => {
+                if (u) urls.add(u);
+              });
+            });
+          });
+        }
       });
     });
     urls.forEach((src) => {
@@ -302,7 +458,13 @@ export default function ConfiguradorKit() {
   const baseV = cfg.versions.standard;
   const activeUnits = units.slice(0, qty);
 
-  const unitPrice = (u: UnitConfig) => cfg.versions[u.version].prices[u.size][u.finish];
+  const unitPrice = (u: UnitConfig) => {
+    const ver = cfg.versions[u.version];
+    if (ver.hasAcoEmpunhadura && ver.pricesByConfig) {
+      return ver.pricesByConfig[u.size][u.aco][u.empunhadura][u.finish];
+    }
+    return ver.prices[u.size][u.finish];
+  };
   const unitExtraPrice = (u: UnitConfig) => cfg.versions[u.version].bainhaExtraPrice;
 
   const subtotal = useMemo(
@@ -336,13 +498,13 @@ export default function ConfiguradorKit() {
       : `Quero montar este Kit Push Dagger (${qty} unidades):`;
     const lines = activeUnits.map((u, i) => {
       const ver = cfg.versions[u.version];
-      const bn = u.bainha === 'velada' ? 'Velada' : 'Multifuncional';
       const ex = u.bainhaExtra
-        ? ` + Bainha Extra ${u.bainhaExtraTipo === 'velada' ? 'Velada' : 'Multifuncional'} (${BRL(ver.bainhaExtraPrice)})`
+        ? ` + Bainha Extra ${BAINHA_EXTRA_NAMES[u.bainhaExtraTipo]} (${BRL(ver.bainhaExtraPrice)})`
         : '';
       const sizeName = SIZE_LIST.find((s) => s.key === u.size)!.name;
       const finishPart = ver.hasFinishes ? ` — ${FINISH_NAMES[u.finish]}` : '';
-      return `• Unidade ${i + 1}: ${ver.texts.tabLabel} — ${sizeName}${finishPart} (${BRL(ver.prices[u.size][u.finish])})\n   Bainha: ${bn}${ex}`;
+      const acoPart = ver.hasAcoEmpunhadura ? ` — ${ACO_NAMES[u.aco]} · ${EMPUNHADURA_NAMES[u.empunhadura]}` : '';
+      return `• Unidade ${i + 1}: ${ver.texts.tabLabel} — ${sizeName}${finishPart}${acoPart} (${BRL(unitPrice(u))})\n   Bainha: Velada${ex}`;
     });
     const desc = discountPct > 0 ? `\nDesconto: ${discountPct}% (-${BRL(discountValue)})` : '';
     return encodeURIComponent(`${header}\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`);
@@ -405,7 +567,9 @@ export default function ConfiguradorKit() {
           const ver = cfg.versions[u.version];
           const sizeMeta = SIZE_LIST.find((s) => s.key === u.size)!;
           const totalMm = sizeMeta.bladeMm + sizeMeta.gripMm;
-          const img = ver.imagesBySize[u.size][u.finish];
+          const img = ver.hasAcoEmpunhadura && ver.imagesByConfig
+            ? ver.imagesByConfig[u.size][u.aco][u.empunhadura][u.finish]
+            : ver.imagesBySize[u.size][u.finish];
           return (
             <article className="col" key={idx}>
               <div className="col-head">
@@ -421,7 +585,7 @@ export default function ConfiguradorKit() {
                   <img src={img} alt={`${sizeMeta.name} ${FINISH_NAMES[u.finish]}`} className="product-img is-active" loading="eager" decoding="sync" fetchPriority="high" />
                   <div className="product-card-overlay" />
                   {ver.hasFinishes && <div className="product-card-tag">{FINISH_NAMES[u.finish]}</div>}
-                  <div className="product-card-price">{BRL(ver.prices[u.size][u.finish])}</div>
+                  <div className="product-card-price">{BRL(unitPrice(u))}</div>
                 </div>
               </div>
 
@@ -440,6 +604,24 @@ export default function ConfiguradorKit() {
                   ))}
                 </div>
               </div>
+
+              {ver.hasAcoEmpunhadura && (
+                <div className="opt-section">
+                  <div className="opt-label">Aço</div>
+                  <div className="finish-options bainha-options">
+                    {ACO_KEYS.map((ak) => (
+                      <button
+                        key={ak}
+                        type="button"
+                        className={`finish-btn ${u.aco === ak ? 'active' : ''}`}
+                        onClick={() => updateUnit(idx, { aco: ak })}
+                      >
+                        <span className="finish-name">{ACO_NAMES[ak]}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="opt-section">
                 <div className="opt-label">Tamanho</div>
@@ -475,20 +657,27 @@ export default function ConfiguradorKit() {
                 </div>
               )}
 
+              {ver.hasAcoEmpunhadura && (
+                <div className="opt-section">
+                  <div className="opt-label">Empunhadura</div>
+                  <div className="finish-options bainha-options">
+                    {EMPUNHADURA_KEYS.map((ek) => (
+                      <button
+                        key={ek}
+                        type="button"
+                        className={`finish-btn ${u.empunhadura === ek ? 'active' : ''}`}
+                        onClick={() => updateUnit(idx, { empunhadura: ek })}
+                      >
+                        <span className="finish-name">{EMPUNHADURA_NAMES[ek]}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="opt-section">
                 <div className="opt-label">Bainha</div>
-                <div className="finish-options bainha-options">
-                  {(['velada', 'multi'] as BainhaKey[]).map((b) => (
-                    <button
-                      key={b}
-                      type="button"
-                      className={`finish-btn ${u.bainha === b ? 'active' : ''}`}
-                      onClick={() => updateUnit(idx, { bainha: b })}
-                    >
-                      <span className="finish-name">{b === 'velada' ? 'Velada' : 'Multifuncional'}</span>
-                    </button>
-                  ))}
-                </div>
+                <div className="bainha-included">Bainha Velada inclusa</div>
                 <label className={`bainha-extra ${u.bainhaExtra ? 'active' : ''}`}>
                   <input
                     type="checkbox"
@@ -499,15 +688,15 @@ export default function ConfiguradorKit() {
                   <span className="bainha-extra-price">+ {BRL(ver.bainhaExtraPrice)}</span>
                 </label>
                 {u.bainhaExtra && (
-                  <div className="finish-options bainha-options bainha-extra-tipo">
-                    {(['velada', 'multi'] as BainhaKey[]).map((b) => (
+                  <div className="finish-options bainha-options">
+                    {BAINHA_EXTRA_KEYS.map((bk) => (
                       <button
-                        key={b}
+                        key={bk}
                         type="button"
-                        className={`finish-btn ${u.bainhaExtraTipo === b ? 'active' : ''}`}
-                        onClick={() => updateUnit(idx, { bainhaExtraTipo: b })}
+                        className={`finish-btn ${u.bainhaExtraTipo === bk ? 'active' : ''}`}
+                        onClick={() => updateUnit(idx, { bainhaExtraTipo: bk })}
                       >
-                        <span className="finish-name">{b === 'velada' ? 'Velada' : 'Multifuncional'}</span>
+                        <span className="finish-name">{BAINHA_EXTRA_NAMES[bk]}</span>
                       </button>
                     ))}
                   </div>
@@ -566,9 +755,9 @@ export default function ConfiguradorKit() {
             className="btn-cta ref-cta"
             onClick={() => {
               setUnits([
-                { version: 'standard', size: 'standard', finish: 'sw', bainha: 'velada', bainhaExtra: false, bainhaExtraTipo: 'multi' },
-                { version: 'standard', size: 'compact', finish: 'sw', bainha: 'velada', bainhaExtra: false, bainhaExtraTipo: 'multi' },
-                { version: 'standard', size: 'micro', finish: 'sw', bainha: 'velada', bainhaExtra: false, bainhaExtraTipo: 'multi' },
+                { ...newUnit(), size: 'standard' },
+                { ...newUnit(), size: 'compact' },
+                { ...newUnit(), size: 'micro' },
               ]);
               setQty(3);
               window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -597,43 +786,76 @@ export default function ConfiguradorKit() {
 
             {VERSION_LIST.map((vl) => {
               const ver = cfg.versions[vl.key];
+              const sizeDimCell = (s: typeof SIZE_LIST[number]) => (
+                <td>
+                  <div className="price-size-name">{s.name}</div>
+                  <div className="price-size-dim">
+                    <span>Lâmina <strong>{s.bladeMm.toFixed(2).replace('.', ',')} mm</strong></span>
+                    <span>Empunhadura <strong>{s.gripMm.toFixed(2).replace('.', ',')} mm</strong></span>
+                    <span className="price-size-total">Total {(s.bladeMm + s.gripMm).toFixed(2).replace('.', ',')} mm</span>
+                  </div>
+                </td>
+              );
               return (
                 <div key={vl.key} className="price-version">
                   <div className="price-version-title">
                     <span className="price-version-name">{ver.texts.tabLabel || vl.label}</span>
                     {!ver.hasFinishes && <span className="price-version-tag">Único acabamento</span>}
                   </div>
-                  <div className="price-table-wrap">
-                    <table className="price-table">
-                      <thead>
-                        <tr>
-                          <th>Tamanho</th>
-                          {ver.hasFinishes
-                            ? FINISH_KEYS.map((fk) => <th key={fk}>{FINISH_NAMES[fk]}</th>)
-                            : <th>Preço</th>}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {SIZE_LIST.map((s) => (
-                          <tr key={s.key}>
-                            <td>
-                              <div className="price-size-name">{s.name}</div>
-                              <div className="price-size-dim">
-                                <span>Lâmina <strong>{s.bladeMm.toFixed(2).replace('.', ',')} mm</strong></span>
-                                <span>Empunhadura <strong>{s.gripMm.toFixed(2).replace('.', ',')} mm</strong></span>
-                                <span className="price-size-total">Total {(s.bladeMm + s.gripMm).toFixed(2).replace('.', ',')} mm</span>
-                              </div>
-                            </td>
-                            {ver.hasFinishes
-                              ? FINISH_KEYS.map((fk) => (
-                                  <td key={fk} className="price-cell">{BRL(ver.prices[s.key][fk])}</td>
-                                ))
-                              : <td className="price-cell">{BRL(ver.prices[s.key].satin)}</td>}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+
+                  {ver.hasAcoEmpunhadura && ver.pricesByConfig
+                    ? ACO_KEYS.map((ak) => EMPUNHADURA_KEYS.map((ek) => (
+                        <div key={`${ak}-${ek}`} className="price-subgroup">
+                          <div className="price-subgroup-title">{ACO_NAMES[ak]} · {EMPUNHADURA_NAMES[ek]}</div>
+                          <div className="price-table-wrap">
+                            <table className="price-table">
+                              <thead>
+                                <tr>
+                                  <th>Tamanho</th>
+                                  {FINISH_KEYS.map((fk) => <th key={fk}>{FINISH_NAMES[fk]}</th>)}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {SIZE_LIST.map((s) => (
+                                  <tr key={s.key}>
+                                    {sizeDimCell(s)}
+                                    {FINISH_KEYS.map((fk) => (
+                                      <td key={fk} className="price-cell">{BRL(ver.pricesByConfig![s.key][ak][ek][fk])}</td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )))
+                    : (
+                      <div className="price-table-wrap">
+                        <table className="price-table">
+                          <thead>
+                            <tr>
+                              <th>Tamanho</th>
+                              {ver.hasFinishes
+                                ? FINISH_KEYS.map((fk) => <th key={fk}>{FINISH_NAMES[fk]}</th>)
+                                : <th>Preço</th>}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {SIZE_LIST.map((s) => (
+                              <tr key={s.key}>
+                                {sizeDimCell(s)}
+                                {ver.hasFinishes
+                                  ? FINISH_KEYS.map((fk) => (
+                                      <td key={fk} className="price-cell">{BRL(ver.prices[s.key][fk])}</td>
+                                    ))
+                                  : <td className="price-cell">{BRL(ver.prices[s.key].satin)}</td>}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
                   <div className="price-extra">
                     <span>Bainha Extra</span>
                     <strong>+ {BRL(ver.bainhaExtraPrice)}</strong>
@@ -641,23 +863,6 @@ export default function ConfiguradorKit() {
                 </div>
               );
             })}
-
-            <div className="price-discounts">
-              <div className="price-discounts-title">Descontos por quantidade</div>
-              <div className="price-discounts-grid">
-                {([1, 2, 3] as QtyKey[]).map((q) => {
-                  const d = cfg.discountByQty[q] || 0;
-                  return (
-                    <div key={q} className={`price-disc-item ${d > 0 ? 'on' : ''}`}>
-                      <span className="price-disc-qty">{q} un.</span>
-                      <span className="price-disc-val">{d > 0 ? `-${d}%` : '—'}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="price-disc-note">Desconto aplicado apenas em Compact e Micro.</p>
-            </div>
-
             <button type="button" className="btn-cta price-modal-cta" onClick={() => setShowTable(false)}>
               Fechar e configurar
             </button>
@@ -794,6 +999,7 @@ const css = `
 .ck-root .opt-section { display: flex; flex-direction: column; gap: 6px; }
 .ck-root .opt-label { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
 .ck-root .bainha-options { grid-template-columns: 1fr 1fr; }
+.ck-root .bainha-included { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 1.5px; color: var(--text); text-transform: uppercase; padding: 11px 4px; border: 1px solid var(--border); border-radius: 4px; background: rgba(255,255,255,0.02); }
 
 .ck-root .bainha-extra { display: flex; align-items: center; gap: 10px; padding: 9px 11px; background: transparent; border: 1px dashed var(--border-m); border-radius: 4px; cursor: pointer; transition: all .2s ease; margin-top: 2px; }
 .ck-root .bainha-extra:hover { border-color: rgba(255,193,7,0.4); }
@@ -875,6 +1081,8 @@ const css = `
 .ck-root .price-version-title { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(255,193,7,0.06); border-left: 3px solid var(--yellow); border-radius: 2px; margin-bottom: 8px; }
 .ck-root .price-version-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 3px; color: var(--text); }
 .ck-root .price-version-tag { margin-left: auto; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; color: var(--yellow); text-transform: uppercase; }
+.ck-root .price-subgroup { margin-bottom: 10px; }
+.ck-root .price-subgroup-title { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; padding: 0 4px 6px; }
 .ck-root .price-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 4px; }
 .ck-root .price-table { width: 100%; border-collapse: collapse; min-width: 360px; }
 .ck-root .price-table th { background: var(--s2); padding: 10px 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; text-align: center; font-weight: 600; border-bottom: 1px solid var(--border); }
