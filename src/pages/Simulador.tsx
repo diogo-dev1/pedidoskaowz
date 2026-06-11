@@ -956,6 +956,64 @@ OBS: ${observacao || '-'}`;
       setTextoFormatado(texto);
       setPedidoFinalizado(true);
       toast.success('Pedido finalizado com sucesso!');
+
+      // ── CONFIRMAR PEDIDO NO SISTEMA ──────────────────────────
+      try {
+        const { data: confirmacao, error: erroConfirmacao } = await supabase.functions.invoke(
+          'confirmar-pedido',
+          {
+            body: {
+              // Cliente
+              nomeCompleto,
+              cpf,
+              email,
+              celular,
+              cep,
+              estado,
+              cidade,
+              bairro,
+              endereco,
+              numero,
+              complemento,
+              dataNascimento,
+              // Pedido
+              canal,
+              formaPagamento,
+              status,
+              prazo,
+              brindes,
+              cupom,
+              observacao,
+              nomeCertificado: nomeCertificado || nomeCompleto,
+              embalagem,
+              valorTotal: valorPedido || valorTotalCalculado,
+              vendedorId: profile?.id,
+              // Lâminas — array completo
+              laminas: todasLaminas,
+              // Produtos adicionais
+              produtosAdicionais: produtosAdicionais
+                .filter(p => (quantidadesProdutos[p.id] || 0) > 0)
+                .map(p => ({
+                  nome: p.nome_produto,
+                  quantidade: quantidadesProdutos[p.id],
+                  preco: p.preco_unitario,
+                })),
+            },
+          }
+        );
+
+        if (erroConfirmacao) {
+          console.error('Erro ao confirmar pedido:', erroConfirmacao);
+          toast.error('Pedido enviado para produção, mas erro ao registrar no sistema.');
+        } else {
+          console.log('Pedido confirmado:', confirmacao);
+          toast.success(`✅ ${confirmacao.mensagem}`);
+        }
+      } catch (erroCatch) {
+        console.error('Erro inesperado ao confirmar pedido:', erroCatch);
+        // Não bloqueia — pedido já foi para o Sheets
+      }
+      // ── FIM CONFIRMAR PEDIDO ─────────────────────────────────
     } catch (error) {
       console.error('Erro ao finalizar pedido:', error);
       toast.error('Erro ao finalizar pedido');
