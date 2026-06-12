@@ -52,6 +52,7 @@ Deno.serve(async (req) => {
 
     const storeDomain = shopifyStore.replace(/^https?:\/\//, '').replace(/\/$/, '');
     const baseUrl = `https://${storeDomain}/admin/api/${API_VERSION}`;
+    console.log('storeDomain:', storeDomain, '| token prefix:', accessToken.slice(0, 6), '| token len:', accessToken.length);
     const shopifyHeaders = {
       'X-Shopify-Access-Token': accessToken,
       'Content-Type': 'application/json',
