@@ -46,6 +46,7 @@ import ParcelamentoAdmin from "./pages/admin/ParcelamentoAdmin";
 import ParcelamentoPublico from "./pages/ParcelamentoPublico";
 import MonteSeuKitLaminas from "./pages/MonteSeuKitLaminas";
 import MonteSeuKitLaminasAdmin from "./pages/admin/MonteSeuKitLaminasAdmin";
+import Inventory from "./pages/Inventory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -388,6 +389,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <MonteSeuKitLaminasAdmin />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inventory"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Inventory />
                   </Layout>
                 </ProtectedRoute>
               }
