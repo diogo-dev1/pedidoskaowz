@@ -3,7 +3,7 @@ import {
   Calculator, Settings, LogOut, User, MessageSquare, BookOpen,
   ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign,
   Users, Store, FileText, Image, TrendingUp, Eye, Link2, LayoutDashboard,
-  Globe, Truck, Briefcase, Download, CreditCard
+  Globe, Truck, Briefcase, Download, CreditCard, Boxes
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -105,6 +105,7 @@ export function AppSidebar() {
     { title: 'Configurações', url: '/admin/configuracoes', icon: Settings },
     { title: 'Informativos', url: '/admin/informativos', icon: Info },
     { title: 'Bling', url: '/bling', icon: Link2 },
+    { title: 'Estoque Shopify', url: '/inventory', icon: Boxes },
   ] : [];
 
   const adminCatalogoItems: MenuItem[] = isAdmin ? [
