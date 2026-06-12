@@ -91,14 +91,42 @@ Deno.serve(async (req) => {
       const fetchLocations = async () => {
         const res = await fetch(`${baseUrl}/locations.json`, { headers: shopifyHeaders });
         if (!res.ok) {
-          const text = await res.text();
-          throw new Error(`Shopify locations error [${res.status}]: ${text}`);
+          console.warn('locations.json unavailable, will fall back to inventory_levels');
+          return null;
         }
         const data = await res.json();
         return (data.locations ?? []).filter((l: { active: boolean }) => l.active);
       };
 
-      const [products, locations] = await Promise.all([fetchAllProducts(), fetchLocations()]);
+      const [products, locationsResult] = await Promise.all([fetchAllProducts(), fetchLocations()]);
+
+      let locations = locationsResult;
+      if (!locations || locations.length === 0) {
+        // Fallback: derive location IDs from inventory levels (requires read_inventory only)
+        const itemIds = (products as { variants?: { inventory_item_id: number }[] }[])
+          .flatMap((p) => p.variants ?? [])
+          .map((v) => v.inventory_item_id)
+          .filter(Boolean)
+          .slice(0, 50);
+        locations = [];
+        if (itemIds.length > 0) {
+          const res = await fetch(
+            `${baseUrl}/inventory_levels.json?inventory_item_ids=${itemIds.join(',')}&limit=250`,
+            { headers: shopifyHeaders },
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const ids = [
+              ...new Set(
+                (data.inventory_levels ?? []).map((l: { location_id: number }) => l.location_id),
+              ),
+            ];
+            locations = ids.map((id) => ({ id, name: `Localização ${id}` }));
+          } else {
+            console.error('inventory_levels fallback failed:', res.status, await res.text());
+          }
+        }
+      }
 
       return new Response(JSON.stringify({ products, locations }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
