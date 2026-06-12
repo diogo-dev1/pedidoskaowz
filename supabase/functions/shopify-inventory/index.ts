@@ -50,9 +50,20 @@ Deno.serve(async (req) => {
       throw new Error('Shopify Admin credentials not configured');
     }
 
-    const storeDomain = shopifyStore.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    let storeDomain = shopifyStore.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    // Admin API only works on the .myshopify.com domain — resolve it if a custom domain is configured
+    if (!storeDomain.endsWith('.myshopify.com')) {
+      try {
+        const metaRes = await fetch(`https://${storeDomain}/meta.json`);
+        if (metaRes.ok) {
+          const meta = await metaRes.json();
+          if (meta?.myshopify_domain) storeDomain = meta.myshopify_domain;
+        }
+      } catch (e) {
+        console.warn('Could not resolve myshopify domain:', e);
+      }
+    }
     const baseUrl = `https://${storeDomain}/admin/api/${API_VERSION}`;
-    console.log('storeDomain:', storeDomain, '| token prefix:', accessToken.slice(0, 6), '| token len:', accessToken.length);
     const shopifyHeaders = {
       'X-Shopify-Access-Token': accessToken,
       'Content-Type': 'application/json',
