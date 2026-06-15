@@ -888,6 +888,35 @@ export default function ConfiguradorKit() {
           </div>
         </div>
       )}
+
+      {showGallery && (
+        <div className="price-modal" role="dialog" aria-modal="true" onClick={() => setShowGallery(false)}>
+          <div className="price-modal-card" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="price-modal-close" onClick={() => setShowGallery(false)} aria-label="Fechar">×</button>
+            <div className="price-modal-head">
+              <div className="eyebrow">— Galeria —</div>
+              <h2>Conheça todas as configurações</h2>
+              <p className="price-modal-sub">Veja em detalhes cada variação da linha Push Dagger.</p>
+            </div>
+            <div className="gallery-grid">
+              {galleryItems.map((item) => (
+                <article key={item.id} className="gallery-card">
+                  <div className="gallery-img-wrap">
+                    <img src={item.imagem_url} alt={item.titulo} loading="lazy" />
+                  </div>
+                  <div className="gallery-card-body">
+                    <h3>{item.titulo}</h3>
+                    {item.descricao && <p>{item.descricao}</p>}
+                  </div>
+                </article>
+              ))}
+            </div>
+            <button type="button" className="btn-cta price-modal-cta" onClick={() => setShowGallery(false)}>
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
