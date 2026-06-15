@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package, Check, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { IconPicker } from '@/components/IconPicker';
@@ -561,13 +561,53 @@ export default function ConfiguracoesCatalogo() {
     setBannerFormOpen(false);
   };
 
+  const [syncingShopify, setSyncingShopify] = useState(false);
+  const handleSyncShopify = async () => {
+    try {
+      setSyncingShopify(true);
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) {
+        toast.error('Você precisa estar logado para sincronizar.');
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke('sync-shopify', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (error) throw error;
+      if (data?.success === false) throw new Error(data?.error || 'Falha ao sincronizar');
+      toast.success(`Sincronização concluída: ${data?.synced ?? 0} produtos atualizados.`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Erro desconhecido';
+      toast.error(`Falha ao sincronizar Shopify: ${msg}`);
+    } finally {
+      setSyncingShopify(false);
+    }
+  };
+
   return (
     <div className="space-y-4 px-1">
-      <div className="min-w-0">
-        <h1 className="text-lg sm:text-2xl font-bold">Configurações do Catálogo</h1>
-        <p className="text-muted-foreground text-xs sm:text-sm">
-          Gerencie banners, categorias e exibição do catálogo público
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-2xl font-bold">Configurações do Catálogo</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">
+            Gerencie banners, categorias e exibição do catálogo público
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSyncShopify}
+          disabled={syncingShopify}
+          className="self-start sm:self-auto"
+        >
+          {syncingShopify ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4 mr-2" />
+          )}
+          {syncingShopify ? 'Sincronizando...' : 'Sincronizar Shopify'}
+        </Button>
       </div>
 
       <Tabs defaultValue="geral" className="w-full">

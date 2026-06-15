@@ -900,7 +900,223 @@ export default function ConfiguradorKitConfig() {
             );
           })}
         </CollapsibleSection>
+
+        <GaleriaConfiguracoes />
       </div>
+    </div>
+  );
+}
+
+interface GaleriaItem {
+  id: string;
+  titulo: string;
+  descricao: string | null;
+  imagem_url: string;
+  ordem: number;
+  ativo: boolean;
+}
+
+function GaleriaConfiguracoes() {
+  const [items, setItems] = useState<GaleriaItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [novoTitulo, setNovoTitulo] = useState('');
+  const [novaDescricao, setNovaDescricao] = useState('');
+  const [novoArquivo, setNovoArquivo] = useState<File | null>(null);
+  const [salvando, setSalvando] = useState(false);
+
+  const carregar = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('push_dagger_galeria')
+      .select('*')
+      .order('ordem', { ascending: true });
+    if (error) toast.error('Erro ao carregar galeria');
+    setItems(data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    carregar();
+  }, []);
+
+  const handleCriar = async () => {
+    if (!novoTitulo.trim() || !novoArquivo) {
+      toast.error('Informe um título e selecione uma imagem');
+      return;
+    }
+    setSalvando(true);
+    try {
+      const url = await uploadImage(novoArquivo, `galeria/${novoTitulo.toLowerCase().replace(/\s+/g, '-')}`);
+      const proximaOrdem = items.length > 0 ? Math.max(...items.map((i) => i.ordem)) + 1 : 0;
+      const { error } = await supabase.from('push_dagger_galeria').insert({
+        titulo: novoTitulo.trim(),
+        descricao: novaDescricao.trim() || null,
+        imagem_url: url,
+        ordem: proximaOrdem,
+        ativo: true,
+      });
+      if (error) throw error;
+      toast.success('Configuração adicionada à galeria');
+      setNovoTitulo('');
+      setNovaDescricao('');
+      setNovoArquivo(null);
+      await carregar();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Erro';
+      toast.error(`Falha ao salvar: ${msg}`);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const handleUpdate = async (id: string, patch: Partial<GaleriaItem>) => {
+    const { error } = await supabase.from('push_dagger_galeria').update(patch).eq('id', id);
+    if (error) toast.error('Erro ao atualizar');
+    else await carregar();
+  };
+
+  const handleTrocarImagem = async (item: GaleriaItem, file: File | null) => {
+    if (!file) return;
+    try {
+      const url = await uploadImage(file, `galeria/${item.titulo.toLowerCase().replace(/\s+/g, '-')}`);
+      await handleUpdate(item.id, { imagem_url: url });
+      toast.success('Imagem atualizada');
+    } catch {
+      toast.error('Falha ao enviar imagem');
+    }
+  };
+
+  const handleRemover = async (id: string) => {
+    if (!confirm('Remover este item da galeria?')) return;
+    const { error } = await supabase.from('push_dagger_galeria').delete().eq('id', id);
+    if (error) toast.error('Erro ao remover');
+    else {
+      toast.success('Removido');
+      await carregar();
+    }
+  };
+
+  return (
+    <div className="border border-border rounded-lg bg-card p-4 sm:p-5 space-y-4">
+      <div>
+        <h2 className="font-semibold">Galeria de Configurações</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Imagens exibidas no modal "Conhecer todas as configurações" da página pública do Push Dagger.
+        </p>
+      </div>
+
+      <div className="border border-dashed border-border rounded-lg p-4 space-y-3 bg-muted/20">
+        <h3 className="text-sm font-semibold">Adicionar nova configuração</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Título">
+            <input
+              type="text"
+              value={novoTitulo}
+              onChange={(e) => setNovoTitulo(e.target.value)}
+              placeholder="Ex: Standard Sandvik G10 Tactical"
+              className="w-full px-3 py-2 text-sm border border-border rounded bg-background"
+            />
+          </Field>
+          <Field label="Descrição (opcional)">
+            <input
+              type="text"
+              value={novaDescricao}
+              onChange={(e) => setNovaDescricao(e.target.value)}
+              placeholder="Breve descrição da configuração"
+              className="w-full px-3 py-2 text-sm border border-border rounded bg-background"
+            />
+          </Field>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="inline-flex items-center gap-2 px-3 py-2 text-xs border border-border rounded cursor-pointer hover:bg-secondary">
+            <Upload size={14} />
+            {novoArquivo ? novoArquivo.name : 'Selecionar imagem'}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => setNovoArquivo(e.target.files?.[0] ?? null)}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={handleCriar}
+            disabled={salvando}
+            className="px-4 py-2 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50"
+          >
+            {salvando ? 'Salvando...' : 'Adicionar à galeria'}
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-sm text-muted-foreground py-4 text-center">Carregando...</div>
+      ) : items.length === 0 ? (
+        <div className="text-sm text-muted-foreground py-6 text-center">Nenhuma configuração cadastrada ainda.</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {items.map((item) => (
+            <div key={item.id} className="border border-border rounded-lg overflow-hidden bg-background">
+              <label className="block cursor-pointer group relative">
+                <div className="aspect-square w-full bg-muted overflow-hidden">
+                  <img src={item.imagem_url} alt={item.titulo} className="w-full h-full object-cover" />
+                </div>
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs gap-2">
+                  <Upload size={14} /> Trocar imagem
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleTrocarImagem(item, e.target.files?.[0] ?? null)}
+                />
+              </label>
+              <div className="p-3 space-y-2">
+                <input
+                  type="text"
+                  value={item.titulo}
+                  onChange={(e) => setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, titulo: e.target.value } : i)))}
+                  onBlur={(e) => e.target.value !== '' && handleUpdate(item.id, { titulo: e.target.value })}
+                  className="w-full px-2 py-1 text-sm font-medium border border-border rounded bg-background"
+                />
+                <textarea
+                  value={item.descricao ?? ''}
+                  onChange={(e) => setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, descricao: e.target.value } : i)))}
+                  onBlur={(e) => handleUpdate(item.id, { descricao: e.target.value || null })}
+                  placeholder="Descrição"
+                  rows={2}
+                  className="w-full px-2 py-1 text-xs border border-border rounded bg-background resize-none"
+                />
+                <div className="flex items-center justify-between gap-2">
+                  <label className="flex items-center gap-1.5 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={item.ativo}
+                      onChange={(e) => handleUpdate(item.id, { ativo: e.target.checked })}
+                    />
+                    Ativo
+                  </label>
+                  <input
+                    type="number"
+                    value={item.ordem}
+                    onChange={(e) => setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, ordem: parseInt(e.target.value) || 0 } : i)))}
+                    onBlur={(e) => handleUpdate(item.id, { ordem: parseInt(e.target.value) || 0 })}
+                    className="w-16 px-2 py-1 text-xs border border-border rounded bg-background"
+                    title="Ordem"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemover(item.id)}
+                    className="text-xs text-destructive hover:underline"
+                  >
+                    Remover
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
