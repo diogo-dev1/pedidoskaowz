@@ -1113,6 +1113,15 @@ const css = `
 /* See prices button */
 .ck-root .see-prices-btn { margin-top: 22px; display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; background: transparent; border: 1px solid var(--yellow); color: var(--yellow); font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase; border-radius: 4px; cursor: pointer; transition: all .25s ease; }
 .ck-root .see-prices-btn:hover { background: rgba(255,193,7,0.1); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(255,193,7,0.18); }
+.ck-root .see-gallery-btn { margin-left: 8px; }
+.ck-root .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-top: 18px; }
+.ck-root .gallery-card { background: var(--s2); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; transition: transform .2s ease, border-color .2s ease; }
+.ck-root .gallery-card:hover { transform: translateY(-2px); border-color: rgba(255,193,7,0.3); }
+.ck-root .gallery-img-wrap { aspect-ratio: 1 / 1; background: #000; overflow: hidden; }
+.ck-root .gallery-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ck-root .gallery-card-body { padding: 10px 12px 14px; }
+.ck-root .gallery-card-body h3 { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 1.6px; text-transform: uppercase; color: #fff; margin: 0 0 4px; }
+.ck-root .gallery-card-body p { font-size: 12px; color: #aaa; line-height: 1.45; margin: 0; }
 
 /* Price modal */
 .ck-root .price-modal { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; animation: fadeInUp 0.25s ease-out; }
