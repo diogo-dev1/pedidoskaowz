@@ -541,6 +541,15 @@ export default function ConfiguradorKit() {
         <button type="button" className="see-prices-btn" onClick={() => setShowTable(true)}>
           Ver tabela completa de preços
         </button>
+        {galleryItems.length > 0 && (
+          <button
+            type="button"
+            className="see-prices-btn see-gallery-btn"
+            onClick={() => setShowGallery(true)}
+          >
+            Conhecer todas as configurações
+          </button>
+        )}
       </section>
 
       <div className="qty-tabs" role="tablist" aria-label="Quantidade">
