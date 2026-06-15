@@ -417,6 +417,16 @@ export default function ConfiguradorKit() {
   const [qty, setQty] = useState<QtyKey>(1);
   const [units, setUnits] = useState<UnitConfig[]>([newUnit(), newUnit(), newUnit()]);
   const [showTable, setShowTable] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+  const [galleryItems, setGalleryItems] = useState<Array<{ id: string; titulo: string; descricao: string | null; imagem_url: string }>>([]);
+  useEffect(() => {
+    supabase
+      .from('push_dagger_galeria')
+      .select('id, titulo, descricao, imagem_url')
+      .eq('ativo', true)
+      .order('ordem', { ascending: true })
+      .then(({ data }) => setGalleryItems(data ?? []));
+  }, []);
 
   useEffect(() => {
     let active = true;
