@@ -319,6 +319,10 @@ const CSS = `
 .pdc-root .btn-wa:hover { background:var(--gold-l); }
 .pdc-root .btn-wa svg { width:16px; height:16px; flex-shrink:0; }
 .pdc-root .footer-note { text-align:center; padding:1.5rem 2rem 4rem; font-size:12px; color:var(--dim); }
+.pdc-root .sheath-btn { padding:8px 12px; }
+.pdc-root .sheath-btn .finish-name { font-size:12px; }
+.pdc-root .sheath-btn .finish-price { font-size:12px; color:var(--muted); }
+.pdc-root .sheath-btn.active .finish-price { color:var(--gold-l); }
 @media(max-width:700px) {
   .pdc-root .config-grid { grid-template-columns:1fr; border-radius:10px; }
   .pdc-root .hero { padding:2rem 1.5rem 1.5rem; }
