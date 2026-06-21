@@ -185,6 +185,28 @@ export default function PushDaggerConfigurador() {
                   );
                 })}
               </div>
+
+              <div className="finish-label" style={{ marginTop: '14px' }}>Bainha</div>
+              <div className="finish-options">
+                {SHEATHS.map(s => {
+                  const active = sheath[model.key] === s.key;
+                  return (
+                    <button
+                      key={s.key}
+                      className={`finish-btn sheath-btn${active ? ' active' : ''}`}
+                      onClick={() => setSheath(sh => ({ ...sh, [model.key]: s.key }))}
+                    >
+                      <div className="finish-info" style={{ marginLeft: 0 }}>
+                        <div className="finish-name">{s.name}</div>
+                      </div>
+                      <div className="finish-price">
+                        {s.price === 0 ? 'Incl.' : s.price > 0 ? `+R$ ${s.price.toLocaleString('pt-BR')}` : `-R$ ${Math.abs(s.price).toLocaleString('pt-BR')}`}
+                      </div>
+                      <div className="check"><div className="check-dot" /></div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
