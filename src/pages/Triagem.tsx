@@ -62,9 +62,10 @@ export default function Triagem() {
 
       if (data?.sucesso) {
         toast.success(`Pedido de ${pedido.nome} - ${pedido.item} lançado!`);
-        setPedidos(prev => prev.filter(p => p.row !== pedido.row));
+        await carregarPedidos();
       } else {
-        toast.error('Erro: ' + (data?.erro || 'Erro desconhecido'));
+        toast.error('Erro: ' + (data?.erro || JSON.stringify(data) || 'Erro desconhecido'));
+        await carregarPedidos();
       }
     } catch (err: any) {
       toast.error('Erro ao lançar: ' + (err.message || err));
