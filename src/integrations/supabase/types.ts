@@ -463,6 +463,56 @@ export type Database = {
           },
         ]
       }
+      certificados: {
+        Row: {
+          arquivo_gerado: boolean | null
+          arquivo_gravado: boolean | null
+          categoria: string | null
+          created_at: string | null
+          data_emissao: string | null
+          id: string
+          modelo: string
+          nome_proprietario: string
+          numero: number
+          observacoes: string | null
+          pedido_item_id: string | null
+        }
+        Insert: {
+          arquivo_gerado?: boolean | null
+          arquivo_gravado?: boolean | null
+          categoria?: string | null
+          created_at?: string | null
+          data_emissao?: string | null
+          id?: string
+          modelo: string
+          nome_proprietario: string
+          numero: number
+          observacoes?: string | null
+          pedido_item_id?: string | null
+        }
+        Update: {
+          arquivo_gerado?: boolean | null
+          arquivo_gravado?: boolean | null
+          categoria?: string | null
+          created_at?: string | null
+          data_emissao?: string | null
+          id?: string
+          modelo?: string
+          nome_proprietario?: string
+          numero?: number
+          observacoes?: string | null
+          pedido_item_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificados_pedido_item_id_fkey"
+            columns: ["pedido_item_id"]
+            isOneToOne: false
+            referencedRelation: "pedido_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       config_internacional: {
         Row: {
           chave: string
@@ -558,6 +608,124 @@ export type Database = {
           valor?: string
         }
         Relationships: []
+      }
+      expedicao: {
+        Row: {
+          brindes: string | null
+          cep_destino: string | null
+          codigo_rastreio: string | null
+          created_at: string | null
+          data_entrega: string | null
+          data_mesa: string | null
+          data_postagem: string | null
+          endereco_completo: string | null
+          espuma_cortada: boolean | null
+          id: string
+          nome_destinatario: string | null
+          observacoes: string | null
+          pedido_id: string | null
+          prazo_previsto: string | null
+          status: string | null
+          tipo_caixa: string | null
+          transportadora: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          brindes?: string | null
+          cep_destino?: string | null
+          codigo_rastreio?: string | null
+          created_at?: string | null
+          data_entrega?: string | null
+          data_mesa?: string | null
+          data_postagem?: string | null
+          endereco_completo?: string | null
+          espuma_cortada?: boolean | null
+          id?: string
+          nome_destinatario?: string | null
+          observacoes?: string | null
+          pedido_id?: string | null
+          prazo_previsto?: string | null
+          status?: string | null
+          tipo_caixa?: string | null
+          transportadora?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          brindes?: string | null
+          cep_destino?: string | null
+          codigo_rastreio?: string | null
+          created_at?: string | null
+          data_entrega?: string | null
+          data_mesa?: string | null
+          data_postagem?: string | null
+          endereco_completo?: string | null
+          espuma_cortada?: boolean | null
+          id?: string
+          nome_destinatario?: string | null
+          observacoes?: string | null
+          pedido_id?: string | null
+          prazo_previsto?: string | null
+          status?: string | null
+          tipo_caixa?: string | null
+          transportadora?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expedicao_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: true
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_recebimentos: {
+        Row: {
+          created_at: string | null
+          data_recebimento: string | null
+          data_vencimento: string | null
+          forma_pagamento: string | null
+          id: string
+          parcela: number | null
+          pedido_id: string | null
+          status: string | null
+          total_parcelas: number | null
+          valor: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_recebimento?: string | null
+          data_vencimento?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          parcela?: number | null
+          pedido_id?: string | null
+          status?: string | null
+          total_parcelas?: number | null
+          valor?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          data_recebimento?: string | null
+          data_vencimento?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          parcela?: number | null
+          pedido_id?: string | null
+          status?: string | null
+          total_parcelas?: number | null
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_recebimentos_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       imagens_album: {
         Row: {
@@ -807,6 +975,45 @@ export type Database = {
           telefone?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      lotes: {
+        Row: {
+          capacidade_max: number | null
+          created_at: string | null
+          data_exportacao: string | null
+          exportado_sheets: boolean | null
+          id: string
+          lote_id_semana: string | null
+          numero_lote: number
+          prazo_envio: string | null
+          status: string | null
+          total_pedidos: number | null
+        }
+        Insert: {
+          capacidade_max?: number | null
+          created_at?: string | null
+          data_exportacao?: string | null
+          exportado_sheets?: boolean | null
+          id?: string
+          lote_id_semana?: string | null
+          numero_lote: number
+          prazo_envio?: string | null
+          status?: string | null
+          total_pedidos?: number | null
+        }
+        Update: {
+          capacidade_max?: number | null
+          created_at?: string | null
+          data_exportacao?: string | null
+          exportado_sheets?: boolean | null
+          id?: string
+          lote_id_semana?: string | null
+          numero_lote?: number
+          prazo_envio?: string | null
+          status?: string | null
+          total_pedidos?: number | null
         }
         Relationships: []
       }
@@ -1285,6 +1492,235 @@ export type Database = {
         }
         Relationships: []
       }
+      pedido_itens: {
+        Row: {
+          acabamento: string | null
+          aco: string | null
+          bainha: string | null
+          brute_forge: boolean | null
+          certificado_id: string | null
+          cor_bainha: string | null
+          created_at: string | null
+          dragon_scale: boolean | null
+          embalagem_item: string | null
+          empunhadura: string | null
+          id: string
+          modelo: string | null
+          observacoes_item: string | null
+          pedido_id: string | null
+          posicao_laser: string | null
+          preco_unitario: number | null
+          quantidade: number | null
+          status_bainha: string | null
+          status_empunhadura: string | null
+          status_lamina: string | null
+          status_laser: string | null
+          texto_laser: string | null
+        }
+        Insert: {
+          acabamento?: string | null
+          aco?: string | null
+          bainha?: string | null
+          brute_forge?: boolean | null
+          certificado_id?: string | null
+          cor_bainha?: string | null
+          created_at?: string | null
+          dragon_scale?: boolean | null
+          embalagem_item?: string | null
+          empunhadura?: string | null
+          id?: string
+          modelo?: string | null
+          observacoes_item?: string | null
+          pedido_id?: string | null
+          posicao_laser?: string | null
+          preco_unitario?: number | null
+          quantidade?: number | null
+          status_bainha?: string | null
+          status_empunhadura?: string | null
+          status_lamina?: string | null
+          status_laser?: string | null
+          texto_laser?: string | null
+        }
+        Update: {
+          acabamento?: string | null
+          aco?: string | null
+          bainha?: string | null
+          brute_forge?: boolean | null
+          certificado_id?: string | null
+          cor_bainha?: string | null
+          created_at?: string | null
+          dragon_scale?: boolean | null
+          embalagem_item?: string | null
+          empunhadura?: string | null
+          id?: string
+          modelo?: string | null
+          observacoes_item?: string | null
+          pedido_id?: string | null
+          posicao_laser?: string | null
+          preco_unitario?: number | null
+          quantidade?: number | null
+          status_bainha?: string | null
+          status_empunhadura?: string | null
+          status_lamina?: string | null
+          status_laser?: string | null
+          texto_laser?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedido_itens_certificado_id_fkey"
+            columns: ["certificado_id"]
+            isOneToOne: false
+            referencedRelation: "certificados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_itens_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pedidos: {
+        Row: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          bling_contato_id: number | null
+          bling_nfe_id: number | null
+          bling_pedido_id: number | null
+          bloqueado_expedicao: boolean | null
+          brindes: string | null
+          canal: string | null
+          cliente_bairro: string | null
+          cliente_celular: string | null
+          cliente_cep: string | null
+          cliente_cidade: string | null
+          cliente_complemento: string | null
+          cliente_cpf: string | null
+          cliente_email: string | null
+          cliente_endereco: string | null
+          cliente_estado: string | null
+          cliente_nascimento: string | null
+          cliente_nome: string
+          cliente_numero: string | null
+          created_at: string | null
+          cupom: string | null
+          desconto: number | null
+          embalagem: string | null
+          forma_pagamento: string | null
+          id: string
+          lote_id: string | null
+          motivo_bloqueio: string | null
+          nome_certificado: string | null
+          numero_pedido: string
+          observacao: string | null
+          prazo_entrega: string | null
+          status: string | null
+          updated_at: string | null
+          valor_total: number | null
+          vendedor_id: string | null
+        }
+        Insert: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          bling_contato_id?: number | null
+          bling_nfe_id?: number | null
+          bling_pedido_id?: number | null
+          bloqueado_expedicao?: boolean | null
+          brindes?: string | null
+          canal?: string | null
+          cliente_bairro?: string | null
+          cliente_celular?: string | null
+          cliente_cep?: string | null
+          cliente_cidade?: string | null
+          cliente_complemento?: string | null
+          cliente_cpf?: string | null
+          cliente_email?: string | null
+          cliente_endereco?: string | null
+          cliente_estado?: string | null
+          cliente_nascimento?: string | null
+          cliente_nome: string
+          cliente_numero?: string | null
+          created_at?: string | null
+          cupom?: string | null
+          desconto?: number | null
+          embalagem?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          lote_id?: string | null
+          motivo_bloqueio?: string | null
+          nome_certificado?: string | null
+          numero_pedido: string
+          observacao?: string | null
+          prazo_entrega?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor_total?: number | null
+          vendedor_id?: string | null
+        }
+        Update: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          bling_contato_id?: number | null
+          bling_nfe_id?: number | null
+          bling_pedido_id?: number | null
+          bloqueado_expedicao?: boolean | null
+          brindes?: string | null
+          canal?: string | null
+          cliente_bairro?: string | null
+          cliente_celular?: string | null
+          cliente_cep?: string | null
+          cliente_cidade?: string | null
+          cliente_complemento?: string | null
+          cliente_cpf?: string | null
+          cliente_email?: string | null
+          cliente_endereco?: string | null
+          cliente_estado?: string | null
+          cliente_nascimento?: string | null
+          cliente_nome?: string
+          cliente_numero?: string | null
+          created_at?: string | null
+          cupom?: string | null
+          desconto?: number | null
+          embalagem?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          lote_id?: string | null
+          motivo_bloqueio?: string | null
+          nome_certificado?: string | null
+          numero_pedido?: string
+          observacao?: string | null
+          prazo_entrega?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor_total?: number | null
+          vendedor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_aprovado_por_fkey"
+            columns: ["aprovado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       preview_config: {
         Row: {
           created_at: string
@@ -1511,6 +1947,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calcular_prazo_uteis: { Args: { dias: number }; Returns: string }
+      gerar_numero_pedido: { Args: never; Returns: string }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
