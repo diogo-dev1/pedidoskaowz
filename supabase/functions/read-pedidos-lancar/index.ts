@@ -44,12 +44,42 @@ async function getAccessToken(serviceAccountKey: string): Promise<string> {
   return tokenData.access_token;
 }
 
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxnSBLsmbhkN-WRmMTKfSuw6wIxFtd5j8LZHxmsfjf9_T32Id4vR_DKeSMdOhckIHLPJQ/exec';
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
+    const body = await req.json().catch(() => ({}));
+
+    // POST com action = lancar → chama Apps Script
+    if (body.action === 'lancar' && body.row) {
+      const scriptRes = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'lancarLinha', row: body.row }),
+        redirect: 'follow',
+      });
+      const scriptText = await scriptRes.text();
+      let scriptData;
+      try { scriptData = JSON.parse(scriptText); } catch (_) { scriptData = { raw: scriptText }; }
+
+      if (scriptData.error) {
+        return new Response(
+          JSON.stringify({ sucesso: false, erro: scriptData.error }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ sucesso: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // GET ou POST sem action → lê a planilha
     const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
     if (!serviceAccountKey) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY não configurada');
 

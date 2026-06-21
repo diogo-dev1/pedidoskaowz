@@ -6,8 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { ClipboardList, Check, Loader2, RefreshCw } from 'lucide-react';
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxnSBLsmbhkN-WRmMTKfSuw6wIxFtd5j8LZHxmsfjf9_T32Id4vR_DKeSMdOhckIHLPJQ/exec';
-
 interface PedidoPlanilha {
   row: number;
   nome: string;
@@ -45,15 +43,29 @@ export default function Triagem() {
   const lancarPedido = async (pedido: PedidoPlanilha) => {
     setLancando(pedido.row);
     try {
-      await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'lancarLinha', row: pedido.row }),
+      const { data, error } = await supabase.functions.invoke('read-pedidos-lancar', {
+        body: { action: 'lancar', row: pedido.row },
       });
 
-      toast.success(`Pedido de ${pedido.nome} - ${pedido.item} lançado!`);
-      setPedidos(prev => prev.filter(p => p.row !== pedido.row));
+      if (error) {
+        const ctx = (error as any).context;
+        let detalhe = error.message;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const body = await ctx.json();
+            detalhe = body?.erro || body?.error || JSON.stringify(body);
+          } catch (_) {}
+        }
+        toast.error('Erro: ' + detalhe);
+        return;
+      }
+
+      if (data?.sucesso) {
+        toast.success(`Pedido de ${pedido.nome} - ${pedido.item} lançado!`);
+        setPedidos(prev => prev.filter(p => p.row !== pedido.row));
+      } else {
+        toast.error('Erro: ' + (data?.erro || 'Erro desconhecido'));
+      }
     } catch (err: any) {
       toast.error('Erro ao lançar: ' + (err.message || err));
     } finally {
