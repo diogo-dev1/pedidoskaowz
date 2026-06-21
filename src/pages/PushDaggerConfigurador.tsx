@@ -86,6 +86,8 @@ export default function PushDaggerConfigurador() {
     compact: 'kydex',
     micro: 'kydex',
   });
+  const [totalLabel, setTotalLabel] = useState('Total do Kit');
+  const [editingLabel, setEditingLabel] = useState(false);
 
   useEffect(() => {
     document.title = 'Configurador de Kit Push Dagger — Kaowz';
@@ -230,7 +232,18 @@ export default function PushDaggerConfigurador() {
             })}
           </div>
           <div className="summary-total">
-            <div className="total-label">Total do Kit</div>
+            {editingLabel ? (
+              <input
+                className="total-label-input"
+                value={totalLabel}
+                onChange={e => setTotalLabel(e.target.value)}
+                onBlur={() => setEditingLabel(false)}
+                onKeyDown={e => { if (e.key === 'Enter') setEditingLabel(false); }}
+                autoFocus
+              />
+            ) : (
+              <div className="total-label editable" onClick={() => setEditingLabel(true)} title="Clique para editar">{totalLabel}</div>
+            )}
             <div className="total-val">R$ {totalFmt}</div>
           </div>
           <div className="summary-cta">
@@ -323,6 +336,9 @@ const CSS = `
 .pdc-root .sheath-btn .finish-name { font-size:12px; }
 .pdc-root .sheath-btn .finish-price { font-size:12px; color:var(--muted); }
 .pdc-root .sheath-btn.active .finish-price { color:var(--gold-l); }
+.pdc-root .total-label.editable { cursor:text; border-bottom:1px dashed var(--dim); display:inline-block; }
+.pdc-root .total-label.editable:hover { color:var(--text); border-bottom-color:var(--gold); }
+.pdc-root .total-label-input { font-family:'Barlow Condensed',sans-serif; font-size:10px; letter-spacing:2px; color:var(--text); text-transform:uppercase; background:transparent; border:none; border-bottom:1px solid var(--gold); outline:none; width:100%; text-align:right; padding:0; margin-bottom:2px; }
 @media(max-width:700px) {
   .pdc-root .config-grid { grid-template-columns:1fr; border-radius:10px; }
   .pdc-root .hero { padding:2rem 1.5rem 1.5rem; }
