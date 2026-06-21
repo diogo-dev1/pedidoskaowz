@@ -1117,6 +1117,29 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
     toast.success('Texto copiado para a área de transferência!');
   };
 
+  const exportarProntaEntregaVendas = async () => {
+    setExportandoSheets(true);
+    try {
+      const { error } = await supabase.functions.invoke('export-to-sheets', {
+        body: {
+          nomeCompleto, cpf, email, celular, cep, endereco, numero, bairro, cidade, estado, complemento, dataNascimento,
+          nomeCertificado: nomeCertificado || nomeCompleto,
+          formaPagamento, canal, status, origemCliente, observacao, cupom, prazo: '',
+          valorTotal: valorPedido ? parseFloat(String(valorPedido).replace(',', '.')) : 0,
+          vendedor: profile?.nome_vendedor || '',
+          laminas: [{ modelo: textoProntaEntrega, aco: '', acabamento: '', empunhadura: '', bainha: '', corBainha: '', laser: false, textoLaser: '', localGravacao: '', embalagem: '', embalagemGravacao: false, embalagemTextoGravacao: '' }],
+          prontaEntrega: true,
+        },
+      });
+      if (error) throw error;
+      toast.success('Lançado no Relatório de Vendas!');
+    } catch (err: any) {
+      toast.error('Erro ao lançar: ' + (err.message || err));
+    } finally {
+      setExportandoSheets(false);
+    }
+  };
+
   const exportarParaSheets = async () => {
     setExportandoSheets(true);
 
@@ -2160,9 +2183,15 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
                   <Copy className="h-4 w-4 mr-2" />
                   Copiar Texto
                 </Button>
-                <Button variant="outline" onClick={exportarParaSheets} disabled={exportandoSheets}>
-                  {exportandoSheets ? 'Exportando...' : 'Google Sheets'}
-                </Button>
+                {tipoPedido === 'customizado' ? (
+                  <Button variant="outline" onClick={exportarParaSheets} disabled={exportandoSheets}>
+                    {exportandoSheets ? 'Exportando...' : 'Google Sheets'}
+                  </Button>
+                ) : (
+                  <Button variant="outline" onClick={exportarProntaEntregaVendas} disabled={exportandoSheets}>
+                    {exportandoSheets ? 'Lançando...' : 'Lançar Relatório de Vendas'}
+                  </Button>
+                )}
                 <Button variant="outline" onClick={exportarPedidoComoImagem}>
                   <Image className="h-4 w-4 mr-2" />
                   Imagem
