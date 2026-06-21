@@ -47,6 +47,7 @@ import ParcelamentoPublico from "./pages/ParcelamentoPublico";
 import MonteSeuKitLaminas from "./pages/MonteSeuKitLaminas";
 import MonteSeuKitLaminasAdmin from "./pages/admin/MonteSeuKitLaminasAdmin";
 import Inventory from "./pages/Inventory";
+import ShopifyOrders from "./pages/ShopifyOrders";
 import PushDaggerConfigurador from "./pages/PushDaggerConfigurador";
 import NotFound from "./pages/NotFound";
 
@@ -401,6 +402,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Inventory />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/shopify-orders"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ShopifyOrders />
                   </Layout>
                 </ProtectedRoute>
               }

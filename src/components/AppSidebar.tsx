@@ -106,6 +106,7 @@ export function AppSidebar() {
     { title: 'Informativos', url: '/admin/informativos', icon: Info },
     { title: 'Bling', url: '/bling', icon: Link2 },
     { title: 'Estoque Shopify', url: '/inventory', icon: Boxes },
+    { title: 'Pedidos Shopify', url: '/shopify-orders', icon: Download },
   ] : [];
 
   const adminCatalogoItems: MenuItem[] = isAdmin ? [
