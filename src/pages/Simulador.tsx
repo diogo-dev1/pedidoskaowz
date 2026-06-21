@@ -1056,7 +1056,7 @@ OBS: ${observacao || '-'}`;
       const laminasFormatadas = todasLaminas.map(lamina => ({
         modelo: ((lamina.modelo?.nome_modelo || '') + (lamina.bruteForge ? ' Brute Forge' : '')).trim(),
         aco: lamina.aco?.nome_opcao || '',
-        empunhadura: [lamina.empunhadura?.nome_opcao, lamina.dragonScale ? 'Dragon Scale' : null, lamina.espacador ? `Espaçador G10 ${lamina.espacador.nome_opcao}` : null].filter(Boolean).join(' / '),
+        empunhadura: [lamina.empunhadura?.nome_opcao, lamina.dragonScale ? 'Dragon Scale' : null, (lamina as any).espacador ? `Espaçador G10 ${(lamina as any).espacador.nome_opcao}` : null].filter(Boolean).join(' / '),
         acabamento: lamina.acabamento?.nome_opcao || '',
         bainha: lamina.bainha?.nome_opcao || '',
         corBainha: lamina.corBainha,
