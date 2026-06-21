@@ -154,6 +154,9 @@ function getDataAtual(): string {
 // URL do Web App do Google Apps Script para executar "lancarPedido"
 const GOOGLE_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxp-uq9EJTeB69ptLrE5dsDrcsLMQPn1i89ydZ_EP7NjggRaNZtrdSEu6MxKVY9f2fBsw/exec';
 
+// Planilha nova — "PEDIDOS A LANÇAR"
+const PEDIDOS_A_LANCAR_SPREADSHEET_ID = '1VjHLz1jQLk9r6W5YMt6g7dbAgeTS4-lVpGxZkJT0cDo';
+
 interface LaminaResult {
   index: number;
   success: boolean;
@@ -272,6 +275,56 @@ async function exportarParaProducao(
   return { success: true, processadas, total };
 }
 
+// Exportar para aba "PEDIDOS A LANÇAR" na planilha nova (append por lâmina)
+async function exportarParaPedidosALancar(
+  accessToken: string,
+  data: ExportData
+): Promise<void> {
+  const rows = data.laminas.map(lamina => {
+    let personalizacao = '-';
+    if (lamina.laser && lamina.textoLaser) {
+      personalizacao = lamina.textoLaser;
+      if (lamina.localGravacao) {
+        personalizacao += ` (${lamina.localGravacao})`;
+      }
+    }
+
+    return [
+      '', // A — vazia
+      valorOuTraco(data.nomeCompleto), // B — Nome
+      valorOuTraco(lamina.modelo), // C — Item
+      valorOuTraco(lamina.aco), // D — Aço
+      valorOuTraco(lamina.acabamento), // E — Acabamento
+      valorOuTraco(lamina.empunhadura), // F — Empunhadura
+      valorOuTraco(lamina.bainha), // G — Bainha
+      valorOuTraco(lamina.corBainha), // H — Cor bainha
+      valorOuTraco(data.prazo), // I — Prazo
+      valorOuTraco(lamina.observacoesLamina), // J — Observações
+      personalizacao, // K — Personalização
+    ];
+  });
+
+  const range = encodeURIComponent('PEDIDOS A LANÇAR!A:K');
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${PEDIDOS_A_LANCAR_SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ values: rows }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Erro ao exportar para PEDIDOS A LANÇAR:', errorText);
+    throw new Error(`Falha ao exportar para PEDIDOS A LANÇAR: ${errorText}`);
+  }
+
+  console.log(`Exportado para PEDIDOS A LANÇAR: ${rows.length} lâmina(s)`);
+}
+
 // Exportar para planilha de Relatório de Vendas (aba "Vendas Diário")
 async function exportarParaVendas(
   accessToken: string, 
@@ -379,6 +432,13 @@ serve(async (req) => {
 
     // Depois exportar para Vendas
     await exportarParaVendas(accessToken, vendasSpreadsheetId, data);
+
+    // Exportar para PEDIDOS A LANÇAR (planilha nova)
+    try {
+      await exportarParaPedidosALancar(accessToken, data);
+    } catch (error) {
+      console.error('Erro ao exportar para PEDIDOS A LANÇAR (não bloqueia):', error);
+    }
 
     console.log('Exportação concluída com sucesso');
 
