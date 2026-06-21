@@ -1054,10 +1054,10 @@ OBS: ${observacao || '-'}`;
       }
 
       const laminasFormatadas = todasLaminas.map(lamina => ({
-        modelo: lamina.modelo?.nome_modelo || '',
+        modelo: ((lamina.modelo?.nome_modelo || '') + (lamina.bruteForge ? ' Brute Forge' : '')).trim(),
         aco: lamina.aco?.nome_opcao || '',
-        empunhadura: (lamina.empunhadura?.nome_opcao || '') + (lamina.dragonScale ? ' + Dragon Scale' : ''),
-        acabamento: (lamina.acabamento?.nome_opcao || '') + (lamina.bruteForge ? ' + Brute Forge' : ''),
+        empunhadura: [lamina.empunhadura?.nome_opcao, lamina.dragonScale ? 'Dragon Scale' : null, lamina.espacador ? `Espaçador G10 ${lamina.espacador.nome_opcao}` : null].filter(Boolean).join(' / '),
+        acabamento: lamina.acabamento?.nome_opcao || '',
         bainha: lamina.bainha?.nome_opcao || '',
         corBainha: lamina.corBainha,
         textoLaser: lamina.textoLaser,

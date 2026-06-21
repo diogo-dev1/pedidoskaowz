@@ -290,7 +290,6 @@ async function exportarParaPedidosALancar(
     }
 
     return [
-      '', // A — vazia
       valorOuTraco(data.nomeCompleto), // B — Nome
       valorOuTraco(lamina.modelo), // C — Item
       valorOuTraco(lamina.aco), // D — Aço
@@ -304,7 +303,7 @@ async function exportarParaPedidosALancar(
     ];
   });
 
-  const range = encodeURIComponent('PEDIDOS A LANÇAR!A:K');
+  const range = encodeURIComponent('PEDIDOS A LANÇAR!B:K');
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${PEDIDOS_A_LANCAR_SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
   const response = await fetch(url, {
