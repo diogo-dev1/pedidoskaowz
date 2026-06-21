@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.calcular-frete]
 verify_jwt = false
+
+[functions.sync-shopify-orders]
+verify_jwt = false
