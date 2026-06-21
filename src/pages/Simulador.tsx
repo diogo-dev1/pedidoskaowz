@@ -62,7 +62,21 @@ interface LaminaCustomizada {
 export default function Simulador() {
   const { profile } = useAuth();
   const { opcoes: opcoesN8n } = useOpcoesN8n();
-  const [tipoPedido, setTipoPedido] = useState<'customizado' | 'pronta_entrega'>('customizado');
+  const calcularPrazo65Dias = () => {
+    const hoje = new Date();
+    let diasContados = 0;
+    const data = new Date(hoje);
+    while (diasContados < 65) {
+      data.setDate(data.getDate() + 1);
+      if (data.getDay() !== 0 && data.getDay() !== 6) diasContados++;
+    }
+    return `${String(data.getDate()).padStart(2, '0')}/${String(data.getMonth() + 1).padStart(2, '0')}/${data.getFullYear()}`;
+  };
+  const [tipoPedido, setTipoPedidoRaw] = useState<'customizado' | 'pronta_entrega'>('customizado');
+  const setTipoPedido = (tipo: 'customizado' | 'pronta_entrega') => {
+    setTipoPedidoRaw(tipo);
+    setPrazo(tipo === 'pronta_entrega' ? '' : calcularPrazo65Dias());
+  };
   const [textoProntaEntrega, setTextoProntaEntrega] = useState('');
   const [modelos, setModelos] = useState<ModeloBase[]>([]);
   const [componentes, setComponentes] = useState<OpcaoComponente[]>([]);
