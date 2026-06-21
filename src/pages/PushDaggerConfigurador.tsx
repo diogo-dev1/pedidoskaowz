@@ -217,12 +217,13 @@ export default function PushDaggerConfigurador() {
           <div className="summary-kit">
             {MODELS.map(m => {
               const f = FINISHES.find(x => x.key === selection[m.key])!;
+              const s = SHEATHS.find(x => x.key === sheath[m.key])!;
               return (
                 <div key={m.key} className="kit-pill">
                   <div className={`kit-pill-swatch ${f.swatchClass}`} />
                   <div className="kit-pill-text">
                     <strong>{m.name.charAt(0) + m.name.slice(1).toLowerCase()}</strong>
-                    {f.name}
+                    {f.name}{s.key !== 'kydex' ? ` · ${s.name}` : ''}
                   </div>
                 </div>
               );
