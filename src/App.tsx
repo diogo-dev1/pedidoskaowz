@@ -47,6 +47,7 @@ import ParcelamentoPublico from "./pages/ParcelamentoPublico";
 import MonteSeuKitLaminas from "./pages/MonteSeuKitLaminas";
 import MonteSeuKitLaminasAdmin from "./pages/admin/MonteSeuKitLaminasAdmin";
 import Inventory from "./pages/Inventory";
+import PushDaggerConfigurador from "./pages/PushDaggerConfigurador";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -204,6 +205,7 @@ const App = () => (
               }
             />
             <Route path="/push-dagger-kaowz" element={<ConfiguradorKit />} />
+            <Route path="/push-dagger-configurador" element={<PushDaggerConfigurador />} />
             {/* Compat: rota antiga */}
             <Route path="/configurador-kit" element={<ConfiguradorKit />} />
             <Route
