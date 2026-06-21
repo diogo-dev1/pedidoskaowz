@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.sync-shopify-orders]
 verify_jwt = false
+
+[functions.read-pedidos-lancar]
+verify_jwt = false
