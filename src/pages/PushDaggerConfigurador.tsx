@@ -232,7 +232,18 @@ export default function PushDaggerConfigurador() {
             })}
           </div>
           <div className="summary-total">
-            <div className="total-label">Total do Kit</div>
+            {editingLabel ? (
+              <input
+                className="total-label-input"
+                value={totalLabel}
+                onChange={e => setTotalLabel(e.target.value)}
+                onBlur={() => setEditingLabel(false)}
+                onKeyDown={e => { if (e.key === 'Enter') setEditingLabel(false); }}
+                autoFocus
+              />
+            ) : (
+              <div className="total-label editable" onClick={() => setEditingLabel(true)} title="Clique para editar">{totalLabel}</div>
+            )}
             <div className="total-val">R$ {totalFmt}</div>
           </div>
           <div className="summary-cta">
