@@ -60,11 +60,31 @@ function Dagger({ blade, handle, scale }: { blade: string; handle: string; scale
   );
 }
 
+type SheathKey = 'kydex' | 'couro' | 'nylon' | 'sem';
+
+interface SheathOption {
+  key: SheathKey;
+  name: string;
+  price: number;
+}
+
+const SHEATHS: SheathOption[] = [
+  { key: 'kydex', name: 'Kydex', price: 0 },
+  { key: 'couro', name: 'Couro', price: 120 },
+  { key: 'nylon', name: 'Nylon Tático', price: 60 },
+  { key: 'sem', name: 'Sem bainha', price: -80 },
+];
+
 export default function PushDaggerConfigurador() {
   const [selection, setSelection] = useState<Record<string, FinishKey>>({
     standard: 'satin',
     compact: 'satin',
     micro: 'satin',
+  });
+  const [sheath, setSheath] = useState<Record<string, SheathKey>>({
+    standard: 'kydex',
+    compact: 'kydex',
+    micro: 'kydex',
   });
 
   useEffect(() => {
@@ -75,9 +95,10 @@ export default function PushDaggerConfigurador() {
     () =>
       MODELS.reduce((sum, m) => {
         const f = FINISHES.find(x => x.key === selection[m.key])!;
-        return sum + f.price;
+        const s = SHEATHS.find(x => x.key === sheath[m.key])!;
+        return sum + f.price + s.price;
       }, 0),
-    [selection]
+    [selection, sheath]
   );
 
   const totalFmt = total.toLocaleString('pt-BR');
@@ -85,7 +106,10 @@ export default function PushDaggerConfigurador() {
   const handleWhats = () => {
     const lines = MODELS.map(m => {
       const f = FINISHES.find(x => x.key === selection[m.key])!;
-      return `• ${m.name} — ${f.name} (R$ ${f.price.toLocaleString('pt-BR')})`;
+      const s = SHEATHS.find(x => x.key === sheath[m.key])!;
+      const itemTotal = f.price + s.price;
+      const sText = s.key !== 'kydex' ? ` + Bainha ${s.name}` : '';
+      return `• ${m.name} — ${f.name}${sText} (R$ ${itemTotal.toLocaleString('pt-BR')})`;
     }).join('\n');
     const msg = `Olá! Quero montar este Kit Push Dagger:\n\n${lines}\n\nTotal: R$ ${totalFmt}`;
     window.open(`https://wa.me/5528999025695?text=${encodeURIComponent(msg)}`, '_blank');
