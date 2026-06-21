@@ -67,8 +67,8 @@ export function AppSidebar() {
   const isCollapsed = state === 'collapsed';
 
   const vendaItems: MenuItem[] = [
-    { title: 'Pedidos', url: '/triagem', icon: ClipboardList },
-    { title: 'Simulador', url: '/', icon: Calculator },
+    { title: 'Novo Pedido', url: '/', icon: Calculator },
+    { title: 'Pedidos a Lançar', url: '/triagem', icon: ClipboardList },
     { title: 'Orçamento', url: '/orcamento', icon: FileText },
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },

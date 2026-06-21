@@ -960,7 +960,7 @@ ${itensPedido}
 22. PRAZO: ${prazo || '-'}
 23. EMBALAGEM: ${embalagemTexto}
 24. BRINDES: ${brindes || produtosSelecionados || '-'}
-OBS: ${observacao || '-'}`;
+OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}` : ''].filter(Boolean).join(' | ') || '-'}`;
 
       setTextoFormatado(texto);
       setPedidoFinalizado(true);
@@ -1166,7 +1166,7 @@ OBS: ${observacao || '-'}`;
       <div className="container mx-auto px-3 py-4 max-w-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg font-bold tracking-tight">Monte sua Faca</h1>
+          <h1 className="text-lg font-bold tracking-tight">Novo Pedido</h1>
           <div className="flex items-center gap-2">
             {laminasCustomizadas.length > 0 && (
               <Badge variant="secondary" className="text-xs">
@@ -1277,7 +1277,7 @@ OBS: ${observacao || '-'}`;
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {acabamentos.map(opt => (
-                      <button key={opt.id} onClick={() => setAcabamentoSelecionado(opt.id)}
+                      <button key={opt.id} onClick={() => { setAcabamentoSelecionado(opt.id); setTimeout(() => setCurrentStep(1), 200); }}
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                           acabamentoSelecionado === opt.id ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
                         }`}>
@@ -1316,7 +1316,7 @@ OBS: ${observacao || '-'}`;
 
             <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
               {empunhadurasFiltradas.map(opt => (
-                <button key={opt.id} onClick={() => setEmpunhaduraSelecionada(opt.id)}
+                <button key={opt.id} onClick={() => { setEmpunhaduraSelecionada(opt.id); setTimeout(() => setCurrentStep(2), 200); }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     empunhaduraSelecionada === opt.id ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
                   }`}>
@@ -1355,7 +1355,7 @@ OBS: ${observacao || '-'}`;
                 <Label className="text-xs text-muted-foreground font-medium">Cor da Bainha</Label>
                 <div className="flex flex-wrap gap-1.5">
                   {coresBainha.map(cor => (
-                    <button key={cor.id} onClick={() => { setCorBainha(cor.nome_opcao); setCorBainhaPersonalizada(''); }}
+                    <button key={cor.id} onClick={() => { setCorBainha(cor.nome_opcao); setCorBainhaPersonalizada(''); setTimeout(() => setCurrentStep(3), 200); }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                         corBainha === cor.nome_opcao ? 'bg-accent text-accent-foreground ring-1 ring-accent shadow-sm' : 'bg-muted hover:bg-muted/80 text-foreground'
                       }`}>

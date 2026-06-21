@@ -54,8 +54,23 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
 
-    // POST com action = lancar → chama Apps Script
+    // POST com action = lancar → lê dados da linha, chama Apps Script, exporta para Vendas
     if (body.action === 'lancar' && body.row) {
+      const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY')!;
+      const vendasSpreadsheetId = Deno.env.get('GOOGLE_SHEETS_VENDAS_ID');
+      const accessToken = await getAccessToken(serviceAccountKey);
+
+      // Ler dados da linha antes de lançar (o Apps Script deleta a linha)
+      const rowRange = encodeURIComponent(`PEDIDOS A LANÇAR!B${body.row}:K${body.row}`);
+      const rowUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${rowRange}`;
+      const rowRes = await fetch(rowUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+      let dadosLinha: string[] = [];
+      if (rowRes.ok) {
+        const rowData = await rowRes.json();
+        dadosLinha = rowData.values?.[0] || [];
+      }
+
+      // Chamar Apps Script para lançar no Controle/Expedição
       const scriptRes = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,6 +86,37 @@ Deno.serve(async (req) => {
           JSON.stringify({ sucesso: false, erro: scriptData.error }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      }
+
+      // Exportar para Vendas Diário
+      if (vendasSpreadsheetId && dadosLinha.length >= 2) {
+        try {
+          const hoje = new Date();
+          const dataFormatada = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+          const vendaRow = [
+            dataFormatada,          // Data
+            dadosLinha[0] || '-',   // Nome
+            body.canal || 'WhatsApp', // Canal
+            body.vendedor || '-',   // Vendedor
+            body.valor || '-',      // Valor
+            body.formaPagamento || '-', // Forma Pag
+            'pago',                 // Status
+            dadosLinha[1] || '-',   // Item
+            dadosLinha[8] || '-',   // Obs
+            '-',                    // Cupom
+          ];
+
+          const vendaRange = encodeURIComponent('Vendas Diário!B:K');
+          const vendaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${vendasSpreadsheetId}/values/${vendaRange}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+          await fetch(vendaUrl, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ values: [vendaRow] }),
+          });
+          console.log('Exportado para Vendas Diário:', dadosLinha[0]);
+        } catch (e) {
+          console.error('Erro ao exportar para Vendas (não bloqueia):', e);
+        }
       }
 
       return new Response(
