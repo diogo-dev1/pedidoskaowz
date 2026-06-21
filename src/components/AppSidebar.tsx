@@ -3,7 +3,7 @@ import {
   Calculator, Settings, LogOut, User, MessageSquare, BookOpen,
   ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign,
   Users, Store, FileText, Image, TrendingUp, Eye, Link2, LayoutDashboard,
-  Globe, Truck, Briefcase, Download, CreditCard, Boxes
+  Globe, Truck, Briefcase, Download, CreditCard, Boxes, ClipboardList
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -67,6 +67,7 @@ export function AppSidebar() {
   const isCollapsed = state === 'collapsed';
 
   const vendaItems: MenuItem[] = [
+    { title: 'Pedidos', url: '/triagem', icon: ClipboardList },
     { title: 'Simulador', url: '/', icon: Calculator },
     { title: 'Orçamento', url: '/orcamento', icon: FileText },
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },

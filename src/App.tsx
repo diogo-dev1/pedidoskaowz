@@ -48,6 +48,7 @@ import MonteSeuKitLaminas from "./pages/MonteSeuKitLaminas";
 import MonteSeuKitLaminasAdmin from "./pages/admin/MonteSeuKitLaminasAdmin";
 import Inventory from "./pages/Inventory";
 import ShopifyOrders from "./pages/ShopifyOrders";
+import Triagem from "./pages/Triagem";
 import PushDaggerConfigurador from "./pages/PushDaggerConfigurador";
 import NotFound from "./pages/NotFound";
 
@@ -402,6 +403,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Inventory />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/triagem"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Triagem />
                   </Layout>
                 </ProtectedRoute>
               }
