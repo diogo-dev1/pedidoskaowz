@@ -186,7 +186,9 @@ Deno.serve(async (req) => {
       .in('shopify_order_id', orderIds);
 
     const idsJaExportados = new Set((jaExportados || []).map(r => r.shopify_order_id));
-    const pedidosNovos = allOrders.filter(o => !idsJaExportados.has(o.id));
+    const pedidosNovos = allOrders
+      .filter(o => !idsJaExportados.has(o.id))
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
     console.log(`${pedidosNovos.length} pedido(s) novo(s) de ${allOrders.length} total`);
 
