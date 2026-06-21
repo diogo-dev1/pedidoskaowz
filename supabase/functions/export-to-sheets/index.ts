@@ -304,11 +304,27 @@ async function exportarParaPedidosALancar(
     ];
   });
 
-  const range = encodeURIComponent('PEDIDOS A LANÇAR!B:K');
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${PEDIDOS_A_LANCAR_SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  // Encontrar última linha com dados na coluna B
+  const readRange = encodeURIComponent('PEDIDOS A LANÇAR!B:B');
+  const readUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PEDIDOS_A_LANCAR_SPREADSHEET_ID}/values/${readRange}`;
+  const readRes = await fetch(readUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+  let nextRow = 2;
+  if (readRes.ok) {
+    const readData = await readRes.json();
+    const colB = readData.values || [];
+    for (let i = colB.length - 1; i >= 0; i--) {
+      if (colB[i][0] && colB[i][0].toString().trim()) {
+        nextRow = i + 2;
+        break;
+      }
+    }
+  }
 
-  const response = await fetch(url, {
-    method: 'POST',
+  const writeRange = encodeURIComponent(`PEDIDOS A LANÇAR!B${nextRow}:K${nextRow + rows.length - 1}`);
+  const writeUrl = `https://sheets.googleapis.com/v4/spreadsheets/${PEDIDOS_A_LANCAR_SPREADSHEET_ID}/values/${writeRange}?valueInputOption=USER_ENTERED`;
+
+  const response = await fetch(writeUrl, {
+    method: 'PUT',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
