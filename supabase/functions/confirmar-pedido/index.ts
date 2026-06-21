@@ -1,12 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { salvarNoBanco } from "./_handlers/banco.ts";
-import { criarNoBling } from "./_handlers/bling.ts";
-import { exportarSheets } from "./_handlers/sheets.ts";
 import { criarExpedicao } from "./_handlers/expedicao.ts";
-import { reservarCertificado } from "./_handlers/certificado.ts";
-import { descontarInsumos } from "./_handlers/insumos.ts";
 import { registrarFinanceiro } from "./_handlers/financeiro.ts";
-import { notificarCliente } from "./_handlers/notificacao.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,23 +25,17 @@ Deno.serve(async (req) => {
 
     // PASSO 2: Distribuir em background (não bloqueia resposta)
     const distribuir = Promise.allSettled([
-      criarNoBling(supabase, pedido, itens),
-      exportarSheets(supabase, pedido, itens),
       criarExpedicao(supabase, pedido),
-      reservarCertificado(supabase, pedido, itens),
-      descontarInsumos(supabase, itens),
       registrarFinanceiro(supabase, pedido),
-      notificarCliente(supabase, pedido),
     ]).then(resultados => {
       const log = resultados.map((r, i) => ({
-        handler: ['bling','sheets','expedicao','certificado','insumos','financeiro','notificacao'][i],
+        handler: ['expedicao', 'financeiro'][i],
         status: r.status,
         erro: r.status === 'rejected' ? r.reason?.message : null,
       }));
       console.log('Distribuição concluída:', JSON.stringify(log));
     });
 
-    // Aguarda a distribuição em background
     // @ts-ignore
     if (typeof EdgeRuntime !== 'undefined') {
       EdgeRuntime.waitUntil(distribuir);
