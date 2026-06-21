@@ -125,6 +125,7 @@ interface ExportData {
   produtosAdicionais?: ProdutoAdicional[];
   valorTotal?: number;
   vendedor?: string;
+  prontaEntrega?: boolean;
 }
 
 // Helper para garantir que campos vazios sejam preenchidos com "-"
@@ -411,18 +412,28 @@ serve(async (req) => {
     // Gerar número do pedido
     const numeroPedido = data.numeroPedido || gerarNumeroPedido();
 
+    // Pronta Entrega — só exporta para Vendas Diário
+    if (data.prontaEntrega) {
+      await exportarParaVendas(accessToken, vendasSpreadsheetId, data);
+      console.log('Pronta entrega exportada para Vendas');
+      return new Response(
+        JSON.stringify({ success: true, message: 'Exportado para Vendas Diário' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Primeiro exportar para Produção (sequencial com validação)
     const resultadoProducao = await exportarParaProducao(accessToken, producaoSpreadsheetId, data);
 
     if (!resultadoProducao.success) {
       console.error('Erro na exportação para Produção:', resultadoProducao.erro);
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: resultadoProducao.erro,
           processadas: resultadoProducao.processadas,
           total: resultadoProducao.total
         }),
-        { 
+        {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
@@ -442,8 +453,8 @@ serve(async (req) => {
     console.log('Exportação concluída com sucesso');
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: `${resultadoProducao.processadas} lâmina(s) exportada(s) com sucesso para Produção e Vendas!`,
         numeroPedido,
         processadas: resultadoProducao.processadas,

@@ -879,6 +879,41 @@ OBS: ${observacao || '-'}`;
       setTextoFormatado(texto);
       setPedidoFinalizado(true);
       toast.success('Pedido pronta entrega finalizado!');
+
+      // Exportar para Vendas Diário
+      try {
+        await supabase.functions.invoke('export-to-sheets', {
+          body: {
+            nomeCompleto,
+            cpf,
+            email,
+            celular,
+            cep,
+            endereco,
+            numero,
+            bairro,
+            cidade,
+            estado,
+            complemento,
+            dataNascimento,
+            nomeCertificado: nomeCertificado || nomeCompleto,
+            formaPagamento,
+            canal,
+            status,
+            origemCliente,
+            observacao,
+            cupom,
+            prazo: '',
+            valorTotal: valorPedido ? parseFloat(String(valorPedido).replace(',', '.')) : 0,
+            vendedor: profile?.nome_vendedor || '',
+            laminas: [{ modelo: textoProntaEntrega, aco: '', acabamento: '', empunhadura: '', bainha: '', corBainha: '', laser: false, textoLaser: '', localGravacao: '', embalagem: '', embalagemGravacao: false, embalagemTextoGravacao: '' }],
+            prontaEntrega: true,
+          },
+        });
+      } catch (err) {
+        console.error('Erro ao exportar pronta entrega para Vendas:', err);
+      }
+
       return;
     }
 
