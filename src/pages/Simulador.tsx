@@ -62,6 +62,8 @@ interface LaminaCustomizada {
 export default function Simulador() {
   const { profile } = useAuth();
   const { opcoes: opcoesN8n } = useOpcoesN8n();
+  const [tipoPedido, setTipoPedido] = useState<'customizado' | 'pronta_entrega'>('customizado');
+  const [textoProntaEntrega, setTextoProntaEntrega] = useState('');
   const [modelos, setModelos] = useState<ModeloBase[]>([]);
   const [componentes, setComponentes] = useState<OpcaoComponente[]>([]);
   const [produtosAdicionais, setProdutosAdicionais] = useState<ProdutoAdicional[]>([]);
@@ -850,6 +852,36 @@ export default function Simulador() {
       return;
     }
 
+    // Pronta Entrega — gera texto e retorna sem planilha
+    if (tipoPedido === 'pronta_entrega') {
+      const texto = `1. NOME: ${nomeCompleto}
+2. CPF: ${cpf}
+3. CEP: ${cep}
+4. ESTADO: ${estado}
+5. CIDADE: ${cidade}
+6. BAIRRO: ${bairro}
+7. ENDEREÇO: ${endereco}
+8. NÚMERO: ${numero}
+9. COMPLEMENTO: ${complemento}
+10. CELULAR: ${celular}
+11. E-MAIL: ${email}
+12. DATA DE NASCIMENTO: ${dataNascimento}
+13. PEDIDO:
+${textoProntaEntrega}
+14. VALOR: ${valorPedido || '-'}
+15. FORMA DE PAGAMENTO: ${formaPagamento}
+16. VENDEDOR: ${profile?.nome_vendedor || ''}
+17. CANAL DE VENDA: ${canal || '-'}
+18. CUPOM: ${cupom || '-'}
+19. STATUS DO PEDIDO: ${status}
+OBS: ${observacao || '-'}`;
+
+      setTextoFormatado(texto);
+      setPedidoFinalizado(true);
+      toast.success('Pedido pronta entrega finalizado!');
+      return;
+    }
+
     if (laminasCustomizadas.length === 0 && !modeloSelecionado) {
       toast.error('Adicione pelo menos uma lâmina ao orçamento');
       return;
@@ -1179,7 +1211,51 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
           </div>
         </div>
 
-        {/* Stepper */}
+        {/* Tipo de Pedido */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setTipoPedido('customizado')}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              tipoPedido === 'customizado'
+                ? 'bg-accent text-accent-foreground shadow-sm'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            Customizado
+          </button>
+          <button
+            onClick={() => setTipoPedido('pronta_entrega')}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              tipoPedido === 'pronta_entrega'
+                ? 'bg-accent text-accent-foreground shadow-sm'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            Pronta Entrega
+          </button>
+        </div>
+
+        {/* ===== PRONTA ENTREGA ===== */}
+        {tipoPedido === 'pronta_entrega' && (
+          <div className="bg-card rounded-xl border border-border p-4 space-y-3">
+            <h2 className="font-semibold text-sm">Descrição do Pedido</h2>
+            <textarea
+              value={textoProntaEntrega}
+              onChange={(e) => setTextoProntaEntrega(e.target.value)}
+              placeholder="Descreva os itens do pedido..."
+              rows={6}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+            {textoProntaEntrega && (
+              <Button onClick={() => setModalOpen(true)} className="w-full bg-accent hover:bg-accent/90 font-semibold">
+                Fechar Pedido
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Stepper — só no customizado */}
+        {tipoPedido === 'customizado' && (
         <div className="flex items-end gap-2 mb-4 px-1">
           {STEPS.map((step, i) => {
             const isActive = i === currentStep;
@@ -1210,9 +1286,10 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
             );
           })}
         </div>
+        )}
 
         {/* ===== STEP 0: Modelo + Aço + Acabamento ===== */}
-        {currentStep === 0 && (
+        {tipoPedido === 'customizado' && currentStep === 0 && (
           <div className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center gap-2 mb-3">
               <h2 className="font-semibold text-sm">Escolha o Modelo</h2>
@@ -1302,7 +1379,7 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
         )}
 
         {/* ===== STEP 1: Empunhadura ===== */}
-        {currentStep === 1 && modeloSelecionado && (
+        {tipoPedido === 'customizado' && currentStep === 1 && modeloSelecionado && (
           <div className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center gap-2 mb-3">
               <h2 className="font-semibold text-sm">Empunhadura</h2>
@@ -1332,7 +1409,7 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
         )}
 
         {/* ===== STEP 2: Bainha ===== */}
-        {currentStep === 2 && modeloSelecionado && (
+        {tipoPedido === 'customizado' && currentStep === 2 && modeloSelecionado && (
           <div className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center gap-2 mb-3">
               <h2 className="font-semibold text-sm">Bainha</h2>
@@ -1378,7 +1455,7 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
         )}
 
         {/* ===== STEP 3: Personalização ===== */}
-        {currentStep === 3 && modeloSelecionado && (
+        {tipoPedido === 'customizado' && currentStep === 3 && modeloSelecionado && (
           <div className="bg-card rounded-xl border border-border p-4">
             <h2 className="font-semibold text-sm mb-3">Personalização</h2>
 
@@ -1416,8 +1493,8 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
           </div>
         )}
 
-        {/* ===== Produtos Adicionais - sempre visível ===== */}
-        {produtosAdicionais.length > 0 && (
+        {/* ===== Produtos Adicionais - só no customizado ===== */}
+        {tipoPedido === 'customizado' && produtosAdicionais.length > 0 && (
           <div className="bg-card rounded-xl border border-border p-4 mt-3">
             <h3 className="font-semibold text-sm mb-2">Produtos Adicionais</h3>
             <div className="space-y-1.5">
@@ -1447,8 +1524,8 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
           </div>
         )}
 
-        {/* Lâminas Adicionadas - sempre visível */}
-        {laminasCustomizadas.length > 0 && (
+        {/* Lâminas Adicionadas - só no customizado */}
+        {tipoPedido === 'customizado' && laminasCustomizadas.length > 0 && (
           <div className="bg-card rounded-xl border border-border p-4 mt-3">
             <h3 className="font-semibold text-sm mb-2">
               Lâminas ({laminasCustomizadas.reduce((sum, l) => sum + l.quantidade, 0)})
