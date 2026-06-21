@@ -122,7 +122,16 @@ export default function Simulador() {
   const [origemCliente, setOrigemCliente] = useState('');
   const [observacao, setObservacao] = useState('');
   const [cupom, setCupom] = useState('');
-  const [prazo, setPrazo] = useState('');
+  const [prazo, setPrazo] = useState(() => {
+    const hoje = new Date();
+    let diasContados = 0;
+    const data = new Date(hoje);
+    while (diasContados < 65) {
+      data.setDate(data.getDate() + 1);
+      if (data.getDay() !== 0 && data.getDay() !== 6) diasContados++;
+    }
+    return `${String(data.getDate()).padStart(2, '0')}/${String(data.getMonth() + 1).padStart(2, '0')}/${data.getFullYear()}`;
+  });
   const [brindes, setBrindes] = useState('');
   const [valorPedido, setValorPedido] = useState('');
 
@@ -1165,7 +1174,7 @@ OBS: ${observacao || '-'}`;
               </Badge>
             )}
             <Button onClick={() => setModalIAOpen(true)} variant="outline" size="sm" className="gap-1.5 text-xs h-8">
-              ✨ IA
+              Inserir Dados do Cliente
             </Button>
           </div>
         </div>
