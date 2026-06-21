@@ -174,6 +174,29 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Filtrar pedidos já exportados
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    const orderIds = allOrders.map(o => o.id);
+    const { data: jaExportados } = await supabase
+      .from('shopify_orders_sync')
+      .select('shopify_order_id')
+      .in('shopify_order_id', orderIds);
+
+    const idsJaExportados = new Set((jaExportados || []).map(r => r.shopify_order_id));
+    const pedidosNovos = allOrders.filter(o => !idsJaExportados.has(o.id));
+
+    console.log(`${pedidosNovos.length} pedido(s) novo(s) de ${allOrders.length} total`);
+
+    if (pedidosNovos.length === 0) {
+      return new Response(
+        JSON.stringify({ sucesso: true, total: 0, mensagem: `Todos os ${allOrders.length} pedido(s) já foram exportados anteriormente` }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
     const vendasSpreadsheetId = Deno.env.get('GOOGLE_SHEETS_VENDAS_ID');
     if (!serviceAccountKey || !vendasSpreadsheetId) {
@@ -182,7 +205,7 @@ Deno.serve(async (req) => {
 
     const googleToken = await getGoogleAccessToken(serviceAccountKey);
 
-    const rows = allOrders.map(order => {
+    const rows = pedidosNovos.map(order => {
       const nomeCliente = order.customer
         ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim()
         : '-';
@@ -221,13 +244,20 @@ Deno.serve(async (req) => {
       throw new Error(`Erro ao exportar para Vendas Diário: ${errorText}`);
     }
 
+    // Registrar pedidos exportados para evitar duplicatas
+    const registros = pedidosNovos.map(o => ({
+      shopify_order_id: o.id,
+      shopify_order_name: o.name,
+    }));
+    await supabase.from('shopify_orders_sync').upsert(registros, { onConflict: 'shopify_order_id' });
+
     console.log(`Exportados ${rows.length} pedido(s) Shopify para Vendas Diário`);
 
     return new Response(
       JSON.stringify({
         sucesso: true,
-        total: allOrders.length,
-        mensagem: `${allOrders.length} pedido(s) da Shopify exportados para Vendas Diário`,
+        total: pedidosNovos.length,
+        mensagem: `${pedidosNovos.length} pedido(s) novo(s) exportados para Vendas Diário (${idsJaExportados.size} já existiam)`,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
