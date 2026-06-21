@@ -21,7 +21,19 @@ export default function ShopifyOrders() {
         body: { data_inicio: dataInicio, data_fim: dataFim },
       });
 
-      if (error) throw error;
+      if (error) {
+        const ctx = (error as any).context;
+        let detalhe = error.message;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const body = await ctx.json();
+            detalhe = body?.erro || body?.error || JSON.stringify(body);
+          } catch (_) {}
+        }
+        toast.error(detalhe);
+        setResultado('Erro: ' + detalhe);
+        return;
+      }
 
       if (data?.sucesso) {
         toast.success(data.mensagem);
