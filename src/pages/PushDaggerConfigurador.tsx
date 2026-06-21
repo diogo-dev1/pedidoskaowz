@@ -60,11 +60,31 @@ function Dagger({ blade, handle, scale }: { blade: string; handle: string; scale
   );
 }
 
+type SheathKey = 'kydex' | 'couro' | 'nylon' | 'sem';
+
+interface SheathOption {
+  key: SheathKey;
+  name: string;
+  price: number;
+}
+
+const SHEATHS: SheathOption[] = [
+  { key: 'kydex', name: 'Kydex', price: 0 },
+  { key: 'couro', name: 'Couro', price: 120 },
+  { key: 'nylon', name: 'Nylon Tático', price: 60 },
+  { key: 'sem', name: 'Sem bainha', price: -80 },
+];
+
 export default function PushDaggerConfigurador() {
   const [selection, setSelection] = useState<Record<string, FinishKey>>({
     standard: 'satin',
     compact: 'satin',
     micro: 'satin',
+  });
+  const [sheath, setSheath] = useState<Record<string, SheathKey>>({
+    standard: 'kydex',
+    compact: 'kydex',
+    micro: 'kydex',
   });
 
   useEffect(() => {
@@ -75,9 +95,10 @@ export default function PushDaggerConfigurador() {
     () =>
       MODELS.reduce((sum, m) => {
         const f = FINISHES.find(x => x.key === selection[m.key])!;
-        return sum + f.price;
+        const s = SHEATHS.find(x => x.key === sheath[m.key])!;
+        return sum + f.price + s.price;
       }, 0),
-    [selection]
+    [selection, sheath]
   );
 
   const totalFmt = total.toLocaleString('pt-BR');
@@ -85,7 +106,10 @@ export default function PushDaggerConfigurador() {
   const handleWhats = () => {
     const lines = MODELS.map(m => {
       const f = FINISHES.find(x => x.key === selection[m.key])!;
-      return `• ${m.name} — ${f.name} (R$ ${f.price.toLocaleString('pt-BR')})`;
+      const s = SHEATHS.find(x => x.key === sheath[m.key])!;
+      const itemTotal = f.price + s.price;
+      const sText = s.key !== 'kydex' ? ` + Bainha ${s.name}` : '';
+      return `• ${m.name} — ${f.name}${sText} (R$ ${itemTotal.toLocaleString('pt-BR')})`;
     }).join('\n');
     const msg = `Olá! Quero montar este Kit Push Dagger:\n\n${lines}\n\nTotal: R$ ${totalFmt}`;
     window.open(`https://wa.me/5528999025695?text=${encodeURIComponent(msg)}`, '_blank');
@@ -161,6 +185,28 @@ export default function PushDaggerConfigurador() {
                   );
                 })}
               </div>
+
+              <div className="finish-label" style={{ marginTop: '14px' }}>Bainha</div>
+              <div className="finish-options">
+                {SHEATHS.map(s => {
+                  const active = sheath[model.key] === s.key;
+                  return (
+                    <button
+                      key={s.key}
+                      className={`finish-btn sheath-btn${active ? ' active' : ''}`}
+                      onClick={() => setSheath(sh => ({ ...sh, [model.key]: s.key }))}
+                    >
+                      <div className="finish-info" style={{ marginLeft: 0 }}>
+                        <div className="finish-name">{s.name}</div>
+                      </div>
+                      <div className="finish-price">
+                        {s.price === 0 ? 'Incl.' : s.price > 0 ? `+R$ ${s.price.toLocaleString('pt-BR')}` : `-R$ ${Math.abs(s.price).toLocaleString('pt-BR')}`}
+                      </div>
+                      <div className="check"><div className="check-dot" /></div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
@@ -171,12 +217,13 @@ export default function PushDaggerConfigurador() {
           <div className="summary-kit">
             {MODELS.map(m => {
               const f = FINISHES.find(x => x.key === selection[m.key])!;
+              const s = SHEATHS.find(x => x.key === sheath[m.key])!;
               return (
                 <div key={m.key} className="kit-pill">
                   <div className={`kit-pill-swatch ${f.swatchClass}`} />
                   <div className="kit-pill-text">
                     <strong>{m.name.charAt(0) + m.name.slice(1).toLowerCase()}</strong>
-                    {f.name}
+                    {f.name}{s.key !== 'kydex' ? ` · ${s.name}` : ''}
                   </div>
                 </div>
               );
@@ -272,6 +319,10 @@ const CSS = `
 .pdc-root .btn-wa:hover { background:var(--gold-l); }
 .pdc-root .btn-wa svg { width:16px; height:16px; flex-shrink:0; }
 .pdc-root .footer-note { text-align:center; padding:1.5rem 2rem 4rem; font-size:12px; color:var(--dim); }
+.pdc-root .sheath-btn { padding:8px 12px; }
+.pdc-root .sheath-btn .finish-name { font-size:12px; }
+.pdc-root .sheath-btn .finish-price { font-size:12px; color:var(--muted); }
+.pdc-root .sheath-btn.active .finish-price { color:var(--gold-l); }
 @media(max-width:700px) {
   .pdc-root .config-grid { grid-template-columns:1fr; border-radius:10px; }
   .pdc-root .hero { padding:2rem 1.5rem 1.5rem; }
