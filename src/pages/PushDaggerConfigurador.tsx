@@ -86,6 +86,8 @@ export default function PushDaggerConfigurador() {
     compact: 'kydex',
     micro: 'kydex',
   });
+  const [totalLabel, setTotalLabel] = useState('Total do Kit');
+  const [editingLabel, setEditingLabel] = useState(false);
 
   useEffect(() => {
     document.title = 'Configurador de Kit Push Dagger — Kaowz';
