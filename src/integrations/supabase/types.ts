@@ -1912,6 +1912,27 @@ export type Database = {
         }
         Relationships: []
       }
+      shopify_orders_sync: {
+        Row: {
+          exportado_em: string | null
+          id: string
+          shopify_order_id: number
+          shopify_order_name: string | null
+        }
+        Insert: {
+          exportado_em?: string | null
+          id?: string
+          shopify_order_id: number
+          shopify_order_name?: string | null
+        }
+        Update: {
+          exportado_em?: string | null
+          id?: string
+          shopify_order_id?: number
+          shopify_order_name?: string | null
+        }
+        Relationships: []
+      }
       situacoes_leads: {
         Row: {
           cor: string
