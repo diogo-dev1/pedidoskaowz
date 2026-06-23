@@ -52,7 +52,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
+    let body: any = {};
+    try {
+      const text = await req.text();
+      if (text) body = JSON.parse(text);
+    } catch (_) {}
 
     // POST com action = lancar → lê dados da linha, chama Apps Script, exporta para Vendas
     if (body.action === 'lancar' && body.row) {
