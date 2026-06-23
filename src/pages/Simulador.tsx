@@ -1266,7 +1266,7 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
   }
 
   return (
-    <div className="min-h-screen bg-background pb-36">
+    <div className="min-h-screen bg-background pb-20">
       <div className="container mx-auto px-3 py-4 max-w-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
@@ -1639,60 +1639,58 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
         )}
       </div>
 
-      {/* ===== BOTTOM BAR ===== */}
-      <div className="fixed bottom-16 left-0 right-0 bg-card border-t border-border shadow-lg z-40 md:bottom-0">
-        {resumoParts.length > 0 && (
-          <div className="px-3 pt-2 pb-1">
-            <p className="text-[11px] text-muted-foreground truncate text-center">
-              {resumoParts.join(' → ')}
-            </p>
+        {/* ===== BOTÕES DE AÇÃO ===== */}
+        {tipoPedido === 'customizado' && (
+          <div className="mt-4 space-y-2">
+            {resumoParts.length > 0 && (
+              <p className="text-[11px] text-muted-foreground truncate text-center">
+                {resumoParts.join(' → ')}
+              </p>
+            )}
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                {currentStep > 0 && (
+                  <Button onClick={() => setCurrentStep(currentStep - 1)} variant="outline" size="sm" className="text-xs h-9">
+                    Voltar
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {laminaEmEdicao ? (
+                  <>
+                    <Button onClick={() => { cancelarEdicao(); setCurrentStep(0); }} variant="outline" size="sm" className="text-xs h-9">
+                      Cancelar
+                    </Button>
+                    <Button onClick={() => { salvarEdicaoLamina(); setCurrentStep(0); }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
+                      <Check className="h-3.5 w-3.5 mr-1" />
+                      Salvar
+                    </Button>
+                  </>
+                ) : currentStep < 3 ? (
+                  <>
+                    {laminasCustomizadas.length > 0 && (
+                      <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90 font-semibold">
+                        Fechar Pedido
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Button onClick={() => { adicionarLamina(); setCurrentStep(0); }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Adicionar
+                    </Button>
+                    {(laminasCustomizadas.length > 0 || modeloSelecionado) && (
+                      <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90 font-semibold">
+                        Fechar Pedido
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         )}
-        <div className="px-3 py-2.5">
-          <div className="flex items-center justify-between gap-2 max-w-2xl mx-auto">
-            <div>
-              {currentStep > 0 && (
-                <Button onClick={() => setCurrentStep(currentStep - 1)} variant="outline" size="sm" className="text-xs h-9">
-                  Voltar
-                </Button>
-              )}
-            </div>
-            <div className="flex gap-2">
-              {laminaEmEdicao ? (
-                <>
-                  <Button onClick={() => { cancelarEdicao(); setCurrentStep(0); }} variant="outline" size="sm" className="text-xs h-9">
-                    Cancelar
-                  </Button>
-                  <Button onClick={() => { salvarEdicaoLamina(); setCurrentStep(0); }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
-                    <Check className="h-3.5 w-3.5 mr-1" />
-                    Salvar
-                  </Button>
-                </>
-              ) : currentStep < 3 ? (
-                <>
-                  {laminasCustomizadas.length > 0 && (
-                    <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90 font-semibold">
-                      Fechar Pedido
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Button onClick={() => { adicionarLamina(); setCurrentStep(0); }} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90">
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    Adicionar
-                  </Button>
-                  {(laminasCustomizadas.length > 0 || modeloSelecionado) && (
-                    <Button onClick={() => setModalOpen(true)} size="sm" className="text-xs h-9 bg-accent hover:bg-accent/90 font-semibold">
-                      Fechar Pedido
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Modal de Detalhes da Lâmina */}
       <Dialog open={!!laminaModalAberta} onOpenChange={() => setLaminaModalAberta(null)}>
