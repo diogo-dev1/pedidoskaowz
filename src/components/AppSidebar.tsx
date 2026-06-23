@@ -70,10 +70,8 @@ export function AppSidebar() {
     { title: 'Novo Pedido', url: '/', icon: Calculator },
     { title: 'Pedidos a Lançar', url: '/triagem', icon: ClipboardList },
     { title: 'Pedidos', url: '/pedidos', icon: ShoppingBag },
-    { title: 'Orçamento', url: '/orcamento', icon: FileText },
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
-    { title: 'Parcelamento', url: '/admin/parcelamento', icon: CreditCard },
   ];
 
   const catalogoItems: MenuItem[] = [
@@ -83,7 +81,6 @@ export function AppSidebar() {
     { title: 'Catálogo Revendedor Internacional', url: '/catalogo-internacional', icon: Globe },
     { title: 'Push Dagger Kaowz', url: '/push-dagger-kaowz', icon: Layers },
     { title: 'Monte seu Kit', url: '/monte-seu-kit', icon: Layers },
-    { title: 'Preview', url: '/preview', icon: Eye },
   ];
 
   const crmItems: MenuItem[] = [
