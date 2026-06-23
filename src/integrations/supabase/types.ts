@@ -1912,6 +1912,24 @@ export type Database = {
         }
         Relationships: []
       }
+      urban_edc_config: {
+        Row: {
+          chave: string
+          updated_at: string
+          valor: string | null
+        }
+        Insert: {
+          chave: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Update: {
+          chave?: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Relationships: []
+      }
       shopify_orders_sync: {
         Row: {
           exportado_em: string | null

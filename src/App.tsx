@@ -51,6 +51,8 @@ import ShopifyOrders from "./pages/ShopifyOrders";
 import Triagem from "./pages/Triagem";
 import Pedidos from "./pages/Pedidos";
 import PushDaggerConfigurador from "./pages/PushDaggerConfigurador";
+import KitUrbanEdc from "./pages/KitUrbanEdc";
+import KitUrbanEdcConfig from "./pages/KitUrbanEdcConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -388,6 +390,17 @@ const App = () => (
             />
             <Route path="/p/:slug" element={<ParcelamentoPublico />} />
             <Route path="/monte-seu-kit" element={<MonteSeuKitLaminas />} />
+            <Route path="/kit-urban-edc" element={<KitUrbanEdc />} />
+            <Route
+              path="/admin/kit-urban-edc"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <KitUrbanEdcConfig />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/admin/monte-seu-kit"
               element={
