@@ -52,69 +52,12 @@ async function resolveShopDomain(): Promise<string> {
   return domain;
 }
 
-async function getGoogleAccessToken(serviceAccountKey: string): Promise<string> {
-  const credentials = JSON.parse(serviceAccountKey);
-  const header = { alg: "RS256", typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
-  const claim = {
-    iss: credentials.client_email,
-    scope: "https://www.googleapis.com/auth/spreadsheets",
-    aud: "https://oauth2.googleapis.com/token",
-    exp: now + 3600,
-    iat: now,
-  };
-
-  const headerB64 = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-  const claimB64 = btoa(JSON.stringify(claim)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-  const signatureInput = `${headerB64}.${claimB64}`;
-
-  const privateKeyPem = credentials.private_key
-    .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\s/g, '');
-  const binaryKey = Uint8Array.from(atob(privateKeyPem), (c: string) => c.charCodeAt(0));
-
-  const key = await crypto.subtle.importKey('pkcs8', binaryKey,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
-  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key,
-    new TextEncoder().encode(signatureInput));
-  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-
-  const jwt = `${signatureInput}.${signatureB64}`;
-  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
-  });
-  const tokenData = await tokenResponse.json();
-  return tokenData.access_token;
-}
-
-function formatDate(isoDate: string): string {
-  const d = new Date(isoDate);
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-}
-
 function mapPaymentGateway(gateways: string[]): string {
   const g = (gateways || []).join(', ').toLowerCase();
-  if (g.includes('pix')) return 'Pix';
-  if (g.includes('credit') || g.includes('cartao') || g.includes('cartão') || g.includes('card')) return 'Cartão';
+  if (g.includes('pix')) return 'PIX';
+  if (g.includes('credit') || g.includes('cartao') || g.includes('cartão') || g.includes('card')) return 'Cartão de Crédito';
   if (g.includes('boleto')) return 'Boleto';
-  if (g.includes('manual')) return 'Manual';
   return gateways.join(', ') || '-';
-}
-
-function mapFinancialStatus(status: string): string {
-  const map: Record<string, string> = {
-    'paid': 'pago',
-    'pending': 'pendente',
-    'refunded': 'reembolsado',
-    'partially_refunded': 'parcialmente reembolsado',
-    'voided': 'cancelado',
-    'authorized': 'autorizado',
-  };
-  return map[status] || status || '-';
 }
 
 interface ShopifyOrder {
@@ -124,10 +67,33 @@ interface ShopifyOrder {
   total_price: string;
   financial_status: string;
   payment_gateway_names: string[];
-  customer?: { first_name?: string; last_name?: string };
-  line_items: { title: string; quantity: number }[];
+  customer?: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    phone?: string;
+    default_address?: {
+      address1?: string;
+      address2?: string;
+      city?: string;
+      province_code?: string;
+      zip?: string;
+      country?: string;
+    };
+  };
+  line_items: { title: string; quantity: number; price: string }[];
   note?: string;
   discount_codes?: { code: string }[];
+  shipping_address?: {
+    first_name?: string;
+    last_name?: string;
+    address1?: string;
+    address2?: string;
+    city?: string;
+    province_code?: string;
+    zip?: string;
+    name?: string;
+  };
 }
 
 Deno.serve(async (req) => {
@@ -136,7 +102,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
+    let body: any = {};
+    try {
+      const text = await req.text();
+      if (text) body = JSON.parse(text);
+    } catch (_) {}
+
     const dataInicio = body.data_inicio || new Date().toISOString().split('T')[0];
     const dataFim = body.data_fim || dataInicio;
 
@@ -174,92 +145,126 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Filtrar pedidos já exportados
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Filtrar pedidos já importados
     const orderIds = allOrders.map(o => o.id);
-    const { data: jaExportados } = await supabase
+    const { data: jaImportados } = await supabase
       .from('shopify_orders_sync')
       .select('shopify_order_id')
       .in('shopify_order_id', orderIds);
 
-    const idsJaExportados = new Set((jaExportados || []).map(r => r.shopify_order_id));
+    const idsJaImportados = new Set((jaImportados || []).map(r => r.shopify_order_id));
     const pedidosNovos = allOrders
-      .filter(o => !idsJaExportados.has(o.id))
+      .filter(o => !idsJaImportados.has(o.id))
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-    console.log(`${pedidosNovos.length} pedido(s) novo(s) de ${allOrders.length} total`);
 
     if (pedidosNovos.length === 0) {
       return new Response(
-        JSON.stringify({ sucesso: true, total: 0, mensagem: `Todos os ${allOrders.length} pedido(s) já foram exportados anteriormente` }),
+        JSON.stringify({ sucesso: true, total: 0, mensagem: `Todos os ${allOrders.length} pedido(s) já foram importados` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
-    const vendasSpreadsheetId = Deno.env.get('GOOGLE_SHEETS_VENDAS_ID');
-    if (!serviceAccountKey || !vendasSpreadsheetId) {
-      throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY ou GOOGLE_SHEETS_VENDAS_ID não configurados');
+    let importados = 0;
+    let erros = 0;
+
+    for (const order of pedidosNovos) {
+      try {
+        const nomeCliente = order.customer
+          ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim()
+          : 'Cliente Shopify';
+        const endereco = order.shipping_address || order.customer?.default_address;
+        const itensTexto = order.line_items.map(li => `${li.title}${li.quantity > 1 ? ` x${li.quantity}` : ''}`).join(', ');
+        const cupom = (order.discount_codes || []).map(dc => dc.code).join(', ') || null;
+
+        // Gerar número do pedido
+        const { data: numData } = await supabase.rpc('gerar_numero_pedido');
+        const numeroPedido = numData || `KWZ-SHOP-${order.id}`;
+
+        // Inserir pedido
+        const { data: pedido, error: erroPedido } = await supabase
+          .from('pedidos')
+          .insert({
+            numero_pedido: numeroPedido,
+            canal: 'Site',
+            cliente_nome: nomeCliente,
+            cliente_email: order.customer?.email || null,
+            cliente_celular: order.customer?.phone || null,
+            cliente_cep: endereco?.zip || null,
+            cliente_estado: endereco?.province_code || null,
+            cliente_cidade: endereco?.city || null,
+            cliente_endereco: endereco?.address1 || null,
+            cliente_complemento: endereco?.address2 || null,
+            valor_total: parseFloat(order.total_price) || 0,
+            forma_pagamento: mapPaymentGateway(order.payment_gateway_names),
+            cupom,
+            status: 'aguardando_triagem',
+            observacao: [order.note, `Shopify ${order.name}`].filter(Boolean).join(' | ') || null,
+          })
+          .select()
+          .single();
+
+        if (erroPedido) {
+          console.error(`Erro ao inserir pedido Shopify ${order.name}:`, erroPedido);
+          erros++;
+          continue;
+        }
+
+        // Inserir itens
+        const itensParaInserir = order.line_items.map(li => ({
+          pedido_id: pedido.id,
+          modelo: li.title,
+          preco_unitario: parseFloat(li.price) || 0,
+          quantidade: li.quantity || 1,
+        }));
+
+        if (itensParaInserir.length > 0) {
+          await supabase.from('pedido_itens').insert(itensParaInserir);
+        }
+
+        // Criar expedição
+        await supabase.from('expedicao').insert({
+          pedido_id: pedido.id,
+          nome_destinatario: endereco?.name || nomeCliente,
+          cep_destino: endereco?.zip || null,
+          endereco_completo: [endereco?.address1, endereco?.address2, endereco?.city, endereco?.province_code].filter(Boolean).join(', ') || null,
+          status: 'aguardando',
+        });
+
+        // Criar financeiro
+        await supabase.from('financeiro_recebimentos').insert({
+          pedido_id: pedido.id,
+          valor: parseFloat(order.total_price) || 0,
+          forma_pagamento: mapPaymentGateway(order.payment_gateway_names),
+          status: order.financial_status === 'paid' ? 'recebido' : 'pendente',
+          data_recebimento: order.financial_status === 'paid' ? new Date().toISOString().split('T')[0] : null,
+        });
+
+        // Registrar como importado
+        await supabase.from('shopify_orders_sync').upsert({
+          shopify_order_id: order.id,
+          shopify_order_name: order.name,
+        }, { onConflict: 'shopify_order_id' });
+
+        importados++;
+        console.log(`Pedido Shopify ${order.name} → ${numeroPedido} salvo no banco`);
+
+      } catch (err) {
+        console.error(`Erro ao processar pedido Shopify ${order.name}:`, err);
+        erros++;
+      }
     }
-
-    const googleToken = await getGoogleAccessToken(serviceAccountKey);
-
-    const rows = pedidosNovos.map(order => {
-      const nomeCliente = order.customer
-        ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim()
-        : '-';
-      const itens = order.line_items.map(li => `${li.title}${li.quantity > 1 ? ` x${li.quantity}` : ''}`).join(', ');
-      const cupom = (order.discount_codes || []).map(dc => dc.code).join(', ') || '-';
-      const valor = parseFloat(order.total_price).toFixed(2).replace('.', ',');
-
-      return [
-        formatDate(order.created_at),
-        nomeCliente,
-        'Site',
-        'Site',
-        valor,
-        mapPaymentGateway(order.payment_gateway_names),
-        mapFinancialStatus(order.financial_status),
-        itens,
-        order.note || '-',
-        cupom,
-      ];
-    });
-
-    const range = encodeURIComponent('Vendas Diário!B:K');
-    const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${vendasSpreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
-
-    const response = await fetch(appendUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${googleToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ values: rows }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Erro ao exportar para Vendas Diário: ${errorText}`);
-    }
-
-    // Registrar pedidos exportados para evitar duplicatas
-    const registros = pedidosNovos.map(o => ({
-      shopify_order_id: o.id,
-      shopify_order_name: o.name,
-    }));
-    await supabase.from('shopify_orders_sync').upsert(registros, { onConflict: 'shopify_order_id' });
-
-    console.log(`Exportados ${rows.length} pedido(s) Shopify para Vendas Diário`);
 
     return new Response(
       JSON.stringify({
         sucesso: true,
         total: pedidosNovos.length,
-        mensagem: `${pedidosNovos.length} pedido(s) novo(s) exportados para Vendas Diário (${idsJaExportados.size} já existiam)`,
+        importados,
+        erros,
+        mensagem: `${importados} pedido(s) importado(s) para o banco${erros > 0 ? `, ${erros} erro(s)` : ''}`,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
