@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { salvarNoBanco } from "./_handlers/banco.ts";
+import { criarNoBling } from "./_handlers/bling.ts";
 import { criarExpedicao } from "./_handlers/expedicao.ts";
 import { registrarFinanceiro } from "./_handlers/financeiro.ts";
 
@@ -25,11 +26,12 @@ Deno.serve(async (req) => {
 
     // PASSO 2: Distribuir em background (não bloqueia resposta)
     const distribuir = Promise.allSettled([
+      criarNoBling(supabase, pedido, itens),
       criarExpedicao(supabase, pedido),
       registrarFinanceiro(supabase, pedido),
     ]).then(resultados => {
       const log = resultados.map((r, i) => ({
-        handler: ['expedicao', 'financeiro'][i],
+        handler: ['bling', 'expedicao', 'financeiro'][i],
         status: r.status,
         erro: r.status === 'rejected' ? r.reason?.message : null,
       }));
