@@ -1637,8 +1637,6 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
             </div>
           </div>
         )}
-      </div>
-
         {/* ===== BOTÕES DE AÇÃO ===== */}
         {tipoPedido === 'customizado' && (
           <div className="mt-4 space-y-2">
@@ -1691,6 +1689,7 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
             </div>
           </div>
         )}
+      </div>
 
       {/* Modal de Detalhes da Lâmina */}
       <Dialog open={!!laminaModalAberta} onOpenChange={() => setLaminaModalAberta(null)}>
