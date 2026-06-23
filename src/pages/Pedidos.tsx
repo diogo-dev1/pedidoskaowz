@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ShoppingBag, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw, ChevronRight, X, Package, Clock, CheckCircle2, Truck, Box, AlertTriangle } from 'lucide-react';
 
 interface PedidoItem {
   id: string;
@@ -27,6 +26,14 @@ interface Pedido {
   cliente_nome: string;
   cliente_celular: string;
   cliente_email: string;
+  cliente_cpf: string;
+  cliente_cep: string;
+  cliente_estado: string;
+  cliente_cidade: string;
+  cliente_bairro: string;
+  cliente_endereco: string;
+  cliente_numero: string;
+  cliente_complemento: string;
   canal: string;
   forma_pagamento: string;
   valor_total: number;
@@ -38,32 +45,24 @@ interface Pedido {
   bloqueado_expedicao: boolean;
   motivo_bloqueio: string;
   bling_pedido_id: number;
+  cupom: string;
   created_at: string;
   pedido_itens?: PedidoItem[];
 }
 
-const statusCor: Record<string, string> = {
-  'aguardando_triagem': 'bg-yellow-500',
-  'aprovado': 'bg-green-500',
-  'em_producao': 'bg-blue-500',
-  'pronto': 'bg-purple-500',
-  'em_expedicao': 'bg-orange-500',
-  'entregue': 'bg-gray-500',
-};
-
-const statusLabel: Record<string, string> = {
-  'aguardando_triagem': 'Aguardando',
-  'aprovado': 'Aprovado',
-  'em_producao': 'Em Produção',
-  'pronto': 'Pronto',
-  'em_expedicao': 'Expedição',
-  'entregue': 'Entregue',
+const STATUS_CONFIG: Record<string, { label: string; cor: string; bg: string; icon: any }> = {
+  'aguardando_triagem': { label: 'Aguardando', cor: 'text-amber-700', bg: 'bg-amber-50 border-amber-200', icon: Clock },
+  'aprovado': { label: 'Aprovado', cor: 'text-green-700', bg: 'bg-green-50 border-green-200', icon: CheckCircle2 },
+  'em_producao': { label: 'Produção', cor: 'text-blue-700', bg: 'bg-blue-50 border-blue-200', icon: Package },
+  'pronto': { label: 'Pronto', cor: 'text-purple-700', bg: 'bg-purple-50 border-purple-200', icon: Box },
+  'em_expedicao': { label: 'Expedição', cor: 'text-orange-700', bg: 'bg-orange-50 border-orange-200', icon: Truck },
+  'entregue': { label: 'Entregue', cor: 'text-gray-500', bg: 'bg-gray-50 border-gray-200', icon: CheckCircle2 },
 };
 
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandido, setExpandido] = useState<string | null>(null);
+  const [selecionado, setSelecionado] = useState<string | null>(null);
   const [filtro, setFiltro] = useState('todos');
 
   const carregarPedidos = async () => {
@@ -94,9 +93,16 @@ export default function Pedidos() {
 
   useEffect(() => { carregarPedidos(); }, []);
 
+  const contadores = pedidos.reduce((acc, p) => {
+    acc[p.status] = (acc[p.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   const pedidosFiltrados = filtro === 'todos'
     ? pedidos
     : pedidos.filter(p => p.status === filtro);
+
+  const pedidoAberto = pedidos.find(p => p.id === selecionado);
 
   const formatarData = (data: string) => {
     if (!data) return '-';
@@ -106,7 +112,20 @@ export default function Pedidos() {
 
   const formatarValor = (valor: number) => {
     if (!valor) return '-';
-    return `R$ ${valor.toFixed(2).replace('.', ',')}`;
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+  };
+
+  const atualizarStatus = async (pedidoId: string, novoStatus: string) => {
+    const { error } = await supabase
+      .from('pedidos')
+      .update({ status: novoStatus, ...(novoStatus === 'aprovado' ? { aprovado_em: new Date().toISOString() } : {}) })
+      .eq('id', pedidoId);
+    if (error) {
+      toast.error('Erro ao atualizar');
+    } else {
+      toast.success('Status atualizado');
+      carregarPedidos();
+    }
   };
 
   if (loading) {
@@ -117,121 +136,220 @@ export default function Pedidos() {
     );
   }
 
-  return (
-    <div className="max-w-5xl mx-auto py-6 px-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <ShoppingBag className="h-6 w-6" />
-          Pedidos
-        </h1>
-        <Badge variant="outline">{pedidosFiltrados.length} pedido(s)</Badge>
-      </div>
+  // Detalhe do pedido aberto
+  if (pedidoAberto) {
+    const cfg = STATUS_CONFIG[pedidoAberto.status] || STATUS_CONFIG['aguardando_triagem'];
+    const StatusIcon = cfg.icon;
+    return (
+      <div className="max-w-2xl mx-auto py-6 px-4 space-y-4">
+        <button onClick={() => setSelecionado(null)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+          ← Voltar
+        </button>
 
-      <div className="flex gap-1.5 flex-wrap">
-        {['todos', 'aguardando_triagem', 'aprovado', 'em_producao', 'pronto', 'em_expedicao', 'entregue'].map(s => (
-          <button key={s} onClick={() => setFiltro(s)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              filtro === s ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}>
-            {s === 'todos' ? 'Todos' : statusLabel[s] || s}
-          </button>
-        ))}
-      </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">{pedidoAberto.numero_pedido}</h1>
+            <p className="text-sm text-muted-foreground">{formatarData(pedidoAberto.created_at)}</p>
+          </div>
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium ${cfg.bg} ${cfg.cor}`}>
+            <StatusIcon className="h-3.5 w-3.5" />
+            {cfg.label}
+          </div>
+        </div>
 
-      {pedidosFiltrados.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            Nenhum pedido encontrado.
-          </CardContent>
-        </Card>
-      ) : (
-        pedidosFiltrados.map(pedido => (
-          <Card key={pedido.id} className={pedido.bloqueado_expedicao ? 'border-red-400' : ''}>
-            <CardHeader
-              className="cursor-pointer pb-3"
-              onClick={() => setExpandido(expandido === pedido.id ? null : pedido.id)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CardTitle className="text-base">{pedido.numero_pedido}</CardTitle>
-                  <Badge className={`${statusCor[pedido.status] || 'bg-gray-400'} text-white text-xs`}>
-                    {statusLabel[pedido.status] || pedido.status}
-                  </Badge>
-                  {pedido.bloqueado_expedicao && (
-                    <Badge variant="destructive" className="text-xs">BLOQUEADO</Badge>
-                  )}
-                  {pedido.bling_pedido_id && (
-                    <Badge variant="outline" className="text-xs">Bling</Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span className="hidden sm:inline">{pedido.cliente_nome}</span>
-                  <span>{formatarValor(pedido.valor_total)}</span>
-                  <span>{pedido.pedido_itens?.length || 0} item(ns)</span>
-                  {expandido === pedido.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </div>
-              </div>
-            </CardHeader>
+        {pedidoAberto.bloqueado_expedicao && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+            <span><strong>Bloqueado:</strong> {pedidoAberto.motivo_bloqueio || 'Expedição bloqueada'}</span>
+          </div>
+        )}
 
-            {expandido === pedido.id && (
-              <CardContent className="pt-0 space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                  <div><span className="font-medium text-muted-foreground">Cliente:</span> {pedido.cliente_nome}</div>
-                  <div><span className="font-medium text-muted-foreground">Canal:</span> {pedido.canal || '-'}</div>
-                  <div><span className="font-medium text-muted-foreground">Pagamento:</span> {pedido.forma_pagamento || '-'}</div>
-                  <div><span className="font-medium text-muted-foreground">Prazo:</span> {formatarData(pedido.prazo_entrega)}</div>
-                  <div><span className="font-medium text-muted-foreground">Celular:</span> {pedido.cliente_celular || '-'}</div>
-                  <div><span className="font-medium text-muted-foreground">Email:</span> {pedido.cliente_email || '-'}</div>
-                  <div><span className="font-medium text-muted-foreground">Criado:</span> {formatarData(pedido.created_at)}</div>
-                  <div><span className="font-medium text-muted-foreground">Embalagem:</span> {pedido.embalagem || '-'}</div>
-                </div>
-
-                {pedido.observacao && (
-                  <div className="text-sm p-2 bg-muted rounded-md">
-                    <span className="font-medium">OBS:</span> {pedido.observacao}
-                  </div>
-                )}
-
-                {pedido.pedido_itens && pedido.pedido_itens.length > 0 && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border">
-                      <thead>
-                        <tr className="bg-muted">
-                          <th className="p-2 text-left">#</th>
-                          <th className="p-2 text-left">Modelo</th>
-                          <th className="p-2 text-left">Aço</th>
-                          <th className="p-2 text-left">Acabamento</th>
-                          <th className="p-2 text-left">Empunhadura</th>
-                          <th className="p-2 text-left">Bainha</th>
-                          <th className="p-2 text-left">Cor</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pedido.pedido_itens.map((item, idx) => (
-                          <tr key={item.id} className="border-t">
-                            <td className="p-2">{idx + 1}</td>
-                            <td className="p-2 font-medium">
-                              {item.modelo}
-                              {item.brute_forge && <Badge variant="outline" className="ml-1 text-xs">BF</Badge>}
-                            </td>
-                            <td className="p-2">{item.aco || '-'}</td>
-                            <td className="p-2">{item.acabamento || '-'}</td>
-                            <td className="p-2">
-                              {item.empunhadura || '-'}
-                              {item.dragon_scale && <Badge variant="outline" className="ml-1 text-xs">DS</Badge>}
-                            </td>
-                            <td className="p-2">{item.bainha || '-'}</td>
-                            <td className="p-2">{item.cor_bainha || '-'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
+        {/* Cliente */}
+        <div className="rounded-xl border bg-card p-4 space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cliente</h3>
+          <div className="space-y-1">
+            <p className="font-semibold">{pedidoAberto.cliente_nome}</p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {pedidoAberto.cliente_celular && <p>{pedidoAberto.cliente_celular}</p>}
+              {pedidoAberto.cliente_email && <p>{pedidoAberto.cliente_email}</p>}
+              {pedidoAberto.cliente_cpf && <p>CPF: {pedidoAberto.cliente_cpf}</p>}
+            </div>
+            {pedidoAberto.cliente_endereco && (
+              <p className="text-sm text-muted-foreground">
+                {[pedidoAberto.cliente_endereco, pedidoAberto.cliente_numero, pedidoAberto.cliente_complemento, pedidoAberto.cliente_bairro, pedidoAberto.cliente_cidade, pedidoAberto.cliente_estado, pedidoAberto.cliente_cep].filter(Boolean).join(', ')}
+              </p>
             )}
-          </Card>
-        ))
+          </div>
+        </div>
+
+        {/* Detalhes do pedido */}
+        <div className="rounded-xl border bg-card p-4 space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pedido</h3>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center p-3 rounded-lg bg-muted">
+              <p className="text-lg font-bold">{formatarValor(pedidoAberto.valor_total)}</p>
+              <p className="text-[10px] text-muted-foreground">Valor</p>
+            </div>
+            <div className="text-center p-3 rounded-lg bg-muted">
+              <p className="text-lg font-bold">{pedidoAberto.pedido_itens?.length || 0}</p>
+              <p className="text-[10px] text-muted-foreground">Itens</p>
+            </div>
+            <div className="text-center p-3 rounded-lg bg-muted">
+              <p className="text-lg font-bold">{formatarData(pedidoAberto.prazo_entrega)}</p>
+              <p className="text-[10px] text-muted-foreground">Prazo</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div><span className="text-muted-foreground">Canal:</span> {pedidoAberto.canal || '-'}</div>
+            <div><span className="text-muted-foreground">Pagamento:</span> {pedidoAberto.forma_pagamento || '-'}</div>
+            {pedidoAberto.embalagem && <div><span className="text-muted-foreground">Embalagem:</span> {pedidoAberto.embalagem}</div>}
+            {pedidoAberto.cupom && <div><span className="text-muted-foreground">Cupom:</span> {pedidoAberto.cupom}</div>}
+            {pedidoAberto.bling_pedido_id && <div><span className="text-muted-foreground">Bling:</span> #{pedidoAberto.bling_pedido_id}</div>}
+          </div>
+          {pedidoAberto.observacao && (
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-100 text-sm">
+              <p className="text-amber-800">{pedidoAberto.observacao}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Itens */}
+        {pedidoAberto.pedido_itens && pedidoAberto.pedido_itens.length > 0 && (
+          <div className="rounded-xl border bg-card p-4 space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Lâminas</h3>
+            <div className="space-y-2">
+              {pedidoAberto.pedido_itens.map((item, idx) => (
+                <div key={item.id} className="p-3 rounded-lg bg-muted space-y-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-sm">
+                      {item.modelo}
+                      {item.brute_forge && <span className="ml-1 text-xs text-orange-600">BF</span>}
+                      {item.quantidade > 1 && <span className="ml-1 text-xs text-muted-foreground">x{item.quantidade}</span>}
+                    </p>
+                    {item.preco_unitario > 0 && (
+                      <span className="text-sm font-medium">{formatarValor(item.preco_unitario)}</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {[
+                      item.aco && `Aço: ${item.aco}`,
+                      item.acabamento && `Acab: ${item.acabamento}`,
+                      item.empunhadura && `Emp: ${item.empunhadura}${item.dragon_scale ? ' + DS' : ''}`,
+                      item.bainha && `Bainha: ${item.bainha}`,
+                      item.cor_bainha && `Cor: ${item.cor_bainha}`,
+                    ].filter(Boolean).join(' • ')}
+                  </p>
+                  {item.texto_laser && item.texto_laser !== '-' && (
+                    <p className="text-xs text-blue-600">Laser: {item.texto_laser}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Ações */}
+        <div className="space-y-2">
+          {pedidoAberto.status === 'aguardando_triagem' && (
+            <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => atualizarStatus(pedidoAberto.id, 'aprovado')}>
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Aprovar Pedido
+            </Button>
+          )}
+          {pedidoAberto.status === 'aprovado' && (
+            <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => atualizarStatus(pedidoAberto.id, 'em_producao')}>
+              <Package className="h-4 w-4 mr-2" />
+              Enviar para Produção
+            </Button>
+          )}
+          {pedidoAberto.status === 'em_producao' && (
+            <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={() => atualizarStatus(pedidoAberto.id, 'pronto')}>
+              <Box className="h-4 w-4 mr-2" />
+              Marcar como Pronto
+            </Button>
+          )}
+          {pedidoAberto.status === 'pronto' && (
+            <Button className="w-full bg-orange-600 hover:bg-orange-700" onClick={() => atualizarStatus(pedidoAberto.id, 'em_expedicao')}>
+              <Truck className="h-4 w-4 mr-2" />
+              Enviar para Expedição
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Lista de pedidos
+  return (
+    <div className="max-w-3xl mx-auto py-6 px-4 space-y-5">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold">Pedidos</h1>
+        <Button variant="ghost" size="sm" onClick={carregarPedidos} className="h-8 w-8 p-0">
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Contadores por status */}
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+        {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+          const count = contadores[key] || 0;
+          const StatusIcon = cfg.icon;
+          return (
+            <button
+              key={key}
+              onClick={() => setFiltro(filtro === key ? 'todos' : key)}
+              className={`p-2.5 rounded-xl border text-center transition-all ${
+                filtro === key ? `${cfg.bg} ${cfg.cor} ring-2 ring-offset-1` : count > 0 ? 'bg-card hover:bg-muted' : 'bg-card opacity-50'
+              }`}
+            >
+              <StatusIcon className={`h-4 w-4 mx-auto mb-1 ${filtro === key ? cfg.cor : 'text-muted-foreground'}`} />
+              <p className="text-lg font-bold">{count}</p>
+              <p className="text-[9px] leading-tight text-muted-foreground">{cfg.label}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {filtro !== 'todos' && (
+        <button onClick={() => setFiltro('todos')} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+          <X className="h-3 w-3" /> Limpar filtro
+        </button>
+      )}
+
+      {/* Cards dos pedidos */}
+      {pedidosFiltrados.length === 0 ? (
+        <div className="py-16 text-center text-muted-foreground text-sm">
+          Nenhum pedido encontrado.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {pedidosFiltrados.map(pedido => {
+            const cfg = STATUS_CONFIG[pedido.status] || STATUS_CONFIG['aguardando_triagem'];
+            return (
+              <button
+                key={pedido.id}
+                onClick={() => setSelecionado(pedido.id)}
+                className="w-full text-left p-4 rounded-xl border bg-card hover:shadow-md transition-all flex items-center gap-3"
+              >
+                <div className={`w-1 h-12 rounded-full flex-shrink-0 ${cfg.cor.replace('text-', 'bg-')}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm truncate">{pedido.cliente_nome}</p>
+                    {pedido.bloqueado_expedicao && <AlertTriangle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {pedido.numero_pedido} • {pedido.pedido_itens?.length || 0} item(ns) • {pedido.canal || '-'}
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="font-semibold text-sm">{formatarValor(pedido.valor_total)}</p>
+                  <p className="text-[10px] text-muted-foreground">{formatarData(pedido.created_at)}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );
