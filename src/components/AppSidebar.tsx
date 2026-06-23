@@ -69,6 +69,7 @@ export function AppSidebar() {
   const vendaItems: MenuItem[] = [
     { title: 'Novo Pedido', url: '/', icon: Calculator },
     { title: 'Pedidos a Lançar', url: '/triagem', icon: ClipboardList },
+    { title: 'Pedidos', url: '/pedidos', icon: ShoppingBag },
     { title: 'Orçamento', url: '/orcamento', icon: FileText },
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
