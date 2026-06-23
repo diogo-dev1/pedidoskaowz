@@ -29,58 +29,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // 1. Restaurar sessão e escutar mudanças
   useEffect(() => {
-    let mounted = true;
-
-    const fetchProfile = async (userId: string) => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-      if (mounted) setProfile(data as Profile | null);
-    };
-
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id).finally(() => {
-          if (mounted) setLoading(false);
-        });
-      } else {
-        setLoading(false);
-      }
+      if (!session) setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchProfile(session.user.id).finally(() => {
-            if (mounted) setLoading(false);
-          });
-        } else {
+        if (!session) {
           setProfile(null);
           setLoading(false);
         }
       }
     );
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
+  // 2. Buscar profile quando user muda (separado do auth para evitar loop)
+  useEffect(() => {
+    if (!user) {
+      setProfile(null);
+      return;
+    }
+
+    let cancelled = false;
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (!cancelled) {
+          setProfile(data as Profile | null);
+          setLoading(false);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
   };
 
@@ -90,10 +85,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: {
-          nome_vendedor: nome,
-          cargo: cargo,
-        }
+        data: { nome_vendedor: nome, cargo },
       }
     });
     return { error };
