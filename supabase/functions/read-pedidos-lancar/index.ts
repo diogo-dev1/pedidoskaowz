@@ -58,7 +58,89 @@ Deno.serve(async (req) => {
       if (text) body = JSON.parse(text);
     } catch (_) {}
 
-    // POST com action = lancar → lê dados da linha, chama Apps Script, exporta para Vendas
+    // Ler dados da linha (reutilizado por várias actions)
+    const lerDadosLinha = async (row: number) => {
+      const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY')!;
+      const accessToken = await getAccessToken(serviceAccountKey);
+      const rowRange = encodeURIComponent(`PEDIDOS A LANÇAR!B${row}:K${row}`);
+      const rowUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${rowRange}`;
+      const rowRes = await fetch(rowUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+      let dados: string[] = [];
+      if (rowRes.ok) {
+        const rowData = await rowRes.json();
+        dados = rowData.values?.[0] || [];
+      }
+      return { dados, accessToken };
+    };
+
+    // ACTION: vendas → exportar só para Vendas Diário
+    if (body.action === 'vendas' && body.row) {
+      const vendasSpreadsheetId = Deno.env.get('GOOGLE_SHEETS_VENDAS_ID');
+      const { dados, accessToken } = await lerDadosLinha(body.row);
+      if (!vendasSpreadsheetId || dados.length < 2) {
+        return new Response(
+          JSON.stringify({ sucesso: false, erro: 'Dados insuficientes ou GOOGLE_SHEETS_VENDAS_ID não configurado' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      const hoje = new Date();
+      const dataFormatada = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+      const vendaRow = [dataFormatada, dados[0] || '-', 'WhatsApp', '-', '-', '-', 'pago', dados[1] || '-', dados[8] || '-', '-'];
+      const vendaRange = encodeURIComponent('Vendas Diário!B:K');
+      const vendaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${vendasSpreadsheetId}/values/${vendaRange}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+      await fetch(vendaUrl, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [vendaRow] }),
+      });
+      return new Response(
+        JSON.stringify({ sucesso: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ACTION: bling → criar pedido de venda no Bling
+    if (body.action === 'bling' && body.row) {
+      const { dados } = await lerDadosLinha(body.row);
+      const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+      const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+      const { data: blingRes, error: blingErr } = await supabaseClient.functions.invoke('bling-api', {
+        body: {
+          endpoint: 'pedidos/vendas',
+          method: 'POST',
+          body: {
+            numero: 0,
+            data: new Date().toISOString().split('T')[0],
+            contato: { nome: dados[0] || 'Cliente' },
+            itens: [{
+              codigo: 'KWZ-ITEM',
+              descricao: [dados[1], dados[2] ? `Aço: ${dados[2]}` : null, dados[3] ? `Acab: ${dados[3]}` : null, dados[4] ? `Emp: ${dados[4]}` : null, dados[5] ? `Bainha: ${dados[5]}` : null].filter(Boolean).join(' | '),
+              unidade: 'UN',
+              quantidade: 1,
+              valor: 0,
+            }],
+            observacoes: dados[8] || '',
+          },
+        },
+      });
+
+      if (blingErr) {
+        return new Response(
+          JSON.stringify({ sucesso: false, erro: blingErr.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ sucesso: true, bling: blingRes }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ACTION: lancar → chama Apps Script + exporta para Vendas
     if (body.action === 'lancar' && body.row) {
       const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY')!;
       const vendasSpreadsheetId = Deno.env.get('GOOGLE_SHEETS_VENDAS_ID');
