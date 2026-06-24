@@ -61,7 +61,9 @@ export default function ShopifyOrders() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Puxa os pedidos da Shopify e lança na planilha de Relatório de Vendas.
+            Puxa os pedidos da Shopify e lança na planilha de Relatório de Vendas
+            (aba "Vendas Diário"), cada um inserido na data correta e em ordem cronológica.
+            Pedidos já lançados na planilha são ignorados — sem duplicar.
           </p>
 
           <div className="flex gap-3">
