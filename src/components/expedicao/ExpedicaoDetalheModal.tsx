@@ -158,10 +158,41 @@ export function ExpedicaoDetalheModal({ open, onClose, pedido, loteId }: Props) 
     if (error) {
       console.error('Erro ao salvar dados do cliente:', error);
       toast.error('Erro ao salvar dados do cliente');
-    } else {
-      toast.success('Dados do cliente atualizados');
-      qc.invalidateQueries({ queryKey: ['pedidos-lote', loteId] });
+      return;
     }
+
+    // Preenche automaticamente as informações de envio com os dados do cliente
+    const enderecoCompleto = [
+      data.endereco,
+      data.numero,
+      data.bairro,
+      data.cidade,
+      data.estado,
+    ].filter(Boolean).join(', ');
+
+    const expUpdate = {
+      nome_destinatario: data.nome || pedido.cliente_nome,
+      cep_destino: data.cep || null,
+      endereco_completo: enderecoCompleto || null,
+    };
+
+    if (exp?.id) {
+      await supabase.from('expedicao').update(expUpdate).eq('id', exp.id);
+      setExp((prev) => prev ? { ...prev, ...expUpdate } : prev);
+    } else {
+      const { data: novaExp } = await supabase.from('expedicao').insert({
+        pedido_id: pedido.id,
+        ...expUpdate,
+        tipo_caixa: pedido.embalagem,
+        transportadora: 'Correios',
+        status: 'aguardando',
+      }).select().single();
+      if (novaExp) setExp(novaExp as Expedicao);
+    }
+
+    toast.success('Dados do cliente e envio atualizados');
+    qc.invalidateQueries({ queryKey: ['pedidos-lote', loteId] });
+    qc.invalidateQueries({ queryKey: ['expedicao-lote', loteId] });
   };
 
   if (!pedido) return null;
