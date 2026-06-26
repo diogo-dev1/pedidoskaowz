@@ -54,54 +54,118 @@ export function gerarFichaExpedicao(pedido: PedidoComItens, expedicao: {
   y += 6;
 
   const boxSize = 3.5;
+  const indent1 = margin + 6;
+  const indent2 = margin + 12;
   let itemNum = 0;
+
+  const subLine = (label: string, value: string) => {
+    checkPage(5);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.text(`${label}: `, indent2, y);
+    const labelW = pdf.getTextWidth(`${label}: `);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(value, indent2 + labelW, y);
+    y += 4.5;
+  };
 
   for (const item of pedido.pedido_itens) {
     const qty = item.quantidade || 1;
     for (let q = 0; q < qty; q++) {
       itemNum++;
-      checkPage(18);
+      checkPage(40);
 
-      // Checkbox + item line
-      pdf.setFont('helvetica', 'normal');
+      // Título da faca (checkbox + modelo)
+      pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(9);
       pdf.rect(margin, y - 2.5, boxSize, boxSize);
-      const specs = [item.aco, item.acabamento, item.empunhadura ? `(${item.empunhadura})` : null].filter(Boolean).join(' ');
-      pdf.text(`FACA.${itemNum}: ${item.modelo || '—'} — ${specs}`, margin + 6, y);
+      pdf.text(`FACA.${itemNum}: ${item.modelo || '—'}`, indent1, y);
       y += 5;
 
-      // Personalização
+      // Detalhes completos da lâmina
+      pdf.setFontSize(8);
+      if (item.aco) subLine('Aço', item.aco);
+      if (item.acabamento) subLine('Acabamento', item.acabamento);
+      if (item.empunhadura) subLine('Empunhadura', item.empunhadura);
+      if (item.brute_forge) subLine('Brute Forge', 'Sim');
+      if (item.dragon_scale) subLine('Dragon Scale', 'Sim');
+      if (item.bainha) subLine('Bainha', `${item.bainha}${item.cor_bainha ? ` — ${item.cor_bainha}` : ''}`);
+      else if (item.cor_bainha) subLine('Cor Bainha', item.cor_bainha);
+      if (item.embalagem_item) subLine('Embalagem', item.embalagem_item);
+
+      // Personalização / Laser
       if (item.texto_laser) {
-        checkPage(6);
-        pdf.rect(margin + 6, y - 2.5, boxSize, boxSize);
-        pdf.text(`PERSONALIZAÇÃO: ${item.texto_laser}`, margin + 12, y);
+        checkPage(5);
+        pdf.rect(indent1, y - 2.5, boxSize, boxSize);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+        pdf.text(`PERSONALIZAÇÃO: ${item.texto_laser}${item.posicao_laser ? ` (${item.posicao_laser})` : ''}`, indent2 + 6, y);
         y += 5;
+      }
+
+      // Observações do item
+      if (item.observacoes_item) {
+        checkPage(5);
+        pdf.setFont('helvetica', 'italic');
+        pdf.setFontSize(7.5);
+        const obsLines = pdf.splitTextToSize(`OBS: ${item.observacoes_item}`, usable - 20);
+        for (const line of obsLines) {
+          checkPage(4.5);
+          pdf.text(line, indent2, y);
+          y += 4;
+        }
+        pdf.setFont('helvetica', 'normal');
       }
 
       // Certificado
       if (pedido.nome_certificado) {
-        checkPage(6);
-        pdf.rect(margin + 6, y - 2.5, boxSize, boxSize);
-        pdf.text(`CERTIFICADO: ${pedido.nome_certificado}`, margin + 12, y);
+        checkPage(5);
+        pdf.rect(indent1, y - 2.5, boxSize, boxSize);
+        pdf.setFontSize(8);
+        pdf.text(`CERTIFICADO: ${pedido.nome_certificado}`, indent2 + 6, y);
         y += 5;
       }
+
+      // Separador entre itens
+      y += 2;
+      pdf.setDrawColor(230);
+      pdf.line(indent1, y, W - margin, y);
+      y += 3;
     }
   }
 
   // Caixa
   if (expedicao?.tipo_caixa || pedido.embalagem) {
     checkPage(6);
+    pdf.setFontSize(9);
     pdf.rect(margin, y - 2.5, boxSize, boxSize);
-    pdf.text(`CAIXA: ${expedicao?.tipo_caixa || pedido.embalagem || '—'} — ${pedido.cliente_nome}`, margin + 6, y);
+    pdf.text(`CAIXA: ${expedicao?.tipo_caixa || pedido.embalagem || '—'} — ${pedido.cliente_nome}`, indent1, y);
     y += 5;
   }
 
-  // Brindes
+  // Brindes / Adicionais
   if (pedido.brindes) {
     checkPage(6);
     pdf.rect(margin, y - 2.5, boxSize, boxSize);
-    pdf.text(`ADICIONAL: ${pedido.brindes}`, margin + 6, y);
+    pdf.text(`ADICIONAL: ${pedido.brindes}`, indent1, y);
     y += 5;
+  }
+
+  // Observações gerais do pedido
+  if (pedido.observacao) {
+    checkPage(10);
+    y += 2;
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.text('Observações do Pedido:', margin, y);
+    y += 4;
+    pdf.setFont('helvetica', 'normal');
+    const obsLines = pdf.splitTextToSize(pedido.observacao, usable);
+    for (const line of obsLines) {
+      checkPage(4.5);
+      pdf.text(line, margin, y);
+      y += 4;
+    }
   }
 
   y += 4;
