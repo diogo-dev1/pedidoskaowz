@@ -5,7 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Planilha de Produção (Produção Semanal)
 const SPREADSHEET_ID = '1k5EIAyrdojpi-9IMHNjpbhii9XwTlt8h3dOhm0GjVkM';
 const ABA = 'Produção Semanal';
 
@@ -43,13 +42,11 @@ function val(s: string | undefined): string | null {
   return v && v !== '-' && v !== '--' ? v : null;
 }
 
-function parseDataLote(raw: string): string | null {
+function parseData(raw: string): string | null {
   const s = (raw ?? '').trim();
   if (!s) return null;
-  // DD/MM/YYYY
   let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
-  // DD/MM (assume ano corrente)
   m = s.match(/^(\d{1,2})\/(\d{1,2})$/);
   if (m) return `${new Date().getFullYear()}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
   return null;
@@ -62,8 +59,44 @@ function mapStatus(raw: string | undefined): string {
   return 'pendente';
 }
 
-interface SheetRow {
-  dataLote: string;
+/**
+ * Detecta se uma linha é um separador de lote.
+ * Padrões: "L52", "Lote 53", "LOTE 54", "L 55", "Lote_44"
+ * Procura em TODAS as colunas da linha (pode estar em A, B ou C).
+ * Retorna o número do lote ou null.
+ */
+function detectarLote(row: string[]): number | null {
+  for (const cell of row) {
+    const s = (cell ?? '').trim();
+    // "Lote 53", "LOTE 53", "lote53"
+    let m = s.match(/^[Ll][Oo]?[Tt][Ee][\s_.-]*(\d+)$/);
+    if (m) return parseInt(m[1], 10);
+    // "L52", "L 52"
+    m = s.match(/^[Ll]\s*(\d+)$/);
+    if (m) return parseInt(m[1], 10);
+    // Dentro de texto maior: "Data Lote 44 Data" ou similar
+    m = s.match(/[Ll]ote\s*(\d+)/i);
+    if (m) return parseInt(m[1], 10);
+  }
+  return null;
+}
+
+/** Detecta se a linha é um cabeçalho (Data | Código | Nome | Item...) */
+function isHeader(row: string[]): boolean {
+  const joined = row.map((c) => (c ?? '').trim().toLowerCase()).join(' ');
+  return joined.includes('nome') && (joined.includes('item') || joined.includes('código') || joined.includes('codigo'));
+}
+
+/** Detecta se a linha tem dados válidos (tem nome na coluna C e data na coluna A) */
+function isDataRow(row: string[]): boolean {
+  const nome = (row[2] ?? '').trim();
+  const data = (row[0] ?? '').trim();
+  return nome.length > 1 && /\d/.test(data);
+}
+
+interface ParsedItem {
+  loteNum: number;
+  dataLote: string | null;
   codigo: string | null;
   nome: string;
   item: string | null;
@@ -104,20 +137,30 @@ Deno.serve(async (req) => {
 
     console.log(`Planilha lida: ${allRows.length} linhas`);
 
-    // Parsear linhas válidas (pula cabeçalhos e linhas vazias)
-    const items: SheetRow[] = [];
-    for (const row of allRows) {
-      const dataLoteRaw = (row[0] ?? '').trim();
-      const nome = (row[2] ?? '').trim();
-      if (!nome || !dataLoteRaw) continue;
-      // Pular linhas de cabeçalho
-      if (nome.toLowerCase() === 'nome' || dataLoteRaw.toLowerCase() === 'data lote') continue;
+    // ── Fase 1: Parsear por lotes (separados por "Lote XX" / "LXX") ──
+    const items: ParsedItem[] = [];
+    let currentLote = 0; // 0 = nenhum lote detectado ainda
 
-      const dataLote = parseDataLote(dataLoteRaw);
-      if (!dataLote) continue;
+    for (const row of allRows) {
+      // Detecta separador de lote
+      const loteNum = detectarLote(row);
+      if (loteNum !== null) {
+        currentLote = loteNum;
+        console.log(`Detectado: Lote ${loteNum}`);
+        continue;
+      }
+
+      // Pula cabeçalhos e linhas vazias
+      if (isHeader(row)) continue;
+      if (!isDataRow(row)) continue;
+      if (currentLote === 0) continue; // dados antes do primeiro lote — ignora
+
+      const nome = (row[2] ?? '').trim();
+      if (!nome) continue;
 
       items.push({
-        dataLote,
+        loteNum: currentLote,
+        dataLote: parseData(row[0]),
         codigo: val(row[1]),
         nome,
         item: val(row[3]),
@@ -130,69 +173,56 @@ Deno.serve(async (req) => {
         statusEmpunhadura: mapStatus(row[10]),
         statusBainha: mapStatus(row[11]),
         entregue: (row[12] ?? '').trim().toUpperCase() === 'TRUE',
-        prazo: parseDataLote(row[13]) ?? null,
+        prazo: parseData(row[13]) ?? null,
         observacoes: val(row[14]),
       });
     }
 
-    console.log(`Itens válidos parseados: ${items.length}`);
+    console.log(`Itens válidos parseados: ${items.length} em ${new Set(items.map((i) => i.loteNum)).size} lote(s)`);
 
     if (items.length === 0) {
       return new Response(
-        JSON.stringify({ sucesso: true, mensagem: 'Nenhum item encontrado na planilha', lotes: 0, pedidos: 0, itens: 0 }),
+        JSON.stringify({ sucesso: true, mensagem: 'Nenhum item encontrado na planilha (verifique se os lotes estão marcados como "Lote XX")', lotes: 0, pedidos: 0, itens: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    // Agrupar por Data Lote → cria um lote por data
-    const lotesByDate = new Map<string, SheetRow[]>();
+    // ── Fase 2: Agrupar por numero_lote ──
+    const loteGroups = new Map<number, ParsedItem[]>();
     for (const item of items) {
-      const arr = lotesByDate.get(item.dataLote) || [];
+      const arr = loteGroups.get(item.loteNum) || [];
       arr.push(item);
-      lotesByDate.set(item.dataLote, arr);
+      loteGroups.set(item.loteNum, arr);
     }
 
-    // Buscar lotes já existentes no banco (por numero_lote)
+    // Buscar lotes já existentes no banco
     const { data: lotesExistentes } = await supabase.from('lotes').select('id, numero_lote');
     const lotesMap = new Map<number, string>();
     (lotesExistentes ?? []).forEach((l: any) => lotesMap.set(l.numero_lote, l.id));
 
-    // Buscar o maior numero_lote para gerar novos sequenciais
-    let maxLote = 0;
-    lotesMap.forEach((_, n) => { if (n > maxLote) maxLote = n; });
-
     let lotesImportados = 0;
+    let lotesPulados = 0;
     let pedidosImportados = 0;
     let itensImportados = 0;
-    let lotesPulados = 0;
 
-    // Processar cada lote (agrupado por data)
-    const sortedDates = [...lotesByDate.keys()].sort();
-
-    for (const dataLote of sortedDates) {
-      const loteItems = lotesByDate.get(dataLote)!;
-
-      // Verificar se já existe um lote para essa data (usando prazo_envio como referência)
-      const { data: loteExistente } = await supabase
-        .from('lotes')
-        .select('id')
-        .eq('prazo_envio', dataLote)
-        .maybeSingle();
-
+    for (const [loteNum, loteItems] of loteGroups) {
       let loteId: string;
 
-      if (loteExistente) {
-        loteId = loteExistente.id;
+      if (lotesMap.has(loteNum)) {
+        // Lote já existe — usa o ID existente, adiciona itens novos
+        loteId = lotesMap.get(loteNum)!;
         lotesPulados++;
-        console.log(`Lote para data ${dataLote} já existe (${loteId}) — adicionando itens novos`);
+        console.log(`Lote ${loteNum} já existe (${loteId}) — verificando pedidos novos`);
       } else {
-        // Criar novo lote
-        maxLote++;
+        // Criar novo lote com o numero_lote da planilha
+        const prazos = loteItems.map((i) => i.prazo).filter(Boolean).sort();
+        const prazoEnvio = prazos[prazos.length - 1] || null;
+
         const { data: novoLote, error: erroLote } = await supabase
           .from('lotes')
           .insert({
-            numero_lote: maxLote,
-            prazo_envio: dataLote,
+            numero_lote: loteNum,
+            prazo_envio: prazoEnvio,
             total_pedidos: 0,
             status: 'aberto',
           })
@@ -200,24 +230,25 @@ Deno.serve(async (req) => {
           .single();
 
         if (erroLote) {
-          console.error(`Erro ao criar lote para ${dataLote}:`, erroLote);
+          console.error(`Erro ao criar lote ${loteNum}:`, erroLote);
           continue;
         }
         loteId = novoLote.id;
+        lotesMap.set(loteNum, loteId);
         lotesImportados++;
-        console.log(`Lote ${maxLote} criado para data ${dataLote}`);
+        console.log(`Lote ${loteNum} criado (${loteId})`);
       }
 
-      // Agrupar itens do lote por cliente (nome)
-      const clienteItems = new Map<string, SheetRow[]>();
+      // Agrupar itens por cliente
+      const clienteItems = new Map<string, ParsedItem[]>();
       for (const item of loteItems) {
         const arr = clienteItems.get(item.nome) || [];
         arr.push(item);
         clienteItems.set(item.nome, arr);
       }
 
-      for (const [nomeCliente, clientItems] of clienteItems) {
-        // Verificar se esse pedido (cliente + lote) já existe no banco
+      for (const [nomeCliente, cItems] of clienteItems) {
+        // Verificar se pedido já existe (cliente + lote)
         const { data: pedidoExistente } = await supabase
           .from('pedidos')
           .select('id')
@@ -226,39 +257,38 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (pedidoExistente) {
-          console.log(`Pedido ${nomeCliente} no lote já existe — pulando`);
+          console.log(`  ${nomeCliente} já existe no lote ${loteNum} — pulando`);
           continue;
         }
 
         // Gerar numero_pedido
-        let numeroPedido = `KWZ-PLAN-${Date.now().toString(36).slice(-6)}`;
+        let numeroPedido = `KWZ-PLAN-${loteNum}-${Date.now().toString(36).slice(-4)}`;
         try {
           const { data: numData } = await supabase.rpc('gerar_numero_pedido');
           if (numData) numeroPedido = numData;
         } catch { /* usa fallback */ }
 
-        // Extrair observações/embalagem do primeiro item
-        const firstItem = clientItems[0];
+        // Extrair embalagem das observações
         let embalagem: string | null = null;
-        let obsLimpas: string | null = null;
-        for (const ci of clientItems) {
+        const allObs: string[] = [];
+        for (const ci of cItems) {
           if (ci.observacoes) {
             const matchCaixa = ci.observacoes.match(/CAIXA:\s*(.+)/i);
             if (matchCaixa && !embalagem) embalagem = matchCaixa[1].trim();
+            allObs.push(ci.observacoes);
           }
         }
-        const allObs = clientItems.map((ci) => ci.observacoes).filter(Boolean).join(' | ');
-        if (allObs) obsLimpas = allObs;
 
-        // Status do pedido baseado nos status dos itens
-        const algumConcluido = clientItems.some((ci) => ci.statusLamina === 'concluido');
-        const todosEntregues = clientItems.every((ci) => ci.entregue);
-        const algumAndamento = clientItems.some((ci) => ci.statusLamina === 'em_andamento');
-        let statusPedido = 'aguardando_triagem';
+        // Status do pedido
+        const algumAndamento = cItems.some((ci) => ci.statusLamina === 'em_andamento' || ci.statusEmpunhadura === 'em_andamento');
+        const algumConcluido = cItems.some((ci) => ci.statusLamina === 'concluido');
+        const todosEntregues = cItems.every((ci) => ci.entregue);
+        let statusPedido = 'em_producao';
         if (todosEntregues) statusPedido = 'entregue';
-        else if (algumConcluido || algumAndamento) statusPedido = 'em_producao';
+        else if (!algumAndamento && !algumConcluido) statusPedido = 'aguardando_triagem';
 
-        // Inserir pedido
+        const firstItem = cItems[0];
+
         const { data: pedido, error: erroPedido } = await supabase
           .from('pedidos')
           .insert({
@@ -267,7 +297,7 @@ Deno.serve(async (req) => {
             lote_id: loteId,
             prazo_entrega: firstItem.prazo || null,
             embalagem,
-            observacao: obsLimpas,
+            observacao: allObs.length ? allObs.join(' | ') : null,
             status: statusPedido,
             canal: 'WhatsApp',
           })
@@ -275,14 +305,13 @@ Deno.serve(async (req) => {
           .single();
 
         if (erroPedido) {
-          console.error(`Erro ao inserir pedido de ${nomeCliente}:`, erroPedido);
+          console.error(`  Erro ao inserir pedido de ${nomeCliente}:`, erroPedido);
           continue;
         }
 
         pedidosImportados++;
 
-        // Inserir pedido_itens
-        const itensParaInserir = clientItems.map((ci) => ({
+        const itensParaInserir = cItems.map((ci) => ({
           pedido_id: pedido.id,
           modelo: ci.item,
           aco: ci.aco,
@@ -299,9 +328,10 @@ Deno.serve(async (req) => {
 
         const { error: erroItens } = await supabase.from('pedido_itens').insert(itensParaInserir);
         if (erroItens) {
-          console.error(`Erro ao inserir itens de ${nomeCliente}:`, erroItens);
+          console.error(`  Erro ao inserir itens de ${nomeCliente}:`, erroItens);
         } else {
           itensImportados += itensParaInserir.length;
+          console.log(`  ${nomeCliente}: ${itensParaInserir.length} item(ns)`);
         }
       }
 
@@ -315,9 +345,9 @@ Deno.serve(async (req) => {
 
     const mensagem = [
       `${lotesImportados} lote(s) criado(s)`,
-      lotesPulados > 0 ? `${lotesPulados} lote(s) já existente(s)` : null,
-      `${pedidosImportados} pedido(s) importado(s)`,
-      `${itensImportados} item(ns) importado(s)`,
+      lotesPulados > 0 ? `${lotesPulados} já existente(s)` : null,
+      `${pedidosImportados} pedido(s)`,
+      `${itensImportados} faca(s)`,
     ].filter(Boolean).join(' · ');
 
     console.log('Importação concluída:', mensagem);
