@@ -211,7 +211,7 @@ export default function KitUrbanEdc() {
   const [kit, setKit] = useState<KitConfig | null>(null);
   const [canivetes, setCanivetes] = useState<Canivete[]>([]);
   const [multitool, setMultitool] = useState<CatalogoItem | null>(null);
-  const [parcelamento, setParcelamento] = useState<{ parcelas: number; taxa: number }>({ parcelas: 12, taxa: 12.98 });
+  const [parcelamento, setParcelamento] = useState<{ parcelas: number; taxa: number }>({ parcelas: 10, taxa: 11.43 });
   const [loading, setLoading] = useState(true);
 
   const [pushVersion, setPushVersion] = useState<PushVersionKey>('standard');
@@ -232,11 +232,12 @@ export default function KitUrbanEdc() {
       setPushAco(c.pushAco);
       setPushEmpunhadura(c.pushEmpunhadura);
 
-      // Maior parcelamento ativo (ex.: 12x) — mesma fonte do resto da loja
+      // Maior parcelamento ativo limitado a 10x para o kit
       supabase
         .from('parcelamento_taxas')
         .select('parcelas, taxa_percentual')
         .eq('ativo', true)
+        .lte('parcelas', 10)
         .order('parcelas', { ascending: false })
         .limit(1)
         .then(({ data }) => {
@@ -551,7 +552,7 @@ export default function KitUrbanEdc() {
 
         <div className="pay-info">
           <span className="pay-pix">ou {BRL2(totalPix)} no Pix <em>({DESCONTO_PIX}% OFF)</em></span>
-          <span className="pay-parc">até {parcelamento.parcelas}x de {BRL2(valorParcela)}</span>
+          <span className="pay-parc">ATÉ {parcelamento.parcelas}X DE {BRL2(valorParcela)}</span>
         </div>
 
         <a className="btn-cta" href={waUrl} target="_blank" rel="noopener noreferrer">{cfg.texts.ctaText}</a>
