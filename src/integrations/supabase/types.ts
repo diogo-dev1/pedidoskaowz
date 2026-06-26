@@ -1963,6 +1963,24 @@ export type Database = {
         }
         Relationships: []
       }
+      urban_edc_config: {
+        Row: {
+          chave: string
+          updated_at: string
+          valor: string | null
+        }
+        Insert: {
+          chave: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Update: {
+          chave?: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
