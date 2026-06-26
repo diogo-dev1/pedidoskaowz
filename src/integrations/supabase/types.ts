@@ -1492,6 +1492,48 @@ export type Database = {
         }
         Relationships: []
       }
+      pedido_comentarios: {
+        Row: {
+          id: string
+          pedido_id: string
+          autor_id: string | null
+          autor_nome: string
+          texto: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          pedido_id: string
+          autor_id?: string | null
+          autor_nome: string
+          texto: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          pedido_id?: string
+          autor_id?: string | null
+          autor_nome?: string
+          texto?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedido_comentarios_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_comentarios_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedido_itens: {
         Row: {
           acabamento: string | null

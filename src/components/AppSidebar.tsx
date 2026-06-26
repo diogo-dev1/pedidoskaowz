@@ -3,7 +3,7 @@ import {
   Calculator, Settings, LogOut, User, MessageSquare, BookOpen,
   ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign,
   Users, Store, FileText, Image, TrendingUp, Eye, Link2, LayoutDashboard,
-  Globe, Truck, Briefcase, Download, CreditCard, Boxes, ClipboardList
+  Globe, Truck, Briefcase, Download, CreditCard, Boxes, ClipboardList, Factory
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -74,6 +74,12 @@ export function AppSidebar() {
     { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
   ];
 
+  const producaoItems: MenuItem[] = [
+    { title: 'Produção', url: '/producao', icon: Factory },
+    { title: 'Expedição', url: '/expedicao', icon: Truck },
+    { title: 'Lote (legado)', url: '/lote', icon: Package },
+  ];
+
   const catalogoItems: MenuItem[] = [
     { title: 'Catálogo Público', url: '/catalogo', icon: ShoppingBag },
     { title: 'Catálogo Público Internacional', url: '/catalogo-publico-internacional', icon: Globe },
@@ -125,6 +131,7 @@ export function AppSidebar() {
       <SidebarContent className="bg-sidebar-background overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="space-y-1 py-2">
           <MenuSection label="Vendas" items={vendaItems} isCollapsed={isCollapsed} />
+          <MenuSection label="Produção" items={producaoItems} isCollapsed={isCollapsed} />
           <MenuSection label="Catálogos" items={catalogoItems} isCollapsed={isCollapsed} />
           <MenuSection label="CRM" items={crmItems} isCollapsed={isCollapsed} />
           <MenuSection label="Comunicação" items={comunicacaoItems} isCollapsed={isCollapsed} />

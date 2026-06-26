@@ -61,6 +61,8 @@ export interface UrbanEdcConfig {
   pushEmpunhadura: EmpunhaduraKey;
   /** IDs dos canivetes K1 (catalogo_modelos) exibidos como opção no kit */
   caniveteIds: string[];
+  /** IDs dos canivetes marcados como esgotados (aparecem, mas não selecionáveis) */
+  caniveteEsgotadoIds: string[];
   /** ID do multitool no catálogo (foto e nome vêm do site) */
   multitoolId: string;
   /** Valor do multitool embutido no total (NÃO exibido) */
@@ -84,6 +86,11 @@ const DEFAULT_CANIVETE_IDS = [
 /** ID do Multitool Kaowz no catálogo (site) */
 const DEFAULT_MULTITOOL_ID = '1b6cf9e3-96d8-403f-8119-25cf4888d935';
 
+/** Canivetes esgotados por padrão (Full Black) */
+const DEFAULT_CANIVETE_ESGOTADO_IDS = [
+  'b62876de-1843-4a3c-92a3-c325850409bb', // K1 Full Black
+];
+
 export const DEFAULT_URBAN_EDC_CONFIG: UrbanEdcConfig = {
   whatsappPhone: '5528999025695',
   texts: {
@@ -100,6 +107,7 @@ export const DEFAULT_URBAN_EDC_CONFIG: UrbanEdcConfig = {
   pushAco: 'sandvik',
   pushEmpunhadura: 'g10',
   caniveteIds: DEFAULT_CANIVETE_IDS,
+  caniveteEsgotadoIds: DEFAULT_CANIVETE_ESGOTADO_IDS,
   multitoolId: DEFAULT_MULTITOOL_ID,
   multitoolPrice: 75,
   casePrice: 50,
@@ -123,6 +131,7 @@ export async function loadUrbanEdcConfig(): Promise<UrbanEdcConfig> {
       pushAco: map.push_aco,
       pushEmpunhadura: map.push_empunhadura,
       caniveteIds: p('canivete_ids'),
+      caniveteEsgotadoIds: p('canivete_esgotado_ids'),
       multitoolId: map.multitool_id,
       multitoolPrice: p('multitool_price'),
       casePrice: p('case_price'),
@@ -142,6 +151,7 @@ export async function saveUrbanEdcConfig(cfg: UrbanEdcConfig): Promise<void> {
     { chave: 'push_aco', valor: cfg.pushAco },
     { chave: 'push_empunhadura', valor: cfg.pushEmpunhadura },
     { chave: 'canivete_ids', valor: JSON.stringify(cfg.caniveteIds) },
+    { chave: 'canivete_esgotado_ids', valor: JSON.stringify(cfg.caniveteEsgotadoIds) },
     { chave: 'multitool_id', valor: cfg.multitoolId || '' },
     { chave: 'multitool_price', valor: JSON.stringify(cfg.multitoolPrice) },
     { chave: 'case_price', valor: JSON.stringify(cfg.casePrice) },
@@ -161,6 +171,7 @@ function mergeConfig(p: any): UrbanEdcConfig {
     pushAco: p?.pushAco || d.pushAco,
     pushEmpunhadura: p?.pushEmpunhadura || d.pushEmpunhadura,
     caniveteIds: Array.isArray(p?.caniveteIds) && p.caniveteIds.length ? p.caniveteIds : d.caniveteIds,
+    caniveteEsgotadoIds: Array.isArray(p?.caniveteEsgotadoIds) ? p.caniveteEsgotadoIds : d.caniveteEsgotadoIds,
     multitoolId: p?.multitoolId || d.multitoolId,
     multitoolPrice: typeof p?.multitoolPrice === 'number' ? p.multitoolPrice : d.multitoolPrice,
     casePrice: typeof p?.casePrice === 'number' ? p.casePrice : d.casePrice,
@@ -187,6 +198,8 @@ function pushImage(kit: KitConfig, version: PushVersionKey, size: PushSizeKey, f
 
 const BRL = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const BRL2 = (n: number) =>
+  n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function renderHeroTitle(t: string) {
   return t.split(/\{([^}]+)\}/g).map((p, i) => <span key={i}>{p}</span>);
@@ -198,6 +211,7 @@ export default function KitUrbanEdc() {
   const [kit, setKit] = useState<KitConfig | null>(null);
   const [canivetes, setCanivetes] = useState<Canivete[]>([]);
   const [multitool, setMultitool] = useState<CatalogoItem | null>(null);
+  const [parcelamento, setParcelamento] = useState<{ parcelas: number; taxa: number }>({ parcelas: 12, taxa: 12.98 });
   const [loading, setLoading] = useState(true);
 
   const [pushVersion, setPushVersion] = useState<PushVersionKey>('standard');
@@ -218,6 +232,19 @@ export default function KitUrbanEdc() {
       setPushAco(c.pushAco);
       setPushEmpunhadura(c.pushEmpunhadura);
 
+      // Maior parcelamento ativo (ex.: 12x) — mesma fonte do resto da loja
+      supabase
+        .from('parcelamento_taxas')
+        .select('parcelas, taxa_percentual')
+        .eq('ativo', true)
+        .order('parcelas', { ascending: false })
+        .limit(1)
+        .then(({ data }) => {
+          if (active && data?.[0]) {
+            setParcelamento({ parcelas: data[0].parcelas, taxa: Number(data[0].taxa_percentual) || 0 });
+          }
+        });
+
       // Carrega canivetes + multitool a partir do catálogo (site) numa única consulta
       const ids = [...c.caniveteIds, c.multitoolId].filter(Boolean);
       if (ids.length) {
@@ -230,7 +257,10 @@ export default function KitUrbanEdc() {
           (data as CatalogoItem[]).forEach((x) => (byId[x.id] = x));
           const sorted = c.caniveteIds.map((id) => byId[id]).filter(Boolean);
           setCanivetes(sorted);
-          if (sorted.length) setCaniveteId(sorted[Math.min(1, sorted.length - 1)].id);
+          // Seleção inicial: primeiro canivete NÃO esgotado (preferindo o 2º — Stone Washed)
+          const disponiveis = sorted.filter((cv) => !c.caniveteEsgotadoIds.includes(cv.id));
+          const escolha = disponiveis[Math.min(1, disponiveis.length - 1)] || sorted[0];
+          if (escolha) setCaniveteId(escolha.id);
           setMultitool(byId[c.multitoolId] || null);
         }
       }
@@ -283,6 +313,11 @@ export default function KitUrbanEdc() {
   const subtotal = pPrice + cPrice + embutido;
   const discountValue = cfg.kitDiscount > 0 ? Math.round(subtotal * (cfg.kitDiscount / 100)) : 0;
   const total = subtotal - discountValue;
+
+  // Pagamento: Pix com 5% OFF e parcelamento (taxa da tabela parcelamento_taxas)
+  const DESCONTO_PIX = 5;
+  const totalPix = total * (1 - DESCONTO_PIX / 100);
+  const valorParcela = (total * (1 + parcelamento.taxa / 100)) / parcelamento.parcelas;
 
   const multitoolName = multitool?.nome_modelo?.trim() ?? 'Multitool Kaowz';
 
@@ -475,12 +510,23 @@ export default function KitUrbanEdc() {
           <div className="opt-section">
             <div className="opt-label">Modelo</div>
             <div className="finish-options canivete-options">
-              {canivetes.map((c) => (
-                <button key={c.id} type="button" className={`finish-btn canivete-btn ${caniveteId === c.id ? 'active' : ''}`} onClick={() => setCaniveteId(c.id)}>
-                  <span className="finish-name">{c.nome_modelo.trim()}</span>
-                  <span className="canivete-price">{BRL(c.preco_base)}</span>
-                </button>
-              ))}
+              {canivetes.map((c) => {
+                const esgotado = cfg.caniveteEsgotadoIds.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    disabled={esgotado}
+                    className={`finish-btn canivete-btn ${caniveteId === c.id ? 'active' : ''} ${esgotado ? 'esgotado' : ''}`}
+                    onClick={() => { if (!esgotado) setCaniveteId(c.id); }}
+                  >
+                    <span className="finish-name">{c.nome_modelo.trim()}</span>
+                    {esgotado
+                      ? <span className="canivete-esgotado">Esgotado</span>
+                      : <span className="canivete-price">{BRL(c.preco_base)}</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </article>
@@ -501,6 +547,11 @@ export default function KitUrbanEdc() {
             <span className="total-val">{BRL(total)}</span>
           </div>
           {discountValue > 0 && <span className="total-discount">-{cfg.kitDiscount}% Kit</span>}
+        </div>
+
+        <div className="pay-info">
+          <span className="pay-pix">ou {BRL2(totalPix)} no Pix <em>({DESCONTO_PIX}% OFF)</em></span>
+          <span className="pay-parc">até {parcelamento.parcelas}x de {BRL2(valorParcela)}</span>
         </div>
 
         <a className="btn-cta" href={waUrl} target="_blank" rel="noopener noreferrer">{cfg.texts.ctaText}</a>
@@ -642,6 +693,10 @@ const css = `
 .uedc-root .canivete-options { grid-template-columns: 1fr; }
 .uedc-root .canivete-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; padding: 11px 12px; }
 .uedc-root .canivete-price { font-family: 'Bebas Neue', sans-serif; font-size: 13px; color: var(--accent); letter-spacing: 1px; flex-shrink: 0; }
+.uedc-root .canivete-btn.esgotado { opacity: 0.5; cursor: not-allowed; }
+.uedc-root .canivete-btn.esgotado:hover { border-color: var(--border); background: transparent; transform: none; }
+.uedc-root .canivete-btn.esgotado .finish-name { text-decoration: line-through; color: var(--dim); }
+.uedc-root .canivete-esgotado { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: #F87171; border: 1px solid rgba(248,113,113,0.4); border-radius: 3px; padding: 2px 7px; flex-shrink: 0; }
 
 /* Included note */
 .uedc-root .included-note { display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: rgba(255,193,7,0.06); border: 1px solid rgba(255,193,7,0.15); border-radius: 4px; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 1px; line-height: 1.5; }
@@ -662,6 +717,11 @@ const css = `
 .uedc-root .total-por-label { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; }
 .uedc-root .total-val { font-family: 'Bebas Neue', sans-serif; font-size: 84px; letter-spacing: 3px; color: var(--accent); line-height: 1; text-shadow: 0 2px 24px rgba(255,193,7,0.25); transition: all .3s ease; }
 .uedc-root .total-discount { display: inline-block; margin-top: 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; background: var(--accent); color: #000; padding: 4px 12px; border-radius: 3px; font-weight: 700; }
+
+.uedc-root .pay-info { display: flex; flex-direction: column; align-items: center; gap: 3px; margin: 4px 0 18px; }
+.uedc-root .pay-pix { font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 800; color: #34D399; letter-spacing: 0.3px; }
+.uedc-root .pay-pix em { font-style: normal; font-weight: 600; font-size: 12px; color: #10B981; }
+.uedc-root .pay-parc { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
 
 /* Kit summary */
 .uedc-root .kit-summary { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.5rem; text-align: left; max-width: 380px; margin-left: auto; margin-right: auto; }

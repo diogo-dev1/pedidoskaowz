@@ -53,6 +53,8 @@ import Pedidos from "./pages/Pedidos";
 import PushDaggerConfigurador from "./pages/PushDaggerConfigurador";
 import KitUrbanEdc from "./pages/KitUrbanEdc";
 import KitUrbanEdcConfig from "./pages/KitUrbanEdcConfig";
+import Producao from "./pages/Producao";
+import ExpedicaoPage from "./pages/ExpedicaoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -437,6 +439,26 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Pedidos />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/producao"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Producao />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/expedicao"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ExpedicaoPage />
                   </Layout>
                 </ProtectedRoute>
               }

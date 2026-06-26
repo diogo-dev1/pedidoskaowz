@@ -158,6 +158,13 @@ export default function KitUrbanEdcConfig() {
     });
   };
 
+  const toggleEsgotado = (id: string) => {
+    setCfg((c) => {
+      const exists = c.caniveteEsgotadoIds.includes(id);
+      return { ...c, caniveteEsgotadoIds: exists ? c.caniveteEsgotadoIds.filter((x) => x !== id) : [...c.caniveteEsgotadoIds, id] };
+    });
+  };
+
   const save = async () => {
     setSaving(true);
     try { await saveUrbanEdcConfig(cfg); toast.success('Configurações salvas'); }
@@ -322,18 +329,28 @@ export default function KitUrbanEdcConfig() {
               {catalogoCanivetes.map((cv) => {
                 const selected = cfg.caniveteIds.includes(cv.id);
                 const order = cfg.caniveteIds.indexOf(cv.id);
+                const esgotado = cfg.caniveteEsgotadoIds.includes(cv.id);
                 return (
-                  <button key={cv.id} type="button" onClick={() => toggleCanivete(cv.id)}
-                    className={`text-left border rounded-lg overflow-hidden transition relative ${selected ? 'border-primary ring-1 ring-primary' : 'border-border hover:bg-secondary'}`}>
-                    {selected && <span className="absolute top-2 left-2 z-10 bg-primary text-primary-foreground text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">{order + 1}</span>}
-                    <div className="aspect-square w-full bg-muted overflow-hidden">
-                      {cv.imagem_modelo ? <img src={cv.imagem_modelo} alt={cv.nome_modelo} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">sem imagem</div>}
-                    </div>
-                    <div className="p-2.5">
-                      <div className="text-sm font-medium leading-tight">{cv.nome_modelo.trim()}</div>
-                      <div className="text-xs text-primary font-semibold mt-1">{BRL(cv.preco_base)}</div>
-                    </div>
-                  </button>
+                  <div key={cv.id}
+                    className={`border rounded-lg overflow-hidden transition relative ${selected ? 'border-primary ring-1 ring-primary' : 'border-border'}`}>
+                    <button type="button" onClick={() => toggleCanivete(cv.id)} className="block w-full text-left hover:bg-secondary transition">
+                      {selected && <span className="absolute top-2 left-2 z-10 bg-primary text-primary-foreground text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">{order + 1}</span>}
+                      {esgotado && <span className="absolute top-2 right-2 z-10 bg-red-500 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded">Esgotado</span>}
+                      <div className="aspect-square w-full bg-muted overflow-hidden">
+                        {cv.imagem_modelo ? <img src={cv.imagem_modelo} alt={cv.nome_modelo} className={`w-full h-full object-cover ${esgotado ? 'opacity-50' : ''}`} /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">sem imagem</div>}
+                      </div>
+                      <div className="p-2.5">
+                        <div className="text-sm font-medium leading-tight">{cv.nome_modelo.trim()}</div>
+                        <div className="text-xs text-primary font-semibold mt-1">{BRL(cv.preco_base)}</div>
+                      </div>
+                    </button>
+                    {selected && (
+                      <button type="button" onClick={() => toggleEsgotado(cv.id)}
+                        className={`block w-full text-xs font-medium py-2 border-t transition ${esgotado ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 hover:bg-red-500/20' : 'border-border text-muted-foreground hover:bg-secondary'}`}>
+                        {esgotado ? '✓ Esgotado (clique para reativar)' : 'Marcar como esgotado'}
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>
