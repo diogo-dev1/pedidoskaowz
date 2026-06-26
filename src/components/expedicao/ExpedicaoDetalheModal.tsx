@@ -146,10 +146,17 @@ export function ExpedicaoDetalheModal({ open, onClose, pedido, loteId }: Props) 
     if (data.complemento) updates.cliente_complemento = data.complemento;
     if (data.celular) updates.cliente_celular = data.celular;
     if (data.email) updates.cliente_email = data.email;
-    if (data.dataNascimento) updates.cliente_nascimento = data.dataNascimento;
+    if (data.dataNascimento) {
+      // Converte DD/MM/YYYY → YYYY-MM-DD (formato que o Supabase aceita para DATE)
+      const m = data.dataNascimento.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      updates.cliente_nascimento = m
+        ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
+        : data.dataNascimento;
+    }
 
     const { error } = await supabase.from('pedidos').update(updates).eq('id', pedido.id);
     if (error) {
+      console.error('Erro ao salvar dados do cliente:', error);
       toast.error('Erro ao salvar dados do cliente');
     } else {
       toast.success('Dados do cliente atualizados');
