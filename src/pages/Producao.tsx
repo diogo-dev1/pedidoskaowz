@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { Search, Factory } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Search, Factory, Download, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLoteSelector } from '@/hooks/useLoteSelector';
 import { usePedidosByLote, type PedidoItem } from '@/hooks/usePedidosByLote';
 import { LoteSelectorHeader } from '@/components/producao/LoteSelectorHeader';
@@ -21,6 +25,35 @@ export default function Producao() {
 
   const [search, setSearch] = useState('');
   const [selectedItem, setSelectedItem] = useState<FlatItem | null>(null);
+  const [importing, setImporting] = useState(false);
+  const qc = useQueryClient();
+
+  const importarDaPlanilha = async () => {
+    setImporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('import-producao-sheets');
+      if (error) {
+        const ctx = (error as any).context;
+        let detalhe = error.message;
+        if (ctx && typeof ctx.json === 'function') {
+          try { const body = await ctx.json(); detalhe = body?.erro || JSON.stringify(body); } catch {}
+        }
+        toast.error('Erro ao importar: ' + detalhe);
+        return;
+      }
+      if (data?.sucesso) {
+        toast.success(data.mensagem);
+        qc.invalidateQueries({ queryKey: ['lotes'] });
+        qc.invalidateQueries({ queryKey: ['pedidos-lote'] });
+      } else {
+        toast.error(data?.erro || 'Erro desconhecido');
+      }
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || err));
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const flatItems: FlatItem[] = useMemo(() => {
     const items: FlatItem[] = [];
@@ -50,12 +83,18 @@ export default function Producao() {
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-6">
-      <div className="flex items-center gap-3">
-        <Factory className="h-6 w-6 text-primary" />
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold">Acompanhamento de Produção</h1>
-          <p className="text-xs text-muted-foreground">Status de cada faca no lote</p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <Factory className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">Acompanhamento de Produção</h1>
+            <p className="text-xs text-muted-foreground">Status de cada faca no lote</p>
+          </div>
         </div>
+        <Button variant="outline" size="sm" className="gap-2" onClick={importarDaPlanilha} disabled={importing}>
+          {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {importing ? 'Importando...' : 'Importar da Planilha'}
+        </Button>
       </div>
 
       <LoteSelectorHeader
