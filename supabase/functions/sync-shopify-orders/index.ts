@@ -482,7 +482,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         sucesso: true,
-        total: pedidosNovos.length,
+        total: pedidosOrdenados.length,
         importados,
         planilha_lancados: planilhaLancados,
         planilha_duplicados: planilhaDuplicados,
