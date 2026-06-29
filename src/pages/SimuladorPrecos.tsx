@@ -1,27 +1,16 @@
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
-import { Calculator, Plus, Trash2, Copy, MessageCircle } from 'lucide-react';
+import { Calculator, Plus, Trash2, Copy, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ─── Dados da planilha de preços ───
 
 type Tamanho = 'P' | 'M' | 'G' | '-';
 
-interface Modelo {
-  nome: string;
-  tamanho: Tamanho;
-  preco: number | null; // null = NT (não temos)
-}
-
-interface Componente {
-  nome: string;
-  preco: number;
-}
+interface Modelo { nome: string; tamanho: Tamanho; preco: number | null; }
+interface Componente { nome: string; preco: number; }
 
 const MODELOS: Modelo[] = [
   { nome: 'Edc - Mini', tamanho: 'P', preco: 465 },
@@ -70,105 +59,41 @@ const MODELOS: Modelo[] = [
 ];
 
 const ACOS: Record<string, Componente[]> = {
-  P: [
-    { nome: 'Sandvik 14C28N', preco: 165 },
-    { nome: '52100', preco: 165 },
-  ],
-  M: [
-    { nome: 'Sandvik 14C28N', preco: 245 },
-    { nome: '52100', preco: 245 },
-  ],
-  G: [
-    { nome: 'Sandvik 14C28N', preco: 350 },
-    { nome: '52100', preco: 350 },
-  ],
+  P: [{ nome: 'Sandvik 14C28N', preco: 165 }, { nome: '52100', preco: 165 }],
+  M: [{ nome: 'Sandvik 14C28N', preco: 245 }, { nome: '52100', preco: 245 }],
+  G: [{ nome: 'Sandvik 14C28N', preco: 350 }, { nome: '52100', preco: 350 }],
 };
 
 const EMPUNHADURAS: Record<string, Componente[]> = {
-  P: [
-    { nome: 'G10', preco: 115 },
-    { nome: 'Espaçador', preco: 70 },
-    { nome: 'Imbuia', preco: 80 },
-    { nome: 'Dragon Scale', preco: 70 },
-  ],
-  M: [
-    { nome: 'G10', preco: 145 },
-    { nome: 'Imbuia', preco: 100 },
-    { nome: 'Dragon Scale', preco: 70 },
-  ],
-  G: [
-    { nome: 'G10', preco: 145 },
-    { nome: 'Espaçador', preco: 90 },
-    { nome: 'Imbuia', preco: 100 },
-    { nome: 'Dragon Scale', preco: 70 },
-  ],
+  P: [{ nome: 'G10', preco: 115 }, { nome: 'Espaçador', preco: 70 }, { nome: 'Imbuia', preco: 80 }, { nome: 'Dragon Scale', preco: 70 }],
+  M: [{ nome: 'G10', preco: 145 }, { nome: 'Imbuia', preco: 100 }, { nome: 'Dragon Scale', preco: 70 }],
+  G: [{ nome: 'G10', preco: 145 }, { nome: 'Espaçador', preco: 90 }, { nome: 'Imbuia', preco: 100 }, { nome: 'Dragon Scale', preco: 70 }],
 };
 
 const ACABAMENTOS: Record<string, Componente[]> = {
-  P: [
-    { nome: 'Acetinado', preco: 0 },
-    { nome: 'Stone Washed', preco: 25 },
-    { nome: 'Tactical', preco: 90 },
-    { nome: 'Brute Forge', preco: 125 },
-  ],
-  M: [
-    { nome: 'Acetinado', preco: 0 },
-    { nome: 'Stone Washed', preco: 25 },
-    { nome: 'Tactical', preco: 90 },
-    { nome: 'Brute Forge', preco: 125 },
-  ],
-  G: [
-    { nome: 'Acetinado', preco: 0 },
-    { nome: 'Stone Washed', preco: 35 },
-    { nome: 'Tactical', preco: 125 },
-    { nome: 'Brute Forge', preco: 300 },
-  ],
+  P: [{ nome: 'Acetinado', preco: 0 }, { nome: 'Stone Washed', preco: 25 }, { nome: 'Tactical', preco: 90 }, { nome: 'Brute Forge', preco: 125 }],
+  M: [{ nome: 'Acetinado', preco: 0 }, { nome: 'Stone Washed', preco: 25 }, { nome: 'Tactical', preco: 90 }, { nome: 'Brute Forge', preco: 125 }],
+  G: [{ nome: 'Acetinado', preco: 0 }, { nome: 'Stone Washed', preco: 35 }, { nome: 'Tactical', preco: 125 }, { nome: 'Brute Forge', preco: 300 }],
 };
 
 const BAINHAS: Record<string, Componente[]> = {
-  P: [
-    { nome: 'Bainha Preta (inclusa)', preco: 0 },
-    { nome: 'Bainha Colorida', preco: 195 },
-    { nome: 'Bainha Adicional', preco: 195 },
-  ],
-  M: [
-    { nome: 'Bainha Preta (inclusa)', preco: 0 },
-    { nome: 'Bainha Colorida', preco: 195 },
-    { nome: 'Bainha Adicional', preco: 195 },
-  ],
-  G: [
-    { nome: 'Bainha Preta (inclusa)', preco: 0 },
-    { nome: 'Bainha Colorida', preco: 250 },
-    { nome: 'Bainha Adicional', preco: 250 },
-  ],
+  P: [{ nome: 'Preta (inclusa)', preco: 0 }, { nome: 'Colorida', preco: 195 }, { nome: 'Adicional', preco: 195 }],
+  M: [{ nome: 'Preta (inclusa)', preco: 0 }, { nome: 'Colorida', preco: 195 }, { nome: 'Adicional', preco: 195 }],
+  G: [{ nome: 'Preta (inclusa)', preco: 0 }, { nome: 'Colorida', preco: 250 }, { nome: 'Adicional', preco: 250 }],
 };
 
 const ADICIONAIS: Componente[] = [
-  { nome: 'Strop', preco: 95 },
-  { nome: 'Café Médio ou Escuro', preco: 45 },
-  { nome: 'Clipe Extra', preco: 25 },
-  { nome: 'Clipe Lateral', preco: 75 },
-  { nome: 'Patch Fluorescente', preco: 55 },
-  { nome: 'Patch Cão Pastor', preco: 45 },
-  { nome: 'Patch K', preco: 35 },
-  { nome: 'BC Churrasco', preco: 200 },
-  { nome: 'BC Churrasco Dupla', preco: 270 },
-  { nome: 'BC Churrasco Tripla', preco: 370 },
-  { nome: 'Passador de Couro', preco: 95 },
-  { nome: 'Bainha Couro EDC', preco: 200 },
-  { nome: 'Bainha Couro Camp', preco: 350 },
-  { nome: 'Bainha Couro Jagunço', preco: 290 },
-  { nome: 'Boné', preco: 75 },
-  { nome: 'Camisa Kaowz', preco: 170 },
-  { nome: 'Moletom', preco: 240 },
+  { nome: 'Strop', preco: 95 }, { nome: 'Café', preco: 45 }, { nome: 'Clipe Extra', preco: 25 },
+  { nome: 'Clipe Lateral', preco: 75 }, { nome: 'Patch Fluorescente', preco: 55 }, { nome: 'Patch Cão Pastor', preco: 45 },
+  { nome: 'Patch K', preco: 35 }, { nome: 'BC Churrasco', preco: 200 }, { nome: 'BC Churrasco Dupla', preco: 270 },
+  { nome: 'BC Churrasco Tripla', preco: 370 }, { nome: 'Passador de Couro', preco: 95 }, { nome: 'Bainha Couro EDC', preco: 200 },
+  { nome: 'Bainha Couro Camp', preco: 350 }, { nome: 'Bainha Couro Jagunço', preco: 290 },
+  { nome: 'Boné', preco: 75 }, { nome: 'Camisa Kaowz', preco: 170 }, { nome: 'Moletom', preco: 240 },
 ];
 
-const BRL = (n: number) =>
-  n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
-
-const TAMANHO_LABEL: Record<Tamanho, string> = { P: 'Pequeno', M: 'Médio', G: 'Grande', '-': '-' };
-
-// ─── Tipos de configuração ───
+const BRL = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
+const TAMANHO_CORES: Record<Tamanho, string> = { P: 'bg-blue-500', M: 'bg-amber-500', G: 'bg-red-500', '-': 'bg-zinc-500' };
+const TAMANHO_LABEL: Record<Tamanho, string> = { P: 'P', M: 'M', G: 'G', '-': '-' };
 
 interface Config {
   id: string;
@@ -184,171 +109,228 @@ function newConfig(): Config {
   return { id: crypto.randomUUID(), modeloIdx: null, acoIdx: null, empunhaduraIdx: null, acabamentoIdx: null, bainhaIdx: null, adicionais: new Set() };
 }
 
-function calcTotal(cfg: Config): { total: number; breakdown: string[] } {
-  const parts: string[] = [];
+function calcTotal(cfg: Config): number {
   let total = 0;
   const modelo = cfg.modeloIdx !== null ? MODELOS[cfg.modeloIdx] : null;
-  if (modelo?.preco) { total += modelo.preco; parts.push(`${modelo.nome}: ${BRL(modelo.preco)}`); }
+  if (modelo?.preco) total += modelo.preco;
   const tam = modelo?.tamanho === '-' ? 'P' : (modelo?.tamanho || 'P');
-  if (cfg.acoIdx !== null) { const a = ACOS[tam]?.[cfg.acoIdx]; if (a) { total += a.preco; parts.push(`${a.nome}: ${BRL(a.preco)}`); } }
-  if (cfg.empunhaduraIdx !== null) { const e = EMPUNHADURAS[tam]?.[cfg.empunhaduraIdx]; if (e) { total += e.preco; parts.push(`${e.nome}: ${BRL(e.preco)}`); } }
-  if (cfg.acabamentoIdx !== null) { const a = ACABAMENTOS[tam]?.[cfg.acabamentoIdx]; if (a && a.preco > 0) { total += a.preco; parts.push(`${a.nome}: ${BRL(a.preco)}`); } }
-  if (cfg.bainhaIdx !== null) { const b = BAINHAS[tam]?.[cfg.bainhaIdx]; if (b && b.preco > 0) { total += b.preco; parts.push(`${b.nome}: ${BRL(b.preco)}`); } }
-  cfg.adicionais.forEach((i) => { const a = ADICIONAIS[i]; if (a) { total += a.preco; parts.push(`${a.nome}: ${BRL(a.preco)}`); } });
-  return { total, breakdown: parts };
+  if (cfg.acoIdx !== null) total += ACOS[tam]?.[cfg.acoIdx]?.preco ?? 0;
+  if (cfg.empunhaduraIdx !== null) total += EMPUNHADURAS[tam]?.[cfg.empunhaduraIdx]?.preco ?? 0;
+  if (cfg.acabamentoIdx !== null) total += ACABAMENTOS[tam]?.[cfg.acabamentoIdx]?.preco ?? 0;
+  if (cfg.bainhaIdx !== null) total += BAINHAS[tam]?.[cfg.bainhaIdx]?.preco ?? 0;
+  cfg.adicionais.forEach((i) => { total += ADICIONAIS[i]?.preco ?? 0; });
+  return total;
 }
 
-// ─── Componente de uma configuração ───
+// ─── Componente: botão de opção ───
+function OptBtn({ label, price, selected, onClick, disabled }: {
+  label: string; price?: number | null; selected: boolean; onClick: () => void; disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`
+        text-left px-3 py-2.5 rounded-lg border transition-all w-full
+        ${selected
+          ? 'border-primary bg-primary/10 ring-1 ring-primary'
+          : disabled
+            ? 'border-border opacity-40 cursor-not-allowed'
+            : 'border-border hover:border-primary/40 hover:bg-muted/50 active:scale-[0.98]'}
+      `}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className={`text-sm font-medium ${selected ? 'text-primary' : ''}`}>{label}</span>
+        {price !== undefined && price !== null && (
+          <span className={`text-xs font-semibold flex-shrink-0 ${selected ? 'text-primary' : 'text-muted-foreground'}`}>
+            {price === 0 ? 'incluso' : `+${BRL(price)}`}
+          </span>
+        )}
+        {price === null && <span className="text-[10px] text-muted-foreground">indisponível</span>}
+      </div>
+    </button>
+  );
+}
 
-function ConfigCard({ cfg, onChange, onRemove, index }: {
-  cfg: Config; onChange: (c: Config) => void; onRemove: () => void; index: number;
+// ─── Seção de opções com título ───
+function Section({ title, step, children }: { title: string; step: number; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">{step}</span>
+        <span className="text-sm font-semibold">{title}</span>
+      </div>
+      <div className="grid gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+// ─── Card de configuração ───
+function ConfigCard({ cfg, onChange, onRemove, index, expanded, onToggle }: {
+  cfg: Config; onChange: (c: Config) => void; onRemove: () => void; index: number; expanded: boolean; onToggle: () => void;
 }) {
   const modelo = cfg.modeloIdx !== null ? MODELOS[cfg.modeloIdx] : null;
   const tam = modelo?.tamanho === '-' ? 'P' : (modelo?.tamanho || 'P');
+  const total = calcTotal(cfg);
+  const isNT = modelo?.preco === null;
+
   const acos = ACOS[tam] || [];
   const emps = EMPUNHADURAS[tam] || [];
   const acabs = ACABAMENTOS[tam] || [];
   const bainhas = BAINHAS[tam] || [];
-  const { total, breakdown } = calcTotal(cfg);
 
-  const isNT = modelo?.preco === null;
+  // Resumo da config
+  const resumoParts = [
+    modelo?.nome,
+    cfg.acoIdx !== null ? acos[cfg.acoIdx]?.nome : null,
+    cfg.empunhaduraIdx !== null ? emps[cfg.empunhaduraIdx]?.nome : null,
+    cfg.acabamentoIdx !== null ? acabs[cfg.acabamentoIdx]?.nome : null,
+  ].filter(Boolean);
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">{index + 1}</span>
-            {modelo ? modelo.nome : 'Nova Configuração'}
-            {modelo && <Badge variant="secondary" className="text-[10px]">{TAMANHO_LABEL[modelo.tamanho]}</Badge>}
-          </CardTitle>
-          <Button variant="ghost" size="icon" onClick={onRemove} className="h-8 w-8 text-destructive">
-            <Trash2 className="h-4 w-4" />
+    <div className="border rounded-xl overflow-hidden bg-card">
+      {/* Header (sempre visível — clicável para expandir/colapsar) */}
+      <button type="button" onClick={onToggle} className="w-full p-4 flex items-center gap-3 hover:bg-muted/30 transition-colors">
+        <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold flex-shrink-0">
+          {index + 1}
+        </span>
+        <div className="flex-1 text-left min-w-0">
+          <p className="font-semibold text-sm truncate">
+            {modelo ? modelo.nome : 'Selecione um modelo'}
+          </p>
+          {modelo && !isNT && (
+            <p className="text-xs text-muted-foreground truncate">
+              {resumoParts.slice(1).join(' · ') || 'Configure os componentes'}
+            </p>
+          )}
+        </div>
+        {modelo && !isNT && (
+          <span className="text-base font-bold text-primary flex-shrink-0">{BRL(total)}</span>
+        )}
+        {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+      </button>
+
+      {/* Corpo expandido */}
+      {expanded && (
+        <div className="px-4 pb-4 space-y-5 border-t">
+          {/* Passo 1: Modelo */}
+          <div className="pt-4">
+            <Section title="Escolha o modelo" step={1}>
+              {/* Agrupados por tamanho */}
+              {(['P', 'M', 'G', '-'] as Tamanho[]).map((t) => {
+                const modelos = MODELOS.filter((m) => m.tamanho === t);
+                if (modelos.length === 0) return null;
+                return (
+                  <div key={t}>
+                    <div className="flex items-center gap-1.5 mb-1 mt-2">
+                      <span className={`w-2 h-2 rounded-full ${TAMANHO_CORES[t]}`} />
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        {t === '-' ? 'Outros' : `Tamanho ${TAMANHO_LABEL[t]}`}
+                      </span>
+                    </div>
+                    <div className="grid gap-1">
+                      {modelos.map((m) => {
+                        const idx = MODELOS.indexOf(m);
+                        return (
+                          <OptBtn
+                            key={idx}
+                            label={m.nome}
+                            price={m.preco}
+                            selected={cfg.modeloIdx === idx}
+                            disabled={m.preco === null}
+                            onClick={() => onChange({ ...cfg, modeloIdx: idx, acoIdx: null, empunhaduraIdx: null, acabamentoIdx: null, bainhaIdx: null })}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </Section>
+          </div>
+
+          {modelo && !isNT && (
+            <>
+              {/* Passo 2: Aço */}
+              {acos.length > 0 && (
+                <Section title="Aço da lâmina" step={2}>
+                  {acos.map((a, i) => (
+                    <OptBtn key={i} label={a.nome} price={a.preco} selected={cfg.acoIdx === i} onClick={() => onChange({ ...cfg, acoIdx: i })} />
+                  ))}
+                </Section>
+              )}
+
+              {/* Passo 3: Empunhadura */}
+              {emps.length > 0 && (
+                <Section title="Empunhadura" step={3}>
+                  {emps.map((e, i) => (
+                    <OptBtn key={i} label={e.nome} price={e.preco} selected={cfg.empunhaduraIdx === i} onClick={() => onChange({ ...cfg, empunhaduraIdx: i })} />
+                  ))}
+                </Section>
+              )}
+
+              {/* Passo 4: Acabamento */}
+              {acabs.length > 0 && (
+                <Section title="Acabamento" step={4}>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {acabs.map((a, i) => (
+                      <OptBtn key={i} label={a.nome} price={a.preco} selected={cfg.acabamentoIdx === i} onClick={() => onChange({ ...cfg, acabamentoIdx: i })} />
+                    ))}
+                  </div>
+                </Section>
+              )}
+
+              {/* Passo 5: Bainha */}
+              {bainhas.length > 0 && (
+                <Section title="Bainha" step={5}>
+                  {bainhas.map((b, i) => (
+                    <OptBtn key={i} label={b.nome} price={b.preco} selected={cfg.bainhaIdx === i} onClick={() => onChange({ ...cfg, bainhaIdx: i })} />
+                  ))}
+                </Section>
+              )}
+
+              {/* Passo 6: Adicionais */}
+              <Section title="Adicionais" step={6}>
+                <div className="grid grid-cols-1 gap-1">
+                  {ADICIONAIS.map((a, i) => {
+                    const checked = cfg.adicionais.has(i);
+                    return (
+                      <label
+                        key={i}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-all ${checked ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/30'}`}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => {
+                            const next = new Set(cfg.adicionais);
+                            if (v) next.add(i); else next.delete(i);
+                            onChange({ ...cfg, adicionais: next });
+                          }}
+                        />
+                        <span className={`flex-1 text-sm ${checked ? 'font-medium' : ''}`}>{a.nome}</span>
+                        <span className={`text-xs font-semibold flex-shrink-0 ${checked ? 'text-primary' : 'text-muted-foreground'}`}>{BRL(a.preco)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </Section>
+
+              {/* Total da configuração */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <span className="text-sm font-semibold">Total desta faca</span>
+                <span className="text-xl font-bold text-primary">{BRL(total)}</span>
+              </div>
+            </>
+          )}
+
+          {/* Botão remover */}
+          <Button variant="ghost" size="sm" className="w-full text-destructive hover:text-destructive gap-2" onClick={onRemove}>
+            <Trash2 className="h-3.5 w-3.5" /> Remover esta configuração
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Modelo */}
-        <div>
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Modelo</label>
-          <Select
-            value={cfg.modeloIdx !== null ? String(cfg.modeloIdx) : ''}
-            onValueChange={(v) => onChange({ ...cfg, modeloIdx: Number(v), acoIdx: null, empunhaduraIdx: null, acabamentoIdx: null, bainhaIdx: null })}
-          >
-            <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione o modelo" /></SelectTrigger>
-            <SelectContent>
-              {MODELOS.map((m, i) => (
-                <SelectItem key={i} value={String(i)} disabled={m.preco === null}>
-                  {m.nome} ({m.tamanho}) {m.preco !== null ? BRL(m.preco) : '— NT'}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {isNT && (
-          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm text-amber-600 dark:text-amber-400">
-            Este modelo não está disponível no momento (NT).
-          </div>
-        )}
-
-        {modelo && !isNT && (
-          <>
-            {/* Aço */}
-            {acos.length > 0 && (
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Aço</label>
-                <Select value={cfg.acoIdx !== null ? String(cfg.acoIdx) : ''} onValueChange={(v) => onChange({ ...cfg, acoIdx: Number(v) })}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione o aço" /></SelectTrigger>
-                  <SelectContent>
-                    {acos.map((a, i) => <SelectItem key={i} value={String(i)}>{a.nome} (+{BRL(a.preco)})</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Empunhadura */}
-            {emps.length > 0 && (
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Empunhadura</label>
-                <Select value={cfg.empunhaduraIdx !== null ? String(cfg.empunhaduraIdx) : ''} onValueChange={(v) => onChange({ ...cfg, empunhaduraIdx: Number(v) })}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione a empunhadura" /></SelectTrigger>
-                  <SelectContent>
-                    {emps.map((e, i) => <SelectItem key={i} value={String(i)}>{e.nome} (+{BRL(e.preco)})</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Acabamento */}
-            {acabs.length > 0 && (
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Acabamento</label>
-                <Select value={cfg.acabamentoIdx !== null ? String(cfg.acabamentoIdx) : ''} onValueChange={(v) => onChange({ ...cfg, acabamentoIdx: Number(v) })}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione o acabamento" /></SelectTrigger>
-                  <SelectContent>
-                    {acabs.map((a, i) => <SelectItem key={i} value={String(i)}>{a.nome} {a.preco > 0 ? `(+${BRL(a.preco)})` : '(incluso)'}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Bainha */}
-            {bainhas.length > 0 && (
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bainha</label>
-                <Select value={cfg.bainhaIdx !== null ? String(cfg.bainhaIdx) : ''} onValueChange={(v) => onChange({ ...cfg, bainhaIdx: Number(v) })}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione a bainha" /></SelectTrigger>
-                  <SelectContent>
-                    {bainhas.map((b, i) => <SelectItem key={i} value={String(i)}>{b.nome} {b.preco > 0 ? `(+${BRL(b.preco)})` : ''}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Adicionais */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Adicionais</label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {ADICIONAIS.map((a, i) => (
-                  <label key={i} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <Checkbox
-                      checked={cfg.adicionais.has(i)}
-                      onCheckedChange={(checked) => {
-                        const next = new Set(cfg.adicionais);
-                        if (checked) next.add(i); else next.delete(i);
-                        onChange({ ...cfg, adicionais: next });
-                      }}
-                    />
-                    <span className="flex-1 truncate">{a.nome}</span>
-                    <span className="text-xs text-muted-foreground flex-shrink-0">{BRL(a.preco)}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Breakdown */}
-            {breakdown.length > 0 && (
-              <div className="space-y-1">
-                {breakdown.map((line, i) => (
-                  <div key={i} className="flex justify-between text-xs text-muted-foreground">
-                    <span>{line.split(':')[0]}</span>
-                    <span>{line.split(':').slice(1).join(':').trim()}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-2 border-t">
-              <span className="text-sm font-semibold">Total</span>
-              <span className="text-lg font-bold text-primary">{BRL(total)}</span>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
 
@@ -356,12 +338,24 @@ function ConfigCard({ cfg, onChange, onRemove, index }: {
 
 export default function SimuladorPrecos() {
   const [configs, setConfigs] = useState<Config[]>([newConfig()]);
+  const [expandedId, setExpandedId] = useState<string | null>(configs[0]?.id ?? null);
 
-  const addConfig = () => setConfigs((prev) => [...prev, newConfig()]);
-  const removeConfig = (id: string) => setConfigs((prev) => prev.length > 1 ? prev.filter((c) => c.id !== id) : prev);
+  const addConfig = () => {
+    const c = newConfig();
+    setConfigs((prev) => [...prev, c]);
+    setExpandedId(c.id);
+  };
+  const removeConfig = (id: string) => {
+    setConfigs((prev) => {
+      if (prev.length <= 1) return prev;
+      const next = prev.filter((c) => c.id !== id);
+      if (expandedId === id) setExpandedId(next[0]?.id ?? null);
+      return next;
+    });
+  };
   const updateConfig = (id: string, updated: Config) => setConfigs((prev) => prev.map((c) => c.id === id ? updated : c));
 
-  const totalGeral = useMemo(() => configs.reduce((sum, cfg) => sum + calcTotal(cfg).total, 0), [configs]);
+  const totalGeral = useMemo(() => configs.reduce((sum, cfg) => sum + calcTotal(cfg), 0), [configs]);
 
   const gerarTexto = () => {
     const lines: string[] = ['*Simulação de Preço — Kaowz Facas*', ''];
@@ -369,8 +363,8 @@ export default function SimuladorPrecos() {
       const modelo = cfg.modeloIdx !== null ? MODELOS[cfg.modeloIdx] : null;
       if (!modelo || modelo.preco === null) return;
       const tam = modelo.tamanho === '-' ? 'P' : modelo.tamanho;
-      const { total } = calcTotal(cfg);
-      lines.push(`*${idx + 1}. ${modelo.nome}* (${TAMANHO_LABEL[modelo.tamanho]})`);
+      const total = calcTotal(cfg);
+      lines.push(`*${idx + 1}. ${modelo.nome}*`);
       if (cfg.acoIdx !== null) lines.push(`   Aço: ${ACOS[tam]?.[cfg.acoIdx]?.nome || '—'}`);
       if (cfg.empunhaduraIdx !== null) lines.push(`   Empunhadura: ${EMPUNHADURAS[tam]?.[cfg.empunhaduraIdx]?.nome || '—'}`);
       if (cfg.acabamentoIdx !== null) lines.push(`   Acabamento: ${ACABAMENTOS[tam]?.[cfg.acabamentoIdx]?.nome || '—'}`);
@@ -384,41 +378,27 @@ export default function SimuladorPrecos() {
   };
 
   const copiarTexto = async () => {
-    const texto = gerarTexto();
-    try {
-      await navigator.clipboard.writeText(texto);
-      toast.success('Simulação copiada!');
-    } catch {
-      toast.error('Não foi possível copiar');
-    }
+    try { await navigator.clipboard.writeText(gerarTexto()); toast.success('Simulação copiada!'); }
+    catch { toast.error('Não foi possível copiar'); }
   };
 
   const enviarWhatsApp = () => {
-    const texto = gerarTexto();
-    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+    window.open(`https://wa.me/?text=${encodeURIComponent(gerarTexto())}`, '_blank');
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-6 px-4 space-y-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Calculator className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Simulador de Preços</h1>
-            <p className="text-xs text-muted-foreground">Monte configurações e calcule o valor total</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2" onClick={copiarTexto}>
-            <Copy className="h-4 w-4" /> Copiar
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2" onClick={enviarWhatsApp}>
-            <MessageCircle className="h-4 w-4" /> WhatsApp
-          </Button>
+    <div className="max-w-lg mx-auto py-4 px-4 space-y-4 pb-32">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Calculator className="h-6 w-6 text-primary" />
+        <div>
+          <h1 className="text-lg font-bold">Simulador de Preços</h1>
+          <p className="text-xs text-muted-foreground">Monte a faca e veja o valor</p>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Lista de configurações (accordion) */}
+      <div className="space-y-3">
         {configs.map((cfg, idx) => (
           <ConfigCard
             key={cfg.id}
@@ -426,21 +406,32 @@ export default function SimuladorPrecos() {
             index={idx}
             onChange={(updated) => updateConfig(cfg.id, updated)}
             onRemove={() => removeConfig(cfg.id)}
+            expanded={expandedId === cfg.id}
+            onToggle={() => setExpandedId(expandedId === cfg.id ? null : cfg.id)}
           />
         ))}
       </div>
 
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <Button variant="outline" className="gap-2" onClick={addConfig}>
-          <Plus className="h-4 w-4" /> Adicionar Configuração
-        </Button>
+      {/* Adicionar */}
+      <Button variant="outline" className="w-full gap-2" onClick={addConfig}>
+        <Plus className="h-4 w-4" /> Adicionar outra faca
+      </Button>
 
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground">{configs.length} configuração(ões)</span>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Geral</p>
-            <p className="text-2xl font-bold text-primary">{BRL(totalGeral)}</p>
+      {/* Footer fixo — total + ações */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t px-4 py-3 z-50">
+        <div className="max-w-lg mx-auto flex items-center gap-3">
+          <div className="flex-1">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+              {configs.length} {configs.length === 1 ? 'faca' : 'facas'}
+            </p>
+            <p className="text-xl font-bold text-primary leading-tight">{BRL(totalGeral)}</p>
           </div>
+          <Button variant="outline" size="icon" className="h-10 w-10 flex-shrink-0" onClick={copiarTexto} title="Copiar">
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button className="gap-2 h-10 flex-shrink-0" onClick={enviarWhatsApp}>
+            <MessageCircle className="h-4 w-4" /> WhatsApp
+          </Button>
         </div>
       </div>
     </div>
