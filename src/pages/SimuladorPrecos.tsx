@@ -61,20 +61,26 @@ const ACOS: Record<string, Componente[]> = {
   G: [{ nome: 'Sandvik 14C28N', preco: 350 }, { nome: '52100', preco: 350 }],
 };
 const EMPUNHADURAS: Record<string, Componente[]> = {
-  P: [{ nome: 'G10', preco: 115 }, { nome: 'Espaçador', preco: 70 }, { nome: 'Imbuia', preco: 80 }, { nome: 'Dragon Scale', preco: 70 }],
-  M: [{ nome: 'G10', preco: 145 }, { nome: 'Imbuia', preco: 100 }, { nome: 'Dragon Scale', preco: 70 }],
-  G: [{ nome: 'G10', preco: 145 }, { nome: 'Espaçador', preco: 90 }, { nome: 'Imbuia', preco: 100 }, { nome: 'Dragon Scale', preco: 70 }],
+  P: [{ nome: 'G10', preco: 115 }, { nome: 'Espaçador', preco: 70 }, { nome: 'Imbuia', preco: 80 }],
+  M: [{ nome: 'G10', preco: 145 }, { nome: 'Imbuia', preco: 100 }],
+  G: [{ nome: 'G10', preco: 145 }, { nome: 'Espaçador', preco: 90 }, { nome: 'Imbuia', preco: 100 }],
 };
 const ACABAMENTOS: Record<string, Componente[]> = {
-  P: [{ nome: 'Acetinado', preco: 0 }, { nome: 'Stone Washed', preco: 25 }, { nome: 'Tactical', preco: 90 }, { nome: 'Brute Forge', preco: 125 }],
-  M: [{ nome: 'Acetinado', preco: 0 }, { nome: 'Stone Washed', preco: 25 }, { nome: 'Tactical', preco: 90 }, { nome: 'Brute Forge', preco: 125 }],
-  G: [{ nome: 'Acetinado', preco: 0 }, { nome: 'Stone Washed', preco: 35 }, { nome: 'Tactical', preco: 125 }, { nome: 'Brute Forge', preco: 300 }],
+  P: [{ nome: 'Acetinado', preco: 0 }, { nome: 'Stone Washed', preco: 25 }, { nome: 'Tactical', preco: 90 }],
+  M: [{ nome: 'Acetinado', preco: 0 }, { nome: 'Stone Washed', preco: 25 }, { nome: 'Tactical', preco: 90 }],
+  G: [{ nome: 'Acetinado', preco: 0 }, { nome: 'Stone Washed', preco: 35 }, { nome: 'Tactical', preco: 125 }],
 };
 const BAINHAS: Record<string, Componente[]> = {
   P: [{ nome: 'Preta (inclusa)', preco: 0 }, { nome: 'Colorida', preco: 195 }, { nome: 'Adicional', preco: 195 }],
   M: [{ nome: 'Preta (inclusa)', preco: 0 }, { nome: 'Colorida', preco: 195 }, { nome: 'Adicional', preco: 195 }],
   G: [{ nome: 'Preta (inclusa)', preco: 0 }, { nome: 'Colorida', preco: 250 }, { nome: 'Adicional', preco: 250 }],
 };
+const OPCIONAIS: Record<string, { nome: string; preco: number }[]> = {
+  P: [{ nome: 'Dragon Scale', preco: 70 }, { nome: 'Brute Forge', preco: 125 }],
+  M: [{ nome: 'Dragon Scale', preco: 70 }, { nome: 'Brute Forge', preco: 125 }],
+  G: [{ nome: 'Dragon Scale', preco: 70 }, { nome: 'Brute Forge', preco: 300 }],
+};
+
 const ADICIONAIS: Componente[] = [
   { nome: 'Strop', preco: 95 }, { nome: 'Café', preco: 45 }, { nome: 'Clipe Extra', preco: 25 },
   { nome: 'Clipe Lateral', preco: 75 }, { nome: 'Patch Fluorescente', preco: 55 }, { nome: 'Patch Cão Pastor', preco: 45 },
@@ -94,11 +100,12 @@ interface Config {
   empunhaduraIdx: number | null;
   acabamentoIdx: number | null;
   bainhaIdx: number | null;
+  opcionais: Set<number>;
   adicionais: Set<number>;
 }
 
 function newConfig(): Config {
-  return { id: crypto.randomUUID(), modeloIdx: null, acoIdx: null, empunhaduraIdx: null, acabamentoIdx: null, bainhaIdx: null, adicionais: new Set() };
+  return { id: crypto.randomUUID(), modeloIdx: null, acoIdx: null, empunhaduraIdx: null, acabamentoIdx: null, bainhaIdx: null, opcionais: new Set(), adicionais: new Set() };
 }
 
 function calcTotal(cfg: Config): number {
@@ -110,6 +117,7 @@ function calcTotal(cfg: Config): number {
   if (cfg.empunhaduraIdx !== null) t += EMPUNHADURAS[s]?.[cfg.empunhaduraIdx]?.preco ?? 0;
   if (cfg.acabamentoIdx !== null) t += ACABAMENTOS[s]?.[cfg.acabamentoIdx]?.preco ?? 0;
   if (cfg.bainhaIdx !== null) t += BAINHAS[s]?.[cfg.bainhaIdx]?.preco ?? 0;
+  cfg.opcionais.forEach((i) => { t += OPCIONAIS[s]?.[i]?.preco ?? 0; });
   cfg.adicionais.forEach((i) => { t += ADICIONAIS[i]?.preco ?? 0; });
   return t;
 }
@@ -223,10 +231,12 @@ function ConfigCard({ cfg, onChange, onRemove, index, expanded, onToggle }: {
   const acabs = ACABAMENTOS[tam] || [];
   const bainhas = BAINHAS[tam] || [];
 
+  const opcionais = OPCIONAIS[tam] || [];
   const specs = [
     cfg.acoIdx !== null ? acos[cfg.acoIdx]?.nome : null,
     cfg.empunhaduraIdx !== null ? emps[cfg.empunhaduraIdx]?.nome : null,
     cfg.acabamentoIdx !== null ? acabs[cfg.acabamentoIdx]?.nome : null,
+    ...[...cfg.opcionais].map((i) => opcionais[i]?.nome).filter(Boolean),
   ].filter(Boolean);
 
   const [showAdicionais, setShowAdicionais] = useState(false);
@@ -253,7 +263,7 @@ function ConfigCard({ cfg, onChange, onRemove, index, expanded, onToggle }: {
           <OptSection title="Modelo" step={1} done={cfg.modeloIdx !== null}>
             <ModeloSearch
               currentIdx={cfg.modeloIdx}
-              onSelect={(i) => onChange({ ...cfg, modeloIdx: i, acoIdx: null, empunhaduraIdx: null, acabamentoIdx: null, bainhaIdx: null })}
+              onSelect={(i) => onChange({ ...cfg, modeloIdx: i, acoIdx: null, empunhaduraIdx: null, acabamentoIdx: null, bainhaIdx: null, opcionais: new Set() })}
             />
           </OptSection>
 
@@ -286,17 +296,37 @@ function ConfigCard({ cfg, onChange, onRemove, index, expanded, onToggle }: {
                 </OptSection>
               )}
 
-              {/* 5. Bainha */}
+              {/* 5. Opcionais (Dragon Scale / Brute Forge) */}
+              {(OPCIONAIS[tam] || []).length > 0 && (
+                <OptSection title="Opcionais" step={5} done={cfg.opcionais.size > 0}>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(OPCIONAIS[tam] || []).map((o, i) => {
+                      const on = cfg.opcionais.has(i);
+                      return (
+                        <button key={i} type="button"
+                          onClick={() => { const s = new Set(cfg.opcionais); if (on) s.delete(i); else s.add(i); onChange({ ...cfg, opcionais: s }); }}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all whitespace-nowrap
+                            ${on ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-border bg-background hover:bg-muted active:scale-95'}`}>
+                          {o.nome}
+                          <span className={on ? 'text-primary-foreground/80' : 'text-muted-foreground'}>+{BRL(o.preco)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </OptSection>
+              )}
+
+              {/* 6. Bainha */}
               {bainhas.length > 0 && (
-                <OptSection title="Bainha" step={5} done={cfg.bainhaIdx !== null}>
+                <OptSection title="Bainha" step={6} done={cfg.bainhaIdx !== null}>
                   <div className="flex flex-wrap gap-1.5">
                     {bainhas.map((b, i) => <Chip key={i} label={b.nome} price={b.preco} selected={cfg.bainhaIdx === i} onClick={() => onChange({ ...cfg, bainhaIdx: i })} />)}
                   </div>
                 </OptSection>
               )}
 
-              {/* 6. Adicionais (colapsável) */}
-              <OptSection title="Adicionais" step={6} done={cfg.adicionais.size > 0}>
+              {/* 7. Adicionais (colapsável) */}
+              <OptSection title="Adicionais" step={7} done={cfg.adicionais.size > 0}>
                 <button type="button" onClick={() => setShowAdicionais(!showAdicionais)}
                   className="flex items-center gap-2 text-xs text-primary font-medium hover:underline">
                   {showAdicionais ? 'Ocultar' : `Ver ${ADICIONAIS.length} opções`}
@@ -357,6 +387,7 @@ export default function SimuladorPrecos() {
       if (cfg.acoIdx !== null) l.push(`   Aço: ${ACOS[t]?.[cfg.acoIdx]?.nome}`);
       if (cfg.empunhaduraIdx !== null) l.push(`   Empunhadura: ${EMPUNHADURAS[t]?.[cfg.empunhaduraIdx]?.nome}`);
       if (cfg.acabamentoIdx !== null) l.push(`   Acabamento: ${ACABAMENTOS[t]?.[cfg.acabamentoIdx]?.nome}`);
+      cfg.opcionais.forEach((i) => { const o = OPCIONAIS[t]?.[i]; if (o) l.push(`   + ${o.nome}`); });
       if (cfg.bainhaIdx !== null) { const b = BAINHAS[t]?.[cfg.bainhaIdx]; if (b?.preco) l.push(`   Bainha: ${b.nome}`); }
       cfg.adicionais.forEach((i) => l.push(`   + ${ADICIONAIS[i]?.nome}`));
       l.push(`   *${BRL(calcTotal(cfg))}*`);
