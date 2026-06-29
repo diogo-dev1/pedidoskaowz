@@ -72,6 +72,7 @@ export function AppSidebar() {
     { title: 'Pedidos', url: '/pedidos', icon: ShoppingBag },
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
+    { title: 'Simulador de Preços', url: '/simulador-precos', icon: Calculator },
   ];
 
   const producaoItems: MenuItem[] = [

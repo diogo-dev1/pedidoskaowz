@@ -55,6 +55,7 @@ import KitUrbanEdc from "./pages/KitUrbanEdc";
 import KitUrbanEdcConfig from "./pages/KitUrbanEdcConfig";
 import Producao from "./pages/Producao";
 import ExpedicaoPage from "./pages/ExpedicaoPage";
+import SimuladorPrecos from "./pages/SimuladorPrecos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -439,6 +440,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Pedidos />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/simulador-precos"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <SimuladorPrecos />
                   </Layout>
                 </ProtectedRoute>
               }
