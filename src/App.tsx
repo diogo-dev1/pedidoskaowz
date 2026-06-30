@@ -56,6 +56,7 @@ import KitUrbanEdcConfig from "./pages/KitUrbanEdcConfig";
 import Producao from "./pages/Producao";
 import ExpedicaoPage from "./pages/ExpedicaoPage";
 import SimuladorPrecos from "./pages/SimuladorPrecos";
+import ProdutosShopify from "./pages/ProdutosShopify";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -440,6 +441,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Pedidos />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/produtos-shopify"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ProdutosShopify />
                   </Layout>
                 </ProtectedRoute>
               }
