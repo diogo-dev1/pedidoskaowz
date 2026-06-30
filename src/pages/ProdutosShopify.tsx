@@ -4,8 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, ShoppingBag, Loader2, RefreshCw, Package } from 'lucide-react';
+import { Search, ShoppingBag, Loader2, RefreshCw, Package, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface ShopifyVariant {
   id: number;
@@ -46,6 +47,48 @@ function totalEstoque(p: ShopifyProduct): number {
 const STATUS_LABEL: Record<string, string> = { active: 'Ativo', draft: 'Rascunho', archived: 'Arquivado' };
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'outline'> = { active: 'default', draft: 'secondary', archived: 'outline' };
 
+function csvEscape(value: string | number): string {
+  const s = String(value ?? '');
+  if (/[";\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function exportarCsv(produtos: ShopifyProduct[]) {
+  const header = ['ID Produto', 'Produto', 'Status', 'Variante', 'SKU', 'Preço (R$)', 'Estoque'];
+  const rows: string[][] = [];
+
+  for (const p of produtos) {
+    if (p.variants.length === 0) {
+      rows.push([String(p.id), p.title, STATUS_LABEL[p.status] ?? p.status, '—', '—', '—', '—']);
+      continue;
+    }
+    for (const v of p.variants) {
+      const preco = v.price != null ? parseFloat(v.price).toFixed(2).replace('.', ',') : '—';
+      rows.push([
+        String(p.id),
+        p.title,
+        STATUS_LABEL[p.status] ?? p.status,
+        v.title === 'Default Title' ? 'Padrão' : v.title,
+        v.sku ?? '—',
+        preco,
+        String(v.inventory_quantity ?? 0),
+      ]);
+    }
+  }
+
+  const csv = [header, ...rows].map((row) => row.map(csvEscape).join(';')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dataHoje = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `produtos-shopify-${dataHoje}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export default function ProdutosShopify() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<ShopifyProduct | null>(null);
@@ -81,10 +124,25 @@ export default function ProdutosShopify() {
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="gap-2" onClick={() => refetch()} disabled={isFetching}>
-          {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          Atualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={produtos.length === 0}
+            onClick={() => {
+              exportarCsv(filtrados.length !== produtos.length ? filtrados : produtos);
+              toast.success(`CSV exportado: ${(filtrados.length !== produtos.length ? filtrados : produtos).length} produto(s)`);
+            }}
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => refetch()} disabled={isFetching}>
+            {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       {error && (
