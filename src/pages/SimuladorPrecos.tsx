@@ -44,7 +44,7 @@ const MODELOS: Modelo[] = [
 
 const ACOS: Record<string, Componente[]> = {
   P: [{ nome: 'Sandvik 14C28N', preco: 165 }, { nome: '52100', preco: 165 }],
-  M: [{ nome: 'Sandvik 14C28N', preco: 245 }, { nome: '52100', preco: 245 }],
+  M: [{ nome: 'Sandvik 14C28N', preco: 195 }, { nome: '52100', preco: 245 }],
   G: [{ nome: 'Sandvik 14C28N', preco: 350 }, { nome: '52100', preco: 350 }],
 };
 const EMPUNHADURAS: Record<string, Componente[]> = {
