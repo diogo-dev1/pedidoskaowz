@@ -174,13 +174,13 @@ async function getSheetId(accessToken: string, spreadsheetId: string, title: str
   return sheet?.properties?.sheetId ?? null;
 }
 
-/** Lê todas as linhas (A:J) da aba "Vendas Diário". */
+/** Lê todas as linhas (B:K) da aba "Vendas Site" — coluna A é vazia, dados começam em B. */
 async function lerVendas(accessToken: string, spreadsheetId: string): Promise<string[][]> {
-  const range = encodeURIComponent(`${ABA_VENDAS}!A:J`);
+  const range = encodeURIComponent(`${ABA_VENDAS}!B:K`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!res.ok) {
-    console.error('Erro ao ler a aba Vendas Diário:', await res.text());
+    console.error('Erro ao ler a aba Vendas Site:', await res.text());
     return [];
   }
   const data = await res.json();
