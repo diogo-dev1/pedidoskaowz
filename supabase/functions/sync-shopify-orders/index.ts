@@ -174,13 +174,13 @@ async function getSheetId(accessToken: string, spreadsheetId: string, title: str
   return sheet?.properties?.sheetId ?? null;
 }
 
-/** Lê todas as linhas (A:J) da aba "Vendas Diário". */
+/** Lê todas as linhas (B:K) da aba "Vendas Site" — coluna A é vazia, dados começam em B. */
 async function lerVendas(accessToken: string, spreadsheetId: string): Promise<string[][]> {
-  const range = encodeURIComponent(`${ABA_VENDAS}!A:J`);
+  const range = encodeURIComponent(`${ABA_VENDAS}!B:K`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!res.ok) {
-    console.error('Erro ao ler a aba Vendas Diário:', await res.text());
+    console.error('Erro ao ler a aba Vendas Site:', await res.text());
     return [];
   }
   const data = await res.json();
@@ -205,9 +205,9 @@ async function inserirLinhaVazia(accessToken: string, spreadsheetId: string, she
   if (!res.ok) throw new Error(`Falha ao inserir linha na planilha: ${await res.text()}`);
 }
 
-/** Escreve os valores de um pedido na linha rowNumber1 (1-based) da aba "Vendas Diário". */
+/** Escreve os valores de um pedido na linha rowNumber1 (1-based) da aba "Vendas Site" (B:K). */
 async function escreverLinhaVendas(accessToken: string, spreadsheetId: string, rowNumber1: number, row: string[]): Promise<void> {
-  const range = encodeURIComponent(`${ABA_VENDAS}!A${rowNumber1}:J${rowNumber1}`);
+  const range = encodeURIComponent(`${ABA_VENDAS}!B${rowNumber1}:K${rowNumber1}`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueInputOption=USER_ENTERED`;
   const res = await fetch(url, {
     method: 'PUT',
