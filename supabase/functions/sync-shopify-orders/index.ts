@@ -133,7 +133,7 @@ async function getGoogleAccessToken(serviceAccountKey: string): Promise<string> 
   return tokenData.access_token;
 }
 
-const ABA_VENDAS = 'Vendas Diário';
+const ABA_VENDAS = 'Vendas Site';
 const TIMEZONE_BR = 'America/Sao_Paulo';
 
 function valorOuTraco(v: unknown): string {
@@ -352,77 +352,81 @@ Deno.serve(async (req) => {
 
         // ── Banco: só insere se o pedido ainda não foi importado (dedup via shopify_orders_sync) ──
         if (!idsJaImportados.has(order.id)) {
-        // Gerar número do pedido
-        const { data: numData } = await supabase.rpc('gerar_numero_pedido');
-        const numeroPedido = numData || `KWZ-SHOP-${order.id}`;
+          try {
+            // Gerar número do pedido
+            const { data: numData } = await supabase.rpc('gerar_numero_pedido');
+            const numeroPedido = numData || `KWZ-SHOP-${order.id}`;
 
-        // Inserir pedido
-        const { data: pedido, error: erroPedido } = await supabase
-          .from('pedidos')
-          .insert({
-            numero_pedido: numeroPedido,
-            canal: 'Site',
-            cliente_nome: nomeCliente,
-            cliente_email: order.customer?.email || null,
-            cliente_celular: order.customer?.phone || null,
-            cliente_cep: endereco?.zip || null,
-            cliente_estado: endereco?.province_code || null,
-            cliente_cidade: endereco?.city || null,
-            cliente_endereco: endereco?.address1 || null,
-            cliente_complemento: endereco?.address2 || null,
-            valor_total: parseFloat(order.total_price) || 0,
-            forma_pagamento: mapPaymentGateway(order.payment_gateway_names),
-            cupom,
-            status: 'aguardando_triagem',
-            observacao: [order.note, `Shopify ${order.name}`].filter(Boolean).join(' | ') || null,
-          })
-          .select()
-          .single();
+            // Inserir pedido
+            const { data: pedido, error: erroPedido } = await supabase
+              .from('pedidos')
+              .insert({
+                numero_pedido: numeroPedido,
+                canal: 'Site',
+                cliente_nome: nomeCliente,
+                cliente_email: order.customer?.email || null,
+                cliente_celular: order.customer?.phone || null,
+                cliente_cep: endereco?.zip || null,
+                cliente_estado: endereco?.province_code || null,
+                cliente_cidade: endereco?.city || null,
+                cliente_endereco: endereco?.address1 || null,
+                cliente_complemento: endereco?.address2 || null,
+                valor_total: parseFloat(order.total_price) || 0,
+                forma_pagamento: mapPaymentGateway(order.payment_gateway_names),
+                cupom,
+                status: 'aguardando_triagem',
+                observacao: [order.note, `Shopify ${order.name}`].filter(Boolean).join(' | ') || null,
+              })
+              .select()
+              .single();
 
-        if (erroPedido) {
-          console.error(`Erro ao inserir pedido Shopify ${order.name}:`, erroPedido);
-          erros++;
-          continue;
-        }
+            if (erroPedido) {
+              console.error(`Erro ao inserir pedido Shopify ${order.name}:`, erroPedido);
+              erros++;
+            } else {
+              // Inserir itens
+              const itensParaInserir = order.line_items.map(li => ({
+                pedido_id: pedido.id,
+                modelo: li.title,
+                preco_unitario: parseFloat(li.price) || 0,
+                quantidade: li.quantity || 1,
+              }));
 
-        // Inserir itens
-        const itensParaInserir = order.line_items.map(li => ({
-          pedido_id: pedido.id,
-          modelo: li.title,
-          preco_unitario: parseFloat(li.price) || 0,
-          quantidade: li.quantity || 1,
-        }));
+              if (itensParaInserir.length > 0) {
+                await supabase.from('pedido_itens').insert(itensParaInserir);
+              }
 
-        if (itensParaInserir.length > 0) {
-          await supabase.from('pedido_itens').insert(itensParaInserir);
-        }
+              // Criar expedição
+              await supabase.from('expedicao').insert({
+                pedido_id: pedido.id,
+                nome_destinatario: endereco?.name || nomeCliente,
+                cep_destino: endereco?.zip || null,
+                endereco_completo: [endereco?.address1, endereco?.address2, endereco?.city, endereco?.province_code].filter(Boolean).join(', ') || null,
+                status: 'aguardando',
+              });
 
-        // Criar expedição
-        await supabase.from('expedicao').insert({
-          pedido_id: pedido.id,
-          nome_destinatario: endereco?.name || nomeCliente,
-          cep_destino: endereco?.zip || null,
-          endereco_completo: [endereco?.address1, endereco?.address2, endereco?.city, endereco?.province_code].filter(Boolean).join(', ') || null,
-          status: 'aguardando',
-        });
+              // Criar financeiro
+              await supabase.from('financeiro_recebimentos').insert({
+                pedido_id: pedido.id,
+                valor: parseFloat(order.total_price) || 0,
+                forma_pagamento: mapPaymentGateway(order.payment_gateway_names),
+                status: order.financial_status === 'paid' ? 'recebido' : 'pendente',
+                data_recebimento: order.financial_status === 'paid' ? new Date().toISOString().split('T')[0] : null,
+              });
 
-        // Criar financeiro
-        await supabase.from('financeiro_recebimentos').insert({
-          pedido_id: pedido.id,
-          valor: parseFloat(order.total_price) || 0,
-          forma_pagamento: mapPaymentGateway(order.payment_gateway_names),
-          status: order.financial_status === 'paid' ? 'recebido' : 'pendente',
-          data_recebimento: order.financial_status === 'paid' ? new Date().toISOString().split('T')[0] : null,
-        });
+              // Registrar como importado
+              await supabase.from('shopify_orders_sync').upsert({
+                shopify_order_id: order.id,
+                shopify_order_name: order.name,
+              }, { onConflict: 'shopify_order_id' });
 
-        // Registrar como importado
-        await supabase.from('shopify_orders_sync').upsert({
-          shopify_order_id: order.id,
-          shopify_order_name: order.name,
-        }, { onConflict: 'shopify_order_id' });
-
-        importados++;
-        console.log(`Pedido Shopify ${order.name} → ${numeroPedido} salvo no banco`);
+              importados++;
+              console.log(`Pedido Shopify ${order.name} → ${numeroPedido} salvo no banco`);
+            }
+          } catch (dbErr) {
+            console.error(`Erro no banco para pedido Shopify ${order.name}:`, dbErr);
+            erros++;
+          }
         } // ── fim do bloco banco ──
 
         // Lançar na planilha de Relatório de Vendas — na posição correta (dia/ordem) e sem duplicar
