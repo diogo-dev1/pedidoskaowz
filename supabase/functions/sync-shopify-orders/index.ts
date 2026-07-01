@@ -133,7 +133,7 @@ async function getGoogleAccessToken(serviceAccountKey: string): Promise<string> 
   return tokenData.access_token;
 }
 
-const ABA_VENDAS = 'Vendas Diário';
+const ABA_VENDAS = 'Vendas Site';
 const TIMEZONE_BR = 'America/Sao_Paulo';
 
 function valorOuTraco(v: unknown): string {
