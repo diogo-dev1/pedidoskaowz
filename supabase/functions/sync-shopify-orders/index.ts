@@ -205,9 +205,9 @@ async function inserirLinhaVazia(accessToken: string, spreadsheetId: string, she
   if (!res.ok) throw new Error(`Falha ao inserir linha na planilha: ${await res.text()}`);
 }
 
-/** Escreve os valores de um pedido na linha rowNumber1 (1-based) da aba "Vendas Diário". */
+/** Escreve os valores de um pedido na linha rowNumber1 (1-based) da aba "Vendas Site" (B:K). */
 async function escreverLinhaVendas(accessToken: string, spreadsheetId: string, rowNumber1: number, row: string[]): Promise<void> {
-  const range = encodeURIComponent(`${ABA_VENDAS}!A${rowNumber1}:J${rowNumber1}`);
+  const range = encodeURIComponent(`${ABA_VENDAS}!B${rowNumber1}:K${rowNumber1}`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueInputOption=USER_ENTERED`;
   const res = await fetch(url, {
     method: 'PUT',
