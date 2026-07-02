@@ -462,18 +462,21 @@ Deno.serve(async (req) => {
                 valorOuTraco(cupom),                                                // K - Cupom
               ];
 
-              // Reaproveita primeira linha em branco (formatação/validação já preservadas);
-              // se não houver, insere uma nova no fim mantendo herança de formatação.
+              // Reaproveita primeira linha em branco a partir da 24 (preserva formatação/validação existentes).
+              // Se não houver linha em branco disponível, apenas escreve na próxima linha livre —
+              // SEM insertDimension, para não deslocar linhas e não alterar formatação das linhas existentes.
               const posVazia = acharLinhaVazia();
               let pos0: number;
               if (posVazia >= 0) {
                 pos0 = posVazia;
               } else {
                 pos0 = Math.max(colDatas.length, PRIMEIRA_LINHA_VENDAS - 1);
-                await inserirLinhaVazia(sheetsToken, vendasSpreadsheetId, sheetId, pos0);
-                colDatas[pos0] = null;
-                linhaVazia[pos0] = true;
-                obsVendasExistentes[pos0] = '';
+                // garante slots no estado local sem tocar em linhas anteriores
+                while (colDatas.length <= pos0) {
+                  colDatas.push(null);
+                  linhaVazia.push(true);
+                  obsVendasExistentes.push('');
+                }
               }
               await escreverLinhaVendas(sheetsToken, vendasSpreadsheetId, pos0 + 1, row);
 
