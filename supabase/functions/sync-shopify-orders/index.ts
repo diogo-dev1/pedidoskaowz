@@ -174,13 +174,13 @@ async function getSheetId(accessToken: string, spreadsheetId: string, title: str
   return sheet?.properties?.sheetId ?? null;
 }
 
-/** Lê todas as linhas (A:J) da aba "Vendas Site". */
+/** Lê todas as linhas (B:K) da aba "Vendas Site" — coluna A é vazia, dados começam em B. */
 async function lerVendas(accessToken: string, spreadsheetId: string): Promise<string[][]> {
-  const range = encodeURIComponent(`${ABA_VENDAS}!A:J`);
+  const range = encodeURIComponent(`${ABA_VENDAS}!B:K`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!res.ok) {
-    console.error('Erro ao ler a aba Vendas Diário:', await res.text());
+    console.error('Erro ao ler a aba Vendas Site:', await res.text());
     return [];
   }
   const data = await res.json();
@@ -205,9 +205,9 @@ async function inserirLinhaVazia(accessToken: string, spreadsheetId: string, she
   if (!res.ok) throw new Error(`Falha ao inserir linha na planilha: ${await res.text()}`);
 }
 
-/** Escreve os valores de um pedido na linha rowNumber1 (1-based) da aba "Vendas Site". */
+/** Escreve os valores de um pedido na linha rowNumber1 (1-based) da aba "Vendas Site" (B:K). */
 async function escreverLinhaVendas(accessToken: string, spreadsheetId: string, rowNumber1: number, row: string[]): Promise<void> {
-  const range = encodeURIComponent(`${ABA_VENDAS}!A${rowNumber1}:J${rowNumber1}`);
+  const range = encodeURIComponent(`${ABA_VENDAS}!B${rowNumber1}:K${rowNumber1}`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueInputOption=USER_ENTERED`;
   const res = await fetch(url, {
     method: 'PUT',
@@ -351,12 +351,13 @@ Deno.serve(async (req) => {
         const cupom = (order.discount_codes || []).map(dc => dc.code).join(', ') || null;
 
         // ── Banco: só insere se o pedido ainda não foi importado (dedup via shopify_orders_sync) ──
-        // Erros de banco não bloqueiam o lançamento na planilha.
         if (!idsJaImportados.has(order.id)) {
           try {
+            // Gerar número do pedido
             const { data: numData } = await supabase.rpc('gerar_numero_pedido');
             const numeroPedido = numData || `KWZ-SHOP-${order.id}`;
 
+            // Inserir pedido
             const { data: pedido, error: erroPedido } = await supabase
               .from('pedidos')
               .insert({
@@ -380,17 +381,22 @@ Deno.serve(async (req) => {
               .single();
 
             if (erroPedido) {
-              console.error(`Erro ao inserir pedido Shopify ${order.name} no banco:`, erroPedido);
+              console.error(`Erro ao inserir pedido Shopify ${order.name}:`, erroPedido);
+              erros++;
             } else {
+              // Inserir itens
               const itensParaInserir = order.line_items.map(li => ({
                 pedido_id: pedido.id,
                 modelo: li.title,
                 preco_unitario: parseFloat(li.price) || 0,
                 quantidade: li.quantity || 1,
               }));
+
               if (itensParaInserir.length > 0) {
                 await supabase.from('pedido_itens').insert(itensParaInserir);
               }
+
+              // Criar expedição
               await supabase.from('expedicao').insert({
                 pedido_id: pedido.id,
                 nome_destinatario: endereco?.name || nomeCliente,
@@ -398,6 +404,8 @@ Deno.serve(async (req) => {
                 endereco_completo: [endereco?.address1, endereco?.address2, endereco?.city, endereco?.province_code].filter(Boolean).join(', ') || null,
                 status: 'aguardando',
               });
+
+              // Criar financeiro
               await supabase.from('financeiro_recebimentos').insert({
                 pedido_id: pedido.id,
                 valor: parseFloat(order.total_price) || 0,
@@ -405,15 +413,19 @@ Deno.serve(async (req) => {
                 status: order.financial_status === 'paid' ? 'recebido' : 'pendente',
                 data_recebimento: order.financial_status === 'paid' ? new Date().toISOString().split('T')[0] : null,
               });
+
+              // Registrar como importado
               await supabase.from('shopify_orders_sync').upsert({
                 shopify_order_id: order.id,
                 shopify_order_name: order.name,
               }, { onConflict: 'shopify_order_id' });
+
               importados++;
               console.log(`Pedido Shopify ${order.name} → ${numeroPedido} salvo no banco`);
             }
           } catch (dbErr) {
-            console.error(`Erro de banco ao processar ${order.name} (não bloqueia planilha):`, dbErr);
+            console.error(`Erro no banco para pedido Shopify ${order.name}:`, dbErr);
+            erros++;
           }
         } // ── fim do bloco banco ──
 
