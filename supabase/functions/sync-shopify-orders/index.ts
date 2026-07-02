@@ -135,6 +135,7 @@ async function getGoogleAccessToken(serviceAccountKey: string): Promise<string> 
 
 const ABA_VENDAS = 'Vendas Diário';
 const TIMEZONE_BR = 'America/Sao_Paulo';
+const PRIMEIRA_LINHA_VENDAS = 24;
 
 function valorOuTraco(v: unknown): string {
   return (v ?? '').toString().trim() || '-';
@@ -338,9 +339,10 @@ Deno.serve(async (req) => {
       return obsVendasExistentes.some((o) => o.toLowerCase().includes(marcador));
     };
 
-    /** Primeira linha (0-based) sem Data preenchida — para reaproveitar linhas já criadas. */
+    /** Primeira linha (0-based) sem Data preenchida a partir da linha 24 — para reaproveitar linhas já criadas. */
     const acharLinhaVazia = (): number => {
-      for (let i = 0; i < linhaVazia.length; i++) if (linhaVazia[i]) return i;
+      const primeiraPos0 = PRIMEIRA_LINHA_VENDAS - 1;
+      for (let i = primeiraPos0; i < linhaVazia.length; i++) if (linhaVazia[i]) return i;
       return -1;
     };
 
@@ -467,11 +469,11 @@ Deno.serve(async (req) => {
               if (posVazia >= 0) {
                 pos0 = posVazia;
               } else {
-                pos0 = colDatas.length;
+                pos0 = Math.max(colDatas.length, PRIMEIRA_LINHA_VENDAS - 1);
                 await inserirLinhaVazia(sheetsToken, vendasSpreadsheetId, sheetId, pos0);
-                colDatas.push(null);
-                linhaVazia.push(true);
-                obsVendasExistentes.push('');
+                colDatas[pos0] = null;
+                linhaVazia[pos0] = true;
+                obsVendasExistentes[pos0] = '';
               }
               await escreverLinhaVendas(sheetsToken, vendasSpreadsheetId, pos0 + 1, row);
 
