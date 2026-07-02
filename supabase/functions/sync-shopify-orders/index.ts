@@ -307,8 +307,9 @@ Deno.serve(async (req) => {
     const vendasSpreadsheetId = Deno.env.get('GOOGLE_SHEETS_VENDAS_ID');
     let sheetsToken: string | null = null;
     let sheetId: number | null = null;
-    // Estado local da planilha, atualizado a cada inserção para manter a ordem correta no lote
-    let colDatas: (number | null)[] = []; // data (dia) de cada linha — para posicionar
+    // Estado local da planilha, atualizado a cada gravação
+    let colDatas: (number | null)[] = []; // data (dia) de cada linha
+    let linhaVazia: boolean[] = []; // se a linha está sem dados em B (Data vazia = linha disponível)
     let obsVendasExistentes: string[] = []; // coluna OBS — para deduplicação
     if (serviceAccountKey && vendasSpreadsheetId) {
       try {
@@ -316,8 +317,9 @@ Deno.serve(async (req) => {
         sheetId = await getSheetId(sheetsToken, vendasSpreadsheetId, ABA_VENDAS);
         const linhas = await lerVendas(sheetsToken, vendasSpreadsheetId);
         colDatas = linhas.map((r) => diaDaDataBR((r?.[0] || '').toString()));
+        linhaVazia = linhas.map((r) => !((r?.[0] || '').toString().trim()));
         obsVendasExistentes = linhas.map((r) => (r?.[8] || '').toString());
-        console.log(`Vendas Diário: ${linhas.length} linha(s) lidas (B:K, sheetId=${sheetId}) para posicionamento e dedup`);
+        console.log(`Vendas Diário: ${linhas.length} linha(s) lidas (B:K, sheetId=${sheetId})`);
         if (sheetId === null) {
           console.error(`Aba "${ABA_VENDAS}" não encontrada — pulando lançamento na planilha`);
           sheetsToken = null;
@@ -334,6 +336,12 @@ Deno.serve(async (req) => {
     const jaNaPlanilha = (orderName: string): boolean => {
       const marcador = marcadorShopify(orderName).toLowerCase();
       return obsVendasExistentes.some((o) => o.toLowerCase().includes(marcador));
+    };
+
+    /** Primeira linha (0-based) sem Data preenchida — para reaproveitar linhas já criadas. */
+    const acharLinhaVazia = (): number => {
+      for (let i = 0; i < linhaVazia.length; i++) if (linhaVazia[i]) return i;
+      return -1;
     };
 
     let importados = 0;
