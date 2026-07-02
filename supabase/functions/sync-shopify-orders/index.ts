@@ -133,7 +133,7 @@ async function getGoogleAccessToken(serviceAccountKey: string): Promise<string> 
   return tokenData.access_token;
 }
 
-const ABA_VENDAS = 'Vendas Site';
+const ABA_VENDAS = 'Vendas Diário';
 const TIMEZONE_BR = 'America/Sao_Paulo';
 
 function valorOuTraco(v: unknown): string {
@@ -174,13 +174,13 @@ async function getSheetId(accessToken: string, spreadsheetId: string, title: str
   return sheet?.properties?.sheetId ?? null;
 }
 
-/** Lê todas as linhas (B:K) da aba "Vendas Site" — coluna A é vazia, dados começam em B. */
+/** Lê todas as linhas (B:K) da aba "Vendas Diário" — coluna A é vazia, dados começam em B. */
 async function lerVendas(accessToken: string, spreadsheetId: string): Promise<string[][]> {
   const range = encodeURIComponent(`${ABA_VENDAS}!B:K`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!res.ok) {
-    console.error('Erro ao ler a aba Vendas Site:', await res.text());
+    console.error('Erro ao ler a aba Vendas Diário:', await res.text());
     return [];
   }
   const data = await res.json();
@@ -205,7 +205,7 @@ async function inserirLinhaVazia(accessToken: string, spreadsheetId: string, she
   if (!res.ok) throw new Error(`Falha ao inserir linha na planilha: ${await res.text()}`);
 }
 
-/** Escreve os valores de um pedido na linha rowNumber1 (1-based) da aba "Vendas Site" (B:K). */
+/** Escreve os valores de um pedido na linha rowNumber1 (1-based) da aba "Vendas Diário" (B:K). */
 async function escreverLinhaVendas(accessToken: string, spreadsheetId: string, rowNumber1: number, row: string[]): Promise<void> {
   const range = encodeURIComponent(`${ABA_VENDAS}!B${rowNumber1}:K${rowNumber1}`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueInputOption=USER_ENTERED`;
@@ -317,7 +317,7 @@ Deno.serve(async (req) => {
         const linhas = await lerVendas(sheetsToken, vendasSpreadsheetId);
         colDatas = linhas.map((r) => diaDaDataBR((r?.[0] || '').toString()));
         obsVendasExistentes = linhas.map((r) => (r?.[8] || '').toString());
-        console.log(`Vendas Diário: ${linhas.length} linha(s) lidas (sheetId=${sheetId}) para posicionamento e dedup`);
+        console.log(`Vendas Diário: ${linhas.length} linha(s) lidas (B:K, sheetId=${sheetId}) para posicionamento e dedup`);
         if (sheetId === null) {
           console.error(`Aba "${ABA_VENDAS}" não encontrada — pulando lançamento na planilha`);
           sheetsToken = null;
@@ -440,16 +440,16 @@ Deno.serve(async (req) => {
               const diaTs = diaDaDataBR(dataBR) ?? Date.now();
               const obs = valorOuTraco([order.note, marcadorShopify(order.name)].filter(Boolean).join(' | '));
               const row = [
-                dataBR,                                                             // A - Data
-                valorOuTraco(nomeCliente),                                          // B - Nome
-                'Site',                                                             // C - Canal
-                'Site',                                                             // D - Vendedor
-                (parseFloat(order.total_price) || 0).toFixed(2).replace('.', ','), // E - Valor
-                mapPaymentGateway(order.payment_gateway_names),                     // F - Forma de Pag.
-                order.financial_status === 'paid' ? 'Pago' : 'Pendente',           // G - Status
-                valorOuTraco(itensTexto),                                           // H - Item
-                obs,                                                                // I - OBS (inclui marcador de dedup)
-                valorOuTraco(cupom),                                                // J - Cupom
+                dataBR,                                                             // B - Data
+                valorOuTraco(nomeCliente),                                          // C - Nome
+                'Site',                                                             // D - Canal
+                'Site',                                                             // E - Vendedor
+                (parseFloat(order.total_price) || 0).toFixed(2).replace('.', ','), // F - Valor (R$)
+                mapPaymentGateway(order.payment_gateway_names),                     // G - Forma de Pag.
+                order.financial_status === 'paid' ? 'Pago' : 'Pendente',           // H - Status
+                valorOuTraco(itensTexto),                                           // I - Item
+                obs,                                                                // J - OBS (inclui marcador de dedup)
+                valorOuTraco(cupom),                                                // K - Cupom
               ];
 
               // Posiciona no dia correto (pedidos já vêm ordenados por hora)
