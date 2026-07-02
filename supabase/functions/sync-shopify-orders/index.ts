@@ -460,17 +460,28 @@ Deno.serve(async (req) => {
                 valorOuTraco(cupom),                                                // K - Cupom
               ];
 
-              // Posiciona no dia correto (pedidos já vêm ordenados por hora)
-              const pos0 = calcularPosicaoInsercao(colDatas, diaTs);
-              await inserirLinhaVazia(sheetsToken, vendasSpreadsheetId, sheetId, pos0);
+              // Reaproveita primeira linha em branco (formatação/validação já preservadas);
+              // se não houver, insere uma nova no fim mantendo herança de formatação.
+              const posVazia = acharLinhaVazia();
+              let pos0: number;
+              if (posVazia >= 0) {
+                pos0 = posVazia;
+              } else {
+                pos0 = colDatas.length;
+                await inserirLinhaVazia(sheetsToken, vendasSpreadsheetId, sheetId, pos0);
+                colDatas.push(null);
+                linhaVazia.push(true);
+                obsVendasExistentes.push('');
+              }
               await escreverLinhaVendas(sheetsToken, vendasSpreadsheetId, pos0 + 1, row);
 
-              // Atualiza o estado local para os próximos pedidos do mesmo lote
-              colDatas.splice(pos0, 0, diaTs);
-              obsVendasExistentes.splice(pos0, 0, obs);
+              // Atualiza o estado local
+              colDatas[pos0] = diaTs;
+              linhaVazia[pos0] = false;
+              obsVendasExistentes[pos0] = obs;
 
               planilhaLancados++;
-              console.log(`Pedido ${order.name} lançado na planilha de Vendas (linha ${pos0 + 1})`);
+              console.log(`Pedido ${order.name} gravado na planilha de Vendas (linha ${pos0 + 1})`);
             } catch (e) {
               console.error(`Erro ao lançar ${order.name} na planilha de Vendas:`, e);
               erros++;
