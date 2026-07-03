@@ -552,7 +552,7 @@ export default function KitUrbanEdc() {
 
         <div className="pay-info">
           <span className="pay-pix">ou {BRL2(totalPix)} no Pix <em>({DESCONTO_PIX}% OFF)</em></span>
-          <span className="pay-parc">ATÉ {parcelamento.parcelas}X DE {BRL2(valorParcela)}</span>
+          <span className="pay-parc">OU EM 10X DE {BRL2(total / 10)} SEM JUROS</span>
         </div>
 
         <a className="btn-cta" href={waUrl} target="_blank" rel="noopener noreferrer">{cfg.texts.ctaText}</a>
