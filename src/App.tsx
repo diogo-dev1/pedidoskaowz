@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
 import Auth from "./pages/Auth";
+import Home from "./pages/Home";
 import Simulador from "./pages/Simulador";
 import Lote from "./pages/Lote";
 import AuxilioVendas from "./pages/AuxilioVendas";
@@ -57,6 +58,8 @@ import Producao from "./pages/Producao";
 import ExpedicaoPage from "./pages/ExpedicaoPage";
 import SimuladorPrecos from "./pages/SimuladorPrecos";
 import ProdutosShopify from "./pages/ProdutosShopify";
+import RelatorioVendas from "./pages/RelatorioVendas";
+import RelatorioVendasRelatorios from "./pages/RelatorioVendasRelatorios";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -73,6 +76,16 @@ const App = () => (
             <Route path="/install" element={<Install />} />
             <Route
               path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Home />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/novo-pedido"
               element={
                 <ProtectedRoute>
                   <Layout>
@@ -461,6 +474,26 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <SimuladorPrecos />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/relatorio-vendas"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <RelatorioVendas />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/relatorio-vendas/relatorios"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <RelatorioVendasRelatorios />
                   </Layout>
                 </ProtectedRoute>
               }

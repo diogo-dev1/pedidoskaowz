@@ -37,6 +37,13 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 0 0% 20%;
     --sidebar-ring: 28 90% 55%;
+
+    /* Paleta dos gráficos (Relatório de Vendas) — laranja Kaowz primeiro */
+    --chart-1: 28 90% 55%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 0 72% 51%;
+    --chart-5: 262 83% 58%;
   }
   
   .dark {
@@ -68,6 +75,12 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 0 0% 20%;
     --sidebar-ring: 28 90% 55%;
+
+    --chart-1: 28 90% 55%;
+    --chart-2: 160 84% 45%;
+    --chart-3: 217 91% 65%;
+    --chart-4: 0 72% 55%;
+    --chart-5: 262 83% 65%;
   }
 }
 

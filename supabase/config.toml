@@ -20,3 +20,9 @@ verify_jwt = false
 
 [functions.read-pedidos-lancar]
 verify_jwt = false
+
+[functions.fetch-sales]
+verify_jwt = false
+
+[functions.add-sale]
+verify_jwt = false

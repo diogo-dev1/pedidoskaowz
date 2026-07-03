@@ -67,12 +67,14 @@ export function AppSidebar() {
   const isCollapsed = state === 'collapsed';
 
   const vendaItems: MenuItem[] = [
-    { title: 'Novo Pedido', url: '/', icon: Calculator },
+    { title: 'Início', url: '/', icon: LayoutDashboard },
+    { title: 'Novo Pedido', url: '/novo-pedido', icon: Calculator },
     { title: 'Pedidos a Lançar', url: '/triagem', icon: ClipboardList },
     { title: 'Pedidos', url: '/pedidos', icon: ShoppingBag },
     { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
     { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
     { title: 'Simulador de Preços', url: '/simulador-precos', icon: Calculator },
+    { title: 'Relatório de Vendas', url: '/relatorio-vendas', icon: TrendingUp },
   ];
 
   const producaoItems: MenuItem[] = [
