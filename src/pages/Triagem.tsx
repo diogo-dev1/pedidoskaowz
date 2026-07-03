@@ -111,7 +111,7 @@ export default function Triagem() {
       ) : (
         <>
           {/* Cards minimalistas */}
-          <div className="grid gap-2">
+          <div className="grid grid-cols-1 gap-2">
             {pedidos.map(pedido => (
               <Card
                 key={pedido.row}
@@ -200,7 +200,7 @@ export default function Triagem() {
                 )}
 
                 {/* Botões de ação */}
-                <div className="grid gap-2 pt-2">
+                <div className="grid grid-cols-1 gap-2 pt-2">
                   <Button
                     className="w-full bg-green-600 hover:bg-green-700"
                     onClick={() => executarAcao(pedidoSelecionado, 'vendas', 'Lançamento no Relatório de Vendas')}

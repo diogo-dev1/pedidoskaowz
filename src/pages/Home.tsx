@@ -185,7 +185,7 @@ export default function Home() {
     : '—';
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[290px_1fr] items-start">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[290px_1fr] items-start">
       {/* ── Coluna esquerda: perfil + atalhos ─────────────────── */}
       <div className="space-y-4 order-2 lg:order-1">
         {/* Perfil */}
@@ -306,7 +306,7 @@ export default function Home() {
               <Loader2 className="h-4 w-4 animate-spin" /> Carregando resumo...
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {/* Vendas de hoje (planilha) */}
               <div className="rounded-lg border bg-muted/30 p-4">
                 <p className="text-sm font-semibold mb-2">Pedidos de venda</p>
