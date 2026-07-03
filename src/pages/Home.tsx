@@ -3,9 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { NavLink } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSales } from '@/hooks/useSales';
 import {
   Calculator, ShoppingBag, FilePlus2, ArrowRight, User, Bookmark,
-  ChevronRight, RefreshCw, Factory, Loader2,
+  ChevronRight, RefreshCw, Factory, Loader2, AlertCircle, TrendingUp,
 } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -16,17 +17,14 @@ const META_DIARIA = 9000;
 const brl = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-function inicioDoDia(): Date {
+/** Data de hoje no formato DD/MM/YYYY — mesmo formato da planilha de vendas. */
+function hojeBR(): string {
   const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
 
-interface PedidoResumo {
-  created_at: string;
-  valor_total: number | null;
-  status: string | null;
-  bloqueado_expedicao: boolean | null;
+function chaveDia(d: Date): string {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
 
 // ── Banners de ação (estilo Bling, cores Kaowz) ──────────────────
@@ -66,7 +64,7 @@ const ATALHOS = [
   { titulo: 'Produção', url: '/producao' },
   { titulo: 'Expedição', url: '/expedicao' },
   { titulo: 'Clientes', url: '/clientes' },
-  { titulo: 'Produtos Shopify', url: '/produtos-shopify' },
+  { titulo: 'Relatório de Vendas', url: '/relatorio-vendas' },
 ];
 
 function DotRow({ cor, valor, label }: { cor: string; valor: number; label: string }) {
@@ -83,24 +81,17 @@ export default function Home() {
   const { profile, user } = useAuth();
   const [periodo, setPeriodo] = useState<7 | 30 | 90>(7);
 
-  // Pedidos dos últimos 90 dias — alimenta métricas do dia e o gráfico
-  const { data: pedidos90d, isLoading, dataUpdatedAt, refetch, isFetching } = useQuery({
-    queryKey: ['home-pedidos-90d'],
-    queryFn: async () => {
-      const inicio = new Date();
-      inicio.setDate(inicio.getDate() - 90);
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select('created_at, valor_total, status, bloqueado_expedicao')
-        .gte('created_at', inicio.toISOString())
-        .order('created_at', { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as PedidoResumo[];
-    },
-    staleTime: 60_000,
-  });
+  // Vendas reais da planilha de Relatório de Vendas (mesma fonte do /relatorio-vendas)
+  const {
+    sales,
+    lastUpdated,
+    isLoading: vendasLoading,
+    isError: vendasErro,
+    refetch,
+    isFetching,
+  } = useSales();
 
-  // Contagens gerais de status (todos os pedidos)
+  // Contagens gerais de status (pedidos do sistema)
   const { data: statusGeral } = useQuery({
     queryKey: ['home-status-geral'],
     queryFn: async () => {
@@ -142,16 +133,15 @@ export default function Home() {
     staleTime: 60_000,
   });
 
+  // Vendas de hoje — direto da planilha (data no formato DD/MM/YYYY)
   const hoje = useMemo(() => {
-    const inicio = inicioDoDia().getTime();
-    const doDia = (pedidos90d ?? []).filter(
-      (p) => new Date(p.created_at).getTime() >= inicio
-    );
+    const chave = hojeBR();
+    const doDia = sales.filter((s) => s.date === chave);
     return {
       total: doDia.length,
-      valor: doDia.reduce((s, p) => s + (Number(p.valor_total) || 0), 0),
+      valor: doDia.reduce((sum, s) => sum + s.value, 0),
     };
-  }, [pedidos90d]);
+  }, [sales]);
 
   const situacao = useMemo(() => {
     const rows = statusGeral ?? [];
@@ -171,29 +161,27 @@ export default function Home() {
     };
   }, [expedicoes]);
 
+  // Gráfico: soma da planilha por dia, nos últimos N dias
   const dadosGrafico = useMemo(() => {
-    const dias: { dia: string; valor: number }[] = [];
     const mapa = new Map<string, number>();
-    for (const p of pedidos90d ?? []) {
-      const d = new Date(p.created_at);
-      const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      mapa.set(chave, (mapa.get(chave) ?? 0) + (Number(p.valor_total) || 0));
+    for (const s of sales) {
+      mapa.set(s.date, (mapa.get(s.date) ?? 0) + s.value);
     }
+    const dias: { dia: string; valor: number }[] = [];
     for (let i = periodo - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       dias.push({
         dia: `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`,
-        valor: mapa.get(chave) ?? 0,
+        valor: mapa.get(chaveDia(d)) ?? 0,
       });
     }
     return dias;
-  }, [pedidos90d, periodo]);
+  }, [sales, periodo]);
 
   const metaPct = Math.min(100, Math.round((hoje.valor / META_DIARIA) * 100));
-  const horaAtualizacao = dataUpdatedAt
-    ? new Date(dataUpdatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  const horaAtualizacao = lastUpdated
+    ? new Date(lastUpdated).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     : '—';
 
   return (
@@ -261,13 +249,13 @@ export default function Home() {
 
       {/* ── Coluna principal ──────────────────────────────────── */}
       <div className="space-y-4 order-1 lg:order-2 min-w-0">
-        {/* Banners de ação */}
-        <div className="grid gap-3 sm:grid-cols-3">
+        {/* Banners de ação — carrossel com snap no mobile, grid no desktop */}
+        <div className="flex gap-3 overflow-x-auto snap-x-carousel -mx-3 px-3 pb-1 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:grid-cols-3 sm:overflow-visible">
           {BANNERS.map((b) => (
             <NavLink
               key={b.url}
               to={b.url}
-              className={`group relative rounded-xl p-4 flex flex-col justify-between min-h-[130px] shadow-sm hover:shadow-md transition-all overflow-hidden ${b.classe}`}
+              className={`group relative rounded-xl p-4 flex flex-col justify-between min-h-[130px] min-w-[78%] sm:min-w-0 shadow-sm hover:shadow-md transition-all overflow-hidden ${b.classe}`}
             >
               <b.icon className="absolute -right-3 -bottom-3 h-20 w-20 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all" />
               <div>
@@ -282,13 +270,22 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Resumo diário */}
+        {/* Resumo diário — alimentado pela planilha de Relatório de Vendas */}
         <div className="rounded-xl border bg-card p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">Resumo diário</h2>
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="font-semibold">Resumo diário</h2>
+              <NavLink
+                to="/relatorio-vendas"
+                className="hidden sm:flex items-center gap-1 text-[11px] text-accent hover:underline"
+              >
+                <TrendingUp className="h-3 w-3" />
+                ver relatório completo
+              </NavLink>
+            </div>
             <button
               onClick={() => refetch()}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
             >
               {isFetching
                 ? <Loader2 className="h-3 w-3 animate-spin" />
@@ -297,25 +294,32 @@ export default function Home() {
             </button>
           </div>
 
-          {isLoading ? (
+          {vendasErro && (
+            <div className="flex items-center gap-2 p-3 mb-4 rounded-lg bg-destructive/10 text-destructive text-xs">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>Não foi possível carregar as vendas da planilha. Toque em atualizar para tentar de novo.</span>
+            </div>
+          )}
+
+          {vendasLoading ? (
             <div className="flex items-center justify-center py-10 text-muted-foreground gap-2 text-sm">
               <Loader2 className="h-4 w-4 animate-spin" /> Carregando resumo...
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-3">
-              {/* Pedidos de venda */}
+              {/* Vendas de hoje (planilha) */}
               <div className="rounded-lg border bg-muted/30 p-4">
                 <p className="text-sm font-semibold mb-2">Pedidos de venda</p>
-                <DotRow cor="bg-zinc-400" valor={hoje.total} label="Vendas hoje" />
+                <DotRow cor="bg-accent" valor={hoje.total} label="Vendas hoje" />
                 <DotRow cor="bg-emerald-500" valor={situacao.novos} label="Aguardando triagem" />
                 <DotRow cor="bg-blue-500" valor={situacao.emProducao} label="Em produção" />
                 <DotRow cor="bg-red-500" valor={situacao.bloqueados} label="Bloqueados" />
               </div>
 
-              {/* Meta diária */}
+              {/* Meta diária (planilha) */}
               <div className="rounded-lg border bg-muted/30 p-4 flex flex-col">
                 <p className="text-sm font-semibold mb-2">Meta diária</p>
-                <p className="text-2xl font-bold text-accent">{brl(hoje.valor)}</p>
+                <p className="text-2xl font-bold text-accent" data-numeric>{brl(hoje.valor)}</p>
                 <p className="text-xs text-muted-foreground mb-3">de {brl(META_DIARIA)}</p>
                 <div className="h-2 rounded-full bg-muted overflow-hidden mt-auto">
                   <div
@@ -330,7 +334,7 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Expedição */}
+              {/* Expedição (sistema) */}
               <div className="rounded-lg border bg-muted/30 p-4">
                 <p className="text-sm font-semibold mb-2">Expedição</p>
                 <DotRow cor="bg-amber-500" valor={expedicaoResumo.aguardando} label="Aguardando" />
@@ -341,7 +345,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* Gráficos */}
+        {/* Gráfico de vendas por dia — planilha */}
         <div className="rounded-xl border bg-card p-4 sm:p-5">
           <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
             <h2 className="font-semibold">Vendas por dia</h2>

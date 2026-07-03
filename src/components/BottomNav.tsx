@@ -1,9 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  Calculator, FileText, Users, TrendingUp, MoreHorizontal,
-  ShoppingBag, MessageSquare, BookOpen, Image, Eye, DollarSign,
-  CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User, Globe, Truck
+  Calculator, Users, TrendingUp, MoreHorizontal, LayoutDashboard,
+  ShoppingBag, MessageSquare, BookOpen, Image, DollarSign, Factory,
+  CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User, Globe, Truck,
+  ClipboardList, Boxes, Download, Briefcase,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -15,53 +16,65 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
 }
 
+// 4 destinos de polegar + botão "Mais" — o fluxo diário inteiro a um toque
 const mainTabs: NavItem[] = [
-  { title: 'Simulador', url: '/', icon: Calculator },
-  { title: 'Orçamento', url: '/orcamento', icon: FileText },
-  { title: 'Clientes', url: '/clientes', icon: Users },
-  { title: 'Leads', url: '/leads', icon: TrendingUp },
+  { title: 'Início', url: '/', icon: LayoutDashboard },
+  { title: 'Novo', url: '/novo-pedido', icon: Calculator },
+  { title: 'Pedidos', url: '/pedidos', icon: ShoppingBag },
+  { title: 'Produção', url: '/producao', icon: Factory },
 ];
 
 const moreItems: { label: string; items: NavItem[] }[] = [
   {
     label: 'Vendas',
     items: [
+      { title: 'Pedidos a Lançar', url: '/triagem', icon: ClipboardList },
       { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
       { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
+      { title: 'Simulador de Preços', url: '/simulador-precos', icon: Calculator },
+      { title: 'Relatório de Vendas', url: '/relatorio-vendas', icon: TrendingUp },
+    ],
+  },
+  {
+    label: 'Produção',
+    items: [
+      { title: 'Expedição', url: '/expedicao', icon: Truck },
+      { title: 'Lote (legado)', url: '/lote', icon: Package },
     ],
   },
   {
     label: 'CRM',
     items: [
+      { title: 'Clientes', url: '/clientes', icon: Users },
+      { title: 'Leads', url: '/leads', icon: TrendingUp },
       { title: 'Tarefas', url: '/tarefas', icon: CheckSquare },
     ],
   },
   {
-    label: 'Conteúdo',
+    label: 'Catálogos e Conteúdo',
     items: [
       { title: 'Catálogo Público', url: '/catalogo', icon: ShoppingBag },
-      { title: 'Catálogo Público Internacional', url: '/catalogo-publico-internacional', icon: Globe },
       { title: 'Catálogo Revendedor', url: '/catalogo-revendedor', icon: Store },
-      { title: 'Catálogo Revendedor Internacional', url: '/catalogo-internacional', icon: Globe },
+      { title: 'Push Dagger Kaowz', url: '/push-dagger-kaowz', icon: Layers },
+      { title: 'Monte seu Kit', url: '/monte-seu-kit', icon: Layers },
+      { title: 'Kit Urban EDC', url: '/kit-urban-edc', icon: Layers },
       { title: 'Auxílio de Vendas', url: '/auxilio-vendas', icon: BookOpen },
       { title: 'Mensagens', url: '/mensagens', icon: MessageSquare },
       { title: 'Mídia', url: '/midia', icon: Image },
-      { title: 'Preview', url: '/preview', icon: Eye },
     ],
   },
 ];
 
 const adminMoreItems: NavItem[] = [
+  { title: 'Cases Patola', url: '/admin/cases-patola', icon: Briefcase },
   { title: 'Modelos', url: '/admin/modelos', icon: Layers },
   { title: 'Componentes', url: '/admin/componentes', icon: Package },
   { title: 'Configurações', url: '/admin/configuracoes', icon: Settings },
   { title: 'Informativos', url: '/admin/informativos', icon: Info },
-  { title: 'Config. Catálogo Público', url: '/admin/catalogo', icon: Store },
-  { title: 'Config. Catálogo Público Internacional', url: '/admin/catalogo-publico-internacional', icon: Globe },
-  { title: 'Config. Catálogo Revendedor', url: '/admin/catalogo-revendedor', icon: TrendingUp },
-  { title: 'Config. Catálogo Revendedor Internacional', url: '/admin/catalogo-internacional', icon: Globe },
-  { title: 'Config. Preview', url: '/admin/preview', icon: Eye },
   { title: 'Bling', url: '/bling', icon: Link2 },
+  { title: 'Produtos Shopify', url: '/produtos-shopify', icon: ShoppingBag },
+  { title: 'Estoque Shopify', url: '/inventory', icon: Boxes },
+  { title: 'Vendas Site', url: '/shopify-orders', icon: Download },
 ];
 
 export function BottomNav() {
@@ -82,7 +95,7 @@ export function BottomNav() {
     <>
       {/* Side panel */}
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="right" className="w-[280px] p-0 overflow-y-auto">
+        <SheetContent side="right" className="w-[290px] p-0 overflow-y-auto">
           <SheetHeader className="px-4 py-3 border-b border-border">
             {profile && (
               <div className="flex items-center gap-2">
@@ -98,7 +111,7 @@ export function BottomNav() {
             {!profile && <SheetTitle>Menu</SheetTitle>}
           </SheetHeader>
 
-          <div className="p-3 space-y-4">
+          <div className="p-3 space-y-4 pb-safe">
             {moreItems.map((group) => (
               <div key={group.label}>
                 <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground px-2 mb-1.5">{group.label}</p>
@@ -163,7 +176,10 @@ export function BottomNav() {
       </Sheet>
 
       {/* Bottom tab bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border md:hidden safe-area-bottom">
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur border-t border-border md:hidden pb-safe"
+        aria-label="Navegação principal"
+      >
         <div className="flex items-stretch">
           {mainTabs.map((tab) => (
             <NavLink
@@ -172,7 +188,7 @@ export function BottomNav() {
               end={tab.url === '/'}
               className={({ isActive }) =>
                 cn(
-                  'flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] transition-colors',
+                  'flex-1 flex flex-col items-center gap-0.5 pt-1.5 pb-2 text-[10px] transition-colors',
                   isActive
                     ? 'text-accent font-semibold'
                     : 'text-muted-foreground'
@@ -181,7 +197,14 @@ export function BottomNav() {
             >
               {({ isActive }) => (
                 <>
-                  <tab.icon className={cn('h-5 w-5', isActive && 'text-accent')} />
+                  <span
+                    className={cn(
+                      'flex items-center justify-center h-7 w-12 rounded-full transition-colors',
+                      isActive && 'bg-accent/15'
+                    )}
+                  >
+                    <tab.icon className="h-5 w-5" />
+                  </span>
                   <span>{tab.title}</span>
                 </>
               )}
@@ -190,13 +213,20 @@ export function BottomNav() {
           <button
             onClick={() => setMoreOpen(true)}
             className={cn(
-              'flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] transition-colors',
+              'flex-1 flex flex-col items-center gap-0.5 pt-1.5 pb-2 text-[10px] transition-colors',
               isMoreActive || moreOpen
                 ? 'text-accent font-semibold'
                 : 'text-muted-foreground'
             )}
           >
-            <MoreHorizontal className={cn('h-5 w-5', (isMoreActive || moreOpen) && 'text-accent')} />
+            <span
+              className={cn(
+                'flex items-center justify-center h-7 w-12 rounded-full transition-colors',
+                (isMoreActive || moreOpen) && 'bg-accent/15'
+              )}
+            >
+              <MoreHorizontal className="h-5 w-5" />
+            </span>
             <span>Mais</span>
           </button>
         </div>

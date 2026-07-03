@@ -88,7 +88,7 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-  
+
   html, body, #root {
     overflow-x: hidden;
     max-width: 100%;
@@ -97,21 +97,90 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   img, video {
     max-width: 100%;
     height: auto;
   }
-  
+
   /* Typography minimalista */
   h1, h2, h3, h4, h5, h6 {
     @apply font-medium tracking-tight;
   }
-  
+
   /* Scroll suave */
   html {
     scroll-behavior: smooth;
+  }
+
+  /* Foco visível consistente (teclado) — acessibilidade sem poluir o mouse */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Números alinhados em tabelas e valores monetários */
+  table, [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Scrollbar discreta (desktop) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+
+  /* Touch: alvo mínimo confortável e sem highlight azul nativo */
+  @media (pointer: coarse) {
+    button, [role="button"], a {
+      -webkit-tap-highlight-color: transparent;
+    }
+  }
+
+  /* Respeita usuários que preferem menos animação */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Área segura (iPhone notch / barra de gestos) */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .h-bottom-nav {
+    height: calc(4rem + env(safe-area-inset-bottom));
+  }
+
+  /* Carrossel com snap para cards no mobile */
+  .snap-x-carousel {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .snap-x-carousel::-webkit-scrollbar {
+    display: none;
+  }
+  .snap-x-carousel > * {
+    scroll-snap-align: start;
   }
 }
 

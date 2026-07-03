@@ -37,7 +37,7 @@ function MenuSection({ label, items, isCollapsed }: { label: string; items: Menu
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton asChild tooltip={item.title}>
                 <NavLink
                   to={item.url}
                   end={item.url === '/'}
