@@ -260,23 +260,23 @@ export default function Home() {
               <ShoppingCart className="h-4 w-4 text-accent" />
               <h2 className="text-sm font-semibold">Vendas Site</h2>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">De</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wide w-6 shrink-0">De</span>
                 <Input
                   type="date"
                   value={syncFrom}
                   onChange={(e) => setSyncFrom(e.target.value)}
-                  className="h-8 text-xs px-2 w-full"
+                  className="h-8 text-xs px-2 flex-1 min-w-0"
                 />
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Até</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wide w-6 shrink-0">Até</span>
                 <Input
                   type="date"
                   value={syncTo}
                   onChange={(e) => setSyncTo(e.target.value)}
-                  className="h-8 text-xs px-2 w-full"
+                  className="h-8 text-xs px-2 flex-1 min-w-0"
                 />
               </div>
             </div>
