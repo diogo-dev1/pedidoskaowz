@@ -255,24 +255,30 @@ export default function Home() {
 
         {/* Sync Vendas Site — admin only */}
         {isAdmin && (
-          <div className="rounded-xl border bg-card p-4 space-y-2.5">
+          <div className="rounded-xl border bg-card p-4 space-y-3">
             <div className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4 text-accent" />
               <h2 className="text-sm font-semibold">Vendas Site</h2>
             </div>
-            <div className="flex gap-2">
-              <Input
-                type="date"
-                value={syncFrom}
-                onChange={(e) => setSyncFrom(e.target.value)}
-                className="h-8 text-xs px-2"
-              />
-              <Input
-                type="date"
-                value={syncTo}
-                onChange={(e) => setSyncTo(e.target.value)}
-                className="h-8 text-xs px-2"
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">De</p>
+                <Input
+                  type="date"
+                  value={syncFrom}
+                  onChange={(e) => setSyncFrom(e.target.value)}
+                  className="h-8 text-xs px-2 w-full"
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Até</p>
+                <Input
+                  type="date"
+                  value={syncTo}
+                  onChange={(e) => setSyncTo(e.target.value)}
+                  className="h-8 text-xs px-2 w-full"
+                />
+              </div>
             </div>
             <Button
               onClick={handleSyncShopify}
