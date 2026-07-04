@@ -4,9 +4,12 @@ import { NavLink } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSales } from '@/hooks/useSales';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Calculator, ShoppingBag, FilePlus2, ArrowRight, User, Bookmark,
-  ChevronRight, RefreshCw, Factory, Loader2, AlertCircle, TrendingUp,
+  ChevronRight, RefreshCw, Factory, Loader2, AlertCircle, TrendingUp, ShoppingCart,
 } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -80,6 +83,33 @@ function DotRow({ cor, valor, label }: { cor: string; valor: number; label: stri
 export default function Home() {
   const { profile, user } = useAuth();
   const [periodo, setPeriodo] = useState<7 | 30 | 90>(7);
+
+  const isAdmin = profile?.cargo === 'admin' || profile?.cargo === 'vendedor';
+  const hojeISO = new Date().toISOString().split('T')[0];
+  const [syncFrom, setSyncFrom] = useState(hojeISO);
+  const [syncTo, setSyncTo] = useState(hojeISO);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+
+  async function handleSyncShopify() {
+    setSyncing(true);
+    setSyncMsg(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-shopify-orders', {
+        body: { data_inicio: syncFrom, data_fim: syncTo },
+      });
+      if (error) throw error;
+      const msg = data?.mensagem ?? 'Pedidos sincronizados!';
+      setSyncMsg(msg);
+      toast.success(msg);
+    } catch (err: any) {
+      const msg = err?.message ?? 'Erro ao sincronizar';
+      setSyncMsg(msg);
+      toast.error(msg);
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   // Vendas reais da planilha de Relatório de Vendas (mesma fonte do /relatorio-vendas)
   const {
@@ -221,6 +251,44 @@ export default function Home() {
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
           </NavLink>
+        )}
+
+        {/* Sync Vendas Site — admin only */}
+        {isAdmin && (
+          <div className="rounded-xl border bg-card p-4 space-y-2.5">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4 text-accent" />
+              <h2 className="text-sm font-semibold">Vendas Site</h2>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                value={syncFrom}
+                onChange={(e) => setSyncFrom(e.target.value)}
+                className="h-8 text-xs px-2"
+              />
+              <Input
+                type="date"
+                value={syncTo}
+                onChange={(e) => setSyncTo(e.target.value)}
+                className="h-8 text-xs px-2"
+              />
+            </div>
+            <Button
+              onClick={handleSyncShopify}
+              disabled={syncing}
+              size="sm"
+              className="w-full gap-2"
+            >
+              {syncing
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <RefreshCw className="h-3.5 w-3.5" />}
+              {syncing ? 'Sincronizando...' : 'Sincronizar pedidos'}
+            </Button>
+            {syncMsg && (
+              <p className="text-xs text-center text-muted-foreground leading-snug">{syncMsg}</p>
+            )}
+          </div>
         )}
 
         {/* Atalhos favoritos */}
