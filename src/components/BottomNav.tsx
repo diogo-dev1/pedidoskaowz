@@ -4,7 +4,7 @@ import {
   Calculator, Users, TrendingUp, MoreHorizontal, LayoutDashboard,
   ShoppingBag, MessageSquare, BookOpen, Image, DollarSign, Factory,
   CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User, Globe, Truck,
-  ClipboardList, Boxes, Download, Briefcase,
+  ClipboardList, Boxes, Download, Briefcase, Send,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -33,6 +33,7 @@ const moreItems: { label: string; items: NavItem[] }[] = [
       { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
       { title: 'Simulador de Preços', url: '/simulador-precos', icon: Calculator },
       { title: 'Relatório de Vendas', url: '/relatorio-vendas', icon: TrendingUp },
+      { title: 'Lançar no Bling', url: '/lancar-bling', icon: Send },
     ],
   },
   {

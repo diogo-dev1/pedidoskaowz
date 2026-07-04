@@ -21,21 +21,42 @@ Deno.serve(async (req) => {
   try {
     const payload = await req.json();
 
+    // Quando waitForBling=true, o Bling roda de forma síncrona e o resultado
+    // é retornado na resposta — permite que o cliente saiba se deu certo.
+    const waitForBling = payload.waitForBling === true;
+
     // PASSO 1: Salvar no banco (síncrono — crítico)
     const { pedido, itens } = await salvarNoBanco(supabase, payload);
 
-    // PASSO 2: Distribuir em background (não bloqueia resposta)
-    const distribuir = Promise.allSettled([
-      criarNoBling(supabase, pedido, itens),
+    // PASSO 2A: Bling síncrono (quando solicitado)
+    let blingStatus: { sucesso: boolean; erro?: string } | null = null;
+    if (waitForBling) {
+      try {
+        await criarNoBling(supabase, pedido, itens);
+        blingStatus = { sucesso: true };
+      } catch (blingErr: any) {
+        blingStatus = { sucesso: false, erro: blingErr?.message ?? 'Erro desconhecido' };
+        console.error('[bling] Erro síncrono:', blingErr?.message);
+      }
+    }
+
+    // PASSO 2B: Demais tarefas em background (expedição + financeiro + Bling assíncrono)
+    const tarefasBackground = [
       criarExpedicao(supabase, pedido),
       registrarFinanceiro(supabase, pedido),
-    ]).then(resultados => {
+      ...(waitForBling ? [] : [criarNoBling(supabase, pedido, itens)]),
+    ];
+
+    const distribuir = Promise.allSettled(tarefasBackground).then(resultados => {
+      const handlers = waitForBling
+        ? ['expedicao', 'financeiro']
+        : ['expedicao', 'financeiro', 'bling'];
       const log = resultados.map((r, i) => ({
-        handler: ['bling', 'expedicao', 'financeiro'][i],
+        handler: handlers[i],
         status: r.status,
         erro: r.status === 'rejected' ? r.reason?.message : null,
       }));
-      console.log('Distribuição concluída:', JSON.stringify(log));
+      console.log('Background concluído:', JSON.stringify(log));
     });
 
     // @ts-ignore
@@ -49,6 +70,7 @@ Deno.serve(async (req) => {
         numero_pedido: pedido.numero_pedido,
         prazo: pedido.prazo_entrega,
         mensagem: `Pedido ${pedido.numero_pedido} confirmado! Prazo: ${pedido.prazo_entrega}`,
+        bling: blingStatus,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

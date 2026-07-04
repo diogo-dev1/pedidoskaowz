@@ -1,3 +1,31 @@
+// Normaliza datas em formatos variados (20.06.73, 20/06/1973, 1973-06-20)
+// para YYYY-MM-DD — a coluna cliente_nascimento é DATE e rejeita texto livre.
+function normalizarData(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  if (!s || s === '-') return null;
+
+  // Já está em ISO (YYYY-MM-DD)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  // DD/MM/YYYY, DD.MM.YY, DD-MM-YYYY etc.
+  const m = s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);
+  if (!m) return null;
+
+  const dia = m[1].padStart(2, '0');
+  const mes = m[2].padStart(2, '0');
+  let ano = m[3];
+  if (ano.length === 2) {
+    // Ano de 2 dígitos: 00-29 → 20xx, 30-99 → 19xx
+    ano = parseInt(ano) <= 29 ? `20${ano}` : `19${ano}`;
+  }
+
+  const d = parseInt(dia), mo = parseInt(mes);
+  if (d < 1 || d > 31 || mo < 1 || mo > 12) return null;
+
+  return `${ano}-${mes}-${dia}`;
+}
+
 export async function salvarNoBanco(supabase: any, payload: any) {
   const {
     nomeCompleto, cpf, email, celular, cep, estado, cidade, bairro,
@@ -50,7 +78,7 @@ export async function salvarNoBanco(supabase: any, payload: any) {
       cliente_endereco: endereco || null,
       cliente_numero: numero || null,
       cliente_complemento: complemento || null,
-      cliente_nascimento: dataNascimento || null,
+      cliente_nascimento: normalizarData(dataNascimento),
       valor_total: valorTotal ? parseFloat(String(valorTotal).replace(',', '.')) : null,
       forma_pagamento: formaPagamento || null,
       cupom: cupom || null,

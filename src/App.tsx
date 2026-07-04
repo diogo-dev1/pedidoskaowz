@@ -60,6 +60,7 @@ import SimuladorPrecos from "./pages/SimuladorPrecos";
 import ProdutosShopify from "./pages/ProdutosShopify";
 import RelatorioVendas from "./pages/RelatorioVendas";
 import RelatorioVendasRelatorios from "./pages/RelatorioVendasRelatorios";
+import LancarPedidoBling from "./pages/LancarPedidoBling";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -524,6 +525,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <ShopifyOrders />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lancar-bling"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LancarPedidoBling />
                   </Layout>
                 </ProtectedRoute>
               }

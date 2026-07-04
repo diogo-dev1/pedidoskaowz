@@ -28,6 +28,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/inventory': 'Estoque Shopify',
   '/produtos-shopify': 'Produtos Shopify',
   '/shopify-orders': 'Vendas Site',
+  '/lancar-bling': 'Lançar no Bling',
   '/catalogo': 'Catálogo',
   '/catalogo-revendedor': 'Catálogo Revendedor',
   '/admin/modelos': 'Modelos',

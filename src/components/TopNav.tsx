@@ -4,7 +4,7 @@ import {
   Calculator, LogOut, User, MessageSquare, BookOpen, ChevronDown,
   ShoppingBag, Layers, Package, Info, CheckSquare, DollarSign,
   Users, Store, Image, TrendingUp, Eye, Link2, LayoutDashboard,
-  Globe, Truck, Briefcase, Download, Boxes, ClipboardList, Factory, Settings,
+  Globe, Truck, Briefcase, Download, Boxes, ClipboardList, Factory, Settings, Send,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -38,6 +38,7 @@ const GRUPOS: NavGroup[] = [
       { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
       { title: 'Simulador de Preços', url: '/simulador-precos', icon: Calculator },
       { title: 'Relatório de Vendas', url: '/relatorio-vendas', icon: TrendingUp },
+      { title: 'Lançar no Bling', url: '/lancar-bling', icon: Send },
     ],
   },
   {
@@ -69,7 +70,7 @@ const GRUPOS: NavGroup[] = [
     ],
   },
   {
-    label: 'Comunicação',
+    label: 'Comunic.',
     items: [
       { title: 'Auxílio de Vendas', url: '/auxilio-vendas', icon: BookOpen },
       { title: 'Mensagens', url: '/mensagens', icon: MessageSquare },
@@ -117,14 +118,14 @@ function MenuGrupo({ grupo, pathname }: { grupo: NavGroup; pathname: string }) {
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            'flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors outline-none',
+            'flex items-center gap-1 rounded-md px-2 sm:px-3 py-2 text-sm font-medium transition-colors outline-none shrink-0',
             ativo
               ? 'text-white bg-white/10'
               : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'
           )}
         >
           {grupo.label}
-          <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+          <ChevronDown className="h-3 w-3 sm:h-3.5 sm:w-3.5 opacity-60" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
@@ -158,22 +159,25 @@ export function TopNav({ title }: { title: string }) {
 
   return (
     <header className="sticky top-0 z-40 bg-primary border-b border-border">
-      <div className="px-3 sm:px-4 h-14 flex items-center gap-2">
+      <div className="px-2 sm:px-4 h-14 flex items-center gap-1 sm:gap-2">
         {/* Marca */}
-        <NavLink to="/" className="flex items-center gap-2 shrink-0 mr-1 lg:mr-3">
+        <NavLink to="/" className="flex items-center gap-2 shrink-0 mr-0.5 sm:mr-1">
           <h1 className="text-lg font-bold text-primary-foreground tracking-tight">
             Kaowz<span className="text-accent">.</span>
           </h1>
         </NavLink>
 
-        {/* Menus por categoria — desktop (padrão Bling) */}
-        <nav className="hidden md:flex items-center gap-0.5 flex-1 min-w-0" aria-label="Menu principal">
+        {/* Menus por categoria — scrolláveis no mobile, flex no desktop */}
+        <nav
+          className="flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Menu principal"
+        >
           <NavLink
             to="/"
             end
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-1 rounded-md px-2 sm:px-3 py-2 text-sm font-medium transition-colors shrink-0',
                 isActive
                   ? 'text-white bg-white/10'
                   : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'
@@ -181,7 +185,7 @@ export function TopNav({ title }: { title: string }) {
             }
           >
             <LayoutDashboard className="h-4 w-4" />
-            Início
+            <span className="hidden xs:inline sm:inline">Início</span>
           </NavLink>
 
           {GRUPOS.map((g) => (
@@ -193,18 +197,18 @@ export function TopNav({ title }: { title: string }) {
               <DropdownMenuTrigger asChild>
                 <button
                   className={cn(
-                    'flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors outline-none',
+                    'flex items-center gap-1 rounded-md px-2 sm:px-3 py-2 text-sm font-medium transition-colors outline-none shrink-0',
                     adminAtivo
                       ? 'text-white bg-white/10'
                       : 'text-primary-foreground/70 hover:text-white hover:bg-white/10'
                   )}
                 >
-                  Administração
-                  <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                  Admin
+                  <ChevronDown className="h-3 w-3 sm:h-3.5 sm:w-3.5 opacity-60" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[560px] p-2">
-                <div className="grid grid-cols-2 gap-x-2">
+              <DropdownMenuContent align="start" className="w-[min(560px,calc(100vw-32px))] p-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-2">
                   <div>
                     <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
                       Produtos & Integrações
@@ -249,21 +253,11 @@ export function TopNav({ title }: { title: string }) {
           )}
         </nav>
 
-        {/* Título da página — só no mobile (no desktop os menus mostram o contexto) */}
-        <div className="md:hidden flex items-baseline gap-2 min-w-0 flex-1">
-          {title !== 'Kaowz' && (
-            <>
-              <span className="text-primary-foreground/30 shrink-0">/</span>
-              <span className="text-sm text-primary-foreground/80 truncate">{title}</span>
-            </>
-          )}
-        </div>
-
         {/* Avatar + menu do usuário */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="h-9 w-9 rounded-full bg-accent flex items-center justify-center text-sm font-bold text-accent-foreground shrink-0 hover:opacity-90 transition-opacity outline-none"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-accent flex items-center justify-center text-sm font-bold text-accent-foreground shrink-0 hover:opacity-90 transition-opacity outline-none"
               aria-label="Menu do usuário"
             >
               {inicial}
