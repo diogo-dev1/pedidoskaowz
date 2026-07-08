@@ -52,6 +52,11 @@ import ShopifyOrders from "./pages/ShopifyOrders";
 import Triagem from "./pages/Triagem";
 import Pedidos from "./pages/Pedidos";
 import PushDaggerConfigurador from "./pages/PushDaggerConfigurador";
+import ExternalRedirect from "./components/ExternalRedirect";
+
+// Temporariamente fora do ar — configurador de kit push dagger aponta para o site
+// oficial enquanto os valores são atualizados. Reverter para <ConfiguradorKit /> depois.
+const PUSH_DAGGER_URL = "https://kaowz.com.br/collections/lancamento-push-dagger";
 import KitUrbanEdc from "./pages/KitUrbanEdc";
 import KitUrbanEdcConfig from "./pages/KitUrbanEdcConfig";
 import Producao from "./pages/Producao";
@@ -227,10 +232,11 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route path="/push-dagger-kaowz" element={<ConfiguradorKit />} />
-            <Route path="/push-dagger-configurador" element={<PushDaggerConfigurador />} />
+            {/* Temporariamente redirecionado para o site oficial (atualização de valores) */}
+            <Route path="/push-dagger-kaowz" element={<ExternalRedirect to={PUSH_DAGGER_URL} />} />
+            <Route path="/push-dagger-configurador" element={<ExternalRedirect to={PUSH_DAGGER_URL} />} />
             {/* Compat: rota antiga */}
-            <Route path="/configurador-kit" element={<ConfiguradorKit />} />
+            <Route path="/configurador-kit" element={<ExternalRedirect to={PUSH_DAGGER_URL} />} />
             <Route
               path="/admin/push-dagger-kaowz"
               element={
