@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -27,9 +27,16 @@ const CATEGORIAS = {
 type Categoria = keyof typeof CATEGORIAS;
 
 const DND_MIME = "application/x-mensagem-id";
+const LONG_PRESS_MS = 400; // segurar ~0,4s para "pegar" o card no toque
+const MOVE_TOLERANCE = 12; // px de folga antes de considerar rolagem
+
+interface DragApi {
+  draggingId: string | null;
+  onCardPointerDown: (id: string, titulo: string, e: React.PointerEvent) => void;
+}
 
 /** CRUD de mensagens de uma categoria específica — reaproveitado por cada aba. */
-function MensagensLista({ categoria }: { categoria: Categoria }) {
+function MensagensLista({ categoria, drag }: { categoria: Categoria; drag: DragApi }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -147,7 +154,10 @@ function MensagensLista({ categoria }: { categoria: Categoria }) {
     <div className="space-y-4 w-full min-w-0 overflow-hidden">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          Arraste um card <GripVertical className="inline h-3 w-3 align-middle" /> até a outra aba para movê-lo.
+          <span className="md:hidden">Segure um card e arraste até a outra aba para movê-lo.</span>
+          <span className="hidden md:inline">
+            Arraste um card <GripVertical className="inline h-3 w-3 align-middle" /> até a outra aba para movê-lo.
+          </span>
         </p>
         {!showForm && (
           <Button onClick={() => setShowForm(true)} size="sm" className="gap-2 shrink-0">
@@ -228,7 +238,11 @@ function MensagensLista({ categoria }: { categoria: Categoria }) {
                 e.dataTransfer.setData("text/plain", mensagem.id);
                 e.dataTransfer.effectAllowed = "move";
               }}
-              className="p-3 hover:border-accent/40 transition-colors cursor-grab active:cursor-grabbing"
+              onPointerDown={(e) => drag.onCardPointerDown(mensagem.id, mensagem.titulo, e)}
+              className={cn(
+                "p-3 hover:border-accent/40 transition-all cursor-grab active:cursor-grabbing select-none [-webkit-touch-callout:none]",
+                drag.draggingId === mensagem.id && "opacity-40 ring-2 ring-accent"
+              )}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-2 flex-1 min-w-0">
@@ -276,6 +290,24 @@ const MensagensPadrao = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // ── Estado do arraste por toque (long-press) ─────────────────────
+  const [touchDragId, setTouchDragId] = useState<string | null>(null);
+  const [ghost, setGhost] = useState<{ x: number; y: number; titulo: string } | null>(null);
+  // Dados transitórios do gesto — em ref para não re-renderizar a cada movimento
+  const press = useRef<{
+    id: string;
+    titulo: string;
+    startX: number;
+    startY: number;
+    timer: number | null;
+    dragging: boolean;
+    pointerId: number;
+  } | null>(null);
+  const preventScrollRef = useRef<((e: TouchEvent) => void) | null>(null);
+
+  const abaRef = useRef(aba);
+  abaRef.current = aba;
+
   // Move uma mensagem para outra categoria (arrastar de uma aba para outra)
   const moveMutation = useMutation({
     mutationFn: async ({ id, destino }: { id: string; destino: Categoria }) => {
@@ -286,7 +318,6 @@ const MensagensPadrao = () => {
       if (error) throw error;
     },
     onSuccess: (_data, { destino }) => {
-      // Atualiza as duas abas (origem e destino)
       queryClient.invalidateQueries({ queryKey: ["mensagens-padrao"] });
       toast({
         title: "Mensagem movida",
@@ -302,14 +333,103 @@ const MensagensPadrao = () => {
     },
   });
 
-  const handleDrop = (destino: Categoria, e: React.DragEvent) => {
+  const moverMensagem = (id: string, destino: Categoria) => {
+    if (destino !== abaRef.current) moveMutation.mutate({ id, destino });
+  };
+
+  // Categoria sob um ponto da tela (aba-alvo) — usa os data-drop-cat dos triggers
+  const catSobPonto = (x: number, y: number): Categoria | null => {
+    const el = document.elementFromPoint(x, y)?.closest("[data-drop-cat]");
+    const c = el?.getAttribute("data-drop-cat");
+    return c === "padrao" || c === "apresentacao_produtos" ? (c as Categoria) : null;
+  };
+
+  // ── Desktop (mouse): drag-and-drop nativo HTML5 ──────────────────
+  const handleNativeDrop = (destino: Categoria, e: React.DragEvent) => {
     e.preventDefault();
     setDragOverCat(null);
     const id = e.dataTransfer.getData(DND_MIME) || e.dataTransfer.getData("text/plain");
-    if (id && destino !== aba) {
-      moveMutation.mutate({ id, destino });
-    }
+    if (id) moverMensagem(id, destino);
   };
+
+  // ── Mobile (toque): segurar para pegar, arrastar, soltar ─────────
+  const limparGesto = () => {
+    const p = press.current;
+    if (p?.timer) clearTimeout(p.timer);
+    window.removeEventListener("pointermove", onWindowPointerMove);
+    window.removeEventListener("pointerup", onWindowPointerUp);
+    window.removeEventListener("pointercancel", onWindowPointerUp);
+    if (preventScrollRef.current) {
+      document.removeEventListener("touchmove", preventScrollRef.current);
+      preventScrollRef.current = null;
+    }
+    document.body.style.userSelect = "";
+    press.current = null;
+    setTouchDragId(null);
+    setGhost(null);
+    setDragOverCat(null);
+  };
+
+  const iniciarDrag = () => {
+    const p = press.current;
+    if (!p) return;
+    p.dragging = true;
+    if (navigator.vibrate) navigator.vibrate(25);
+    document.body.style.userSelect = "none";
+    // Bloqueia a rolagem da página enquanto o card está "pego"
+    const prevent = (e: TouchEvent) => e.preventDefault();
+    preventScrollRef.current = prevent;
+    document.addEventListener("touchmove", prevent, { passive: false });
+    setTouchDragId(p.id);
+    setGhost({ x: p.startX, y: p.startY, titulo: p.titulo });
+  };
+
+  const onWindowPointerMove = (e: PointerEvent) => {
+    const p = press.current;
+    if (!p) return;
+    if (!p.dragging) {
+      // Antes de "pegar": se mexeu demais, é rolagem → cancela o long-press
+      const dx = Math.abs(e.clientX - p.startX);
+      const dy = Math.abs(e.clientY - p.startY);
+      if (dx > MOVE_TOLERANCE || dy > MOVE_TOLERANCE) limparGesto();
+      return;
+    }
+    // Já pegou: acompanha o dedo e destaca a aba-alvo
+    setGhost({ x: e.clientX, y: e.clientY, titulo: p.titulo });
+    const alvo = catSobPonto(e.clientX, e.clientY);
+    setDragOverCat(alvo && alvo !== abaRef.current ? alvo : null);
+  };
+
+  const onWindowPointerUp = (e: PointerEvent) => {
+    const p = press.current;
+    const estavaArrastando = p?.dragging;
+    const id = p?.id;
+    if (estavaArrastando && id) {
+      const alvo = catSobPonto(e.clientX, e.clientY);
+      if (alvo) moverMensagem(id, alvo);
+    }
+    limparGesto();
+  };
+
+  const onCardPointerDown = (id: string, titulo: string, e: React.PointerEvent) => {
+    // Só toque/caneta usam long-press; mouse continua no drag nativo HTML5
+    if (e.pointerType === "mouse") return;
+    limparGesto();
+    press.current = {
+      id,
+      titulo,
+      startX: e.clientX,
+      startY: e.clientY,
+      timer: window.setTimeout(iniciarDrag, LONG_PRESS_MS),
+      dragging: false,
+      pointerId: e.pointerId,
+    };
+    window.addEventListener("pointermove", onWindowPointerMove);
+    window.addEventListener("pointerup", onWindowPointerUp);
+    window.addEventListener("pointercancel", onWindowPointerUp);
+  };
+
+  const dragApi: DragApi = { draggingId: touchDragId, onCardPointerDown };
 
   return (
     <div className="space-y-4 w-full min-w-0 overflow-hidden">
@@ -329,6 +449,7 @@ const MensagensPadrao = () => {
               <TabsTrigger
                 key={cat}
                 value={cat}
+                data-drop-cat={cat}
                 onDragOver={(e) => {
                   if (isDropTarget) {
                     e.preventDefault();
@@ -337,7 +458,7 @@ const MensagensPadrao = () => {
                   }
                 }}
                 onDragLeave={() => setDragOverCat((c) => (c === cat ? null : c))}
-                onDrop={(e) => handleDrop(cat, e)}
+                onDrop={(e) => handleNativeDrop(cat, e)}
                 className={cn(
                   "gap-1.5 text-xs sm:text-sm transition-colors",
                   dragOverCat === cat && "ring-2 ring-accent ring-inset bg-accent/10"
@@ -352,10 +473,23 @@ const MensagensPadrao = () => {
 
         {(Object.keys(CATEGORIAS) as Categoria[]).map((cat) => (
           <TabsContent key={cat} value={cat} className="mt-4">
-            <MensagensLista categoria={cat} />
+            <MensagensLista categoria={cat} drag={dragApi} />
           </TabsContent>
         ))}
       </Tabs>
+
+      {/* Fantasma que segue o dedo enquanto arrasta no toque */}
+      {ghost && (
+        <div
+          className="fixed z-[100] pointer-events-none -translate-x-1/2 -translate-y-1/2 max-w-[70vw]"
+          style={{ left: ghost.x, top: ghost.y }}
+        >
+          <div className="rounded-lg border-2 border-accent bg-card shadow-xl px-3 py-2 text-sm font-medium flex items-center gap-2">
+            <GripVertical className="w-4 h-4 text-accent shrink-0" />
+            <span className="truncate">{ghost.titulo}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
