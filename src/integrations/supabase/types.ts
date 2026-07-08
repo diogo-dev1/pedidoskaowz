@@ -1099,6 +1099,7 @@ export type Database = {
       }
       mensagens_padrao: {
         Row: {
+          categoria: string
           conteudo: string
           created_at: string
           id: string
@@ -1107,6 +1108,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          categoria?: string
           conteudo: string
           created_at?: string
           id?: string
@@ -1115,6 +1117,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          categoria?: string
           conteudo?: string
           created_at?: string
           id?: string
