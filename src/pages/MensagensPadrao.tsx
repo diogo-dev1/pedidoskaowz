@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Plus, Trash2, X, MessageSquare, Package } from "lucide-react";
+import { Copy, Plus, Trash2, X, Wrench, Package, GripVertical } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 interface MensagemPadrao {
   id: string;
@@ -17,12 +18,15 @@ interface MensagemPadrao {
 }
 
 // Categorias = abas. Mesma funcionalidade, apenas separando os tipos de mensagem.
+// A chave (categoria no banco) permanece 'padrao'; muda só o rótulo para "Utilidades".
 const CATEGORIAS = {
-  padrao: { label: "Mensagens Padrão", icon: MessageSquare },
+  padrao: { label: "Utilidades", icon: Wrench },
   apresentacao_produtos: { label: "Apresentação Produtos", icon: Package },
 } as const;
 
 type Categoria = keyof typeof CATEGORIAS;
+
+const DND_MIME = "application/x-mensagem-id";
 
 /** CRUD de mensagens de uma categoria específica — reaproveitado por cada aba. */
 function MensagensLista({ categoria }: { categoria: Categoria }) {
@@ -141,7 +145,10 @@ function MensagensLista({ categoria }: { categoria: Categoria }) {
 
   return (
     <div className="space-y-4 w-full min-w-0 overflow-hidden">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">
+          Arraste um card <GripVertical className="inline h-3 w-3 align-middle" /> até a outra aba para movê-lo.
+        </p>
         {!showForm && (
           <Button onClick={() => setShowForm(true)} size="sm" className="gap-2 shrink-0">
             <Plus className="w-4 h-4" />
@@ -215,14 +222,23 @@ function MensagensLista({ categoria }: { categoria: Categoria }) {
           {mensagens.map((mensagem) => (
             <Card
               key={mensagem.id}
-              className="p-3 hover:border-accent/40 transition-colors"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData(DND_MIME, mensagem.id);
+                e.dataTransfer.setData("text/plain", mensagem.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              className="p-3 hover:border-accent/40 transition-colors cursor-grab active:cursor-grabbing"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm mb-1">{mensagem.titulo}</h3>
-                  <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words">
-                    {mensagem.conteudo}
-                  </p>
+                <div className="flex items-start gap-2 flex-1 min-w-0">
+                  <GripVertical className="w-4 h-4 text-muted-foreground/40 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm mb-1">{mensagem.titulo}</h3>
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words">
+                      {mensagem.conteudo}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex gap-1.5 flex-shrink-0">
                   <Button
@@ -256,6 +272,44 @@ function MensagensLista({ categoria }: { categoria: Categoria }) {
 
 const MensagensPadrao = () => {
   const [aba, setAba] = useState<Categoria>("padrao");
+  const [dragOverCat, setDragOverCat] = useState<Categoria | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Move uma mensagem para outra categoria (arrastar de uma aba para outra)
+  const moveMutation = useMutation({
+    mutationFn: async ({ id, destino }: { id: string; destino: Categoria }) => {
+      const { error } = await supabase
+        .from("mensagens_padrao")
+        .update({ categoria: destino })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, { destino }) => {
+      // Atualiza as duas abas (origem e destino)
+      queryClient.invalidateQueries({ queryKey: ["mensagens-padrao"] });
+      toast({
+        title: "Mensagem movida",
+        description: `Movida para "${CATEGORIAS[destino].label}".`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível mover a mensagem.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDrop = (destino: Categoria, e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverCat(null);
+    const id = e.dataTransfer.getData(DND_MIME) || e.dataTransfer.getData("text/plain");
+    if (id && destino !== aba) {
+      moveMutation.mutate({ id, destino });
+    }
+  };
 
   return (
     <div className="space-y-4 w-full min-w-0 overflow-hidden">
@@ -270,8 +324,25 @@ const MensagensPadrao = () => {
         <TabsList className="grid w-full grid-cols-2">
           {(Object.keys(CATEGORIAS) as Categoria[]).map((cat) => {
             const { label, icon: Icon } = CATEGORIAS[cat];
+            const isDropTarget = cat !== aba;
             return (
-              <TabsTrigger key={cat} value={cat} className="gap-1.5 text-xs sm:text-sm">
+              <TabsTrigger
+                key={cat}
+                value={cat}
+                onDragOver={(e) => {
+                  if (isDropTarget) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    setDragOverCat(cat);
+                  }
+                }}
+                onDragLeave={() => setDragOverCat((c) => (c === cat ? null : c))}
+                onDrop={(e) => handleDrop(cat, e)}
+                className={cn(
+                  "gap-1.5 text-xs sm:text-sm transition-colors",
+                  dragOverCat === cat && "ring-2 ring-accent ring-inset bg-accent/10"
+                )}
+              >
                 <Icon className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">{label}</span>
               </TabsTrigger>
