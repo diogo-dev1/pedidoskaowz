@@ -320,19 +320,18 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
     catch { toast.error('Não foi possível copiar'); }
   };
 
-  const enviarWhatsApp = () => {
-    if (!telefoneValido) { toast.error('Informe o WhatsApp do cliente com DDD'); return; }
+  const whatsappUrl = useMemo(() => {
     const numero = telefoneDigits.length <= 11 ? `55${telefoneDigits}` : telefoneDigits;
-    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`, '_blank');
-  };
+    return `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
+  }, [telefoneDigits, mensagem]);
 
-  // Abre o formulário "Shot Fair" já preenchido com a montagem do pedido
-  const registrarNoForm = () => {
-    if (!nomeCliente.trim()) { toast.error('Informe o nome do cliente para registrar'); return; }
+  // URL do formulário "Shot Fair" já preenchido com a montagem do pedido.
+  // Renderizado como link real (<a>) — abre nativamente, sem popup-blocker.
+  const formUrl = useMemo(() => {
     const telFmt = telefoneDigits
       ? (telefoneDigits.length === 11 ? `(${telefoneDigits.slice(0, 2)}) ${telefoneDigits.slice(2, 7)}-${telefoneDigits.slice(7)}` : telefone)
       : '';
-    const url = urlFormPreenchido({
+    return urlFormPreenchido({
       cliente: nomeCliente.trim(),
       telefone: telFmt,
       pedido: texto,               // a montagem do pedido (Item 1, Item 2, Total)
@@ -342,9 +341,9 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
       observacao: observacao.trim(),
       vendedor: FORM_VENDEDORES.includes(vendedor) ? vendedor : '',
     });
-    window.open(url, '_blank');
-    toast.success('Formulário aberto já preenchido — confira e envie.');
-  };
+  }, [nomeCliente, telefone, telefoneDigits, texto, total, pagamento, status, observacao, vendedor]);
+
+  const podeRegistrar = !!nomeCliente.trim();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -391,10 +390,17 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
             <Button variant="outline" className="h-11 rounded-xl gap-2" onClick={copiar}>
               <Copy className="h-4 w-4" /> Copiar
             </Button>
-            <Button className="h-11 rounded-xl gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
-              onClick={enviarWhatsApp} disabled={!telefoneValido}>
-              <Send className="h-4 w-4" /> WhatsApp
-            </Button>
+            {telefoneValido ? (
+              <Button asChild className="h-11 rounded-xl gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  <Send className="h-4 w-4" /> WhatsApp
+                </a>
+              </Button>
+            ) : (
+              <Button disabled className="h-11 rounded-xl gap-2 bg-accent text-accent-foreground">
+                <Send className="h-4 w-4" /> WhatsApp
+              </Button>
+            )}
           </div>
           {!telefoneValido && telefone.length > 0 && (
             <p className="text-[11px] text-muted-foreground text-center -mt-2">Digite o número com DDD para habilitar o envio</p>
@@ -431,11 +437,21 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
               <Input id="orc-obs" value={observacao} onChange={(e) => setObservacao(e.target.value)}
                 placeholder="Ex: gravação, prazo, brinde..." className="h-10" />
             </div>
-            <Button variant="outline" className="w-full h-11 rounded-xl gap-2" onClick={registrarNoForm} disabled={!nomeCliente.trim()}>
-              <ClipboardCheck className="h-4 w-4" /> Registrar no formulário
-            </Button>
+            {podeRegistrar ? (
+              <Button asChild variant="outline" className="w-full h-11 rounded-xl gap-2">
+                <a href={formUrl} target="_blank" rel="noopener noreferrer"
+                  onClick={() => toast.success('Formulário aberto já preenchido — confira e envie.')}>
+                  <ClipboardCheck className="h-4 w-4" /> Registrar no formulário
+                </a>
+              </Button>
+            ) : (
+              <Button variant="outline" className="w-full h-11 rounded-xl gap-2" disabled>
+                <ClipboardCheck className="h-4 w-4" /> Registrar no formulário
+              </Button>
+            )}
             <p className="text-[11px] text-muted-foreground text-center">
               Abre o formulário Shot Fair já preenchido com o pedido — é só conferir e enviar.
+              {' '}Se não abrir, segure o botão para "Abrir link em nova aba".
             </p>
           </div>
         </div>
