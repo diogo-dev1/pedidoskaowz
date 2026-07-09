@@ -1,0 +1,2 @@
+ALTER TABLE public.simulador_precos_config DROP CONSTRAINT simulador_precos_config_updated_by_fkey;
+ALTER TABLE public.simulador_precos_config ADD CONSTRAINT simulador_precos_config_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES auth.users(id) ON DELETE SET NULL;
