@@ -104,7 +104,7 @@ export default function SimuladorPrecosConfig() {
       const { error } = await supabase
         .from('simulador_precos_config')
         .upsert(
-          { chave: SIMULADOR_CONFIG_CHAVE, dados: draft as unknown as Record<string, unknown>, updated_at: new Date().toISOString(), updated_by: user?.id ?? null },
+          { chave: SIMULADOR_CONFIG_CHAVE, dados: draft as any, updated_at: new Date().toISOString(), updated_by: user?.id ?? null } as any,
           { onConflict: 'chave' },
         );
       if (error) throw error;
