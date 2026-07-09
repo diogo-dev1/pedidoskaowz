@@ -1978,6 +1978,38 @@ export type Database = {
         }
         Relationships: []
       }
+      simulador_precos_config: {
+        Row: {
+          chave: string
+          dados: Json
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          chave?: string
+          dados: Json
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          chave?: string
+          dados?: Json
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulador_precos_config_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       situacoes_leads: {
         Row: {
           cor: string
