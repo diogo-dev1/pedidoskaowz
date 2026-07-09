@@ -70,6 +70,7 @@ const adminMoreItems: NavItem[] = [
   { title: 'Cases Patola', url: '/admin/cases-patola', icon: Briefcase },
   { title: 'Modelos', url: '/admin/modelos', icon: Layers },
   { title: 'Componentes', url: '/admin/componentes', icon: Package },
+  { title: 'Valores do Simulador', url: '/admin/simulador-precos', icon: Calculator },
   { title: 'Configurações', url: '/admin/configuracoes', icon: Settings },
   { title: 'Informativos', url: '/admin/informativos', icon: Info },
   { title: 'Bling', url: '/bling', icon: Link2 },

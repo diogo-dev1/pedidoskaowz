@@ -62,6 +62,7 @@ import KitUrbanEdcConfig from "./pages/KitUrbanEdcConfig";
 import Producao from "./pages/Producao";
 import ExpedicaoPage from "./pages/ExpedicaoPage";
 import SimuladorPrecos from "./pages/SimuladorPrecos";
+import SimuladorPrecosConfig from "./pages/admin/SimuladorPrecosConfig";
 import ProdutosShopify from "./pages/ProdutosShopify";
 import RelatorioVendas from "./pages/RelatorioVendas";
 import RelatorioVendasRelatorios from "./pages/RelatorioVendasRelatorios";
@@ -481,6 +482,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <SimuladorPrecos />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/simulador-precos"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <SimuladorPrecosConfig />
                   </Layout>
                 </ProtectedRoute>
               }

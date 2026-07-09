@@ -6,201 +6,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Label } from '@/components/ui/label';
 import {
   Calculator, Plus, Trash2, Copy, MessageCircle, Search, X,
-  ChevronDown, ChevronUp, Check, CopyPlus, Send,
+  ChevronDown, ChevronUp, CopyPlus, Send, Loader2, Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-
-/* ════════════════════════════════════════════════════════════════
-   DADOS — espelham a planilha "Lista de Valores" (Página1).
-   Valor base do modelo = Aço Inox + Empunhadura Grafite inclusos.
-   Regra de classe: M usa os valores de P quando não há preço M
-   explícito; G cai para M e depois P quando não há preço G.
-   ════════════════════════════════════════════════════════════════ */
-
-type Tamanho = 'P' | 'M' | 'G' | '-';
-type Classe = 'P' | 'M' | 'G';
-interface Precos { P?: number; M?: number; G?: number }
-// Campos sem valor na planilha entram como R$ 0,00 (regra do negócio)
-interface Modelo { nome: string; tamanho: Tamanho; preco: number }
-interface Opcao { nome: string; precos: Precos; incluso?: boolean }
-
-/** Regra da planilha: classe M usa P quando não definida; G cai para M→P. */
-function precoClasse(p: Precos, c: Classe): number {
-  if (c === 'P') return p.P ?? 0;
-  if (c === 'M') return p.M ?? p.P ?? 0;
-  return p.G ?? p.M ?? p.P ?? 0;
-}
-
-const MODELOS: Modelo[] = [
-  // ── P ──
-  { nome: 'Adaga Edc', tamanho: 'P', preco: 705 },
-  { nome: 'Edc', tamanho: 'P', preco: 575 },
-  { nome: 'Edc - Mini', tamanho: 'P', preco: 475 },
-  { nome: 'Edc Mini Reverse Tanto', tamanho: 'P', preco: 475 },
-  { nome: 'Edc Mini Tanto', tamanho: 'P', preco: 590 },
-  { nome: 'Edc Mini Wharncliffe', tamanho: 'P', preco: 590 },
-  { nome: 'Edc Reverse Tanto', tamanho: 'P', preco: 575 },
-  { nome: 'Edc Ring', tamanho: 'P', preco: 610 },
-  { nome: 'Edc Ring Tanto', tamanho: 'P', preco: 725 },
-  { nome: 'Edc Tanto', tamanho: 'P', preco: 690 },
-  { nome: 'Edc Wharncliffe', tamanho: 'P', preco: 690 },
-  { nome: 'Karambit', tamanho: 'P', preco: 720 },
-  { nome: 'Push Dagger Compact', tamanho: 'P', preco: 470 },
-  { nome: 'Push Dagger Micro', tamanho: 'P', preco: 340 },
-  { nome: 'Push Dagger Standard', tamanho: 'P', preco: 610 },
-  { nome: 'Ring Tanto', tamanho: 'P', preco: 585 },
-  { nome: 'Wharncliffe', tamanho: 'P', preco: 585 },
-  { nome: 'Shank', tamanho: 'P', preco: 0 },     // "-" na planilha (sob consulta)
-  { nome: 'Shiv', tamanho: 'P', preco: 0 },      // "-" na planilha (sob consulta)
-  // ── M ──
-  { nome: 'Adaga Full Size', tamanho: 'M', preco: 805 },
-  { nome: 'Butcher', tamanho: 'M', preco: 715 },
-  { nome: 'Chef Royal', tamanho: 'M', preco: 715 },
-  { nome: 'Defcon 1', tamanho: 'M', preco: 790 },
-  { nome: 'Defcon 2', tamanho: 'M', preco: 835 },
-  { nome: 'Garfo 8"', tamanho: 'M', preco: 325 },
-  { nome: 'Garfo 10"', tamanho: 'M', preco: 370 },
-  { nome: 'Jagunço', tamanho: 'M', preco: 760 },
-  { nome: 'Jagunço Tanto', tamanho: 'M', preco: 875 },
-  { nome: 'Kiritsuke 8,5"', tamanho: 'M', preco: 620 },
-  { nome: 'Kiritsuke 10"', tamanho: 'M', preco: 650 },
-  { nome: 'Kzr Elite Knight', tamanho: 'M', preco: 780 },
-  { nome: 'Kzr Nimbus', tamanho: 'M', preco: 720 },
-  { nome: 'Kzr Nimbus Tanto', tamanho: 'M', preco: 835 },
-  { nome: 'Picanheira 9"', tamanho: 'M', preco: 650 },
-  { nome: 'Picanheira 10"', tamanho: 'M', preco: 680 },
-  { nome: 'Mini Camp', tamanho: 'M', preco: 0 }, // "NT" na planilha (sob consulta)
-  // ── G ──
-  { nome: 'Camp', tamanho: 'G', preco: 800 },
-  { nome: 'Kzr Full Size', tamanho: 'G', preco: 750 },
-  { nome: 'Kzr Nimbowie', tamanho: 'G', preco: 1555 },
-  { nome: 'Big Camp', tamanho: 'G', preco: 1430 },
-  { nome: 'Kzr Big Nimbowie', tamanho: 'G', preco: 1710 },
-  { nome: 'Big Camp 40 cm', tamanho: 'G', preco: 0 }, // "NT" na planilha (sob consulta)
-  { nome: 'Kzr Big Nimbowie 40 cm', tamanho: 'G', preco: 0 }, // "NT" na planilha (sob consulta)
-  // ── Sem classe ──
-  { nome: 'Chaira 8"', tamanho: '-', preco: 300 },
-  { nome: 'Chaira 10"', tamanho: '-', preco: 350 },
-];
-
-// Aço — Inox incluso no valor base; Brute Forge é opcional de aço
-const ACOS: Opcao[] = [
-  { nome: 'Inox', precos: { P: 0, M: 0, G: 0 }, incluso: true },
-  { nome: 'Sandvik 14C28N', precos: { P: 165, M: 195, G: 350 } },
-  { nome: '52100', precos: { P: 165, M: 175, G: 195 } },
-];
-const BRUTE_FORGE: Precos = { P: 125, M: 125, G: 300 };
-
-// Empunhadura — Grafite inclusa; Dragon Scale é opcional de empunhadura
-const EMPUNHADURAS: Opcao[] = [
-  { nome: 'Grafite', precos: { P: 0, M: 0, G: 0 }, incluso: true },
-  { nome: 'G10', precos: { P: 115, M: 145 } }, // sem G na planilha → usa M
-  { nome: 'Espaçador', precos: { P: 70, M: 70, G: 90 } },
-  { nome: 'Imbuia', precos: { P: 80, M: 80, G: 100 } },
-];
-const DRAGON_SCALE: Precos = { P: 70, M: 70, G: 90 };
-
-const ACABAMENTOS: Opcao[] = [
-  { nome: 'Acetinado', precos: { P: 0, M: 0, G: 0 }, incluso: true },
-  { nome: 'Stone Washed', precos: { P: 25, M: 25, G: 35 } },
-  { nome: 'Tactical', precos: { P: 90, M: 90, G: 125 } },
-];
-
-const BAINHAS: Opcao[] = [
-  { nome: 'Preta', precos: { P: 0, M: 0, G: 0 }, incluso: true },
-  { nome: 'Colorida', precos: { P: 195, M: 195, G: 250 } },
-  { nome: 'Bainha adicional', precos: { P: 195, M: 195, G: 250 } },
-];
-
-const ADICIONAIS: { nome: string; preco: number }[] = [
-  { nome: 'Strop', preco: 95 }, { nome: 'Café Médio ou Escuro', preco: 45 }, { nome: 'Clipe Extra', preco: 25 },
-  { nome: 'Clipe Lateral', preco: 75 }, { nome: 'Patch Fluorescente', preco: 55 }, { nome: 'Patch Cão Pastor', preco: 45 },
-  { nome: 'Patch K', preco: 35 }, { nome: 'BC Churrasco', preco: 200 }, { nome: 'BC Churrasco Dupla', preco: 270 },
-  { nome: 'BC Churrasco Tripla', preco: 370 }, { nome: 'Passador de Couro', preco: 95 }, { nome: 'Bainha Couro EDC', preco: 200 },
-  { nome: 'Bainha Couro Camp', preco: 350 }, { nome: 'Bainha Couro Jagunço', preco: 290 },
-  { nome: 'Boné', preco: 75 }, { nome: 'Camisa Kaowz', preco: 170 }, { nome: 'Moletom', preco: 240 },
-];
-
-const BRL = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
-const TAM_DOT: Record<Tamanho, string> = { P: 'bg-sky-500', M: 'bg-amber-500', G: 'bg-rose-500', '-': 'bg-zinc-400' };
-
-/* ════════════════ Estado de um item ════════════════ */
-
-interface ItemCfg {
-  id: string;
-  modeloIdx: number | null;
-  acoIdx: number;          // default 0 (Inox incluso)
-  bruteForge: boolean;     // opcional do aço
-  empIdx: number;          // default 0 (Grafite inclusa)
-  dragonScale: boolean;    // opcional da empunhadura
-  acabIdx: number;         // default 0 (Acetinado incluso)
-  bainhaIdx: number;       // default 0 (Preta inclusa)
-  adicionais: Set<number>;
-}
-
-function newItem(): ItemCfg {
-  return {
-    id: crypto.randomUUID(), modeloIdx: null,
-    acoIdx: 0, bruteForge: false, empIdx: 0, dragonScale: false,
-    acabIdx: 0, bainhaIdx: 0, adicionais: new Set(),
-  };
-}
-
-function classeDo(m: Modelo | null): Classe {
-  return !m || m.tamanho === '-' ? 'P' : m.tamanho;
-}
-
-function calcItem(cfg: ItemCfg): number {
-  const m = cfg.modeloIdx !== null ? MODELOS[cfg.modeloIdx] : null;
-  if (!m) return 0;
-  const c = classeDo(m);
-  let t = m.preco;
-  t += precoClasse(ACOS[cfg.acoIdx].precos, c);
-  if (cfg.bruteForge) t += precoClasse(BRUTE_FORGE, c);
-  t += precoClasse(EMPUNHADURAS[cfg.empIdx].precos, c);
-  if (cfg.dragonScale) t += precoClasse(DRAGON_SCALE, c);
-  t += precoClasse(ACABAMENTOS[cfg.acabIdx].precos, c);
-  t += precoClasse(BAINHAS[cfg.bainhaIdx].precos, c);
-  cfg.adicionais.forEach((i) => { t += ADICIONAIS[i]?.preco ?? 0; });
-  return t;
-}
-
-/* ════════════════ Orçamento (texto) ════════════════ */
-
-function textoItem(cfg: ItemCfg, n: number): string[] {
-  const m = cfg.modeloIdx !== null ? MODELOS[cfg.modeloIdx] : null;
-  if (!m) return [];
-  const c = classeDo(m);
-  const aco = ACOS[cfg.acoIdx].nome + (cfg.bruteForge ? ' + Brute Forge' : '');
-  const emp = EMPUNHADURAS[cfg.empIdx].nome + (cfg.dragonScale ? ' + Dragon Scale' : '');
-  const l = [
-    `Item ${n}:`,
-    m.nome,
-    `Aço: ${aco}`,
-    `Empunhadura: ${emp}`,
-    `Acabamento: ${ACABAMENTOS[cfg.acabIdx].nome}`,
-    `Bainha: ${BAINHAS[cfg.bainhaIdx].nome}`,
-  ];
-  const ads = [...cfg.adicionais].map((i) => ADICIONAIS[i]?.nome).filter(Boolean);
-  if (ads.length) l.push(`Adicionais: ${ads.join(', ')}`);
-  l.push(`Valor: ${BRL(calcItem(cfg))}`);
-  void c;
-  return l;
-}
-
-function gerarOrcamento(itens: ItemCfg[], total: number): string {
-  const l: string[] = ['Pedido:', ''];
-  let n = 0;
-  itens.forEach((cfg) => {
-    const bloco = textoItem(cfg, n + 1);
-    if (bloco.length === 0) return;
-    n++;
-    l.push(...bloco, '');
-  });
-  l.push(`Total: ${BRL(total)}`);
-  return l.join('\n');
-}
+import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
+import {
+  BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, gerarOrcamento,
+  type SimuladorData, type ItemCfg, type Modelo, type Opcao,
+} from '@/lib/simuladorData';
 
 /* ════════════════ UI: átomos ════════════════ */
 
@@ -240,20 +54,20 @@ function Secao({ title, children }: { title: string; children: React.ReactNode }
 
 /* ════════════════ Busca de modelo ════════════════ */
 
-function ModeloSearch({ onSelect, currentIdx }: { onSelect: (idx: number) => void; currentIdx: number | null }) {
+function ModeloSearch({ modelos, onSelect, currentIdx }: { modelos: Modelo[]; onSelect: (idx: number) => void; currentIdx: number | null }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(currentIdx === null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const selected = currentIdx !== null ? MODELOS[currentIdx] : null;
+  const selected = currentIdx !== null ? modelos[currentIdx] : null;
 
   useEffect(() => { if (open && inputRef.current) inputRef.current.focus(); }, [open]);
 
   const filtered = useMemo(() => {
-    const base = MODELOS.map((m, i) => ({ m, i }));
+    const base = modelos.map((m, i) => ({ m, i }));
     if (!query.trim()) return base;
     const q = query.toLowerCase();
     return base.filter(({ m }) => m.nome.toLowerCase().includes(q));
-  }, [query]);
+  }, [query, modelos]);
 
   if (!open && selected) {
     return (
@@ -261,7 +75,7 @@ function ModeloSearch({ onSelect, currentIdx }: { onSelect: (idx: number) => voi
         className="w-full flex items-center gap-3 p-3 rounded-xl border border-primary/30 bg-primary/5 transition hover:bg-primary/10 active:scale-[0.99]">
         <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${TAM_DOT[selected.tamanho]}`} />
         <span className="flex-1 text-left font-semibold text-sm">{selected.nome}</span>
-        <span className="text-sm font-bold text-primary">{BRL(selected.preco!)}</span>
+        <span className="text-sm font-bold text-primary">{selected.preco > 0 ? BRL(selected.preco) : 'sob consulta'}</span>
         <ChevronDown className="w-4 h-4 text-muted-foreground" />
       </button>
     );
@@ -290,7 +104,7 @@ function ModeloSearch({ onSelect, currentIdx }: { onSelect: (idx: number) => voi
               <span className={`w-2 h-2 rounded-full flex-shrink-0 ${TAM_DOT[m.tamanho]}`} />
               <span className="flex-1 text-sm font-medium truncate">{m.nome}</span>
               <span className="text-xs text-muted-foreground font-semibold flex-shrink-0">{m.tamanho}</span>
-              <span className="text-xs font-bold text-primary flex-shrink-0">{BRL(m.preco!)}</span>
+              <span className="text-xs font-bold text-primary flex-shrink-0">{m.preco > 0 ? BRL(m.preco) : '—'}</span>
             </button>
           ))
         )}
@@ -301,21 +115,26 @@ function ModeloSearch({ onSelect, currentIdx }: { onSelect: (idx: number) => voi
 
 /* ════════════════ Card de item ════════════════ */
 
-function ItemCard({ cfg, onChange, onRemove, onDuplicate, index, expanded, onToggle, removivel }: {
-  cfg: ItemCfg; onChange: (c: ItemCfg) => void; onRemove: () => void; onDuplicate: () => void;
+function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded, onToggle, removivel }: {
+  data: SimuladorData; cfg: ItemCfg; onChange: (c: ItemCfg) => void; onRemove: () => void; onDuplicate: () => void;
   index: number; expanded: boolean; onToggle: () => void; removivel: boolean;
 }) {
-  const modelo = cfg.modeloIdx !== null ? MODELOS[cfg.modeloIdx] : null;
+  const modelo = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   const c = classeDo(modelo);
-  const total = calcItem(cfg);
+  const total = calcItem(data, cfg);
   const [showAdicionais, setShowAdicionais] = useState(false);
 
+  const nomeOpt = (arr: Opcao[], idx: number, sufixo = '') =>
+    arr[idx] && !arr[idx].incluso ? arr[idx].nome + sufixo : (sufixo ? arr[idx]?.nome + sufixo : null);
+
   const specs = modelo ? [
-    ACOS[cfg.acoIdx].incluso && !cfg.bruteForge ? null : ACOS[cfg.acoIdx].nome + (cfg.bruteForge ? ' + BF' : ''),
-    EMPUNHADURAS[cfg.empIdx].incluso && !cfg.dragonScale ? null : EMPUNHADURAS[cfg.empIdx].nome + (cfg.dragonScale ? ' + DS' : ''),
-    ACABAMENTOS[cfg.acabIdx].incluso ? null : ACABAMENTOS[cfg.acabIdx].nome,
-    BAINHAS[cfg.bainhaIdx].incluso ? null : BAINHAS[cfg.bainhaIdx].nome,
-    cfg.adicionais.size > 0 ? `${cfg.adicionais.size} adicional(is)` : null,
+    nomeOpt(data.acos, cfg.acoIdx) ?? (cfg.bruteForge ? data.acos[cfg.acoIdx]?.nome : null),
+    cfg.bruteForge ? 'BF' : null,
+    nomeOpt(data.empunhaduras, cfg.empIdx) ?? (cfg.dragonScale ? data.empunhaduras[cfg.empIdx]?.nome : null),
+    cfg.dragonScale ? 'DS' : null,
+    nomeOpt(data.acabamentos, cfg.acabIdx),
+    nomeOpt(data.bainhas, cfg.bainhaIdx),
+    cfg.adicionais.size > 0 ? `${cfg.adicionais.size} adic.` : null,
   ].filter(Boolean) : [];
 
   return (
@@ -338,7 +157,7 @@ function ItemCard({ cfg, onChange, onRemove, onDuplicate, index, expanded, onTog
       {expanded && (
         <div className="px-4 pb-4 space-y-5 border-t pt-4">
           <Secao title="Modelo">
-            <ModeloSearch currentIdx={cfg.modeloIdx}
+            <ModeloSearch modelos={data.modelos} currentIdx={cfg.modeloIdx}
               onSelect={(i) => onChange({ ...newItem(), id: cfg.id, modeloIdx: i, adicionais: cfg.adicionais })} />
           </Secao>
 
@@ -347,11 +166,11 @@ function ItemCard({ cfg, onChange, onRemove, onDuplicate, index, expanded, onTog
               {/* Aço — Brute Forge é opcional do aço */}
               <Secao title="Aço">
                 <div className="flex flex-wrap gap-1.5">
-                  {ACOS.map((a, i) => (
+                  {data.acos.map((a, i) => (
                     <Chip key={i} label={a.nome} price={precoClasse(a.precos, c)}
                       selected={cfg.acoIdx === i} onClick={() => onChange({ ...cfg, acoIdx: i })} />
                   ))}
-                  <ToggleChip label="Brute Forge" price={precoClasse(BRUTE_FORGE, c)} on={cfg.bruteForge}
+                  <ToggleChip label="Brute Forge" price={precoClasse(data.bruteForge, c)} on={cfg.bruteForge}
                     onClick={() => onChange({ ...cfg, bruteForge: !cfg.bruteForge })} />
                 </div>
               </Secao>
@@ -359,18 +178,18 @@ function ItemCard({ cfg, onChange, onRemove, onDuplicate, index, expanded, onTog
               {/* Empunhadura — Dragon Scale é opcional da empunhadura */}
               <Secao title="Empunhadura">
                 <div className="flex flex-wrap gap-1.5">
-                  {EMPUNHADURAS.map((e, i) => (
+                  {data.empunhaduras.map((e, i) => (
                     <Chip key={i} label={e.nome} price={precoClasse(e.precos, c)}
                       selected={cfg.empIdx === i} onClick={() => onChange({ ...cfg, empIdx: i })} />
                   ))}
-                  <ToggleChip label="Dragon Scale" price={precoClasse(DRAGON_SCALE, c)} on={cfg.dragonScale}
+                  <ToggleChip label="Dragon Scale" price={precoClasse(data.dragonScale, c)} on={cfg.dragonScale}
                     onClick={() => onChange({ ...cfg, dragonScale: !cfg.dragonScale })} />
                 </div>
               </Secao>
 
               <Secao title="Acabamento">
                 <div className="flex flex-wrap gap-1.5">
-                  {ACABAMENTOS.map((a, i) => (
+                  {data.acabamentos.map((a, i) => (
                     <Chip key={i} label={a.nome} price={precoClasse(a.precos, c)}
                       selected={cfg.acabIdx === i} onClick={() => onChange({ ...cfg, acabIdx: i })} />
                   ))}
@@ -379,7 +198,7 @@ function ItemCard({ cfg, onChange, onRemove, onDuplicate, index, expanded, onTog
 
               <Secao title="Bainha">
                 <div className="flex flex-wrap gap-1.5">
-                  {BAINHAS.map((b, i) => (
+                  {data.bainhas.map((b, i) => (
                     <Chip key={i} label={b.nome} price={precoClasse(b.precos, c)}
                       selected={cfg.bainhaIdx === i} onClick={() => onChange({ ...cfg, bainhaIdx: i })} />
                   ))}
@@ -389,13 +208,13 @@ function ItemCard({ cfg, onChange, onRemove, onDuplicate, index, expanded, onTog
               <Secao title="Adicionais">
                 <button type="button" onClick={() => setShowAdicionais(!showAdicionais)}
                   className="flex items-center gap-2 text-xs text-primary font-medium hover:underline">
-                  {showAdicionais ? 'Ocultar' : `Ver ${ADICIONAIS.length} opções`}
+                  {showAdicionais ? 'Ocultar' : `Ver ${data.adicionais.length} opções`}
                   {cfg.adicionais.size > 0 && <span className="bg-accent text-accent-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">{cfg.adicionais.size}</span>}
                   {showAdicionais ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 </button>
                 {showAdicionais && (
                   <div className="space-y-1 mt-1">
-                    {ADICIONAIS.map((a, i) => {
+                    {data.adicionais.map((a, i) => {
                       const on = cfg.adicionais.has(i);
                       return (
                         <label key={i} className={`flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-all ${on ? 'border-accent bg-accent/5' : 'border-transparent hover:bg-muted/40'}`}>
@@ -451,7 +270,7 @@ function OrcamentoModal({ open, onOpenChange, texto, vendedorPadrao }: {
     const partes: string[] = [];
     if (nomeCliente.trim()) partes.push(`Olá, ${nomeCliente.trim()}! Segue seu orçamento Kaowz:`, '');
     partes.push(texto);
-    if (vendedor.trim()) partes.push('', `Qualquer dúvida estou à disposição!`, `— ${vendedor.trim()} · Kaowz`);
+    if (vendedor.trim()) partes.push('', 'Qualquer dúvida estou à disposição!', `— ${vendedor.trim()} · Kaowz`);
     return partes.join('\n');
   }, [nomeCliente, vendedor, texto]);
 
@@ -528,6 +347,7 @@ function OrcamentoModal({ open, onOpenChange, texto, vendedorPadrao }: {
 
 export default function SimuladorPrecos() {
   const { profile } = useAuth();
+  const { data, isLoading } = useSimuladorConfig();
   const [itens, setItens] = useState<ItemCfg[]>([newItem()]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -556,9 +376,9 @@ export default function SimuladorPrecos() {
   });
   const updateItem = (id: string, u: ItemCfg) => setItens((p) => p.map((c) => (c.id === id ? u : c)));
 
-  const totalGeral = useMemo(() => itens.reduce((s, c) => s + calcItem(c), 0), [itens]);
+  const totalGeral = useMemo(() => itens.reduce((s, c) => s + calcItem(data, c), 0), [itens, data]);
   const itensValidos = itens.filter((c) => c.modeloIdx !== null).length;
-  const orcamento = useMemo(() => gerarOrcamento(itens, totalGeral), [itens, totalGeral]);
+  const orcamento = useMemo(() => gerarOrcamento(data, itens, totalGeral), [data, itens, totalGeral]);
 
   const copiarRapido = async () => {
     try { await navigator.clipboard.writeText(orcamento); toast.success('Orçamento copiado!'); }
@@ -573,11 +393,12 @@ export default function SimuladorPrecos() {
           <h1 className="text-lg font-bold leading-tight">Simulador de Preços</h1>
           <p className="text-[11px] text-muted-foreground leading-tight">Base: Aço Inox + Empunhadura Grafite inclusos</p>
         </div>
+        {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-auto" />}
       </div>
 
       <div className="space-y-3">
         {itens.map((cfg, idx) => (
-          <ItemCard key={cfg.id} cfg={cfg} index={idx}
+          <ItemCard key={cfg.id} data={data} cfg={cfg} index={idx}
             onChange={(u) => updateItem(cfg.id, u)}
             onRemove={() => removeItem(cfg.id)}
             onDuplicate={() => duplicateItem(cfg.id)}
