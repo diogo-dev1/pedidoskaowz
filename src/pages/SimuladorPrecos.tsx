@@ -34,11 +34,11 @@ function precoClasse(p: Precos, c: Classe): number {
 
 const MODELOS: Modelo[] = [
   // ── P ──
-  { nome: 'Edc - Mini', tamanho: 'P', preco: 0 },
-  { nome: 'Edc Mini Reverse Tanto', tamanho: 'P', preco: 0 },
-  { nome: 'Edc', tamanho: 'P', preco: 0 },
-  { nome: 'Edc Reverse Tanto', tamanho: 'P', preco: 0 },
-  { nome: 'Edc Tanto', tamanho: 'P', preco: 0 },
+  { nome: 'Edc - Mini', tamanho: 'P', preco: 475 },
+  { nome: 'Edc Mini Reverse Tanto', tamanho: 'P', preco: 475 },
+  { nome: 'Edc', tamanho: 'P', preco: 575 },
+  { nome: 'Edc Reverse Tanto', tamanho: 'P', preco: 630 },
+  { nome: 'Edc Tanto', tamanho: 'P', preco: 630 },
   { nome: 'Edc Ring', tamanho: 'P', preco: 610 },
   { nome: 'Edc Ring Tanto', tamanho: 'P', preco: 685 },
   { nome: 'Edc Mini Tanto', tamanho: 'P', preco: 595 },
@@ -50,9 +50,9 @@ const MODELOS: Modelo[] = [
   { nome: 'Push Dagger Standard', tamanho: 'P', preco: 610 },
   { nome: 'Push Dagger Compact', tamanho: 'P', preco: 470 },
   { nome: 'Push Dagger Micro', tamanho: 'P', preco: 340 },
-  { nome: 'Shank', tamanho: 'P', preco: 0 },
-  { nome: 'Shiv', tamanho: 'P', preco: 0 },
-  { nome: 'Karambit', tamanho: 'P', preco: 0 },
+  { nome: 'Shank', tamanho: 'P', preco: 0 },     // sem valor na planilha
+  { nome: 'Shiv', tamanho: 'P', preco: 0 },      // sem valor na planilha
+  { nome: 'Karambit', tamanho: 'P', preco: 0 },  // sem valor na planilha
   // ── M ──
   { nome: 'Adaga Full Size', tamanho: 'M', preco: 795 },
   { nome: 'Jagunço', tamanho: 'M', preco: 760 },
@@ -62,15 +62,15 @@ const MODELOS: Modelo[] = [
   { nome: 'Kzr Elite Knight', tamanho: 'M', preco: 780 },
   { nome: 'Defcon 1', tamanho: 'M', preco: 985 },
   { nome: 'Defcon 2', tamanho: 'M', preco: 995 },
-  { nome: 'Mini Camp', tamanho: 'M', preco: 0 },
+  { nome: 'Mini Camp', tamanho: 'M', preco: 0 }, // "NT" na planilha (sob consulta)
   // ── G ──
   { nome: 'Kzr Full Size', tamanho: 'G', preco: 715 },
   { nome: 'Camp', tamanho: 'G', preco: 800 },
   { nome: 'Kzr Nimbowie', tamanho: 'G', preco: 1185 },
-  { nome: 'Big Camp', tamanho: 'G', preco: 0 },
-  { nome: 'Big Camp 40 cm', tamanho: 'G', preco: 0 },
+  { nome: 'Big Camp', tamanho: 'G', preco: 1575 },
+  { nome: 'Big Camp 40 cm', tamanho: 'G', preco: 0 }, // "NT" na planilha (sob consulta)
   { nome: 'Kzr Big Nimbowie', tamanho: 'G', preco: 1575 },
-  { nome: 'Kzr Big Nimbowie 40 cm', tamanho: 'G', preco: 0 },
+  { nome: 'Kzr Big Nimbowie 40 cm', tamanho: 'G', preco: 0 }, // "NT" na planilha (sob consulta)
   { nome: 'Picanheira 9"', tamanho: 'G', preco: 525 },
   { nome: 'Picanheira 10"', tamanho: 'G', preco: 685 },
   { nome: 'Garfo 10"', tamanho: 'G', preco: 370 },
