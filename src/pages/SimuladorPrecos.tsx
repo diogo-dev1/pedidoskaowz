@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Calculator, Plus, Trash2, Copy, MessageCircle, Search, X,
-  ChevronDown, ChevronUp, CopyPlus, Send, Loader2, Check,
+  ChevronDown, ChevronUp, CopyPlus, Send, Loader2, Check, ClipboardCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -255,16 +256,53 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
   );
 }
 
+/* ════════════════ Formulário "Shot Fair" (Google Forms) ════════════════ */
+// Registro do pedido vendido. IDs extraídos do próprio formulário.
+const FORM_ID = '1FAIpQLSfMW6dFNHZq9-dPUjK_mB9obx3iiaTTG58dT18t9a8PDd1ooQ';
+const FORM_ENTRY = {
+  cliente: 'entry.13851062',
+  telefone: 'entry.2122172727',
+  pedido: 'entry.2028587306',
+  valor: 'entry.1494257691',
+  pagamento: 'entry.652260350',
+  status: 'entry.1421837376',
+  personalizacao: 'entry.1807345374',
+  observacao: 'entry.285808907',
+  vendedor: 'entry.375383872',
+} as const;
+const FORM_VENDEDORES = ['Mel', 'Gabriel', 'Diogo', 'Daniel', 'Kariston'];
+const FORM_PAGAMENTOS = ['Pix', 'Cartão', 'Dinheiro'];
+const FORM_STATUS = ['Encomenda', 'Pronta Entrega'];
+
+/** Casa o nome do vendedor logado com uma das opções do formulário. */
+function matchVendedorForm(nome: string): string {
+  const n = (nome || '').toLowerCase();
+  return FORM_VENDEDORES.find((v) => n.includes(v.toLowerCase())) ?? '';
+}
+
+/** Monta a URL do Google Form já preenchido (usp=pp_url). */
+function urlFormPreenchido(campos: Partial<Record<keyof typeof FORM_ENTRY, string>>): string {
+  const p = new URLSearchParams({ usp: 'pp_url' });
+  (Object.keys(campos) as (keyof typeof FORM_ENTRY)[]).forEach((k) => {
+    const v = campos[k];
+    if (v) p.set(FORM_ENTRY[k], v);
+  });
+  return `https://docs.google.com/forms/d/e/${FORM_ID}/viewform?${p.toString()}`;
+}
+
 /* ════════════════ Modal de orçamento / WhatsApp ════════════════ */
 
-function OrcamentoModal({ open, onOpenChange, texto, vendedorPadrao }: {
-  open: boolean; onOpenChange: (v: boolean) => void; texto: string; vendedorPadrao: string;
+function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
+  open: boolean; onOpenChange: (v: boolean) => void; texto: string; total: number; vendedorPadrao: string;
 }) {
   const [nomeCliente, setNomeCliente] = useState('');
   const [telefone, setTelefone] = useState('');
-  const [vendedor, setVendedor] = useState(vendedorPadrao);
+  const [vendedor, setVendedor] = useState(matchVendedorForm(vendedorPadrao));
+  const [pagamento, setPagamento] = useState('');
+  const [status, setStatus] = useState('');
+  const [observacao, setObservacao] = useState('');
 
-  useEffect(() => { if (vendedorPadrao && !vendedor) setVendedor(vendedorPadrao); }, [vendedorPadrao]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (vendedorPadrao && !vendedor) setVendedor(matchVendedorForm(vendedorPadrao)); }, [vendedorPadrao]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const mensagem = useMemo(() => {
     const partes: string[] = [];
@@ -288,6 +326,26 @@ function OrcamentoModal({ open, onOpenChange, texto, vendedorPadrao }: {
     window.open(`https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`, '_blank');
   };
 
+  // Abre o formulário "Shot Fair" já preenchido com a montagem do pedido
+  const registrarNoForm = () => {
+    if (!nomeCliente.trim()) { toast.error('Informe o nome do cliente para registrar'); return; }
+    const telFmt = telefoneDigits
+      ? (telefoneDigits.length === 11 ? `(${telefoneDigits.slice(0, 2)}) ${telefoneDigits.slice(2, 7)}-${telefoneDigits.slice(7)}` : telefone)
+      : '';
+    const url = urlFormPreenchido({
+      cliente: nomeCliente.trim(),
+      telefone: telFmt,
+      pedido: texto,               // a montagem do pedido (Item 1, Item 2, Total)
+      valor: BRL(total),
+      pagamento: FORM_PAGAMENTOS.includes(pagamento) ? pagamento : '',
+      status: FORM_STATUS.includes(status) ? status : '',
+      observacao: observacao.trim(),
+      vendedor: FORM_VENDEDORES.includes(vendedor) ? vendedor : '',
+    });
+    window.open(url, '_blank');
+    toast.success('Formulário aberto já preenchido — confira e envie.');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-2xl">
@@ -296,7 +354,7 @@ function OrcamentoModal({ open, onOpenChange, texto, vendedorPadrao }: {
             <MessageCircle className="h-5 w-5 text-accent" /> Enviar orçamento
           </DialogTitle>
           <DialogDescription>
-            Copie o orçamento ou envie direto para o WhatsApp do cliente.
+            Envie ao cliente pelo WhatsApp e/ou registre a venda no formulário.
           </DialogDescription>
         </DialogHeader>
 
@@ -314,14 +372,18 @@ function OrcamentoModal({ open, onOpenChange, texto, vendedorPadrao }: {
                   placeholder="(11) 99999-9999" inputMode="tel" className="h-10" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="orc-vend" className="text-xs">Vendedor</Label>
-                <Input id="orc-vend" value={vendedor} onChange={(e) => setVendedor(e.target.value)}
-                  placeholder="Seu nome" className="h-10" />
+                <Label className="text-xs">Vendedor</Label>
+                <Select value={vendedor} onValueChange={setVendedor}>
+                  <SelectTrigger className="h-10"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {FORM_VENDEDORES.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl border bg-muted/40 p-3 max-h-52 overflow-y-auto">
+          <div className="rounded-xl border bg-muted/40 p-3 max-h-44 overflow-y-auto">
             <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{mensagem}</pre>
           </div>
 
@@ -337,6 +399,45 @@ function OrcamentoModal({ open, onOpenChange, texto, vendedorPadrao }: {
           {!telefoneValido && telefone.length > 0 && (
             <p className="text-[11px] text-muted-foreground text-center -mt-2">Digite o número com DDD para habilitar o envio</p>
           )}
+
+          {/* ── Registrar venda no formulário Shot Fair ── */}
+          <div className="rounded-xl border border-dashed p-3 space-y-3">
+            <div className="flex items-center gap-2">
+              <ClipboardCheck className="h-4 w-4 text-primary" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Registrar venda</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Pagamento</Label>
+                <Select value={pagamento} onValueChange={setPagamento}>
+                  <SelectTrigger className="h-10"><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {FORM_PAGAMENTOS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger className="h-10"><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {FORM_STATUS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="orc-obs" className="text-xs">Observação (opcional)</Label>
+              <Input id="orc-obs" value={observacao} onChange={(e) => setObservacao(e.target.value)}
+                placeholder="Ex: gravação, prazo, brinde..." className="h-10" />
+            </div>
+            <Button variant="outline" className="w-full h-11 rounded-xl gap-2" onClick={registrarNoForm} disabled={!nomeCliente.trim()}>
+              <ClipboardCheck className="h-4 w-4" /> Registrar no formulário
+            </Button>
+            <p className="text-[11px] text-muted-foreground text-center">
+              Abre o formulário Shot Fair já preenchido com o pedido — é só conferir e enviar.
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -431,7 +532,7 @@ export default function SimuladorPrecos() {
         </div>
       </div>
 
-      <OrcamentoModal open={modalOpen} onOpenChange={setModalOpen} texto={orcamento}
+      <OrcamentoModal open={modalOpen} onOpenChange={setModalOpen} texto={orcamento} total={totalGeral}
         vendedorPadrao={profile?.nome_vendedor ?? ''} />
     </div>
   );
