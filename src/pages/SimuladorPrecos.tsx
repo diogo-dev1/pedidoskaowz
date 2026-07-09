@@ -21,7 +21,8 @@ import { useAuth } from '@/contexts/AuthContext';
 type Tamanho = 'P' | 'M' | 'G' | '-';
 type Classe = 'P' | 'M' | 'G';
 interface Precos { P?: number; M?: number; G?: number }
-interface Modelo { nome: string; tamanho: Tamanho; preco: number | null }
+// Campos sem valor na planilha entram como R$ 0,00 (regra do negócio)
+interface Modelo { nome: string; tamanho: Tamanho; preco: number }
 interface Opcao { nome: string; precos: Precos; incluso?: boolean }
 
 /** Regra da planilha: classe M usa P quando não definida; G cai para M→P. */
@@ -33,11 +34,11 @@ function precoClasse(p: Precos, c: Classe): number {
 
 const MODELOS: Modelo[] = [
   // ── P ──
-  { nome: 'Edc - Mini', tamanho: 'P', preco: null },
-  { nome: 'Edc Mini Reverse Tanto', tamanho: 'P', preco: null },
-  { nome: 'Edc', tamanho: 'P', preco: null },
-  { nome: 'Edc Reverse Tanto', tamanho: 'P', preco: null },
-  { nome: 'Edc Tanto', tamanho: 'P', preco: null },
+  { nome: 'Edc - Mini', tamanho: 'P', preco: 0 },
+  { nome: 'Edc Mini Reverse Tanto', tamanho: 'P', preco: 0 },
+  { nome: 'Edc', tamanho: 'P', preco: 0 },
+  { nome: 'Edc Reverse Tanto', tamanho: 'P', preco: 0 },
+  { nome: 'Edc Tanto', tamanho: 'P', preco: 0 },
   { nome: 'Edc Ring', tamanho: 'P', preco: 610 },
   { nome: 'Edc Ring Tanto', tamanho: 'P', preco: 685 },
   { nome: 'Edc Mini Tanto', tamanho: 'P', preco: 595 },
@@ -49,9 +50,9 @@ const MODELOS: Modelo[] = [
   { nome: 'Push Dagger Standard', tamanho: 'P', preco: 610 },
   { nome: 'Push Dagger Compact', tamanho: 'P', preco: 470 },
   { nome: 'Push Dagger Micro', tamanho: 'P', preco: 340 },
-  { nome: 'Shank', tamanho: 'P', preco: null },
-  { nome: 'Shiv', tamanho: 'P', preco: null },
-  { nome: 'Karambit', tamanho: 'P', preco: null },
+  { nome: 'Shank', tamanho: 'P', preco: 0 },
+  { nome: 'Shiv', tamanho: 'P', preco: 0 },
+  { nome: 'Karambit', tamanho: 'P', preco: 0 },
   // ── M ──
   { nome: 'Adaga Full Size', tamanho: 'M', preco: 795 },
   { nome: 'Jagunço', tamanho: 'M', preco: 760 },
@@ -61,15 +62,15 @@ const MODELOS: Modelo[] = [
   { nome: 'Kzr Elite Knight', tamanho: 'M', preco: 780 },
   { nome: 'Defcon 1', tamanho: 'M', preco: 985 },
   { nome: 'Defcon 2', tamanho: 'M', preco: 995 },
-  { nome: 'Mini Camp', tamanho: 'M', preco: null },
+  { nome: 'Mini Camp', tamanho: 'M', preco: 0 },
   // ── G ──
   { nome: 'Kzr Full Size', tamanho: 'G', preco: 715 },
   { nome: 'Camp', tamanho: 'G', preco: 800 },
   { nome: 'Kzr Nimbowie', tamanho: 'G', preco: 1185 },
-  { nome: 'Big Camp', tamanho: 'G', preco: null },
-  { nome: 'Big Camp 40 cm', tamanho: 'G', preco: null },
+  { nome: 'Big Camp', tamanho: 'G', preco: 0 },
+  { nome: 'Big Camp 40 cm', tamanho: 'G', preco: 0 },
   { nome: 'Kzr Big Nimbowie', tamanho: 'G', preco: 1575 },
-  { nome: 'Kzr Big Nimbowie 40 cm', tamanho: 'G', preco: null },
+  { nome: 'Kzr Big Nimbowie 40 cm', tamanho: 'G', preco: 0 },
   { nome: 'Picanheira 9"', tamanho: 'G', preco: 525 },
   { nome: 'Picanheira 10"', tamanho: 'G', preco: 685 },
   { nome: 'Garfo 10"', tamanho: 'G', preco: 370 },
@@ -87,7 +88,7 @@ const MODELOS: Modelo[] = [
 const ACOS: Opcao[] = [
   { nome: 'Inox', precos: { P: 0, M: 0, G: 0 }, incluso: true },
   { nome: 'Sandvik 14C28N', precos: { P: 165, M: 195, G: 350 } },
-  { nome: '52100', precos: { P: 165, M: 245, G: 350 } },
+  { nome: '52100', precos: {} }, // sem valor na planilha → R$ 0,00
 ];
 const BRUTE_FORGE: Precos = { P: 125, G: 300 }; // M usa P (125)
 
@@ -112,11 +113,12 @@ const BAINHAS: Opcao[] = [
   { nome: 'Bainha adicional', precos: { P: 195, G: 250 } },
 ];
 
+// Itens sem valor na planilha entram como R$ 0,00 (regra do negócio)
 const ADICIONAIS: { nome: string; preco: number }[] = [
-  { nome: 'Strop', preco: 95 }, { nome: 'Café', preco: 45 }, { nome: 'Clipe Extra', preco: 25 },
-  { nome: 'Clipe Lateral', preco: 75 }, { nome: 'Patch Fluorescente', preco: 55 }, { nome: 'Patch Cão Pastor', preco: 45 },
-  { nome: 'Patch K', preco: 35 }, { nome: 'BC Churrasco', preco: 200 }, { nome: 'BC Churrasco Dupla', preco: 270 },
-  { nome: 'BC Churrasco Tripla', preco: 370 }, { nome: 'Passador de Couro', preco: 95 }, { nome: 'Bainha Couro EDC', preco: 200 },
+  { nome: 'Strop', preco: 0 }, { nome: 'Café Médio ou Escuro', preco: 0 }, { nome: 'Clipe Extra', preco: 0 },
+  { nome: 'Clipe Lateral', preco: 0 }, { nome: 'Patch Fluorescente', preco: 0 }, { nome: 'Patch Cão Pastor', preco: 0 },
+  { nome: 'Patch K', preco: 0 }, { nome: 'BC Churrasco', preco: 0 }, { nome: 'BC Churrasco Dupla', preco: 0 },
+  { nome: 'BC Churrasco Tripla', preco: 0 }, { nome: 'Passador de Couro', preco: 0 }, { nome: 'Bainha Couro EDC', preco: 200 },
   { nome: 'Bainha Couro Camp', preco: 350 }, { nome: 'Bainha Couro Jagunço', preco: 290 },
   { nome: 'Boné', preco: 75 }, { nome: 'Camisa Kaowz', preco: 170 }, { nome: 'Moletom', preco: 240 },
 ];
@@ -152,7 +154,7 @@ function classeDo(m: Modelo | null): Classe {
 
 function calcItem(cfg: ItemCfg): number {
   const m = cfg.modeloIdx !== null ? MODELOS[cfg.modeloIdx] : null;
-  if (!m || m.preco === null) return 0;
+  if (!m) return 0;
   const c = classeDo(m);
   let t = m.preco;
   t += precoClasse(ACOS[cfg.acoIdx].precos, c);
@@ -169,7 +171,7 @@ function calcItem(cfg: ItemCfg): number {
 
 function textoItem(cfg: ItemCfg, n: number): string[] {
   const m = cfg.modeloIdx !== null ? MODELOS[cfg.modeloIdx] : null;
-  if (!m || m.preco === null) return [];
+  if (!m) return [];
   const c = classeDo(m);
   const aco = ACOS[cfg.acoIdx].nome + (cfg.bruteForge ? ' + Brute Forge' : '');
   const emp = EMPUNHADURAS[cfg.empIdx].nome + (cfg.dragonScale ? ' + Dragon Scale' : '');
@@ -248,7 +250,7 @@ function ModeloSearch({ onSelect, currentIdx }: { onSelect: (idx: number) => voi
   useEffect(() => { if (open && inputRef.current) inputRef.current.focus(); }, [open]);
 
   const filtered = useMemo(() => {
-    const base = MODELOS.map((m, i) => ({ m, i })).filter(({ m }) => m.preco !== null);
+    const base = MODELOS.map((m, i) => ({ m, i }));
     if (!query.trim()) return base;
     const q = query.toLowerCase();
     return base.filter(({ m }) => m.nome.toLowerCase().includes(q));
@@ -330,7 +332,7 @@ function ItemCard({ cfg, onChange, onRemove, onDuplicate, index, expanded, onTog
             {modelo ? (specs.length > 0 ? specs.join(' · ') : 'Configuração base') : 'Escolha o modelo'}
           </p>
         </div>
-        {modelo && modelo.preco !== null && <span className="text-base font-bold text-primary flex-shrink-0" data-numeric>{BRL(total)}</span>}
+        {modelo && <span className="text-base font-bold text-primary flex-shrink-0" data-numeric>{BRL(total)}</span>}
         {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
       </button>
 
@@ -341,7 +343,7 @@ function ItemCard({ cfg, onChange, onRemove, onDuplicate, index, expanded, onTog
               onSelect={(i) => onChange({ ...newItem(), id: cfg.id, modeloIdx: i, adicionais: cfg.adicionais })} />
           </Secao>
 
-          {modelo && modelo.preco !== null && (
+          {modelo && (
             <>
               {/* Aço — Brute Forge é opcional do aço */}
               <Secao title="Aço">
@@ -416,7 +418,7 @@ function ItemCard({ cfg, onChange, onRemove, onDuplicate, index, expanded, onTog
           )}
 
           <div className="flex gap-2">
-            {modelo && modelo.preco !== null && (
+            {modelo && (
               <button type="button" onClick={onDuplicate}
                 className="flex-1 flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground hover:text-primary transition-colors rounded-lg hover:bg-muted/50">
                 <CopyPlus className="w-3.5 h-3.5" /> Duplicar
@@ -556,7 +558,7 @@ export default function SimuladorPrecos() {
   const updateItem = (id: string, u: ItemCfg) => setItens((p) => p.map((c) => (c.id === id ? u : c)));
 
   const totalGeral = useMemo(() => itens.reduce((s, c) => s + calcItem(c), 0), [itens]);
-  const itensValidos = itens.filter((c) => c.modeloIdx !== null && MODELOS[c.modeloIdx]?.preco !== null).length;
+  const itensValidos = itens.filter((c) => c.modeloIdx !== null).length;
   const orcamento = useMemo(() => gerarOrcamento(itens, totalGeral), [itens, totalGeral]);
 
   const copiarRapido = async () => {
