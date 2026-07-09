@@ -1766,30 +1766,6 @@ export type Database = {
           },
         ]
       }
-      simulador_precos_config: {
-        Row: {
-          id: string
-          chave: string
-          dados: Json
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          id?: string
-          chave?: string
-          dados: Json
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          id?: string
-          chave?: string
-          dados?: Json
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: []
-      }
       preview_config: {
         Row: {
           created_at: string
