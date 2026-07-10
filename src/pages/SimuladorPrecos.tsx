@@ -5,9 +5,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Calculator, Plus, Trash2, Copy, MessageCircle, Search, X,
-  ChevronDown, ChevronUp, CopyPlus, Send, Loader2, Check, ClipboardCheck,
+  ChevronDown, ChevronUp, CopyPlus, Send, Loader2, Check, ClipboardCheck, Eraser,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -169,7 +170,7 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                 <div className="flex flex-wrap gap-1.5">
                   {data.acos.map((a, i) => (
                     <Chip key={i} label={a.nome} price={precoClasse(a.precos, c)}
-                      selected={cfg.acoIdx === i} onClick={() => onChange({ ...cfg, acoIdx: i })} />
+                      selected={cfg.acoIdx === i} onClick={() => onChange({ ...cfg, acoIdx: cfg.acoIdx === i ? 0 : i })} />
                   ))}
                   <ToggleChip label="Brute Forge" price={precoClasse(data.bruteForge, c)} on={cfg.bruteForge}
                     onClick={() => onChange({ ...cfg, bruteForge: !cfg.bruteForge })} />
@@ -181,7 +182,7 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                 <div className="flex flex-wrap gap-1.5">
                   {data.empunhaduras.map((e, i) => (
                     <Chip key={i} label={e.nome} price={precoClasse(e.precos, c)}
-                      selected={cfg.empIdx === i} onClick={() => onChange({ ...cfg, empIdx: i })} />
+                      selected={cfg.empIdx === i} onClick={() => onChange({ ...cfg, empIdx: cfg.empIdx === i ? 0 : i })} />
                   ))}
                   <ToggleChip label="Dragon Scale" price={precoClasse(data.dragonScale, c)} on={cfg.dragonScale}
                     onClick={() => onChange({ ...cfg, dragonScale: !cfg.dragonScale })} />
@@ -192,7 +193,7 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                 <div className="flex flex-wrap gap-1.5">
                   {data.acabamentos.map((a, i) => (
                     <Chip key={i} label={a.nome} price={precoClasse(a.precos, c)}
-                      selected={cfg.acabIdx === i} onClick={() => onChange({ ...cfg, acabIdx: i })} />
+                      selected={cfg.acabIdx === i} onClick={() => onChange({ ...cfg, acabIdx: cfg.acabIdx === i ? 0 : i })} />
                   ))}
                 </div>
               </Secao>
@@ -201,7 +202,7 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                 <div className="flex flex-wrap gap-1.5">
                   {data.bainhas.map((b, i) => (
                     <Chip key={i} label={b.nome} price={precoClasse(b.precos, c)}
-                      selected={cfg.bainhaIdx === i} onClick={() => onChange({ ...cfg, bainhaIdx: i })} />
+                      selected={cfg.bainhaIdx === i} onClick={() => onChange({ ...cfg, bainhaIdx: cfg.bainhaIdx === i ? 0 : i })} />
                   ))}
                 </div>
               </Secao>
@@ -280,6 +281,23 @@ function matchVendedorForm(nome: string): string {
   return FORM_VENDEDORES.find((v) => n.includes(v.toLowerCase())) ?? '';
 }
 
+/** Converte texto de valor (R$ 1.560,00 | 1560,00 | 1560.00 | 1560) num número. */
+function parseValor(s: string): number {
+  const limpo = (s || '').replace(/[^\d.,-]/g, '');
+  if (!limpo) return 0;
+  const lastComma = limpo.lastIndexOf(',');
+  const lastDot = limpo.lastIndexOf('.');
+  const str = lastComma > lastDot ? limpo.replace(/\./g, '').replace(',', '.') : limpo.replace(/,/g, '');
+  const n = parseFloat(str);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Número no formato que a planilha reconhece: sem R$, sem separador de milhar,
+ *  vírgula decimal. Ex.: 1560 → "1560,00". */
+function valorParaForm(s: string): string {
+  return parseValor(s).toFixed(2).replace('.', ',');
+}
+
 /** Monta a URL do Google Form já preenchido (usp=pp_url). */
 function urlFormPreenchido(campos: Partial<Record<keyof typeof FORM_ENTRY, string>>): string {
   const p = new URLSearchParams({ usp: 'pp_url' });
@@ -301,14 +319,20 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
   const [pagamento, setPagamento] = useState('');
   const [status, setStatus] = useState('');
   const [observacao, setObservacao] = useState('');
+  // Valor: pré-calculado pelo total, mas editável. Segue o total até o usuário editar.
+  const [valorStr, setValorStr] = useState('');
+  const [valorTocado, setValorTocado] = useState(false);
 
   useEffect(() => { if (vendedorPadrao && !vendedor) setVendedor(matchVendedorForm(vendedorPadrao)); }, [vendedorPadrao]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!valorTocado) setValorStr(total.toFixed(2).replace('.', ',')); }, [total, valorTocado]);
+  useEffect(() => { if (!open) setValorTocado(false); }, [open]);
 
   const mensagem = useMemo(() => {
     const partes: string[] = [];
     if (nomeCliente.trim()) partes.push(`Olá, ${nomeCliente.trim()}! Segue seu orçamento Kaowz:`, '');
     partes.push(texto);
-    if (vendedor.trim()) partes.push('', 'Qualquer dúvida estou à disposição!', `— ${vendedor.trim()} · Kaowz`);
+    partes.push('', 'Qualquer dúvida estou à disposição!', '📞 Contato Kaowz: (28) 9902-5695');
+    if (vendedor.trim()) partes.push(`— ${vendedor.trim()} · Kaowz`);
     return partes.join('\n');
   }, [nomeCliente, vendedor, texto]);
 
@@ -335,13 +359,13 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
       cliente: nomeCliente.trim(),
       telefone: telFmt,
       pedido: texto,               // a montagem do pedido (Item 1, Item 2, Total)
-      valor: BRL(total),
+      valor: valorParaForm(valorStr), // número p/ planilha: sem R$, sem ponto de milhar
       pagamento: FORM_PAGAMENTOS.includes(pagamento) ? pagamento : '',
       status: FORM_STATUS.includes(status) ? status : '',
       observacao: observacao.trim(),
       vendedor: FORM_VENDEDORES.includes(vendedor) ? vendedor : '',
     });
-  }, [nomeCliente, telefone, telefoneDigits, texto, total, pagamento, status, observacao, vendedor]);
+  }, [nomeCliente, telefone, telefoneDigits, texto, valorStr, pagamento, status, observacao, vendedor]);
 
   const podeRegistrar = !!nomeCliente.trim();
 
@@ -412,6 +436,19 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
               <ClipboardCheck className="h-4 w-4 text-primary" />
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Registrar venda</span>
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="orc-valor" className="text-xs">Valor (editável)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                <Input id="orc-valor" value={valorStr} inputMode="decimal"
+                  onChange={(e) => { setValorTocado(true); setValorStr(e.target.value); }}
+                  onBlur={() => setValorStr(parseValor(valorStr).toFixed(2).replace('.', ','))}
+                  placeholder="0,00" className="h-10 pl-9 tabular-nums font-semibold" />
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Pré-calculado pelo total. Vai para a planilha como número (sem R$ nem ponto de milhar).
+              </p>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Pagamento</Label>
@@ -433,9 +470,9 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="orc-obs" className="text-xs">Observação (opcional)</Label>
-              <Input id="orc-obs" value={observacao} onChange={(e) => setObservacao(e.target.value)}
-                placeholder="Ex: gravação, prazo, brinde..." className="h-10" />
+              <Label htmlFor="orc-obs" className="text-xs">Observação</Label>
+              <Textarea id="orc-obs" value={observacao} onChange={(e) => setObservacao(e.target.value)}
+                placeholder="Ex: gravação, prazo, brinde, detalhes do pedido..." rows={3} className="text-sm resize-none" />
             </div>
             {podeRegistrar ? (
               <Button asChild variant="outline" className="w-full h-11 rounded-xl gap-2">
@@ -502,6 +539,15 @@ export default function SimuladorPrecos() {
     catch { toast.error('Erro ao copiar'); }
   };
 
+  // Limpa tudo — reinicia com um item vazio (reseta as configurações selecionadas)
+  const limparTudo = () => {
+    const c = newItem();
+    setItens([c]);
+    setExpandedId(c.id);
+    if (navigator.vibrate) navigator.vibrate(20);
+    toast.success('Limpo! Configurações resetadas.');
+  };
+
   return (
     <div className="max-w-lg mx-auto py-4 px-1 sm:px-4 space-y-3 pb-44 md:pb-28">
       <div className="flex items-center gap-3 mb-1">
@@ -510,7 +556,12 @@ export default function SimuladorPrecos() {
           <h1 className="text-lg font-bold leading-tight">Simulador de Preços</h1>
           <p className="text-[11px] text-muted-foreground leading-tight">Base: Aço Inox + Empunhadura Grafite inclusos</p>
         </div>
-        {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-auto" />}
+        {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+        <button type="button" onClick={limparTudo} title="Limpar seleções"
+          className="ml-auto flex items-center gap-1 h-9 px-2.5 rounded-xl border border-border bg-background hover:bg-muted active:scale-95 transition-all">
+          <Eraser className="h-4 w-4 text-muted-foreground" />
+          <span aria-hidden className="text-base leading-none">🧹</span>
+        </button>
       </div>
 
       <div className="space-y-3">
@@ -543,7 +594,7 @@ export default function SimuladorPrecos() {
           </Button>
           <Button className="gap-2 h-11 rounded-xl flex-shrink-0 bg-accent hover:bg-accent/90 text-accent-foreground"
             onClick={() => setModalOpen(true)} disabled={itensValidos === 0}>
-            <MessageCircle className="h-4 w-4" /> WhatsApp
+            <ClipboardCheck className="h-4 w-4" /> Enviar formulário
           </Button>
         </div>
       </div>
