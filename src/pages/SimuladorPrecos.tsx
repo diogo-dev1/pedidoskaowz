@@ -1,21 +1,22 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Calculator, Plus, Trash2, Copy, MessageCircle, Search, X,
+  Calculator, Plus, Minus, Trash2, Copy, MessageCircle, Search, X,
   ChevronDown, ChevronUp, CopyPlus, Send, Loader2, Check, ClipboardCheck, Eraser,
+  Hammer, PackagePlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
-  BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, gerarOrcamento,
-  type SimuladorData, type ItemCfg, type Modelo, type Opcao,
+  BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcEntry, gerarOrcamento,
+  novaEntradaFaca, novaEntradaAvulso,
+  type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao,
 } from '@/lib/simuladorData';
 
 /* ════════════════ UI: átomos ════════════════ */
@@ -124,7 +125,6 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
   const modelo = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   const c = classeDo(modelo);
   const total = calcItem(data, cfg);
-  const [showAdicionais, setShowAdicionais] = useState(false);
 
   const nomeOpt = (arr: Opcao[], idx: number, sufixo = '') =>
     arr[idx] && !arr[idx].incluso ? arr[idx].nome + sufixo : (sufixo ? arr[idx]?.nome + sufixo : null);
@@ -137,7 +137,6 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
     cfg.dragonScale ? 'DS' : null,
     nomeOpt(data.acabamentos, cfg.acabIdx),
     nomeOpt(data.bainhas, cfg.bainhaIdx),
-    cfg.adicionais.size > 0 ? `${cfg.adicionais.size} adic.` : null,
   ].filter(Boolean) : [];
 
   return (
@@ -161,7 +160,7 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
         <div className="px-4 pb-4 space-y-5 border-t pt-4">
           <Secao title="Modelo">
             <ModeloSearch modelos={data.modelos} currentIdx={cfg.modeloIdx}
-              onSelect={(i) => onChange({ ...newItem(), id: cfg.id, modeloIdx: i, adicionais: cfg.adicionais })} />
+              onSelect={(i) => onChange({ ...newItem(), id: cfg.id, modeloIdx: i })} />
           </Secao>
 
           {modelo && (
@@ -223,29 +222,6 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                 </div>
               </Secao>
 
-              <Secao title="Adicionais">
-                <button type="button" onClick={() => setShowAdicionais(!showAdicionais)}
-                  className="flex items-center gap-2 text-xs text-primary font-medium hover:underline">
-                  {showAdicionais ? 'Ocultar' : `Ver ${data.adicionais.length} opções`}
-                  {cfg.adicionais.size > 0 && <span className="bg-accent text-accent-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">{cfg.adicionais.size}</span>}
-                  {showAdicionais ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                </button>
-                {showAdicionais && (
-                  <div className="space-y-1 mt-1">
-                    {data.adicionais.map((a, i) => {
-                      const on = cfg.adicionais.has(i);
-                      return (
-                        <label key={i} className={`flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-all ${on ? 'border-accent bg-accent/5' : 'border-transparent hover:bg-muted/40'}`}>
-                          <Checkbox checked={on} onCheckedChange={(v) => { const s = new Set(cfg.adicionais); if (v) s.add(i); else s.delete(i); onChange({ ...cfg, adicionais: s }); }} />
-                          <span className={`flex-1 text-sm ${on ? 'font-medium' : ''}`}>{a.nome}</span>
-                          <span className={`text-xs font-semibold ${on ? 'text-accent' : 'text-muted-foreground'}`} data-numeric>{BRL(a.preco)}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </Secao>
-
               <div className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/15">
                 <span className="text-sm font-medium">Subtotal</span>
                 <span className="text-lg font-bold text-primary" data-numeric>{BRL(total)}</span>
@@ -270,6 +246,91 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
         </div>
       )}
     </div>
+  );
+}
+
+/* ════════════════ Item à parte (avulso) ════════════════ */
+
+function AvulsoRow({ data, cfg, onChange, onRemove }: {
+  data: SimuladorData; cfg: import('@/lib/simuladorData').AvulsoCfg;
+  onChange: (c: import('@/lib/simuladorData').AvulsoCfg) => void; onRemove: () => void;
+}) {
+  const a = data.adicionais[cfg.adicionalIdx];
+  if (!a) return null;
+  const subtotal = a.preco * cfg.quantidade;
+  return (
+    <div className="rounded-2xl border bg-card overflow-hidden shadow-sm flex items-center gap-3 p-4">
+      <span className="w-8 h-8 rounded-xl bg-accent/15 text-accent flex items-center justify-center flex-shrink-0">
+        <PackagePlus className="w-4 h-4" />
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-sm truncate">{a.nome}</p>
+        <p className="text-[11px] text-muted-foreground">Item à parte</p>
+      </div>
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        <button type="button" onClick={() => onChange({ ...cfg, quantidade: Math.max(1, cfg.quantidade - 1) })}
+          className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-muted active:scale-95 transition-all disabled:opacity-30"
+          disabled={cfg.quantidade <= 1}>
+          <Minus className="w-3 h-3" />
+        </button>
+        <span className="w-5 text-center text-sm font-semibold tabular-nums">{cfg.quantidade}</span>
+        <button type="button" onClick={() => onChange({ ...cfg, quantidade: cfg.quantidade + 1 })}
+          className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-muted active:scale-95 transition-all">
+          <Plus className="w-3 h-3" />
+        </button>
+      </div>
+      <span className="text-sm font-bold text-primary w-20 text-right flex-shrink-0" data-numeric>{BRL(subtotal)}</span>
+      <button type="button" onClick={onRemove} className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0">
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
+function AvulsoPickerDialog({ open, onOpenChange, data, onPick }: {
+  open: boolean; onOpenChange: (v: boolean) => void; data: SimuladorData; onPick: (idx: number) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const filtered = useMemo(() => {
+    const base = data.adicionais.map((a, i) => ({ a, i }));
+    if (!query.trim()) return base;
+    const q = query.toLowerCase();
+    return base.filter(({ a }) => a.nome.toLowerCase().includes(q));
+  }, [query, data.adicionais]);
+
+  useEffect(() => { if (!open) setQuery(''); }, [open]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col rounded-2xl p-0">
+        <DialogHeader className="p-4 pb-2">
+          <DialogTitle className="flex items-center gap-2">
+            <PackagePlus className="h-5 w-5 text-accent" /> Item à parte
+          </DialogTitle>
+          <DialogDescription>Escolha um item do catálogo de Adicionais, sem faca.</DialogDescription>
+        </DialogHeader>
+        <div className="px-4 pb-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar item..." className="pl-9 h-11" />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1.5">
+          {filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Nenhum item encontrado</p>
+          ) : (
+            filtered.map(({ a, i }) => (
+              <button key={i} type="button" onClick={() => { onPick(i); onOpenChange(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left hover:bg-muted/50 active:scale-[0.99] transition-all">
+                <span className="flex-1 text-sm font-medium truncate">{a.nome}</span>
+                <span className="text-sm font-bold text-primary flex-shrink-0" data-numeric>{BRL(a.preco)}</span>
+                <Plus className="w-4 h-4 text-accent flex-shrink-0" />
+              </button>
+            ))
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -518,19 +579,24 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
 export default function SimuladorPrecos() {
   const { profile } = useAuth();
   const { data, isLoading } = useSimuladorConfig();
-  const [itens, setItens] = useState<ItemCfg[]>([newItem()]);
+  const [entries, setEntries] = useState<PedidoEntry[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  useEffect(() => { setExpandedId((e) => e ?? itens[0]?.id ?? null); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const addFaca = () => { const e = novaEntradaFaca(); setEntries((p) => [...p, e]); setExpandedId(e.id); };
+  const addAvulso = (adicionalIdx: number) => {
+    setEntries((p) => [...p, novaEntradaAvulso(adicionalIdx)]);
+    if (navigator.vibrate) navigator.vibrate(15);
+    toast.success('Item adicionado!');
+  };
 
-  const addItem = () => { const c = newItem(); setItens((p) => [...p, c]); setExpandedId(c.id); };
   const duplicateItem = (id: string) => {
-    setItens((p) => {
-      const src = p.find((c) => c.id === id);
-      if (!src) return p;
-      const copia: ItemCfg = { ...src, id: crypto.randomUUID(), adicionais: new Set(src.adicionais) };
-      const idx = p.findIndex((c) => c.id === id);
+    setEntries((p) => {
+      const src = p.find((e) => e.id === id);
+      if (!src || src.kind !== 'faca') return p;
+      const copia: PedidoEntry = { id: crypto.randomUUID(), kind: 'faca', faca: { ...src.faca, id: crypto.randomUUID() } };
+      const idx = p.findIndex((e) => e.id === id);
       const n = [...p];
       n.splice(idx + 1, 0, copia);
       setExpandedId(copia.id);
@@ -538,34 +604,34 @@ export default function SimuladorPrecos() {
     });
     if (navigator.vibrate) navigator.vibrate(15);
   };
-  const removeItem = (id: string) => setItens((p) => {
-    if (p.length <= 1) return p;
-    const n = p.filter((c) => c.id !== id);
-    if (expandedId === id) setExpandedId(n[0]?.id ?? null);
+  const removeEntry = (id: string) => setEntries((p) => {
+    const n = p.filter((e) => e.id !== id);
+    if (expandedId === id) setExpandedId(null);
     return n;
   });
-  const updateItem = (id: string, u: ItemCfg) => setItens((p) => p.map((c) => (c.id === id ? u : c)));
+  const updateFaca = (id: string, u: ItemCfg) => setEntries((p) => p.map((e) => (e.id === id ? { ...e, faca: u } : e)));
+  const updateAvulso = (id: string, u: import('@/lib/simuladorData').AvulsoCfg) =>
+    setEntries((p) => p.map((e) => (e.id === id ? { ...e, avulso: u } : e)));
 
-  const totalGeral = useMemo(() => itens.reduce((s, c) => s + calcItem(data, c), 0), [itens, data]);
-  const itensValidos = itens.filter((c) => c.modeloIdx !== null).length;
-  const orcamento = useMemo(() => gerarOrcamento(data, itens, totalGeral), [data, itens, totalGeral]);
+  const totalGeral = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
+  const itensValidos = entries.filter((e) => e.kind === 'avulso' || e.faca.modeloIdx !== null).length;
+  const orcamento = useMemo(() => gerarOrcamento(data, entries, totalGeral), [data, entries, totalGeral]);
 
   const copiarRapido = async () => {
     try { await navigator.clipboard.writeText(orcamento); toast.success('Orçamento copiado!'); }
     catch { toast.error('Erro ao copiar'); }
   };
 
-  // Limpa tudo — reinicia com um item vazio (reseta as configurações selecionadas)
+  // Limpa tudo — reinicia sem itens
   const limparTudo = () => {
-    const c = newItem();
-    setItens([c]);
-    setExpandedId(c.id);
+    setEntries([]);
+    setExpandedId(null);
     if (navigator.vibrate) navigator.vibrate(20);
     toast.success('Limpo! Configurações resetadas.');
   };
 
   return (
-    <div className="max-w-lg mx-auto py-4 px-1 sm:px-4 space-y-3 pb-44 md:pb-28">
+    <div className="max-w-lg mx-auto py-4 px-1 sm:px-4 space-y-4 pb-44 md:pb-28">
       <div className="flex items-center gap-3 mb-1">
         <Calculator className="h-5 w-5 text-primary" />
         <div>
@@ -573,28 +639,52 @@ export default function SimuladorPrecos() {
           <p className="text-[11px] text-muted-foreground leading-tight">Base: Aço Inox + Empunhadura Grafite inclusos</p>
         </div>
         {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-        <button type="button" onClick={limparTudo} title="Limpar seleções"
-          className="ml-auto flex items-center gap-1 h-9 px-2.5 rounded-xl border border-border bg-background hover:bg-muted active:scale-95 transition-all">
-          <Eraser className="h-4 w-4 text-muted-foreground" />
-          <span aria-hidden className="text-base leading-none">🧹</span>
+        {entries.length > 0 && (
+          <button type="button" onClick={limparTudo} title="Limpar seleções"
+            className="ml-auto flex items-center gap-1 h-9 px-2.5 rounded-xl border border-border bg-background hover:bg-muted active:scale-95 transition-all">
+            <Eraser className="h-4 w-4 text-muted-foreground" />
+            <span aria-hidden className="text-base leading-none">🧹</span>
+          </button>
+        )}
+      </div>
+
+      {/* Dois cards de entrada — mobile first, minimalista */}
+      <div className="grid grid-cols-2 gap-3">
+        <button type="button" onClick={addFaca}
+          className="group flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-primary/20 bg-primary/5 p-5 text-center transition-all hover:border-primary/40 hover:bg-primary/10 active:scale-[0.97]">
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+            <Hammer className="h-5 w-5" />
+          </span>
+          <span className="text-sm font-bold leading-tight">Montar Faca</span>
+          <span className="text-[10px] text-muted-foreground leading-tight">Configure modelo, aço, empunhadura...</span>
+        </button>
+        <button type="button" onClick={() => setPickerOpen(true)}
+          className="group flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-accent/20 bg-accent/5 p-5 text-center transition-all hover:border-accent/40 hover:bg-accent/10 active:scale-[0.97]">
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-sm">
+            <PackagePlus className="h-5 w-5" />
+          </span>
+          <span className="text-sm font-bold leading-tight">Item à parte</span>
+          <span className="text-[10px] text-muted-foreground leading-tight">Adicionais sem faca vinculada</span>
         </button>
       </div>
 
-      <div className="space-y-3">
-        {itens.map((cfg, idx) => (
-          <ItemCard key={cfg.id} data={data} cfg={cfg} index={idx}
-            onChange={(u) => updateItem(cfg.id, u)}
-            onRemove={() => removeItem(cfg.id)}
-            onDuplicate={() => duplicateItem(cfg.id)}
-            removivel={itens.length > 1}
-            expanded={expandedId === cfg.id}
-            onToggle={() => setExpandedId(expandedId === cfg.id ? null : cfg.id)} />
-        ))}
-      </div>
-
-      <Button variant="outline" className="w-full gap-2 rounded-xl h-11" onClick={addItem}>
-        <Plus className="h-4 w-4" /> Adicionar item
-      </Button>
+      {entries.length > 0 && (
+        <div className="space-y-3">
+          {entries.map((e, idx) => e.kind === 'faca' ? (
+            <ItemCard key={e.id} data={data} cfg={e.faca} index={idx}
+              onChange={(u) => updateFaca(e.id, u)}
+              onRemove={() => removeEntry(e.id)}
+              onDuplicate={() => duplicateItem(e.id)}
+              removivel
+              expanded={expandedId === e.id}
+              onToggle={() => setExpandedId(expandedId === e.id ? null : e.id)} />
+          ) : (
+            <AvulsoRow key={e.id} data={data} cfg={e.avulso}
+              onChange={(u) => updateAvulso(e.id, u)}
+              onRemove={() => removeEntry(e.id)} />
+          ))}
+        </div>
+      )}
 
       {/* Footer fixo — acima da bottom nav no mobile */}
       <div className="fixed left-0 right-0 bg-background/95 backdrop-blur-lg border-t z-40 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0">
@@ -614,6 +704,8 @@ export default function SimuladorPrecos() {
           </Button>
         </div>
       </div>
+
+      <AvulsoPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} data={data} onPick={addAvulso} />
 
       <OrcamentoModal open={modalOpen} onOpenChange={setModalOpen} texto={orcamento} total={totalGeral}
         vendedorPadrao={profile?.nome_vendedor ?? ''} />

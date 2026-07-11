@@ -40,8 +40,20 @@ export interface ItemCfg {
   dragonScale: boolean; // opcional da empunhadura
   acabIdx: number;     // default 0 (Acetinado incluso)
   bainhaIdx: number;   // default 0 (Preta inclusa)
-  adicionais: Set<number>;
 }
+
+/** Item avulso — um produto do catálogo de Adicionais comprado fora da
+ *  configuração de uma faca (ex.: brinde, acessório vendido à parte). */
+export interface AvulsoCfg {
+  id: string;
+  adicionalIdx: number;
+  quantidade: number;
+}
+
+/** Uma entrada do pedido: ou uma faca configurada, ou um item avulso. */
+export type PedidoEntry =
+  | { id: string; kind: 'faca'; faca: ItemCfg }
+  | { id: string; kind: 'avulso'; avulso: AvulsoCfg };
 
 export const BRL = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
@@ -54,8 +66,20 @@ export function newItem(): ItemCfg {
   return {
     id: crypto.randomUUID(), modeloIdx: null,
     acoIdx: 0, bruteForge: false, empIdx: 0, empCor: null, dragonScale: false,
-    acabIdx: 0, bainhaIdx: 0, adicionais: new Set(),
+    acabIdx: 0, bainhaIdx: 0,
   };
+}
+
+export function newAvulso(adicionalIdx: number, quantidade = 1): AvulsoCfg {
+  return { id: crypto.randomUUID(), adicionalIdx, quantidade };
+}
+
+export function novaEntradaFaca(): PedidoEntry {
+  return { id: crypto.randomUUID(), kind: 'faca', faca: newItem() };
+}
+
+export function novaEntradaAvulso(adicionalIdx: number, quantidade = 1): PedidoEntry {
+  return { id: crypto.randomUUID(), kind: 'avulso', avulso: newAvulso(adicionalIdx, quantidade) };
 }
 
 /** Regra da planilha: M usa P quando não definido; G cai para M→P. */
@@ -69,7 +93,7 @@ export function classeDo(m: Modelo | null): Classe {
   return !m || m.tamanho === '-' ? 'P' : m.tamanho;
 }
 
-/** Valor total de um item, usando os dados (SEED ou config do banco). */
+/** Valor total de uma faca configurada, usando os dados (SEED ou config do banco). */
 export function calcItem(data: SimuladorData, cfg: ItemCfg): number {
   const m = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   if (!m) return 0;
@@ -81,11 +105,10 @@ export function calcItem(data: SimuladorData, cfg: ItemCfg): number {
   if (cfg.dragonScale) t += precoClasse(data.dragonScale, c);
   t += precoClasse(data.acabamentos[cfg.acabIdx]?.precos ?? {}, c);
   t += precoClasse(data.bainhas[cfg.bainhaIdx]?.precos ?? {}, c);
-  cfg.adicionais.forEach((i) => { t += data.adicionais[i]?.preco ?? 0; });
   return t;
 }
 
-/** Bloco de texto de um item para o orçamento (formato WhatsApp). */
+/** Bloco de texto de uma faca para o orçamento (formato WhatsApp). */
 export function textoItem(data: SimuladorData, cfg: ItemCfg, n: number): string[] {
   const m = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   if (!m) return [];
@@ -101,18 +124,45 @@ export function textoItem(data: SimuladorData, cfg: ItemCfg, n: number): string[
     `Acabamento: ${data.acabamentos[cfg.acabIdx]?.nome ?? '-'}`,
     `Bainha: ${data.bainhas[cfg.bainhaIdx]?.nome ?? '-'}`,
   ];
-  const ads = [...cfg.adicionais].map((i) => data.adicionais[i]?.nome).filter(Boolean);
-  if (ads.length) l.push(`Adicionais: ${ads.join(', ')}`);
   l.push(`Valor: ${BRL(calcItem(data, cfg))}`);
   return l;
 }
 
-/** Orçamento completo — formato "Pedido: / Item N: / Total:". */
-export function gerarOrcamento(data: SimuladorData, itens: ItemCfg[], total: number): string {
+/** Valor total de um item avulso (produto do catálogo de Adicionais). */
+export function calcAvulso(data: SimuladorData, cfg: AvulsoCfg): number {
+  const a = data.adicionais[cfg.adicionalIdx];
+  if (!a) return 0;
+  return a.preco * Math.max(1, cfg.quantidade);
+}
+
+/** Bloco de texto de um item avulso para o orçamento. */
+export function textoAvulso(data: SimuladorData, cfg: AvulsoCfg, n: number): string[] {
+  const a = data.adicionais[cfg.adicionalIdx];
+  if (!a) return [];
+  const qtd = cfg.quantidade > 1 ? ` x${cfg.quantidade}` : '';
+  return [
+    `Item ${n}:`,
+    `${a.nome}${qtd}`,
+    `Valor: ${BRL(calcAvulso(data, cfg))}`,
+  ];
+}
+
+/** Valor total de uma entrada (faca ou avulso). */
+export function calcEntry(data: SimuladorData, e: PedidoEntry): number {
+  return e.kind === 'faca' ? calcItem(data, e.faca) : calcAvulso(data, e.avulso);
+}
+
+/** Bloco de texto de uma entrada (faca ou avulso). */
+export function textoEntry(data: SimuladorData, e: PedidoEntry, n: number): string[] {
+  return e.kind === 'faca' ? textoItem(data, e.faca, n) : textoAvulso(data, e.avulso, n);
+}
+
+/** Orçamento completo — formato "Pedido: / Item N: / Total:". Mistura facas e avulsos. */
+export function gerarOrcamento(data: SimuladorData, entries: PedidoEntry[], total: number): string {
   const l: string[] = ['Pedido:', ''];
   let n = 0;
-  itens.forEach((cfg) => {
-    const bloco = textoItem(data, cfg, n + 1);
+  entries.forEach((e) => {
+    const bloco = textoEntry(data, e, n + 1);
     if (bloco.length === 0) return;
     n++;
     l.push(...bloco, '');
