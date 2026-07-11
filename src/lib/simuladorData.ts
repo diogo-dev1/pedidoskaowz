@@ -13,7 +13,9 @@ export type Tamanho = 'P' | 'M' | 'G' | '-';
 export type Classe = 'P' | 'M' | 'G';
 export interface Precos { P?: number; M?: number; G?: number }
 export interface Modelo { nome: string; tamanho: Tamanho; preco: number }
-export interface Opcao { nome: string; precos: Precos; incluso?: boolean }
+// cores: lista de nomes de cor cadastráveis no admin. Se vazia/ausente, a
+// opção não abre seletor de cor (comportamento atual, sem cor).
+export interface Opcao { nome: string; precos: Precos; incluso?: boolean; cores?: string[] }
 export interface Adicional { nome: string; preco: number }
 
 export interface SimuladorData {
@@ -34,6 +36,7 @@ export interface ItemCfg {
   acoIdx: number;      // default 0 (Inox incluso)
   bruteForge: boolean; // opcional do aço
   empIdx: number;      // default 0 (Grafite inclusa)
+  empCor: string | null; // cor da empunhadura, quando a opção tem `cores`
   dragonScale: boolean; // opcional da empunhadura
   acabIdx: number;     // default 0 (Acetinado incluso)
   bainhaIdx: number;   // default 0 (Preta inclusa)
@@ -50,7 +53,7 @@ export const TAM_DOT: Record<Tamanho, string> = {
 export function newItem(): ItemCfg {
   return {
     id: crypto.randomUUID(), modeloIdx: null,
-    acoIdx: 0, bruteForge: false, empIdx: 0, dragonScale: false,
+    acoIdx: 0, bruteForge: false, empIdx: 0, empCor: null, dragonScale: false,
     acabIdx: 0, bainhaIdx: 0, adicionais: new Set(),
   };
 }
@@ -87,7 +90,9 @@ export function textoItem(data: SimuladorData, cfg: ItemCfg, n: number): string[
   const m = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   if (!m) return [];
   const aco = data.acos[cfg.acoIdx]?.nome + (cfg.bruteForge ? ' + Brute Forge' : '');
-  const emp = data.empunhaduras[cfg.empIdx]?.nome + (cfg.dragonScale ? ' + Dragon Scale' : '');
+  let emp = data.empunhaduras[cfg.empIdx]?.nome ?? '';
+  if (cfg.empCor) emp += ` (${cfg.empCor})`;
+  emp += cfg.dragonScale ? ' + Dragon Scale' : '';
   const l = [
     `Item ${n}:`,
     m.nome,
@@ -177,9 +182,9 @@ export const SEED: SimuladorData = {
   ],
   bruteForge: { P: 125, M: 125, G: 300 },
   empunhaduras: [
-    { nome: 'Grafite', precos: { P: 0, M: 0, G: 0 }, incluso: true },
+    { nome: 'Grafite', precos: { P: 0, M: 0, G: 0 }, incluso: true, cores: ['Preto', 'Cinza'] },
     { nome: 'G10', precos: { P: 115, M: 145 } },
-    { nome: 'Espaçador', precos: { P: 70, M: 70, G: 90 } },
+    { nome: 'Espaçador', precos: { P: 70, M: 70, G: 90 }, cores: ['Preto', 'Vermelho', 'Azul'] },
     { nome: 'Imbuia', precos: { P: 80, M: 80, G: 100 } },
   ],
   dragonScale: { P: 70, M: 70, G: 90 },

@@ -14,7 +14,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
-  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles,
+  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette,
 } from 'lucide-react';
 
 // Clona profundo (dados são simples: objetos/arrays/números/strings)
@@ -37,8 +37,54 @@ function PrecoInput({ value, onChange, className = '' }: { value: number; onChan
   );
 }
 
-/** Editor de uma opção com preços por tamanho (P/M/G). */
-function OpcaoPrecos({ op, onChange }: { op: Opcao; onChange: (o: Opcao) => void }) {
+/** Editor da lista de cores cadastráveis de uma opção (ex.: Grafite, Espaçador). */
+function CoresEditor({ cores, onChange }: { cores: string[]; onChange: (c: string[]) => void }) {
+  const [novaCor, setNovaCor] = useState('');
+
+  const adicionar = () => {
+    const nome = novaCor.trim();
+    if (!nome) return;
+    if (cores.some((c) => c.toLowerCase() === nome.toLowerCase())) { setNovaCor(''); return; }
+    onChange([...cores, nome]);
+    setNovaCor('');
+  };
+
+  return (
+    <div className="space-y-1.5 pt-1.5 border-t">
+      <div className="flex items-center gap-1.5">
+        <Palette className="w-3.5 h-3.5 text-muted-foreground" />
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Cores (opcional)</span>
+      </div>
+      {cores.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {cores.map((cor, i) => (
+            <span key={i} className="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full text-xs font-medium bg-muted border">
+              {cor}
+              <button type="button" onClick={() => onChange(cores.filter((_, j) => j !== i))}
+                className="rounded-full hover:bg-destructive/15 p-0.5 text-muted-foreground hover:text-destructive">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="flex items-center gap-1.5">
+        <Input value={novaCor} onChange={(e) => setNovaCor(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); adicionar(); } }}
+          placeholder="Ex: Preto, Vermelho..." className="h-8 text-xs flex-1" />
+        <Button type="button" size="icon" variant="outline" className="h-8 w-8 shrink-0" onClick={adicionar}>
+          <Plus className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+      <p className="text-[10px] text-muted-foreground">
+        Se houver ao menos uma cor aqui, o Simulador mostra a seleção de cor quando esta opção for escolhida.
+      </p>
+    </div>
+  );
+}
+
+/** Editor de uma opção com preços por tamanho (P/M/G). `comCores` habilita o cadastro de cores. */
+function OpcaoPrecos({ op, onChange, comCores = false }: { op: Opcao; onChange: (o: Opcao) => void; comCores?: boolean }) {
   return (
     <div className="rounded-lg border bg-card p-3 space-y-2">
       <div className="flex items-center gap-2">
@@ -55,6 +101,9 @@ function OpcaoPrecos({ op, onChange }: { op: Opcao; onChange: (o: Opcao) => void
           </div>
         ))}
       </div>
+      {comCores && (
+        <CoresEditor cores={op.cores ?? []} onChange={(cores) => onChange({ ...op, cores })} />
+      )}
     </div>
   );
 }
@@ -189,7 +238,7 @@ export default function SimuladorPrecosConfig() {
 
           <section className="space-y-2">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Empunhadura</h2>
-            {draft.empunhaduras.map((o, i) => <OpcaoPrecos key={i} op={o} onChange={(x) => updateOpcao('empunhaduras', i, x)} />)}
+            {draft.empunhaduras.map((o, i) => <OpcaoPrecos key={i} op={o} comCores onChange={(x) => updateOpcao('empunhaduras', i, x)} />)}
             <PrecosTamanho label="Dragon Scale (opcional da empunhadura)" precos={draft.dragonScale} onChange={(p) => set({ dragonScale: p })} />
           </section>
 

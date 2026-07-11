@@ -133,6 +133,7 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
     nomeOpt(data.acos, cfg.acoIdx) ?? (cfg.bruteForge ? data.acos[cfg.acoIdx]?.nome : null),
     cfg.bruteForge ? 'BF' : null,
     nomeOpt(data.empunhaduras, cfg.empIdx) ?? (cfg.dragonScale ? data.empunhaduras[cfg.empIdx]?.nome : null),
+    cfg.empCor,
     cfg.dragonScale ? 'DS' : null,
     nomeOpt(data.acabamentos, cfg.acabIdx),
     nomeOpt(data.bainhas, cfg.bainhaIdx),
@@ -182,11 +183,26 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                 <div className="flex flex-wrap gap-1.5">
                   {data.empunhaduras.map((e, i) => (
                     <Chip key={i} label={e.nome} price={precoClasse(e.precos, c)}
-                      selected={cfg.empIdx === i} onClick={() => onChange({ ...cfg, empIdx: cfg.empIdx === i ? 0 : i })} />
+                      selected={cfg.empIdx === i}
+                      onClick={() => onChange({ ...cfg, empIdx: cfg.empIdx === i ? 0 : i, empCor: null })} />
                   ))}
                   <ToggleChip label="Dragon Scale" price={precoClasse(data.dragonScale, c)} on={cfg.dragonScale}
                     onClick={() => onChange({ ...cfg, dragonScale: !cfg.dragonScale })} />
                 </div>
+                {/* Cor da empunhadura — só aparece quando a opção selecionada tem cores cadastradas */}
+                {!!data.empunhaduras[cfg.empIdx]?.cores?.length && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    <span className="w-full text-[10px] text-muted-foreground">Cor da {data.empunhaduras[cfg.empIdx].nome}:</span>
+                    {data.empunhaduras[cfg.empIdx]!.cores!.map((cor) => (
+                      <button key={cor} type="button"
+                        onClick={() => onChange({ ...cfg, empCor: cfg.empCor === cor ? null : cor })}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all
+                          ${cfg.empCor === cor ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-border bg-background hover:bg-muted active:scale-95'}`}>
+                        {cor}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </Secao>
 
               <Secao title="Acabamento">
