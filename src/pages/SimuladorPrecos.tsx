@@ -219,11 +219,18 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
               {(() => {
                 const acoNome = data.acos[cfg.acoIdx]?.nome ?? '';
                 const is52100 = /52100/.test(acoNome);
+                const bswIdx = data.acabamentos.findIndex((x) => /black stone washed/i.test(x.nome));
                 const allowed = is52100
                   ? data.acabamentos
                       .map((a, i) => ({ a, i }))
                       .filter(({ a }) => /black stone washed|tactical/i.test(a.nome))
                   : data.acabamentos.map((a, i) => ({ a, i }));
+                // Se 52100 estiver selecionado mas o acabIdx atual não estiver entre os permitidos,
+                // força Black Stone Washed automaticamente.
+                const acabIdxValido = allowed.some(({ i }) => i === cfg.acabIdx);
+                if (is52100 && !acabIdxValido && bswIdx >= 0) {
+                  queueMicrotask(() => onChange({ ...cfg, acabIdx: bswIdx }));
+                }
                 return (
                   <Secao title="Acabamento">
                     <div className="flex flex-wrap gap-1.5">
@@ -585,50 +592,52 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
             </p>
           </div>
 
-          {/* ── Etapa 2: Mensagem editável + WhatsApp (aparece após registrar) ── */}
-          {formEnviado && (
-            <div className="rounded-xl border-2 border-accent/40 bg-accent/5 p-3 space-y-3 animate-in fade-in slide-in-from-bottom-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4 text-accent" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">2. Enviar ao cliente</span>
-                </div>
-                {mensagemTocada && (
-                  <button type="button" onClick={() => { setMensagemTocada(false); toast.info('Mensagem restaurada'); }}
-                    className="text-[10px] text-muted-foreground hover:text-foreground underline">
-                    restaurar
-                  </button>
-                )}
+          {/* ── Etapa 2: Mensagem editável + WhatsApp (sempre visível, envie após registrar) ── */}
+          <div className={`rounded-xl border-2 p-3 space-y-3 transition-colors ${formEnviado ? 'border-accent/40 bg-accent/5' : 'border-border bg-muted/20'}`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4 text-accent" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">2. Enviar ao cliente</span>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="orc-msg" className="text-xs">Mensagem (editável)</Label>
-                <Textarea id="orc-msg" value={mensagemEditavel}
-                  onChange={(e) => { setMensagemTocada(true); setMensagemEditavel(e.target.value); }}
-                  rows={10} className="text-xs font-sans leading-relaxed resize-y" />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" className="h-11 rounded-xl gap-2" onClick={copiar}>
-                  <Copy className="h-4 w-4" /> Copiar
-                </Button>
-                {telefoneValido ? (
-                  <Button asChild className="h-11 rounded-xl gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
-                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                      <Send className="h-4 w-4" /> WhatsApp
-                    </a>
-                  </Button>
-                ) : (
-                  <Button disabled className="h-11 rounded-xl gap-2 bg-accent text-accent-foreground">
-                    <Send className="h-4 w-4" /> WhatsApp
-                  </Button>
-                )}
-              </div>
-              {!telefoneValido && (
-                <p className="text-[11px] text-muted-foreground text-center">
-                  Digite o WhatsApp do cliente acima com DDD para habilitar o envio.
-                </p>
+              {mensagemTocada && (
+                <button type="button" onClick={() => { setMensagemTocada(false); toast.info('Mensagem restaurada'); }}
+                  className="text-[10px] text-muted-foreground hover:text-foreground underline">
+                  restaurar
+                </button>
               )}
             </div>
-          )}
+            <div className="space-y-1.5">
+              <Label htmlFor="orc-msg" className="text-xs">Mensagem (editável)</Label>
+              <Textarea id="orc-msg" value={mensagemEditavel}
+                onChange={(e) => { setMensagemTocada(true); setMensagemEditavel(e.target.value); }}
+                rows={10} className="text-xs font-sans leading-relaxed resize-y" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" className="h-11 rounded-xl gap-2" onClick={copiar}>
+                <Copy className="h-4 w-4" /> Copiar
+              </Button>
+              {telefoneValido ? (
+                <Button asChild className="h-11 rounded-xl gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                    <Send className="h-4 w-4" /> WhatsApp
+                  </a>
+                </Button>
+              ) : (
+                <Button disabled className="h-11 rounded-xl gap-2 bg-accent text-accent-foreground">
+                  <Send className="h-4 w-4" /> WhatsApp
+                </Button>
+              )}
+            </div>
+            {!telefoneValido ? (
+              <p className="text-[11px] text-muted-foreground text-center">
+                Digite o WhatsApp do cliente acima com DDD para habilitar o envio.
+              </p>
+            ) : !formEnviado && (
+              <p className="text-[11px] text-muted-foreground text-center">
+                Recomendado: registre a venda no formulário acima antes de enviar.
+              </p>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
