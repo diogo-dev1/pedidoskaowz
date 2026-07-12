@@ -241,6 +241,7 @@ export const SEED: SimuladorData = {
   acabamentos: [
     { nome: 'Acetinado', precos: { P: 0, M: 0, G: 0 }, incluso: true },
     { nome: 'Stone Washed', precos: { P: 25, M: 25, G: 35 } },
+    { nome: 'Black Stone Washed', precos: { P: 25, M: 25, G: 35 } },
     { nome: 'Tactical', precos: { P: 90, M: 90, G: 125 } },
   ],
   bainhas: [
