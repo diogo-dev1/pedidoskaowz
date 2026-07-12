@@ -204,14 +204,28 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                 )}
               </Secao>
 
-              <Secao title="Acabamento">
-                <div className="flex flex-wrap gap-1.5">
-                  {data.acabamentos.map((a, i) => (
-                    <Chip key={i} label={a.nome} price={precoClasse(a.precos, c)}
-                      selected={cfg.acabIdx === i} onClick={() => onChange({ ...cfg, acabIdx: cfg.acabIdx === i ? 0 : i })} />
-                  ))}
-                </div>
-              </Secao>
+              {(() => {
+                const acoNome = data.acos[cfg.acoIdx]?.nome ?? '';
+                const is52100 = /52100/.test(acoNome);
+                const allowed = is52100
+                  ? data.acabamentos
+                      .map((a, i) => ({ a, i }))
+                      .filter(({ a }) => /black stone washed|tactical/i.test(a.nome))
+                  : data.acabamentos.map((a, i) => ({ a, i }));
+                return (
+                  <Secao title="Acabamento">
+                    <div className="flex flex-wrap gap-1.5">
+                      {allowed.map(({ a, i }) => (
+                        <Chip key={i} label={a.nome} price={precoClasse(a.precos, c)}
+                          selected={cfg.acabIdx === i} onClick={() => onChange({ ...cfg, acabIdx: cfg.acabIdx === i ? (is52100 ? i : 0) : i })} />
+                      ))}
+                    </div>
+                    {is52100 && (
+                      <p className="text-[10px] text-muted-foreground pt-1">Aço 52100: acabamento padrão Black Stone Washed, único variante disponível Tactical.</p>
+                    )}
+                  </Secao>
+                );
+              })()}
 
               <Secao title="Bainha">
                 <div className="flex flex-wrap gap-1.5">
