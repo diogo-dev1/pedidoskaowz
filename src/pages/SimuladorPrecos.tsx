@@ -219,11 +219,18 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
               {(() => {
                 const acoNome = data.acos[cfg.acoIdx]?.nome ?? '';
                 const is52100 = /52100/.test(acoNome);
+                const bswIdx = data.acabamentos.findIndex((x) => /black stone washed/i.test(x.nome));
                 const allowed = is52100
                   ? data.acabamentos
                       .map((a, i) => ({ a, i }))
                       .filter(({ a }) => /black stone washed|tactical/i.test(a.nome))
                   : data.acabamentos.map((a, i) => ({ a, i }));
+                // Se 52100 estiver selecionado mas o acabIdx atual não estiver entre os permitidos,
+                // força Black Stone Washed automaticamente.
+                const acabIdxValido = allowed.some(({ i }) => i === cfg.acabIdx);
+                if (is52100 && !acabIdxValido && bswIdx >= 0) {
+                  queueMicrotask(() => onChange({ ...cfg, acabIdx: bswIdx }));
+                }
                 return (
                   <Secao title="Acabamento">
                     <div className="flex flex-wrap gap-1.5">
