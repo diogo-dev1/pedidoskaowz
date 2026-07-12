@@ -399,12 +399,23 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
   // Valor: pré-calculado pelo total, mas editável. Segue o total até o usuário editar.
   const [valorStr, setValorStr] = useState('');
   const [valorTocado, setValorTocado] = useState(false);
+  // Etapa 2: só aparece após registrar no formulário
+  const [formEnviado, setFormEnviado] = useState(false);
+  const [mensagemEditavel, setMensagemEditavel] = useState('');
+  const [mensagemTocada, setMensagemTocada] = useState(false);
 
   useEffect(() => { if (vendedorPadrao && !vendedor) setVendedor(matchVendedorForm(vendedorPadrao)); }, [vendedorPadrao]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (!valorTocado) setValorStr(total.toFixed(2).replace('.', ',')); }, [total, valorTocado]);
-  useEffect(() => { if (!open) setValorTocado(false); }, [open]);
+  useEffect(() => {
+    if (!open) {
+      setValorTocado(false);
+      setFormEnviado(false);
+      setMensagemTocada(false);
+      setMensagemEditavel('');
+    }
+  }, [open]);
 
-  const mensagem = useMemo(() => {
+  const mensagemGerada = useMemo(() => {
     const partes: string[] = [];
     if (nomeCliente.trim()) partes.push(`Olá, ${nomeCliente.trim()}! Segue seu orçamento Kaowz:`, '');
     partes.push(texto);
@@ -412,6 +423,10 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
     if (vendedor.trim()) partes.push(`— ${vendedor.trim()} · Kaowz`);
     return partes.join('\n');
   }, [nomeCliente, vendedor, texto]);
+
+  // Enquanto o usuário não editar, a mensagem edit segue a versão gerada.
+  useEffect(() => { if (!mensagemTocada) setMensagemEditavel(mensagemGerada); }, [mensagemGerada, mensagemTocada]);
+  const mensagem = mensagemEditavel;
 
   const telefoneDigits = telefone.replace(/\D/g, '');
   const telefoneValido = telefoneDigits.length >= 10 && telefoneDigits.length <= 13;
