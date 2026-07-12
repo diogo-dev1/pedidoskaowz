@@ -399,12 +399,23 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
   // Valor: pré-calculado pelo total, mas editável. Segue o total até o usuário editar.
   const [valorStr, setValorStr] = useState('');
   const [valorTocado, setValorTocado] = useState(false);
+  // Etapa 2: só aparece após registrar no formulário
+  const [formEnviado, setFormEnviado] = useState(false);
+  const [mensagemEditavel, setMensagemEditavel] = useState('');
+  const [mensagemTocada, setMensagemTocada] = useState(false);
 
   useEffect(() => { if (vendedorPadrao && !vendedor) setVendedor(matchVendedorForm(vendedorPadrao)); }, [vendedorPadrao]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (!valorTocado) setValorStr(total.toFixed(2).replace('.', ',')); }, [total, valorTocado]);
-  useEffect(() => { if (!open) setValorTocado(false); }, [open]);
+  useEffect(() => {
+    if (!open) {
+      setValorTocado(false);
+      setFormEnviado(false);
+      setMensagemTocada(false);
+      setMensagemEditavel('');
+    }
+  }, [open]);
 
-  const mensagem = useMemo(() => {
+  const mensagemGerada = useMemo(() => {
     const partes: string[] = [];
     if (nomeCliente.trim()) partes.push(`Olá, ${nomeCliente.trim()}! Segue seu orçamento Kaowz:`, '');
     partes.push(texto);
@@ -412,6 +423,10 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
     if (vendedor.trim()) partes.push(`— ${vendedor.trim()} · Kaowz`);
     return partes.join('\n');
   }, [nomeCliente, vendedor, texto]);
+
+  // Enquanto o usuário não editar, a mensagem edit segue a versão gerada.
+  useEffect(() => { if (!mensagemTocada) setMensagemEditavel(mensagemGerada); }, [mensagemGerada, mensagemTocada]);
+  const mensagem = mensagemEditavel;
 
   const telefoneDigits = telefone.replace(/\D/g, '');
   const telefoneValido = telefoneDigits.length >= 10 && telefoneDigits.length <= 13;
@@ -483,35 +498,11 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
             </div>
           </div>
 
-          <div className="rounded-xl border bg-muted/40 p-3 max-h-44 overflow-y-auto">
-            <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{mensagem}</pre>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" className="h-11 rounded-xl gap-2" onClick={copiar}>
-              <Copy className="h-4 w-4" /> Copiar
-            </Button>
-            {telefoneValido ? (
-              <Button asChild className="h-11 rounded-xl gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
-                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                  <Send className="h-4 w-4" /> WhatsApp
-                </a>
-              </Button>
-            ) : (
-              <Button disabled className="h-11 rounded-xl gap-2 bg-accent text-accent-foreground">
-                <Send className="h-4 w-4" /> WhatsApp
-              </Button>
-            )}
-          </div>
-          {!telefoneValido && telefone.length > 0 && (
-            <p className="text-[11px] text-muted-foreground text-center -mt-2">Digite o número com DDD para habilitar o envio</p>
-          )}
-
-          {/* ── Registrar venda no formulário Shot Fair ── */}
+          {/* ── Etapa 1: Registrar venda no formulário Shot Fair ── */}
           <div className="rounded-xl border border-dashed p-3 space-y-3">
             <div className="flex items-center gap-2">
               <ClipboardCheck className="h-4 w-4 text-primary" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Registrar venda</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">1. Registrar venda</span>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="orc-valor" className="text-xs">Valor (editável)</Label>
@@ -552,22 +543,66 @@ function OrcamentoModal({ open, onOpenChange, texto, total, vendedorPadrao }: {
                 placeholder="Ex: gravação, prazo, brinde, detalhes do pedido..." rows={3} className="text-sm resize-none" />
             </div>
             {podeRegistrar ? (
-              <Button asChild variant="outline" className="w-full h-11 rounded-xl gap-2">
+              <Button asChild className="w-full h-11 rounded-xl gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
                 <a href={formUrl} target="_blank" rel="noopener noreferrer"
-                  onClick={() => toast.success('Formulário aberto já preenchido — confira e envie.')}>
+                  onClick={() => { setFormEnviado(true); toast.success('Formulário aberto — agora envie a mensagem ao cliente.'); }}>
                   <ClipboardCheck className="h-4 w-4" /> Registrar no formulário
                 </a>
               </Button>
             ) : (
-              <Button variant="outline" className="w-full h-11 rounded-xl gap-2" disabled>
+              <Button className="w-full h-11 rounded-xl gap-2" disabled>
                 <ClipboardCheck className="h-4 w-4" /> Registrar no formulário
               </Button>
             )}
             <p className="text-[11px] text-muted-foreground text-center">
-              Abre o formulário Shot Fair já preenchido com o pedido — é só conferir e enviar.
-              {' '}Se não abrir, segure o botão para "Abrir link em nova aba".
+              Abre o formulário Shot Fair já preenchido — é só conferir e enviar.
             </p>
           </div>
+
+          {/* ── Etapa 2: Mensagem editável + WhatsApp (aparece após registrar) ── */}
+          {formEnviado && (
+            <div className="rounded-xl border-2 border-accent/40 bg-accent/5 p-3 space-y-3 animate-in fade-in slide-in-from-bottom-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-accent" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">2. Enviar ao cliente</span>
+                </div>
+                {mensagemTocada && (
+                  <button type="button" onClick={() => { setMensagemTocada(false); toast.info('Mensagem restaurada'); }}
+                    className="text-[10px] text-muted-foreground hover:text-foreground underline">
+                    restaurar
+                  </button>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="orc-msg" className="text-xs">Mensagem (editável)</Label>
+                <Textarea id="orc-msg" value={mensagemEditavel}
+                  onChange={(e) => { setMensagemTocada(true); setMensagemEditavel(e.target.value); }}
+                  rows={10} className="text-xs font-sans leading-relaxed resize-y" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" className="h-11 rounded-xl gap-2" onClick={copiar}>
+                  <Copy className="h-4 w-4" /> Copiar
+                </Button>
+                {telefoneValido ? (
+                  <Button asChild className="h-11 rounded-xl gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                      <Send className="h-4 w-4" /> WhatsApp
+                    </a>
+                  </Button>
+                ) : (
+                  <Button disabled className="h-11 rounded-xl gap-2 bg-accent text-accent-foreground">
+                    <Send className="h-4 w-4" /> WhatsApp
+                  </Button>
+                )}
+              </div>
+              {!telefoneValido && (
+                <p className="text-[11px] text-muted-foreground text-center">
+                  Digite o WhatsApp do cliente acima com DDD para habilitar o envio.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
