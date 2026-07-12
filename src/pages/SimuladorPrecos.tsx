@@ -170,7 +170,19 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                 <div className="flex flex-wrap gap-1.5">
                   {data.acos.map((a, i) => (
                     <Chip key={i} label={a.nome} price={precoClasse(a.precos, c)}
-                      selected={cfg.acoIdx === i} onClick={() => onChange({ ...cfg, acoIdx: cfg.acoIdx === i ? 0 : i })} />
+                      selected={cfg.acoIdx === i} onClick={() => {
+                        const novoAcoIdx = cfg.acoIdx === i ? 0 : i;
+                        const novoAcoNome = data.acos[novoAcoIdx]?.nome ?? '';
+                        let novoAcabIdx = cfg.acabIdx;
+                        if (/52100/.test(novoAcoNome)) {
+                          const bsw = data.acabamentos.findIndex((x) => /black stone washed/i.test(x.nome));
+                          if (bsw >= 0) novoAcabIdx = bsw;
+                        } else if (/52100/.test(data.acos[cfg.acoIdx]?.nome ?? '')) {
+                          // saindo do 52100 — volta pro incluso
+                          novoAcabIdx = 0;
+                        }
+                        onChange({ ...cfg, acoIdx: novoAcoIdx, acabIdx: novoAcabIdx });
+                      }} />
                   ))}
                   <ToggleChip label="Brute Forge" price={precoClasse(data.bruteForge, c)} on={cfg.bruteForge}
                     onClick={() => onChange({ ...cfg, bruteForge: !cfg.bruteForge })} />
