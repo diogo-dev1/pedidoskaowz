@@ -280,15 +280,57 @@ export async function loadKitConfig(): Promise<KitConfig> {
   }
 }
 
+/** Mantém apenas URLs persistíveis (http/https); troca as demais por "" (= "sem imagem salva"). */
+function sanitizeFinishImages(imgs: Record<FinishKey, string>): Record<FinishKey, string> {
+  const result = {} as Record<FinishKey, string>;
+  (Object.keys(imgs) as FinishKey[]).forEach((finish) => {
+    result[finish] = isImagemPersistivel(imgs[finish]) ? imgs[finish] : '';
+  });
+  return result;
+}
+
+function sanitizeImagesByConfig(imgs: AcoEmpunhaduraImages): AcoEmpunhaduraImages {
+  const sizes: SizeKey[] = ['standard', 'compact', 'micro'];
+  const result = {} as AcoEmpunhaduraImages;
+  sizes.forEach((sk) => {
+    result[sk] = {} as AcoEmpunhaduraImages[SizeKey];
+    ACO_KEYS.forEach((ak) => {
+      result[sk][ak] = {} as AcoEmpunhaduraImages[SizeKey][AcoKey];
+      EMPUNHADURA_KEYS.forEach((ek) => {
+        result[sk][ak][ek] = sanitizeFinishImages(imgs[sk][ak][ek]);
+      });
+    });
+  });
+  return result;
+}
+
+/**
+ * Remove caminhos locais do build (ex: "/assets/foo-<hash>.jpeg") antes de salvar —
+ * eles só são válidos no build vigente no momento do save e quebram no próximo deploy.
+ * Sem isso, salvar sem trocar uma foto reintroduz o mesmo bug de imagem quebrada.
+ */
+function sanitizeVersionForSave(v: VersionConfig): VersionConfig {
+  return {
+    ...v,
+    imagesBySize: {
+      standard: sanitizeFinishImages(v.imagesBySize.standard),
+      compact: sanitizeFinishImages(v.imagesBySize.compact),
+      micro: sanitizeFinishImages(v.imagesBySize.micro),
+    },
+    imagesByConfig: v.imagesByConfig ? sanitizeImagesByConfig(v.imagesByConfig) : v.imagesByConfig,
+    kitImage: isImagemPersistivel(v.kitImage) ? v.kitImage : '',
+  };
+}
+
 /** Salva a config no Supabase, persistindo para todos os visitantes/dispositivos. */
 export async function saveKitConfig(cfg: KitConfig): Promise<void> {
   const rows = [
     { chave: 'whatsapp_phone', valor: cfg.whatsappPhone },
     { chave: 'discount_by_qty', valor: JSON.stringify(cfg.discountByQty) },
     { chave: 'cupom_message', valor: cfg.cupomMessage },
-    { chave: 'version_standard', valor: JSON.stringify(cfg.versions.standard) },
-    { chave: 'version_nonmetallic', valor: JSON.stringify(cfg.versions.nonmetallic) },
-    { chave: 'version_blue', valor: JSON.stringify(cfg.versions.blue) },
+    { chave: 'version_standard', valor: JSON.stringify(sanitizeVersionForSave(cfg.versions.standard)) },
+    { chave: 'version_nonmetallic', valor: JSON.stringify(sanitizeVersionForSave(cfg.versions.nonmetallic)) },
+    { chave: 'version_blue', valor: JSON.stringify(sanitizeVersionForSave(cfg.versions.blue)) },
   ];
   const { error } = await supabase.from(CONFIG_TABLE).upsert(rows, { onConflict: 'chave' });
   if (error) throw error;
@@ -317,6 +359,32 @@ function mergeAcoEmpunhaduraPrices(
   return result;
 }
 
+/**
+ * Só aceita como "imagem real" uma URL http(s) (Supabase Storage). Caminhos locais
+ * (ex: "/assets/foo-<hash>.jpeg") são referências ao build do Vite no momento do save —
+ * o hash muda a cada novo deploy, então esses caminhos ficam quebrados para sempre se
+ * forem persistidos. Rejeitá-los aqui faz o app cair de volta no placeholder do build atual
+ * em vez de manter uma imagem quebrada indefinidamente.
+ */
+function isImagemPersistivel(url: unknown): url is string {
+  return typeof url === 'string' && /^https?:\/\//.test(url);
+}
+
+/** Mescla um objeto finish→url, descartando valores salvos que não sejam URLs reais. */
+function mergeFinishImages<T extends Partial<Record<FinishKey, string>>>(
+  base: T,
+  saved: any,
+): T {
+  const result = { ...base };
+  (Object.keys(base) as FinishKey[]).forEach((finish) => {
+    const savedUrl = saved?.[finish];
+    if (isImagemPersistivel(savedUrl)) {
+      (result as any)[finish] = savedUrl;
+    }
+  });
+  return result;
+}
+
 /** Mescla a matriz de imagens tamanho × aço × empunhadura × acabamento, mantendo defaults para combos ausentes. */
 function mergeImagesByConfig(
   base: AcoEmpunhaduraImages | undefined,
@@ -330,10 +398,7 @@ function mergeImagesByConfig(
     ACO_KEYS.forEach((ak) => {
       result[sk][ak] = {} as AcoEmpunhaduraImages[SizeKey][AcoKey];
       EMPUNHADURA_KEYS.forEach((ek) => {
-        result[sk][ak][ek] = {
-          ...base[sk][ak][ek],
-          ...(p?.[sk]?.[ak]?.[ek] || {}),
-        };
+        result[sk][ak][ek] = mergeFinishImages(base[sk][ak][ek], p?.[sk]?.[ak]?.[ek]);
       });
     });
   });
@@ -354,10 +419,11 @@ function mergeVersion(base: VersionConfig, p: any): VersionConfig {
     pricesByConfig: mergeAcoEmpunhaduraPrices(base.pricesByConfig, p?.pricesByConfig),
     imagesByConfig: mergeImagesByConfig(base.imagesByConfig, p?.imagesByConfig),
     imagesBySize: {
-      standard: { ...base.imagesBySize.standard, ...(p?.imagesBySize?.standard || {}) },
-      compact: { ...base.imagesBySize.compact, ...(p?.imagesBySize?.compact || {}) },
-      micro: { ...base.imagesBySize.micro, ...(p?.imagesBySize?.micro || {}) },
+      standard: mergeFinishImages(base.imagesBySize.standard, p?.imagesBySize?.standard),
+      compact: mergeFinishImages(base.imagesBySize.compact, p?.imagesBySize?.compact),
+      micro: mergeFinishImages(base.imagesBySize.micro, p?.imagesBySize?.micro),
     },
+    kitImage: isImagemPersistivel(p?.kitImage) ? p.kitImage : base.kitImage,
     discountByQty: { ...base.discountByQty, ...(p?.discountByQty || {}) },
   };
 }
@@ -601,7 +667,16 @@ export default function ConfiguradorKit() {
 
               <div className="product-stage">
                 <div className="product-card">
-                  <img src={img} alt={`${sizeMeta.name} ${FINISH_NAMES[u.finish]}`} className="product-img is-active" loading="eager" decoding="sync" fetchPriority="high" />
+                  <img
+                    src={img}
+                    alt={`${sizeMeta.name} ${FINISH_NAMES[u.finish]}`}
+                    className="product-img is-active"
+                    loading="eager" decoding="sync" fetchPriority="high"
+                    onError={(e) => {
+                      const fallback = defaultImgsForSize()[u.finish];
+                      if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+                    }}
+                  />
                   <div className="product-card-overlay" />
                   {ver.hasFinishes && <div className="product-card-tag">{FINISH_NAMES[u.finish]}</div>}
                   <div className="product-card-price">{BRL(unitPrice(u))}</div>
