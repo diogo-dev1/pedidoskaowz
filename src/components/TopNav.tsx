@@ -168,9 +168,14 @@ export function TopNav({ title }: { title: string }) {
           </h1>
         </NavLink>
 
-        {/* Menus por categoria — scrolláveis no mobile, flex no desktop */}
+        {/* Título contextual no mobile (nav via BottomNav) */}
+        <div className="flex-1 min-w-0 md:hidden">
+          <p className="text-sm font-semibold text-primary-foreground truncate">{title}</p>
+        </div>
+
+        {/* Menus por categoria — apenas desktop; mobile usa BottomNav */}
         <nav
-          className="flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="hidden md:flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Menu principal"
         >
           <NavLink
