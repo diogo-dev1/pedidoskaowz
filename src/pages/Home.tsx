@@ -324,20 +324,21 @@ export default function Home() {
       {/* ── Coluna principal ──────────────────────────────────── */}
       <div className="space-y-4 order-1 lg:order-2 min-w-0">
         {/* Banners de ação — 3 colunas sempre visíveis, compactos no mobile */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
           {BANNERS.map((b) => (
             <NavLink
               key={b.url}
               to={b.url}
-              className={`group relative rounded-xl p-2.5 sm:p-4 flex flex-col justify-between min-h-[110px] sm:min-h-[130px] shadow-sm hover:shadow-md transition-all overflow-hidden ${b.classe}`}
+              className={`group relative rounded-xl px-3 py-2.5 sm:p-4 flex flex-row sm:flex-col items-center sm:items-stretch sm:justify-between gap-3 sm:gap-0 sm:min-h-[130px] shadow-sm hover:shadow-md transition-all overflow-hidden ${b.classe}`}
             >
-              <b.icon className="absolute -right-3 -bottom-3 h-16 w-16 sm:h-20 sm:w-20 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all" />
-              <div>
-                <p className="font-bold leading-tight text-xs sm:text-base">{b.titulo}</p>
+              <b.icon className="hidden sm:block absolute -right-3 -bottom-3 h-20 w-20 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all" />
+              <b.icon className="sm:hidden h-6 w-6 shrink-0 opacity-90" />
+              <div className="flex-1 min-w-0 sm:flex-none">
+                <p className="font-bold leading-tight text-sm sm:text-base truncate">{b.titulo}</p>
                 <p className="hidden sm:block text-xs opacity-80 mt-1 leading-snug">{b.descricao}</p>
               </div>
-              <span className={`inline-flex items-center gap-1 self-start text-[10px] sm:text-xs font-semibold px-2 py-1 sm:px-3 sm:py-1.5 rounded-full mt-2 sm:mt-3 transition-opacity ${b.ctaClasse}`}>
-                <span className="truncate">{b.cta}</span>
+              <span className={`inline-flex items-center gap-1 shrink-0 self-center sm:self-start text-[10px] sm:text-xs font-semibold px-2 py-1 sm:px-3 sm:py-1.5 rounded-full sm:mt-3 transition-opacity ${b.ctaClasse}`}>
+                <span className="truncate hidden sm:inline">{b.cta}</span>
                 <ArrowRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 transition-transform" />
               </span>
             </NavLink>
