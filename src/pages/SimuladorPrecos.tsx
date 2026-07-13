@@ -726,7 +726,7 @@ export default function SimuladorPrecos() {
             <Hammer className="h-5 w-5" />
           </span>
           <span className="text-sm font-bold leading-tight">Montar Faca</span>
-          <span className="text-[10px] text-muted-foreground leading-tight">Configure modelo, aço, empunhadura...</span>
+          <span className="text-[10px] text-muted-foreground leading-tight whitespace-pre-wrap">Clique para adicionar uma nova Faca{"\u00a0"}\n</span>
         </button>
         <button type="button" onClick={() => setPickerOpen(true)}
           className="group flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-accent/20 bg-accent/5 p-5 text-center transition-all hover:border-accent/40 hover:bg-accent/10 active:scale-[0.97]">
