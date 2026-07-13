@@ -115,12 +115,67 @@ export function BottomNav() {
           </SheetHeader>
 
           <div className="p-3 pb-safe">
-            <AccordionMenu
-              groups={moreItems}
-              adminItems={isAdmin ? adminMoreItems : null}
-              currentPath={location.pathname}
-              onNavigate={() => setMoreOpen(false)}
-            />
+            <Accordion type="single" collapsible defaultValue={defaultOpenGroup} className="w-full">
+              {moreItems.map((group) => (
+                <AccordionItem key={group.label} value={group.label} className="border-none">
+                  <AccordionTrigger className="px-2 py-2 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground hover:no-underline hover:text-foreground">
+                    {group.label}
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-2">
+                    <div className="space-y-0.5">
+                      {group.items.map((item) => (
+                        <NavLink
+                          key={item.url}
+                          to={item.url}
+                          onClick={() => setMoreOpen(false)}
+                          className={({ isActive }) =>
+                            cn(
+                              'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
+                              isActive
+                                ? 'bg-accent text-accent-foreground font-medium'
+                                : 'text-foreground hover:bg-secondary'
+                            )
+                          }
+                        >
+                          <item.icon className="h-4 w-4 shrink-0" />
+                          <span>{item.title}</span>
+                        </NavLink>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+
+              {isAdmin && (
+                <AccordionItem value="Administração" className="border-none">
+                  <AccordionTrigger className="px-2 py-2 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground hover:no-underline hover:text-foreground">
+                    Administração
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-2">
+                    <div className="space-y-0.5">
+                      {adminMoreItems.map((item) => (
+                        <NavLink
+                          key={item.url}
+                          to={item.url}
+                          onClick={() => setMoreOpen(false)}
+                          className={({ isActive }) =>
+                            cn(
+                              'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
+                              isActive
+                                ? 'bg-accent text-accent-foreground font-medium'
+                                : 'text-foreground hover:bg-secondary'
+                            )
+                          }
+                        >
+                          <item.icon className="h-4 w-4 shrink-0" />
+                          <span>{item.title}</span>
+                        </NavLink>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+            </Accordion>
 
             <button
               onClick={() => { setMoreOpen(false); signOut(); }}
