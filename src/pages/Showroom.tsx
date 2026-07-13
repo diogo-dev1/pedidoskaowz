@@ -62,7 +62,7 @@ export default function Showroom() {
                 key={i}
                 className="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden"
               >
-                <div className="aspect-square bg-zinc-800 animate-pulse" />
+                <div className="aspect-[3/4] bg-zinc-800 animate-pulse" />
                 <div className="p-4">
                   <div className="h-4 w-1/2 bg-zinc-800 animate-pulse rounded" />
                 </div>
@@ -80,7 +80,7 @@ export default function Showroom() {
                 key={k.id}
                 className="group rounded-2xl border border-zinc-800 bg-gradient-to-b from-zinc-900 to-zinc-950 overflow-hidden shadow-xl hover:border-zinc-700 transition-colors"
               >
-                <div className="relative aspect-square">
+                <div className="relative aspect-[3/4]">
                   {k.signedUrl ? (
                     <KnifeViewer360
                       videoUrl={k.signedUrl}
