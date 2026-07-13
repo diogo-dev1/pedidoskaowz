@@ -65,6 +65,8 @@ import RelatorioVendas from "./pages/RelatorioVendas";
 import RelatorioVendasRelatorios from "./pages/RelatorioVendasRelatorios";
 import LancarPedidoBling from "./pages/LancarPedidoBling";
 import NotFound from "./pages/NotFound";
+import KnivesAdmin from "./pages/KnivesAdmin";
+import Showroom from "./pages/Showroom";
 
 const queryClient = new QueryClient();
 
@@ -552,6 +554,17 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/knives"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <KnivesAdmin />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/showroom" element={<Showroom />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
