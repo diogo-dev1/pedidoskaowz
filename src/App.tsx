@@ -230,11 +230,10 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            {/* Temporariamente redirecionado para o site oficial (atualização de valores) */}
-            <Route path="/push-dagger-kaowz" element={<ExternalRedirect to={PUSH_DAGGER_URL} />} />
-            <Route path="/push-dagger-configurador" element={<ExternalRedirect to={PUSH_DAGGER_URL} />} />
+            <Route path="/push-dagger-kaowz" element={<ConfiguradorKit />} />
+            <Route path="/push-dagger-configurador" element={<PushDaggerConfigurador />} />
             {/* Compat: rota antiga */}
-            <Route path="/configurador-kit" element={<ExternalRedirect to={PUSH_DAGGER_URL} />} />
+            <Route path="/configurador-kit" element={<ConfiguradorKit />} />
             <Route
               path="/admin/push-dagger-kaowz"
               element={
