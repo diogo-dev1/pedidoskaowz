@@ -94,6 +94,19 @@ export function BottomNav() {
   ];
   const isMoreActive = moreRoutes.some(url => location.pathname === url || location.pathname.startsWith(url + '/'));
 
+  // Categoria expandida por padrão = a que contém a rota atual
+  const defaultOpenGroup = useMemo(() => {
+    for (const g of moreItems) {
+      if (g.items.some(i => location.pathname === i.url || location.pathname.startsWith(i.url + '/'))) {
+        return g.label;
+      }
+    }
+    if (isAdmin && adminMoreItems.some(i => location.pathname === i.url || location.pathname.startsWith(i.url + '/'))) {
+      return 'Administração';
+    }
+    return moreItems[0]?.label;
+  }, [location.pathname, isAdmin]);
+
   return (
     <>
       {/* Side panel */}
