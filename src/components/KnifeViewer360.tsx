@@ -3,65 +3,178 @@ import { useEffect, useRef, useState } from "react";
 interface KnifeViewer360Props {
   videoUrl: string;
   nome: string;
-  /** Sensibilidade do arraste. Pixels para cobrir a duração inteira. Default 400px. */
+  /** Sensibilidade do arraste. Pixels para cobrir a volta inteira. Default 350px. */
   sensitivity?: number;
+  /** Quantidade de frames pré-extraídos. Mais = mais suave, porém mais RAM. */
+  frameCount?: number;
   className?: string;
 }
 
 /**
- * Visualizador 360° por scrubbing de vídeo.
- * Arrastar horizontalmente altera currentTime proporcionalmente à duração.
+ * Visualizador 360° ultra-fluido.
+ * Pré-extrai N frames do vídeo para bitmaps e renderiza em canvas.
+ * Arraste altera o índice do frame — zero latência de seek.
  */
 export default function KnifeViewer360({
   videoUrl,
   nome,
-  sensitivity = 400,
+  sensitivity = 350,
+  frameCount = 72,
   className = "",
 }: KnifeViewer360Props) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const framesRef = useRef<Array<ImageBitmap | HTMLCanvasElement>>([]);
+  const indexRef = useRef(0);
+  const targetIndexRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
   const draggingRef = useRef(false);
   const startXRef = useRef(0);
-  const startTimeRef = useRef(0);
-  const [duration, setDuration] = useState(0);
+  const startIndexRef = useRef(0);
+
   const [ready, setReady] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [dragging, setDragging] = useState(false);
 
+  // Pré-extração dos frames
   useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    const onLoaded = () => {
-      setDuration(v.duration || 0);
+    let cancelled = false;
+    const video = document.createElement("video");
+    video.src = videoUrl;
+    video.crossOrigin = "anonymous";
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    // @ts-ignore
+    video.playbackRate = 0;
+
+    const extract = async () => {
+      await new Promise<void>((res, rej) => {
+        video.onloadedmetadata = () => res();
+        video.onerror = () => rej(new Error("video load error"));
+      });
+
+      const duration = video.duration;
+      if (!duration || !isFinite(duration)) return;
+
+      const w = video.videoWidth;
+      const h = video.videoHeight;
+
+      const seekTo = (t: number) =>
+        new Promise<void>((res) => {
+          const onSeeked = () => {
+            video.removeEventListener("seeked", onSeeked);
+            res();
+          };
+          video.addEventListener("seeked", onSeeked);
+          video.currentTime = Math.min(t, duration - 0.001);
+        });
+
+      const useBitmap = typeof createImageBitmap === "function";
+
+      for (let i = 0; i < frameCount; i++) {
+        if (cancelled) return;
+        const t = (i / frameCount) * duration;
+        await seekTo(t);
+        if (useBitmap) {
+          try {
+            const bmp = await createImageBitmap(video);
+            framesRef.current.push(bmp);
+          } catch {
+            const c = document.createElement("canvas");
+            c.width = w;
+            c.height = h;
+            c.getContext("2d")!.drawImage(video, 0, 0, w, h);
+            framesRef.current.push(c);
+          }
+        } else {
+          const c = document.createElement("canvas");
+          c.width = w;
+          c.height = h;
+          c.getContext("2d")!.drawImage(video, 0, 0, w, h);
+          framesRef.current.push(c);
+        }
+        setProgress((i + 1) / frameCount);
+      }
+
+      // Ajusta canvas ao vídeo
+      const canvas = canvasRef.current;
+      if (canvas) {
+        canvas.width = w;
+        canvas.height = h;
+        drawFrame(0);
+      }
       setReady(true);
-      // parar no primeiro frame
-      v.pause();
-      v.currentTime = 0;
     };
-    v.addEventListener("loadedmetadata", onLoaded);
-    return () => v.removeEventListener("loadedmetadata", onLoaded);
-  }, [videoUrl]);
+
+    extract().catch(() => {});
+
+    return () => {
+      cancelled = true;
+      framesRef.current.forEach((f) => {
+        if ("close" in f) (f as ImageBitmap).close?.();
+      });
+      framesRef.current = [];
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [videoUrl, frameCount]);
+
+  const drawFrame = (idx: number) => {
+    const canvas = canvasRef.current;
+    const frame = framesRef.current[idx];
+    if (!canvas || !frame) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(frame as CanvasImageSource, 0, 0, canvas.width, canvas.height);
+  };
+
+  // Loop de animação para easing suave até o target
+  const tick = () => {
+    const total = framesRef.current.length;
+    if (total > 0) {
+      const cur = indexRef.current;
+      const target = targetIndexRef.current;
+      // caminho mais curto no círculo
+      let delta = target - cur;
+      if (delta > total / 2) delta -= total;
+      if (delta < -total / 2) delta += total;
+      const next = cur + delta * 0.35; // easing
+      let idx = ((next % total) + total) % total;
+      indexRef.current = idx;
+      drawFrame(Math.round(idx) % total);
+
+      if (Math.abs(delta) > 0.05) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        indexRef.current = target;
+        drawFrame(((Math.round(target) % total) + total) % total);
+        rafRef.current = null;
+      }
+    }
+  };
+
+  const scheduleTick = () => {
+    if (rafRef.current == null) {
+      rafRef.current = requestAnimationFrame(tick);
+    }
+  };
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!videoRef.current || !duration) return;
+    if (!ready) return;
     draggingRef.current = true;
     setDragging(true);
     startXRef.current = e.clientX;
-    startTimeRef.current = videoRef.current.currentTime;
+    startIndexRef.current = indexRef.current;
     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current || !videoRef.current || !duration) return;
+    if (!draggingRef.current || !ready) return;
+    const total = framesRef.current.length;
     const dx = e.clientX - startXRef.current;
     const ratio = dx / sensitivity;
-    let next = startTimeRef.current + ratio * duration;
-    // loop 360°
-    next = ((next % duration) + duration) % duration;
-    try {
-      videoRef.current.currentTime = next;
-    } catch {
-      /* ignore seek errors */
-    }
+    targetIndexRef.current = startIndexRef.current + ratio * total;
+    scheduleTick();
   };
 
   const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -77,7 +190,6 @@ export default function KnifeViewer360({
 
   return (
     <div
-      ref={containerRef}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
@@ -90,19 +202,16 @@ export default function KnifeViewer360({
       aria-label={`Visualizador 360° de ${nome}`}
       role="img"
     >
-      <video
-        ref={videoRef}
-        src={videoUrl}
-        muted
-        playsInline
-        preload="auto"
-        // sem controls e sem autoplay
+      <canvas
+        ref={canvasRef}
         className="w-full h-full object-contain pointer-events-none"
-        draggable={false}
       />
       {!ready && (
-        <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/60">
-          <div className="h-8 w-8 rounded-full border-2 border-zinc-600 border-t-white animate-spin" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/80 gap-3">
+          <div className="h-8 w-8 rounded-full border-2 border-zinc-700 border-t-white animate-spin" />
+          <div className="text-[10px] uppercase tracking-widest text-zinc-500">
+            Carregando {Math.round(progress * 100)}%
+          </div>
         </div>
       )}
     </div>

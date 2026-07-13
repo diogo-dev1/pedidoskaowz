@@ -80,7 +80,7 @@ export default function Showroom() {
                 key={k.id}
                 className="group rounded-2xl border border-zinc-800 bg-gradient-to-b from-zinc-900 to-zinc-950 overflow-hidden shadow-xl hover:border-zinc-700 transition-colors"
               >
-                <div className="relative aspect-square">
+                <div className="relative aspect-[3/4]">
                   {k.signedUrl ? (
                     <KnifeViewer360
                       videoUrl={k.signedUrl}
