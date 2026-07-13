@@ -62,7 +62,7 @@ export default function Showroom() {
                 key={i}
                 className="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden"
               >
-                <div className="aspect-square bg-zinc-800 animate-pulse" />
+                <div className="aspect-[3/4] bg-zinc-800 animate-pulse" />
                 <div className="p-4">
                   <div className="h-4 w-1/2 bg-zinc-800 animate-pulse rounded" />
                 </div>
