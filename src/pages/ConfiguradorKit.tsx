@@ -192,7 +192,7 @@ const buildVersion = (over: Partial<VersionConfig> & { texts: VersionTexts }): V
   },
   kitImage: kitCard,
   discountByQty: { 1: 0, 2: 0, 3: 0 },
-  bainhaExtraPrice: 180,
+  bainhaExtraPrice: 115,
   ...over,
 });
 
