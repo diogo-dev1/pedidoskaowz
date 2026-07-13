@@ -54,32 +54,32 @@ export type AcoEmpunhaduraImages = Record<SizeKey, Record<AcoKey, Record<Empunha
 const STANDARD_PRICES_BY_CONFIG: AcoEmpunhaduraPrices = {
   micro: {
     sandvik: {
-      g10: { satin: 465, sw: 480, tac: 560 },
-      micarta: { satin: 360, sw: 380, tac: 460 },
+      g10: { satin: 515, sw: 535, tac: 625 },
+      micarta: { satin: 400, sw: 420, tac: 510 },
     },
     inox: {
-      g10: { satin: 410, sw: 430, tac: 510 },
-      micarta: { satin: 305, sw: 325, tac: 405 },
+      g10: { satin: 455, sw: 475, tac: 565 },
+      micarta: { satin: 340, sw: 360, tac: 450 },
     },
   },
   compact: {
     sandvik: {
-      g10: { satin: 580, sw: 600, tac: 680 },
-      micarta: { satin: 475, sw: 495, tac: 575 },
+      g10: { satin: 645, sw: 665, tac: 755 },
+      micarta: { satin: 530, sw: 550, tac: 640 },
     },
     inox: {
-      g10: { satin: 525, sw: 545, tac: 625 },
-      micarta: { satin: 425, sw: 440, tac: 520 },
+      g10: { satin: 585, sw: 605, tac: 695 },
+      micarta: { satin: 470, sw: 490, tac: 580 },
     },
   },
   standard: {
     sandvik: {
-      g10: { satin: 705, sw: 750, tac: 845 },
-      micarta: { satin: 605, sw: 650, tac: 740 },
+      g10: { satin: 785, sw: 835, tac: 940 },
+      micarta: { satin: 670, sw: 720, tac: 825 },
     },
     inox: {
-      g10: { satin: 650, sw: 700, tac: 790 },
-      micarta: { satin: 550, sw: 595, tac: 690 },
+      g10: { satin: 725, sw: 775, tac: 880 },
+      micarta: { satin: 610, sw: 660, tac: 765 },
     },
   },
 };
