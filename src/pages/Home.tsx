@@ -323,26 +323,27 @@ export default function Home() {
 
       {/* ── Coluna principal ──────────────────────────────────── */}
       <div className="space-y-4 order-1 lg:order-2 min-w-0">
-        {/* Banners de ação — carrossel com snap no mobile, grid no desktop */}
-        <div className="flex gap-3 overflow-x-auto snap-x-carousel -mx-3 px-3 pb-1 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:grid-cols-3 sm:overflow-visible">
+        {/* Banners de ação — 3 colunas sempre visíveis, compactos no mobile */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {BANNERS.map((b) => (
             <NavLink
               key={b.url}
               to={b.url}
-              className={`group relative rounded-xl p-4 flex flex-col justify-between min-h-[130px] min-w-[78%] sm:min-w-0 shadow-sm hover:shadow-md transition-all overflow-hidden ${b.classe}`}
+              className={`group relative rounded-xl p-2.5 sm:p-4 flex flex-col justify-between min-h-[110px] sm:min-h-[130px] shadow-sm hover:shadow-md transition-all overflow-hidden ${b.classe}`}
             >
-              <b.icon className="absolute -right-3 -bottom-3 h-20 w-20 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all" />
+              <b.icon className="absolute -right-3 -bottom-3 h-16 w-16 sm:h-20 sm:w-20 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all" />
               <div>
-                <p className="font-bold leading-tight">{b.titulo}</p>
-                <p className="text-xs opacity-80 mt-1 leading-snug">{b.descricao}</p>
+                <p className="font-bold leading-tight text-xs sm:text-base">{b.titulo}</p>
+                <p className="hidden sm:block text-xs opacity-80 mt-1 leading-snug">{b.descricao}</p>
               </div>
-              <span className={`inline-flex items-center gap-1.5 self-start text-xs font-semibold px-3 py-1.5 rounded-full mt-3 transition-opacity ${b.ctaClasse}`}>
-                {b.cta}
-                <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+              <span className={`inline-flex items-center gap-1 self-start text-[10px] sm:text-xs font-semibold px-2 py-1 sm:px-3 sm:py-1.5 rounded-full mt-2 sm:mt-3 transition-opacity ${b.ctaClasse}`}>
+                <span className="truncate">{b.cta}</span>
+                <ArrowRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 transition-transform" />
               </span>
             </NavLink>
           ))}
         </div>
+
 
         {/* Resumo diário — alimentado pela planilha de Relatório de Vendas */}
         <div className="rounded-xl border bg-card p-4 sm:p-5">
