@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X, Globe, DollarSign } from 'lucide-react';
+import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X, Globe, DollarSign, Swords } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -227,7 +227,20 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
     subtitulo: cat.categoria,
     categoria: cat.categoria,
     icon: getIconComponent(cat.icone),
+    especial: undefined as 'push-dagger' | undefined,
   }));
+
+  // Card especial "Push Daggers" — não vem do banco, aponta para o configurador dedicado.
+  // Inserido logo após "Defesa" (ou no início, se a categoria não existir).
+  if (!isInternacional) {
+    const idxDefesa = categoriasVenda.findIndex(c => c.categoria === 'Defesa');
+    categoriasVenda.splice(idxDefesa === -1 ? 0 : idxDefesa + 1, 0, {
+      subtitulo: 'Push Daggers',
+      categoria: '__push_dagger__',
+      icon: Swords,
+      especial: 'push-dagger',
+    });
+  }
 
   useEffect(() => {
     carregarModelos();
@@ -713,7 +726,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
                 <div
                   key={idx}
                   className="group cursor-pointer"
-                  onClick={() => selecionarCategoria(cat.categoria)}
+                  onClick={() => cat.especial === 'push-dagger' ? navigate('/push-dagger-kaowz') : selecionarCategoria(cat.categoria)}
                 >
                   <div className="relative bg-zinc-900 border border-zinc-800 hover:border-accent rounded-xl p-5 md:p-6 transition-all duration-300 text-center group-hover:bg-zinc-800 group-hover:shadow-[0_0_30px_rgba(251,146,60,0.15)] group-hover:-translate-y-1">
                     <div className="w-12 h-12 md:w-14 md:h-14 mx-auto mb-3 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
@@ -761,20 +774,6 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
               {T.monteKit}
             </Button>
           </div>
-
-          {/* Push Daggers */}
-          {!isInternacional && (
-            <div className="flex justify-center max-w-lg mx-auto mt-3">
-              <Button
-                onClick={() => navigate('/push-dagger-kaowz')}
-                variant="outline"
-                className="w-full border-amber-600/50 text-amber-400 hover:bg-amber-600 hover:text-white hover:border-amber-600 font-bold h-12 text-sm md:text-base rounded-xl transition-all"
-              >
-                <Package className="h-4 w-4 mr-2" />
-                Push Daggers
-              </Button>
-            </div>
-          )}
 
           {/* WhatsApp CTA */}
           <div className="text-center mt-10 pt-8 border-t border-zinc-800/50">
