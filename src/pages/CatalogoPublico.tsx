@@ -762,6 +762,20 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
             </Button>
           </div>
 
+          {/* Push Daggers */}
+          {!isInternacional && (
+            <div className="flex justify-center max-w-lg mx-auto mt-3">
+              <Button
+                onClick={() => navigate('/push-dagger-kaowz')}
+                variant="outline"
+                className="w-full border-amber-600/50 text-amber-400 hover:bg-amber-600 hover:text-white hover:border-amber-600 font-bold h-12 text-sm md:text-base rounded-xl transition-all"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Push Daggers
+              </Button>
+            </div>
+          )}
+
           {/* WhatsApp CTA */}
           <div className="text-center mt-10 pt-8 border-t border-zinc-800/50">
             <p className="text-zinc-500 text-xs mb-3">{T.ajuda}</p>
