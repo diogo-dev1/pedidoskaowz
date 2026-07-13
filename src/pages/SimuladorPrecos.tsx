@@ -713,7 +713,7 @@ export default function SimuladorPrecos() {
           <button type="button" onClick={limparTudo} title="Limpar seleções"
             className="ml-auto flex items-center gap-1 h-9 px-2.5 rounded-xl border border-border bg-background hover:bg-muted active:scale-95 transition-all">
             <Eraser className="h-4 w-4 text-muted-foreground" />
-            <span aria-hidden className="text-base leading-none">🧹</span>
+            <span aria-hidden className="text-base leading-none">{"\n"}</span>
           </button>
         )}
       </div>
