@@ -574,12 +574,23 @@ export default function ConfiguracoesCatalogo() {
       const { data, error } = await supabase.functions.invoke('sync-shopify', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (error) throw error;
+      if (error) {
+        // FunctionsHttpError esconde o corpo da resposta — extrai a mensagem real da edge function
+        let detalhe = error.message;
+        try {
+          const ctx = (error as { context?: Response }).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            if (body?.error) detalhe = body.error;
+          }
+        } catch { /* mantém mensagem genérica */ }
+        throw new Error(detalhe);
+      }
       if (data?.success === false) throw new Error(data?.error || 'Falha ao sincronizar');
       toast.success(`Sincronização concluída: ${data?.synced ?? 0} produtos atualizados.`);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Erro desconhecido';
-      toast.error(`Falha ao sincronizar Shopify: ${msg}`);
+      toast.error(`Falha ao sincronizar Shopify: ${msg}`, { duration: 10000 });
     } finally {
       setSyncingShopify(false);
     }
