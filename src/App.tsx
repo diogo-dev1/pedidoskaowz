@@ -54,9 +54,6 @@ import Pedidos from "./pages/Pedidos";
 import PushDaggerConfigurador from "./pages/PushDaggerConfigurador";
 import ExternalRedirect from "./components/ExternalRedirect";
 
-// Temporariamente fora do ar — configurador de kit push dagger aponta para o site
-// oficial enquanto os valores são atualizados. Reverter para <ConfiguradorKit /> depois.
-const PUSH_DAGGER_URL = "https://kaowz.com.br/collections/lancamento-push-dagger";
 import KitUrbanEdc from "./pages/KitUrbanEdc";
 import KitUrbanEdcConfig from "./pages/KitUrbanEdcConfig";
 import Producao from "./pages/Producao";
