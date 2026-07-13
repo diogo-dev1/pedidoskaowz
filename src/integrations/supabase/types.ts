@@ -939,6 +939,27 @@ export type Database = {
         }
         Relationships: []
       }
+      knives: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          video_url?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           created_at: string
