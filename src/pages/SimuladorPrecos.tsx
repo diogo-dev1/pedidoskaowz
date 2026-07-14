@@ -684,7 +684,7 @@ export default function SimuladorPrecos() {
     setEntries((p) => p.map((e) => (e.id === id ? { ...e, avulso: u } : e)));
 
   const totalGeral = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
-  const itensValidos = entries.filter((e) => e.kind === 'avulso' || e.faca.modeloIdx !== null).length;
+  const itensValidos = entries.filter((e) => e.kind === 'avulso' || e.kind === 'custom' || (e.kind === 'faca' && e.faca.modeloIdx !== null)).length;
   const orcamento = useMemo(() => gerarOrcamento(data, entries, totalGeral), [data, entries, totalGeral]);
 
   const copiarRapido = async () => {
