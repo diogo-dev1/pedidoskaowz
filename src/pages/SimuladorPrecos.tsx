@@ -367,6 +367,106 @@ function AvulsoPickerDialog({ open, onOpenChange, data, onPick }: {
   );
 }
 
+/* ════════════════ Item não cadastrado (custom) ════════════════ */
+
+function CustomRow({ cfg, onChange, onRemove }: {
+  cfg: CustomCfg; onChange: (c: CustomCfg) => void; onRemove: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const subtotal = Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
+  return (
+    <>
+      <div className="rounded-2xl border bg-card overflow-hidden shadow-sm flex items-center gap-3 p-4">
+        <span className="w-8 h-8 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center flex-shrink-0">
+          <FilePlus2 className="w-4 h-4" />
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm truncate">{cfg.descricao.trim() || 'Item não cadastrado'}</p>
+          <p className="text-[11px] text-muted-foreground">Item não cadastrado · {BRL(Math.max(0, cfg.preco))}/un</p>
+        </div>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <button type="button" onClick={() => onChange({ ...cfg, quantidade: Math.max(1, cfg.quantidade - 1) })}
+            className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-muted active:scale-95 transition-all disabled:opacity-30"
+            disabled={cfg.quantidade <= 1}>
+            <Minus className="w-3 h-3" />
+          </button>
+          <span className="w-5 text-center text-sm font-semibold tabular-nums">{cfg.quantidade}</span>
+          <button type="button" onClick={() => onChange({ ...cfg, quantidade: cfg.quantidade + 1 })}
+            className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-muted active:scale-95 transition-all">
+            <Plus className="w-3 h-3" />
+          </button>
+        </div>
+        <span className="text-sm font-bold text-primary w-20 text-right flex-shrink-0" data-numeric>{BRL(subtotal)}</span>
+        <button type="button" onClick={() => setEditing(true)} className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0" title="Editar">
+          <Pencil className="w-4 h-4" />
+        </button>
+        <button type="button" onClick={onRemove} className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0" title="Remover">
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+      <CustomDialog open={editing} onOpenChange={setEditing} initial={cfg} onSave={(u) => { onChange({ ...cfg, descricao: u.descricao, preco: u.preco }); }} />
+    </>
+  );
+}
+
+function CustomDialog({ open, onOpenChange, initial, onSave }: {
+  open: boolean; onOpenChange: (v: boolean) => void;
+  initial?: { descricao: string; preco: number };
+  onSave: (v: { descricao: string; preco: number }) => void;
+}) {
+  const [descricao, setDescricao] = useState(initial?.descricao ?? '');
+  const [precoStr, setPrecoStr] = useState((initial?.preco ?? 0).toString().replace('.', ','));
+  useEffect(() => {
+    if (open) {
+      setDescricao(initial?.descricao ?? '');
+      setPrecoStr((initial?.preco ?? 0) > 0 ? (initial!.preco).toFixed(2).replace('.', ',') : '');
+    }
+  }, [open, initial]);
+
+  const preco = (() => {
+    const s = precoStr.replace(/[^\d.,-]/g, '');
+    const lastComma = s.lastIndexOf(',');
+    const lastDot = s.lastIndexOf('.');
+    const str = lastComma > lastDot ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    const n = parseFloat(str);
+    return Number.isFinite(n) ? n : 0;
+  })();
+  const podeSalvar = descricao.trim().length > 0 && preco > 0;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FilePlus2 className="h-5 w-5 text-primary" /> Item não cadastrado
+          </DialogTitle>
+          <DialogDescription>Descreva o item e informe o valor. Ele entra no orçamento e no formulário.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="cst-desc" className="text-xs">Descrição do item</Label>
+            <Textarea id="cst-desc" value={descricao} onChange={(e) => setDescricao(e.target.value)}
+              placeholder="Ex: Faca personalizada com detalhe X, gravação Y..." rows={3} className="text-sm resize-none" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cst-preco" className="text-xs">Valor do item</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+              <Input id="cst-preco" value={precoStr} inputMode="decimal"
+                onChange={(e) => setPrecoStr(e.target.value)}
+                placeholder="0,00" className="h-10 pl-9 tabular-nums font-semibold" />
+            </div>
+          </div>
+          <Button className="w-full h-11 rounded-xl" disabled={!podeSalvar}
+            onClick={() => { onSave({ descricao: descricao.trim(), preco }); onOpenChange(false); }}>
+            Salvar item
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /* ════════════════ Formulário "Shot Fair" (Google Forms) ════════════════ */
 // Registro do pedido vendido. IDs extraídos do próprio formulário.
 const FORM_ID = '1FAIpQLSfMW6dFNHZq9-dPUjK_mB9obx3iiaTTG58dT18t9a8PDd1ooQ';
