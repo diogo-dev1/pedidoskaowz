@@ -834,7 +834,7 @@ export default function SimuladorPrecos() {
           </span>
         </button>
         <button type="button" onClick={() => setCustomOpen(true)}
-          className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-secondary/40 bg-secondary/20 p-3 text-center transition-all hover:border-secondary hover:bg-secondary/30 active:scale-[0.97]">
+          className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-secondary/20 bg-secondary/5 p-3 text-center transition-all hover:border-secondary/40 hover:bg-secondary/10 active:scale-[0.97]">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm">
             <FilePlus2 className="h-4 w-4" />
           </span>
