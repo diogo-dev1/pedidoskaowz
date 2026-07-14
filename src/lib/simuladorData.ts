@@ -50,10 +50,20 @@ export interface AvulsoCfg {
   quantidade: number;
 }
 
-/** Uma entrada do pedido: ou uma faca configurada, ou um item avulso. */
+/** Item personalizado — descrição livre e preço definido manualmente
+ *  pelo vendedor (ex.: produto que não está no catálogo). */
+export interface CustomCfg {
+  id: string;
+  descricao: string;
+  preco: number;
+  quantidade: number;
+}
+
+/** Uma entrada do pedido: faca configurada, item avulso ou item personalizado. */
 export type PedidoEntry =
   | { id: string; kind: 'faca'; faca: ItemCfg }
-  | { id: string; kind: 'avulso'; avulso: AvulsoCfg };
+  | { id: string; kind: 'avulso'; avulso: AvulsoCfg }
+  | { id: string; kind: 'custom'; custom: CustomCfg };
 
 export const BRL = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
