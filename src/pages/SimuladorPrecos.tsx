@@ -753,6 +753,7 @@ export default function SimuladorPrecos() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [customOpen, setCustomOpen] = useState(false);
 
   const addFaca = () => { const e = novaEntradaFaca(); setEntries((p) => [...p, e]); setExpandedId(e.id); };
   const addAvulso = (adicionalIdx: number) => {
