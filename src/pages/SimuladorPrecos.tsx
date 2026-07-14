@@ -783,6 +783,8 @@ export default function SimuladorPrecos() {
   const updateFaca = (id: string, u: ItemCfg) => setEntries((p) => p.map((e) => (e.id === id ? { ...e, faca: u } : e)));
   const updateAvulso = (id: string, u: import('@/lib/simuladorData').AvulsoCfg) =>
     setEntries((p) => p.map((e) => (e.id === id ? { ...e, avulso: u } : e)));
+  const updateCustom = (id: string, u: CustomCfg) =>
+    setEntries((p) => p.map((e) => (e.id === id ? { ...e, custom: u } : e)));
 
   const totalGeral = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
   const itensValidos = entries.filter((e) => e.kind === 'avulso' || e.kind === 'custom' || (e.kind === 'faca' && e.faca.modeloIdx !== null)).length;
