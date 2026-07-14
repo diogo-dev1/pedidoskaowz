@@ -157,14 +157,34 @@ export function textoAvulso(data: SimuladorData, cfg: AvulsoCfg, n: number): str
   ];
 }
 
-/** Valor total de uma entrada (faca ou avulso). */
-export function calcEntry(data: SimuladorData, e: PedidoEntry): number {
-  return e.kind === 'faca' ? calcItem(data, e.faca) : calcAvulso(data, e.avulso);
+/** Valor total de um item personalizado. */
+export function calcCustom(cfg: CustomCfg): number {
+  return Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
 }
 
-/** Bloco de texto de uma entrada (faca ou avulso). */
+/** Bloco de texto de um item personalizado. */
+export function textoCustom(cfg: CustomCfg, n: number): string[] {
+  const nome = cfg.descricao.trim() || 'Item personalizado';
+  const qtd = cfg.quantidade > 1 ? ` x${cfg.quantidade}` : '';
+  return [
+    `Item ${n}:`,
+    `${nome}${qtd}`,
+    `Valor: ${BRL(calcCustom(cfg))}`,
+  ];
+}
+
+/** Valor total de uma entrada. */
+export function calcEntry(data: SimuladorData, e: PedidoEntry): number {
+  if (e.kind === 'faca') return calcItem(data, e.faca);
+  if (e.kind === 'avulso') return calcAvulso(data, e.avulso);
+  return calcCustom(e.custom);
+}
+
+/** Bloco de texto de uma entrada. */
 export function textoEntry(data: SimuladorData, e: PedidoEntry, n: number): string[] {
-  return e.kind === 'faca' ? textoItem(data, e.faca, n) : textoAvulso(data, e.avulso, n);
+  if (e.kind === 'faca') return textoItem(data, e.faca, n);
+  if (e.kind === 'avulso') return textoAvulso(data, e.avulso, n);
+  return textoCustom(e.custom, n);
 }
 
 /** Orçamento completo — formato "Pedido: / Item N: / Total:". Mistura facas e avulsos. */
