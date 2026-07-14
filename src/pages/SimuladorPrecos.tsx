@@ -821,30 +821,34 @@ export default function SimuladorPrecos() {
         )}
       </div>
 
-      {/* Dois cards de entrada — mobile first, minimalista */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Cards de entrada — mobile first, minimalista */}
+      <div className="grid grid-cols-3 gap-2">
         <button type="button" onClick={addFaca}
-          className="group flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-primary/20 bg-primary/5 p-5 text-center transition-all hover:border-primary/40 hover:bg-primary/10 active:scale-[0.97]">
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <Hammer className="h-5 w-5" />
+          className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-primary/20 bg-primary/5 p-3 text-center transition-all hover:border-primary/40 hover:bg-primary/10 active:scale-[0.97]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+            <Hammer className="h-4 w-4" />
           </span>
-          <span className="text-sm font-bold leading-tight">Montar Faca</span>
+          <span className="text-xs font-bold leading-tight">Montar Faca</span>
           <span className="text-[10px] text-muted-foreground leading-tight">
-            {entries.some(e => e.kind === 'faca')
-              ? 'Clique para adicionar mais uma faca'
-              : 'Clique para adicionar uma faca'}
+            {entries.some(e => e.kind === 'faca') ? 'Adicionar mais uma' : 'Adicionar uma faca'}
           </span>
         </button>
-        <button type="button" onClick={() => setPickerOpen(true)}
-          className="group flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-accent/20 bg-accent/5 p-5 text-center transition-all hover:border-accent/40 hover:bg-accent/10 active:scale-[0.97]">
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-sm">
-            <PackagePlus className="h-5 w-5" />
+        <button type="button" onClick={() => setCustomOpen(true)}
+          className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-secondary/40 bg-secondary/20 p-3 text-center transition-all hover:border-secondary hover:bg-secondary/30 active:scale-[0.97]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm">
+            <FilePlus2 className="h-4 w-4" />
           </span>
-          <span className="text-sm font-bold leading-tight">Item à parte</span>
+          <span className="text-xs font-bold leading-tight">Itens não cadastrados</span>
+          <span className="text-[10px] text-muted-foreground leading-tight">Descrição + valor livre</span>
+        </button>
+        <button type="button" onClick={() => setPickerOpen(true)}
+          className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-accent/20 bg-accent/5 p-3 text-center transition-all hover:border-accent/40 hover:bg-accent/10 active:scale-[0.97]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-sm">
+            <PackagePlus className="h-4 w-4" />
+          </span>
+          <span className="text-xs font-bold leading-tight">Item à parte</span>
           <span className="text-[10px] text-muted-foreground leading-tight">
-            {entries.some(e => e.kind === 'avulso')
-              ? 'Clique para adicionar mais um item'
-              : 'Clique para adicionar um item'}
+            {entries.some(e => e.kind === 'avulso') ? 'Adicionar mais um' : 'Adicionar um item'}
           </span>
         </button>
       </div>
