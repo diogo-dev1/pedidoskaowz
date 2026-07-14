@@ -830,7 +830,7 @@ export default function SimuladorPrecos() {
           </span>
           <span className="text-xs font-bold leading-tight">Montar Faca</span>
           <span className="text-[10px] text-muted-foreground leading-tight">
-            {entries.some(e => e.kind === 'faca') ? 'Adicionar mais uma' : 'Adicionar uma faca'}
+            {entries.some(e => e.kind === 'faca') ? 'Adicionar mais uma' : 'Adicionar uma nova faca'}
           </span>
         </button>
         <button type="button" onClick={() => setCustomOpen(true)}
@@ -848,7 +848,7 @@ export default function SimuladorPrecos() {
           </span>
           <span className="text-xs font-bold leading-tight">Item à parte</span>
           <span className="text-[10px] text-muted-foreground leading-tight">
-            {entries.some(e => e.kind === 'avulso') ? 'Adicionar mais um' : 'Adicionar um item'}
+            {entries.some(e => e.kind === 'avulso') ? 'Adicionar mais um' : 'Strop, clipe, café..'}
           </span>
         </button>
       </div>
