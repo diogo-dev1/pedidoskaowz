@@ -50,10 +50,20 @@ export interface AvulsoCfg {
   quantidade: number;
 }
 
-/** Uma entrada do pedido: ou uma faca configurada, ou um item avulso. */
+/** Item personalizado — descrição livre e preço definido manualmente
+ *  pelo vendedor (ex.: produto que não está no catálogo). */
+export interface CustomCfg {
+  id: string;
+  descricao: string;
+  preco: number;
+  quantidade: number;
+}
+
+/** Uma entrada do pedido: faca configurada, item avulso ou item personalizado. */
 export type PedidoEntry =
   | { id: string; kind: 'faca'; faca: ItemCfg }
-  | { id: string; kind: 'avulso'; avulso: AvulsoCfg };
+  | { id: string; kind: 'avulso'; avulso: AvulsoCfg }
+  | { id: string; kind: 'custom'; custom: CustomCfg };
 
 export const BRL = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
@@ -80,6 +90,10 @@ export function novaEntradaFaca(): PedidoEntry {
 
 export function novaEntradaAvulso(adicionalIdx: number, quantidade = 1): PedidoEntry {
   return { id: crypto.randomUUID(), kind: 'avulso', avulso: newAvulso(adicionalIdx, quantidade) };
+}
+
+export function novaEntradaCustom(descricao = '', preco = 0, quantidade = 1): PedidoEntry {
+  return { id: crypto.randomUUID(), kind: 'custom', custom: { id: crypto.randomUUID(), descricao, preco, quantidade } };
 }
 
 /** Regra da planilha: M usa P quando não definido; G cai para M→P. */
@@ -147,14 +161,34 @@ export function textoAvulso(data: SimuladorData, cfg: AvulsoCfg, n: number): str
   ];
 }
 
-/** Valor total de uma entrada (faca ou avulso). */
-export function calcEntry(data: SimuladorData, e: PedidoEntry): number {
-  return e.kind === 'faca' ? calcItem(data, e.faca) : calcAvulso(data, e.avulso);
+/** Valor total de um item personalizado. */
+export function calcCustom(cfg: CustomCfg): number {
+  return Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
 }
 
-/** Bloco de texto de uma entrada (faca ou avulso). */
+/** Bloco de texto de um item personalizado. */
+export function textoCustom(cfg: CustomCfg, n: number): string[] {
+  const nome = cfg.descricao.trim() || 'Item personalizado';
+  const qtd = cfg.quantidade > 1 ? ` x${cfg.quantidade}` : '';
+  return [
+    `Item ${n}:`,
+    `${nome}${qtd}`,
+    `Valor: ${BRL(calcCustom(cfg))}`,
+  ];
+}
+
+/** Valor total de uma entrada. */
+export function calcEntry(data: SimuladorData, e: PedidoEntry): number {
+  if (e.kind === 'faca') return calcItem(data, e.faca);
+  if (e.kind === 'avulso') return calcAvulso(data, e.avulso);
+  return calcCustom(e.custom);
+}
+
+/** Bloco de texto de uma entrada. */
 export function textoEntry(data: SimuladorData, e: PedidoEntry, n: number): string[] {
-  return e.kind === 'faca' ? textoItem(data, e.faca, n) : textoAvulso(data, e.avulso, n);
+  if (e.kind === 'faca') return textoItem(data, e.faca, n);
+  if (e.kind === 'avulso') return textoAvulso(data, e.avulso, n);
+  return textoCustom(e.custom, n);
 }
 
 /** Orçamento completo — formato "Pedido: / Item N: / Total:". Mistura facas e avulsos. */

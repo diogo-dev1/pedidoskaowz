@@ -8,15 +8,15 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Calculator, Plus, Minus, Trash2, Copy, MessageCircle, Search, X,
   ChevronDown, ChevronUp, CopyPlus, Send, Loader2, Check, ClipboardCheck, Eraser,
-  Hammer, PackagePlus,
+  Hammer, PackagePlus, Pencil, FilePlus2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcEntry, gerarOrcamento,
-  novaEntradaFaca, novaEntradaAvulso,
-  type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao,
+  novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom,
+  type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
 } from '@/lib/simuladorData';
 
 /* ════════════════ UI: átomos ════════════════ */
@@ -367,6 +367,106 @@ function AvulsoPickerDialog({ open, onOpenChange, data, onPick }: {
   );
 }
 
+/* ════════════════ Item não cadastrado (custom) ════════════════ */
+
+function CustomRow({ cfg, onChange, onRemove }: {
+  cfg: CustomCfg; onChange: (c: CustomCfg) => void; onRemove: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const subtotal = Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
+  return (
+    <>
+      <div className="rounded-2xl border bg-card overflow-hidden shadow-sm flex items-center gap-3 p-4">
+        <span className="w-8 h-8 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center flex-shrink-0">
+          <FilePlus2 className="w-4 h-4" />
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm truncate">{cfg.descricao.trim() || 'Item não cadastrado'}</p>
+          <p className="text-[11px] text-muted-foreground">Item não cadastrado · {BRL(Math.max(0, cfg.preco))}/un</p>
+        </div>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <button type="button" onClick={() => onChange({ ...cfg, quantidade: Math.max(1, cfg.quantidade - 1) })}
+            className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-muted active:scale-95 transition-all disabled:opacity-30"
+            disabled={cfg.quantidade <= 1}>
+            <Minus className="w-3 h-3" />
+          </button>
+          <span className="w-5 text-center text-sm font-semibold tabular-nums">{cfg.quantidade}</span>
+          <button type="button" onClick={() => onChange({ ...cfg, quantidade: cfg.quantidade + 1 })}
+            className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-muted active:scale-95 transition-all">
+            <Plus className="w-3 h-3" />
+          </button>
+        </div>
+        <span className="text-sm font-bold text-primary w-20 text-right flex-shrink-0" data-numeric>{BRL(subtotal)}</span>
+        <button type="button" onClick={() => setEditing(true)} className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0" title="Editar">
+          <Pencil className="w-4 h-4" />
+        </button>
+        <button type="button" onClick={onRemove} className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0" title="Remover">
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+      <CustomDialog open={editing} onOpenChange={setEditing} initial={cfg} onSave={(u) => { onChange({ ...cfg, descricao: u.descricao, preco: u.preco }); }} />
+    </>
+  );
+}
+
+function CustomDialog({ open, onOpenChange, initial, onSave }: {
+  open: boolean; onOpenChange: (v: boolean) => void;
+  initial?: { descricao: string; preco: number };
+  onSave: (v: { descricao: string; preco: number }) => void;
+}) {
+  const [descricao, setDescricao] = useState(initial?.descricao ?? '');
+  const [precoStr, setPrecoStr] = useState((initial?.preco ?? 0).toString().replace('.', ','));
+  useEffect(() => {
+    if (open) {
+      setDescricao(initial?.descricao ?? '');
+      setPrecoStr((initial?.preco ?? 0) > 0 ? (initial!.preco).toFixed(2).replace('.', ',') : '');
+    }
+  }, [open, initial]);
+
+  const preco = (() => {
+    const s = precoStr.replace(/[^\d.,-]/g, '');
+    const lastComma = s.lastIndexOf(',');
+    const lastDot = s.lastIndexOf('.');
+    const str = lastComma > lastDot ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    const n = parseFloat(str);
+    return Number.isFinite(n) ? n : 0;
+  })();
+  const podeSalvar = descricao.trim().length > 0 && preco > 0;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FilePlus2 className="h-5 w-5 text-primary" /> Item não cadastrado
+          </DialogTitle>
+          <DialogDescription>Descreva o item e informe o valor. Ele entra no orçamento e no formulário.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="cst-desc" className="text-xs">Descrição do item</Label>
+            <Textarea id="cst-desc" value={descricao} onChange={(e) => setDescricao(e.target.value)}
+              placeholder="Ex: Faca personalizada com detalhe X, gravação Y..." rows={3} className="text-sm resize-none" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cst-preco" className="text-xs">Valor do item</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+              <Input id="cst-preco" value={precoStr} inputMode="decimal"
+                onChange={(e) => setPrecoStr(e.target.value)}
+                placeholder="0,00" className="h-10 pl-9 tabular-nums font-semibold" />
+            </div>
+          </div>
+          <Button className="w-full h-11 rounded-xl" disabled={!podeSalvar}
+            onClick={() => { onSave({ descricao: descricao.trim(), preco }); onOpenChange(false); }}>
+            Salvar item
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /* ════════════════ Formulário "Shot Fair" (Google Forms) ════════════════ */
 // Registro do pedido vendido. IDs extraídos do próprio formulário.
 const FORM_ID = '1FAIpQLSfMW6dFNHZq9-dPUjK_mB9obx3iiaTTG58dT18t9a8PDd1ooQ';
@@ -653,6 +753,7 @@ export default function SimuladorPrecos() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [customOpen, setCustomOpen] = useState(false);
 
   const addFaca = () => { const e = novaEntradaFaca(); setEntries((p) => [...p, e]); setExpandedId(e.id); };
   const addAvulso = (adicionalIdx: number) => {
@@ -682,9 +783,11 @@ export default function SimuladorPrecos() {
   const updateFaca = (id: string, u: ItemCfg) => setEntries((p) => p.map((e) => (e.id === id ? { ...e, faca: u } : e)));
   const updateAvulso = (id: string, u: import('@/lib/simuladorData').AvulsoCfg) =>
     setEntries((p) => p.map((e) => (e.id === id ? { ...e, avulso: u } : e)));
+  const updateCustom = (id: string, u: CustomCfg) =>
+    setEntries((p) => p.map((e) => (e.id === id ? { ...e, custom: u } : e)));
 
   const totalGeral = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
-  const itensValidos = entries.filter((e) => e.kind === 'avulso' || e.faca.modeloIdx !== null).length;
+  const itensValidos = entries.filter((e) => e.kind === 'avulso' || e.kind === 'custom' || (e.kind === 'faca' && e.faca.modeloIdx !== null)).length;
   const orcamento = useMemo(() => gerarOrcamento(data, entries, totalGeral), [data, entries, totalGeral]);
 
   const copiarRapido = async () => {
@@ -718,49 +821,61 @@ export default function SimuladorPrecos() {
         )}
       </div>
 
-      {/* Dois cards de entrada — mobile first, minimalista */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Cards de entrada — mobile first, minimalista */}
+      <div className="grid grid-cols-3 gap-2">
         <button type="button" onClick={addFaca}
-          className="group flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-primary/20 bg-primary/5 p-5 text-center transition-all hover:border-primary/40 hover:bg-primary/10 active:scale-[0.97]">
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <Hammer className="h-5 w-5" />
+          className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-primary/20 bg-primary/5 p-3 text-center transition-all hover:border-primary/40 hover:bg-primary/10 active:scale-[0.97]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+            <Hammer className="h-4 w-4" />
           </span>
-          <span className="text-sm font-bold leading-tight">Montar Faca</span>
+          <span className="text-xs font-bold leading-tight">Montar Faca</span>
           <span className="text-[10px] text-muted-foreground leading-tight">
-            {entries.some(e => e.kind === 'faca')
-              ? 'Clique para adicionar mais uma faca'
-              : 'Clique para adicionar uma faca'}
+            {entries.some(e => e.kind === 'faca') ? 'Adicionar mais uma' : 'Adicionar uma faca'}
           </span>
         </button>
-        <button type="button" onClick={() => setPickerOpen(true)}
-          className="group flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-accent/20 bg-accent/5 p-5 text-center transition-all hover:border-accent/40 hover:bg-accent/10 active:scale-[0.97]">
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-sm">
-            <PackagePlus className="h-5 w-5" />
+        <button type="button" onClick={() => setCustomOpen(true)}
+          className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-secondary/40 bg-secondary/20 p-3 text-center transition-all hover:border-secondary hover:bg-secondary/30 active:scale-[0.97]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm">
+            <FilePlus2 className="h-4 w-4" />
           </span>
-          <span className="text-sm font-bold leading-tight">Item à parte</span>
+          <span className="text-xs font-bold leading-tight">Itens não cadastrados</span>
+          <span className="text-[10px] text-muted-foreground leading-tight">Descrição + valor livre</span>
+        </button>
+        <button type="button" onClick={() => setPickerOpen(true)}
+          className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-accent/20 bg-accent/5 p-3 text-center transition-all hover:border-accent/40 hover:bg-accent/10 active:scale-[0.97]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-sm">
+            <PackagePlus className="h-4 w-4" />
+          </span>
+          <span className="text-xs font-bold leading-tight">Item à parte</span>
           <span className="text-[10px] text-muted-foreground leading-tight">
-            {entries.some(e => e.kind === 'avulso')
-              ? 'Clique para adicionar mais um item'
-              : 'Clique para adicionar um item'}
+            {entries.some(e => e.kind === 'avulso') ? 'Adicionar mais um' : 'Adicionar um item'}
           </span>
         </button>
       </div>
 
       {entries.length > 0 && (
         <div className="space-y-3">
-          {entries.map((e, idx) => e.kind === 'faca' ? (
-            <ItemCard key={e.id} data={data} cfg={e.faca} index={idx}
-              onChange={(u) => updateFaca(e.id, u)}
-              onRemove={() => removeEntry(e.id)}
-              onDuplicate={() => duplicateItem(e.id)}
-              removivel
-              expanded={expandedId === e.id}
-              onToggle={() => setExpandedId(expandedId === e.id ? null : e.id)} />
-          ) : (
-            <AvulsoRow key={e.id} data={data} cfg={e.avulso}
-              onChange={(u) => updateAvulso(e.id, u)}
-              onRemove={() => removeEntry(e.id)} />
-          ))}
+          {entries.map((e, idx) => {
+            if (e.kind === 'faca') return (
+              <ItemCard key={e.id} data={data} cfg={e.faca} index={idx}
+                onChange={(u) => updateFaca(e.id, u)}
+                onRemove={() => removeEntry(e.id)}
+                onDuplicate={() => duplicateItem(e.id)}
+                removivel
+                expanded={expandedId === e.id}
+                onToggle={() => setExpandedId(expandedId === e.id ? null : e.id)} />
+            );
+            if (e.kind === 'avulso') return (
+              <AvulsoRow key={e.id} data={data} cfg={e.avulso}
+                onChange={(u) => updateAvulso(e.id, u)}
+                onRemove={() => removeEntry(e.id)} />
+            );
+            return (
+              <CustomRow key={e.id} cfg={e.custom}
+                onChange={(u) => updateCustom(e.id, u)}
+                onRemove={() => removeEntry(e.id)} />
+            );
+          })}
         </div>
       )}
 
@@ -784,6 +899,13 @@ export default function SimuladorPrecos() {
       </div>
 
       <AvulsoPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} data={data} onPick={addAvulso} />
+
+      <CustomDialog open={customOpen} onOpenChange={setCustomOpen}
+        onSave={({ descricao, preco }) => {
+          setEntries((p) => [...p, novaEntradaCustom(descricao, preco, 1)]);
+          if (navigator.vibrate) navigator.vibrate(15);
+          toast.success('Item adicionado!');
+        }} />
 
       <OrcamentoModal open={modalOpen} onOpenChange={setModalOpen} texto={orcamento} total={totalGeral}
         vendedorPadrao={profile?.nome_vendedor ?? ''} />
