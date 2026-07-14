@@ -748,19 +748,27 @@ export default function SimuladorPrecos() {
 
       {entries.length > 0 && (
         <div className="space-y-3">
-          {entries.map((e, idx) => e.kind === 'faca' ? (
-            <ItemCard key={e.id} data={data} cfg={e.faca} index={idx}
-              onChange={(u) => updateFaca(e.id, u)}
-              onRemove={() => removeEntry(e.id)}
-              onDuplicate={() => duplicateItem(e.id)}
-              removivel
-              expanded={expandedId === e.id}
-              onToggle={() => setExpandedId(expandedId === e.id ? null : e.id)} />
-          ) : (
-            <AvulsoRow key={e.id} data={data} cfg={e.avulso}
-              onChange={(u) => updateAvulso(e.id, u)}
-              onRemove={() => removeEntry(e.id)} />
-          ))}
+          {entries.map((e, idx) => {
+            if (e.kind === 'faca') return (
+              <ItemCard key={e.id} data={data} cfg={e.faca} index={idx}
+                onChange={(u) => updateFaca(e.id, u)}
+                onRemove={() => removeEntry(e.id)}
+                onDuplicate={() => duplicateItem(e.id)}
+                removivel
+                expanded={expandedId === e.id}
+                onToggle={() => setExpandedId(expandedId === e.id ? null : e.id)} />
+            );
+            if (e.kind === 'avulso') return (
+              <AvulsoRow key={e.id} data={data} cfg={e.avulso}
+                onChange={(u) => updateAvulso(e.id, u)}
+                onRemove={() => removeEntry(e.id)} />
+            );
+            return (
+              <CustomRow key={e.id} cfg={e.custom}
+                onChange={(u) => updateCustom(e.id, u)}
+                onRemove={() => removeEntry(e.id)} />
+            );
+          })}
         </div>
       )}
 
