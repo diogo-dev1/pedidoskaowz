@@ -900,6 +900,13 @@ export default function SimuladorPrecos() {
 
       <AvulsoPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} data={data} onPick={addAvulso} />
 
+      <CustomDialog open={customOpen} onOpenChange={setCustomOpen}
+        onSave={({ descricao, preco }) => {
+          setEntries((p) => [...p, novaEntradaCustom(descricao, preco, 1)]);
+          if (navigator.vibrate) navigator.vibrate(15);
+          toast.success('Item adicionado!');
+        }} />
+
       <OrcamentoModal open={modalOpen} onOpenChange={setModalOpen} texto={orcamento} total={totalGeral}
         vendedorPadrao={profile?.nome_vendedor ?? ''} />
     </div>
