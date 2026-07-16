@@ -43,8 +43,21 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
-        navigateFallbackDenylist: [/^\/auth/],
+        navigateFallbackDenylist: [/^\/auth/, /^\/~oauth/],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+        // HTML sempre da rede (garante que o app carrega a versão nova)
+        navigateFallback: "index.html",
         runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "html-cache",
+              networkTimeoutSeconds: 3,
+            },
+          },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/auth\/.*/i,
             handler: "NetworkOnly",
@@ -58,6 +71,7 @@ export default defineConfig(({ mode }) => ({
             handler: "NetworkFirst",
             options: {
               cacheName: "supabase-rest-cache",
+              networkTimeoutSeconds: 5,
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 5
