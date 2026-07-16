@@ -631,6 +631,22 @@ export default function GerenciarConfiguracoes() {
                   >
                     {config.visivel_todas ? 'Em Todas' : 'Fora de Todas'}
                   </Button>
+                  <Button
+                    variant={config.pronta_entrega ? "default" : "outline"}
+                    size="sm"
+                    onClick={async () => {
+                      const newVal = !config.pronta_entrega;
+                      const { error } = await supabase.from('catalogo_modelos').update({ pronta_entrega: newVal }).eq('id', config.id);
+                      if (error) { toast.error('Erro ao atualizar'); return; }
+                      setConfiguracoes(prev => prev.map(c => c.id === config.id ? { ...c, pronta_entrega: newVal } : c));
+                      toast.success(newVal ? 'Marcado como pronta entrega' : 'Removido de pronta entrega');
+                    }}
+                    className="h-7 text-xs px-2"
+                    title="Alternar pronta entrega"
+                  >
+                    <Zap className="h-3 w-3 mr-1" />
+                    {config.pronta_entrega ? 'Pronta Entrega' : 'Sob Encomenda'}
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => abrirMidiaDialog(config)} className="h-7 text-xs px-2">
                     <ImageIcon className="h-3 w-3 mr-1" />
                     Mídias
