@@ -26,6 +26,7 @@ interface Configuracao {
   visivel_catalogo: boolean;
   visivel_todas: boolean;
   ordem_catalogo: number;
+  pronta_entrega: boolean;
 }
 
 interface Midia {
