@@ -77,6 +77,7 @@ export default function CatalogoRevendedor() {
     } catch { return new Map(); }
   });
   const [loading, setLoading] = useState(true);
+  const [mostrarGateway, setMostrarGateway] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
   const [categoriasVisiveis, setCategoriasVisiveis] = useState<CategoriaVisivel[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
