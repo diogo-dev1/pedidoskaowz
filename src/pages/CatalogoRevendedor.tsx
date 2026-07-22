@@ -982,19 +982,141 @@ export default function CatalogoRevendedor() {
         </div>
       </div>
 
-      {/* Botão WhatsApp Flutuante */}
+      {/* Barra fixa do Combo (Big Tech style) */}
       {modelosSelecionados.size > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button
-            size="lg"
-            onClick={enviarWhatsAppCombo}
-            className="rounded-full bg-accent hover:bg-accent/90 text-white font-semibold shadow-[0_0_40px_rgba(251,146,60,0.5)] hover:scale-105 transition-all"
-          >
-            <MessageCircle className="h-5 w-5 mr-2" />
-            Montar Kit ({modelosSelecionados.size})
-          </Button>
+        <div className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)]">
+          <div className="mx-auto max-w-3xl m-3 sm:m-4 rounded-2xl bg-zinc-950/95 backdrop-blur-xl border border-zinc-800 shadow-2xl overflow-hidden">
+            {/* Progresso */}
+            <div className="h-1 bg-zinc-900">
+              <div
+                className={`h-full transition-all duration-500 ${podeFecharCombo ? 'bg-emerald-500' : 'bg-accent'}`}
+                style={{ width: `${progresso}%` }}
+              />
+            </div>
+            <div className="flex items-center gap-3 p-3 sm:p-4">
+              <button
+                onClick={() => setComboAberto(true)}
+                className="relative flex items-center justify-center h-11 w-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 transition"
+                aria-label="Ver combo"
+              >
+                <ShoppingBag className="h-5 w-5 text-white" />
+                <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center">
+                  {modelosSelecionados.size}
+                </span>
+              </button>
+
+              <div className="flex-1 min-w-0">
+                {podeFecharCombo ? (
+                  <>
+                    <p className="text-[11px] uppercase tracking-wider text-emerald-400 font-semibold">Combo pronto</p>
+                    <p className="text-sm text-white truncate">
+                      {modelosSelecionados.size} lâminas · Lucro est. <strong className="text-emerald-400">R$ {totalLucro.toFixed(2)}</strong>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold">Faltam {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''}</p>
+                    <p className="text-sm text-zinc-300 truncate">
+                      Mínimo {KIT_MIN_LAMINAS} para negociar margens especiais
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <Button
+                size="lg"
+                disabled={!podeFecharCombo}
+                onClick={enviarWhatsAppCombo}
+                className={`rounded-xl font-semibold h-11 px-4 ${podeFecharCombo ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
+              >
+                {podeFecharCombo ? <MessageCircle className="h-4 w-4 sm:mr-2" /> : <Lock className="h-4 w-4 sm:mr-2" />}
+                <span className="hidden sm:inline">{podeFecharCombo ? 'Falar de margens' : 'Bloqueado'}</span>
+              </Button>
+            </div>
+          </div>
         </div>
       )}
+
+      {/* Sheet com detalhes do combo */}
+      <Sheet open={comboAberto} onOpenChange={setComboAberto}>
+        <SheetContent side="right" className="w-full sm:max-w-md bg-zinc-950 border-zinc-800 text-white overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-white flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5 text-accent" />
+              Seu Combo de Revenda
+            </SheetTitle>
+          </SheetHeader>
+
+          <div className="mt-4 space-y-4">
+            {/* Progresso */}
+            <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3">
+              <div className="flex justify-between text-xs mb-2">
+                <span className="text-zinc-400">Progresso do combo</span>
+                <span className={podeFecharCombo ? 'text-emerald-400 font-semibold' : 'text-white font-semibold'}>
+                  {modelosSelecionados.size} / {KIT_MIN_LAMINAS}
+                </span>
+              </div>
+              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all ${podeFecharCombo ? 'bg-emerald-500' : 'bg-accent'}`}
+                  style={{ width: `${progresso}%` }}
+                />
+              </div>
+              {!podeFecharCombo && (
+                <p className="text-[11px] text-zinc-500 mt-2">
+                  Adicione mais {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''} para desbloquear a negociação de margens no WhatsApp.
+                </p>
+              )}
+            </div>
+
+            {/* Lista */}
+            <div className="space-y-2">
+              {laminasSelecionadasList.map((m) => {
+                const margem = margensProduto[m.id] ?? margemGlobal;
+                const custo = m.preco_base * (1 - margem / 100);
+                const lucro = m.preco_base - custo;
+                return (
+                  <div key={m.id} className="flex items-center gap-3 rounded-xl bg-zinc-900/50 border border-zinc-800 p-2.5">
+                    {m.imagem_modelo && (
+                      <img src={m.imagem_modelo} alt="" className="h-12 w-12 rounded-lg object-cover bg-zinc-800" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{m.nome_modelo}</p>
+                      <p className="text-[11px] text-zinc-500">
+                        Custo R$ {custo.toFixed(2)} · <span className="text-emerald-400">+R$ {lucro.toFixed(2)}</span>
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => toggleModeloSelecionado(m.id)}
+                      className="h-8 w-8 rounded-lg bg-zinc-800 hover:bg-red-500/20 hover:text-red-400 text-zinc-400 flex items-center justify-center transition"
+                      aria-label="Remover"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Totais */}
+            <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3 space-y-1.5 text-sm">
+              <div className="flex justify-between text-zinc-400"><span>Custo total</span><span>R$ {totalCusto.toFixed(2)}</span></div>
+              <div className="flex justify-between text-zinc-400"><span>Venda sugerida</span><span>R$ {totalVenda.toFixed(2)}</span></div>
+              <div className="flex justify-between text-emerald-400 font-semibold pt-1.5 border-t border-zinc-800"><span>Lucro estimado</span><span>R$ {totalLucro.toFixed(2)}</span></div>
+            </div>
+
+            <Button
+              size="lg"
+              disabled={!podeFecharCombo}
+              onClick={enviarWhatsAppCombo}
+              className={`w-full rounded-xl font-semibold ${podeFecharCombo ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
+            >
+              {podeFecharCombo ? <><MessageCircle className="h-4 w-4 mr-2" /> Negociar margens no WhatsApp</> : <><Lock className="h-4 w-4 mr-2" /> Faltam {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''}</>}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
 
     </div>);
 
