@@ -9,8 +9,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Globe, Languages, DollarSign, TrendingUp, Save, Loader2, Percent, RefreshCw, Copy, Share2 } from 'lucide-react';
+import { Globe, Languages, DollarSign, TrendingUp, Save, Loader2, Percent, RefreshCw, Copy, Share2, Eye } from 'lucide-react';
 import { useExchangeRate, type ExchangeMode } from '@/hooks/useExchangeRate';
+import { VisibilidadeLaminasTab } from '@/components/admin/VisibilidadeLaminasTab';
 
 const ALL_CURRENCIES = ['USD', 'BRL', 'EUR', 'AED'] as const;
 const ALL_LANGUAGES = [
