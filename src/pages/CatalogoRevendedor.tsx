@@ -1092,7 +1092,7 @@ export default function CatalogoRevendedor() {
               <div className="flex justify-between text-xs mb-2">
                 <span className="text-zinc-400">Progresso do combo</span>
                 <span className={podeFecharCombo ? 'text-emerald-400 font-semibold' : 'text-white font-semibold'}>
-                  {modelosSelecionados.size} / {KIT_MIN_LAMINAS}
+                  {totalQtd} / {KIT_MIN_LAMINAS}
                 </span>
               </div>
               <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
@@ -1103,14 +1103,14 @@ export default function CatalogoRevendedor() {
               </div>
               {!podeFecharCombo && (
                 <p className="text-[11px] text-zinc-500 mt-2">
-                  Adicione mais {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''} para desbloquear a negociação de margens no WhatsApp.
+                  Selecione 10 lâminas para margens de 15% a 30%.
                 </p>
               )}
             </div>
 
             {/* Lista */}
             <div className="space-y-2">
-              {laminasSelecionadasList.map((m) => {
+              {laminasSelecionadasList.map(({ modelo: m, qtd }) => {
                 const margem = margensProduto[m.id] ?? margemGlobal;
                 const custo = m.preco_base * (1 - margem / 100);
                 const lucro = m.preco_base - custo;
@@ -1125,10 +1125,27 @@ export default function CatalogoRevendedor() {
                         Custo R$ {custo.toFixed(2)} · <span className="text-emerald-400">+R$ {lucro.toFixed(2)}</span>
                       </p>
                     </div>
+                    <div className="flex items-center gap-1 bg-zinc-800 rounded-lg px-1 py-1">
+                      <button
+                        onClick={() => removerSelecao(m.id)}
+                        className="h-6 w-6 rounded-md hover:bg-zinc-700 text-zinc-300 flex items-center justify-center transition"
+                        aria-label="Remover 1"
+                      >
+                        <span className="text-sm font-bold leading-none">−</span>
+                      </button>
+                      <span className="min-w-[18px] text-center text-white text-xs font-bold">{qtd}</span>
+                      <button
+                        onClick={() => adicionarSelecao(m.id)}
+                        className="h-6 w-6 rounded-md hover:bg-zinc-700 text-zinc-300 flex items-center justify-center transition"
+                        aria-label="Adicionar 1"
+                      >
+                        <span className="text-sm font-bold leading-none">+</span>
+                      </button>
+                    </div>
                     <button
-                      onClick={() => toggleSelecao(m.id)}
+                      onClick={() => removerItemTodo(m.id)}
                       className="h-8 w-8 rounded-lg bg-zinc-800 hover:bg-red-500/20 hover:text-red-400 text-zinc-400 flex items-center justify-center transition"
-                      aria-label="Remover"
+                      aria-label="Remover item"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -1136,6 +1153,7 @@ export default function CatalogoRevendedor() {
                 );
               })}
             </div>
+
 
             {/* Totais */}
             <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3 space-y-1.5 text-sm">
