@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { TopNav } from '@/components/TopNav';
 import { BottomNav } from '@/components/BottomNav';
+import { AppSidebar } from '@/components/AppSidebar';
 
 // Título contextual exibido no header mobile — orienta onde o usuário está
 const PAGE_TITLES: Record<string, string> = {
@@ -58,11 +59,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col w-full bg-background overflow-x-hidden">
       <TopNav title={title} />
 
-      <main className="flex-1 bg-secondary overflow-x-hidden">
-        <div className="w-full max-w-6xl mx-auto p-3 sm:p-6 pb-24 md:pb-6">
-          {children}
-        </div>
-      </main>
+      <div className="flex flex-1 w-full">
+        <AppSidebar />
+        <main className="flex-1 bg-secondary overflow-x-hidden min-w-0">
+          <div className="w-full max-w-6xl mx-auto p-3 sm:p-6 pb-24 md:pb-6">
+            {children}
+          </div>
+        </main>
+      </div>
 
       <BottomNav />
     </div>
