@@ -1191,20 +1191,13 @@ export default function CatalogoRevendedor() {
             </div>
 
 
-            {/* Totais */}
-            <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3 space-y-1.5 text-sm">
-              <div className="flex justify-between text-zinc-400"><span>Custo total</span><span>R$ {totalCusto.toFixed(2)}</span></div>
-              <div className="flex justify-between text-zinc-400"><span>Venda sugerida</span><span>R$ {totalVenda.toFixed(2)}</span></div>
-              <div className="flex justify-between text-emerald-400 font-semibold pt-1.5 border-t border-zinc-800"><span>Lucro estimado</span><span>R$ {totalLucro.toFixed(2)}</span></div>
-            </div>
-
             <Button
               size="lg"
               disabled={!podeFecharCombo}
               onClick={enviarWhatsAppCombo}
               className={`w-full rounded-xl font-semibold ${podeFecharCombo ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
             >
-              {podeFecharCombo ? <><MessageCircle className="h-4 w-4 mr-2" /> Negociar margens no WhatsApp</> : <><Lock className="h-4 w-4 mr-2" /> Faltam {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''}</>}
+              {podeFecharCombo ? <><MessageCircle className="h-4 w-4 mr-2" /> Solicitar orçamento no WhatsApp</> : <><Lock className="h-4 w-4 mr-2" /> Faltam {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''}</>}
             </Button>
           </div>
         </SheetContent>
