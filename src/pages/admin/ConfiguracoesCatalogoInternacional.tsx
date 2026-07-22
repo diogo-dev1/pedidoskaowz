@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getIconComponent } from '@/lib/icon-utils';
 import { useExchangeRate, type ExchangeMode } from '@/hooks/useExchangeRate';
 import { TranslationManager } from '@/components/admin/TranslationManager';
+import { VisibilidadeLaminasTab } from '@/components/admin/VisibilidadeLaminasTab';
 
 const ALL_CURRENCIES = ['USD', 'BRL', 'EUR', 'AED'] as const;
 const ALL_LANGUAGES = [{ code: 'pt', label: 'Português' }, { code: 'en', label: 'English' }] as const;
