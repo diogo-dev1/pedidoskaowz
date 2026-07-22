@@ -1087,7 +1087,7 @@ export default function CatalogoRevendedor() {
                       </p>
                     </div>
                     <button
-                      onClick={() => toggleModeloSelecionado(m.id)}
+                      onClick={() => toggleSelecao(m.id)}
                       className="h-8 w-8 rounded-lg bg-zinc-800 hover:bg-red-500/20 hover:text-red-400 text-zinc-400 flex items-center justify-center transition"
                       aria-label="Remover"
                     >
