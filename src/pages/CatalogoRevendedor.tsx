@@ -875,7 +875,8 @@ export default function CatalogoRevendedor() {
                   const margem = getMargemModelo(modelo.id);
                   const precoRevenda = getPrecoRevenda(modelo.preco_base, modelo.id);
                   const lucro = getLucro(modelo.preco_base, modelo.id);
-                  const selecionado = modelosSelecionados.has(modelo.id);
+                  const qtd = modelosSelecionados.get(modelo.id) ?? 0;
+                  const selecionado = qtd > 0;
 
                   return (
                     <div
@@ -903,20 +904,40 @@ export default function CatalogoRevendedor() {
                             }
                             </div>
 
-                            {/* Checkbox de seleção */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleSelecao(modelo.id);
-                              }}
-                              className={`absolute top-3 right-3 w-7 h-7 rounded-full transition-all z-20 ${
-                                selecionado
-                                  ? 'bg-emerald-500 border-[3px] border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.6)]'
-                                  : 'bg-transparent border-[3px] border-emerald-500/80 hover:border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
-                              }`}
-                            >
-                              {selecionado && <Check className="h-3.5 w-3.5 text-white mx-auto" />}
-                            </button>
+                            {/* Seletor de quantidade */}
+                            {selecionado ? (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute top-3 right-3 z-20 flex items-center gap-1 bg-emerald-500 rounded-full pl-1 pr-1 py-1 shadow-[0_0_12px_rgba(16,185,129,0.55)]"
+                              >
+                                <button
+                                  onClick={() => removerSelecao(modelo.id)}
+                                  className="h-6 w-6 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"
+                                  aria-label="Remover 1"
+                                >
+                                  <span className="text-sm font-bold leading-none">−</span>
+                                </button>
+                                <span className="min-w-[18px] text-center text-white text-xs font-bold">{qtd}</span>
+                                <button
+                                  onClick={() => adicionarSelecao(modelo.id)}
+                                  className="h-6 w-6 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"
+                                  aria-label="Adicionar 1"
+                                >
+                                  <span className="text-sm font-bold leading-none">+</span>
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  adicionarSelecao(modelo.id);
+                                }}
+                                className="absolute top-3 right-3 w-7 h-7 rounded-full transition-all z-20 bg-transparent border-[3px] border-emerald-500/80 hover:border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.3)] flex items-center justify-center text-emerald-400 hover:text-emerald-300"
+                                aria-label="Adicionar ao combo"
+                              >
+                                <span className="text-sm font-bold leading-none">+</span>
+                              </button>
+                            )}
 
                             {modelo.pronta_entrega &&
                           <Badge className="absolute top-3 left-3 bg-emerald-600 text-white border-0 text-[10px] gap-0.5 z-20">
