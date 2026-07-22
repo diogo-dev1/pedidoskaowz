@@ -66,6 +66,7 @@ export default function GerenciarConfiguracoes() {
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('todas');
+  const [gerenciarCategoriasOpen, setGerenciarCategoriasOpen] = useState(false);
   
 
   useEffect(() => {
