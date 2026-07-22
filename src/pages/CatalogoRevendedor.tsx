@@ -157,19 +157,14 @@ export default function CatalogoRevendedor() {
       return;
     }
     const linhas = laminasSelecionadasList.map(({ modelo: m, qtd }, i) => {
-      const custo = m.preco_base * (1 - (margensProduto[m.id] ?? margemGlobal) / 100);
       const qtdTxt = qtd > 1 ? ` (x${qtd})` : '';
-      return `${String(i + 1).padStart(2, '0')}. ${m.nome_modelo}${qtdTxt} — Custo R$ ${custo.toFixed(2)} · Venda R$ ${m.preco_base.toFixed(2)}`;
+      return `${String(i + 1).padStart(2, '0')}. ${m.nome_modelo}${qtdTxt} — R$ ${m.preco_base.toFixed(2)}`;
     }).join('\n');
     const mensagem =
-      `Olá! Quero fechar um *combo para revenda* com ${totalQtd} lâminas ` +
+      `Olá! Quero solicitar um *orçamento de revenda* com ${totalQtd} lâminas ` +
       `e gostaria de conversar sobre *margens especiais* (15% a 30%) para este volume.\n\n` +
       `*LÂMINAS SELECIONADAS*\n${linhas}\n\n` +
-      `*TOTAIS ESTIMADOS*\n` +
-      `Custo base: R$ ${totalCusto.toFixed(2)}\n` +
-      `Venda sugerida: R$ ${totalVenda.toFixed(2)}\n` +
-      `Lucro estimado: R$ ${totalLucro.toFixed(2)}\n\n` +
-      `Podemos alinhar margem/condição para este combo?`;
+      `Aguardo o retorno com as condições.`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
