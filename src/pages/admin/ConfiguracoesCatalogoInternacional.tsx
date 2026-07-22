@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Loader2, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package, Check, Percent, TrendingUp, Globe, Languages, RefreshCw, AlertTriangle, CheckCircle2, Save } from 'lucide-react';
+import { Plus, Loader2, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package, Check, Percent, TrendingUp, Globe, Languages, RefreshCw, AlertTriangle, CheckCircle2, Save, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getIconComponent } from '@/lib/icon-utils';
 import { useExchangeRate, type ExchangeMode } from '@/hooks/useExchangeRate';
