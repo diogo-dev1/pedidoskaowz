@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import {
   Calculator, ShoppingBag, FilePlus2, ArrowRight, User, Bookmark,
   ChevronRight, RefreshCw, Factory, Loader2, AlertCircle, TrendingUp, ShoppingCart,
+  Layers,
 } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -30,36 +31,34 @@ function chaveDia(d: Date): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
 
-// ── Banners de ação (estilo Bling, cores Kaowz) ──────────────────
+// ── Botões quadrados de acesso rápido ──────────────────
 const BANNERS = [
   {
     titulo: 'Novo Pedido',
-    descricao: 'Lance um pedido completo com todas as lâminas',
-    cta: 'Criar pedido',
     url: '/novo-pedido',
     icon: FilePlus2,
     classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white',
-    ctaClasse: 'bg-accent text-accent-foreground hover:opacity-90',
   },
   {
     titulo: 'Catálogo',
-    descricao: 'Catálogo público Kaowz para enviar ao cliente',
-    cta: 'Abrir catálogo',
     url: '/catalogo',
     icon: ShoppingBag,
     classe: 'bg-gradient-to-br from-accent via-accent to-orange-600 text-accent-foreground',
-    ctaClasse: 'bg-white text-zinc-900 hover:bg-white/90',
   },
   {
-    titulo: 'Simulador de Preços',
-    descricao: 'Calcule o valor de qualquer lâmina na hora',
-    cta: 'Simular preço',
+    titulo: 'Simulador',
     url: '/simulador-precos',
     icon: Calculator,
     classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white',
-    ctaClasse: 'bg-accent text-accent-foreground hover:opacity-90',
+  },
+  {
+    titulo: 'Push Dagger',
+    url: '/push-dagger-kaowz',
+    icon: Layers,
+    classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white ring-1 ring-accent/40',
   },
 ];
+
 
 const ATALHOS = [
   { titulo: 'Pedidos de venda', url: '/pedidos' },
@@ -323,27 +322,20 @@ export default function Home() {
 
       {/* ── Coluna principal ──────────────────────────────────── */}
       <div className="space-y-4 order-1 lg:order-2 min-w-0">
-        {/* Banners de ação — 3 colunas sempre visíveis, compactos no mobile */}
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+        {/* Botões quadrados de acesso rápido */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
           {BANNERS.map((b) => (
             <NavLink
               key={b.url}
               to={b.url}
-              className={`group relative rounded-xl px-3 py-2.5 sm:p-4 flex flex-row sm:flex-col items-center sm:items-stretch sm:justify-between gap-3 sm:gap-0 sm:min-h-[130px] shadow-sm hover:shadow-md transition-all overflow-hidden ${b.classe}`}
+              className={`group relative rounded-xl aspect-square flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden ${b.classe}`}
             >
-              <b.icon className="hidden sm:block absolute -right-3 -bottom-3 h-20 w-20 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all" />
-              <b.icon className="sm:hidden h-6 w-6 shrink-0 opacity-90" />
-              <div className="flex-1 min-w-0 sm:flex-none">
-                <p className="font-bold leading-tight text-sm sm:text-base truncate">{b.titulo}</p>
-                <p className="hidden sm:block text-xs opacity-80 mt-1 leading-snug">{b.descricao}</p>
-              </div>
-              <span className={`inline-flex items-center gap-1 shrink-0 self-center sm:self-start text-[10px] sm:text-xs font-semibold px-2 py-1 sm:px-3 sm:py-1.5 rounded-full sm:mt-3 transition-opacity ${b.ctaClasse}`}>
-                <span className="truncate hidden sm:inline">{b.cta}</span>
-                <ArrowRight className="h-3 w-3 shrink-0 group-hover:translate-x-0.5 transition-transform" />
-              </span>
+              <b.icon className="h-7 w-7 sm:h-9 sm:w-9 opacity-90 group-hover:scale-110 transition-transform" />
+              <p className="font-bold text-xs sm:text-sm text-center px-1 leading-tight">{b.titulo}</p>
             </NavLink>
           ))}
         </div>
+
 
 
         {/* Resumo diário — alimentado pela planilha de Relatório de Vendas */}
