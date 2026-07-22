@@ -63,14 +63,18 @@ export default function CatalogoRevendedor() {
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const [categoriasMultiplas, setCategoriasMultiplas] = useState<string[]>([]);
   const [busca, setBusca] = useState('');
-  const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set();
+  const [modelosSelecionados, setModelosSelecionados] = useState<Map<string, number>>(() => {
+    if (typeof window === 'undefined') return new Map();
     const saved = sessionStorage.getItem(SELECAO_REVENDEDOR_KEY);
-    if (!saved) return new Set();
+    if (!saved) return new Map();
     try {
-      const ids = JSON.parse(saved);
-      return Array.isArray(ids) ? new Set(ids) : new Set();
-    } catch { return new Set(); }
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return new Map();
+      if (parsed.length && typeof parsed[0] === 'string') {
+        return new Map((parsed as string[]).map((id) => [id, 1]));
+      }
+      return new Map(parsed as [string, number][]);
+    } catch { return new Map(); }
   });
   const [loading, setLoading] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
@@ -106,47 +110,59 @@ export default function CatalogoRevendedor() {
       sessionStorage.removeItem(SELECAO_REVENDEDOR_KEY);
       return;
     }
-    sessionStorage.setItem(SELECAO_REVENDEDOR_KEY, JSON.stringify(Array.from(modelosSelecionados)));
+    sessionStorage.setItem(SELECAO_REVENDEDOR_KEY, JSON.stringify(Array.from(modelosSelecionados.entries())));
   }, [modelosSelecionados]);
 
-  const toggleSelecao = (id: string) => {
-    const novaSelecao = new Set(modelosSelecionados);
-    if (novaSelecao.has(id)) {
-      novaSelecao.delete(id);
-    } else {
-      novaSelecao.add(id);
-    }
-    setModelosSelecionados(novaSelecao);
+  const adicionarSelecao = (id: string, delta = 1) => {
+    setModelosSelecionados((prev) => {
+      const n = new Map(prev);
+      const cur = (n.get(id) ?? 0) + delta;
+      if (cur <= 0) n.delete(id); else n.set(id, cur);
+      return n;
+    });
+  };
+  const removerSelecao = (id: string) => adicionarSelecao(id, -1);
+  const removerItemTodo = (id: string) => {
+    setModelosSelecionados((prev) => {
+      const n = new Map(prev);
+      n.delete(id);
+      return n;
+    });
   };
 
   const [comboAberto, setComboAberto] = useState(false);
 
-  const laminasSelecionadasList = Array.from(modelosSelecionados)
-    .map(id => modelos.find(m => m.id === id))
-    .filter((m): m is Modelo => !!m);
+  const laminasSelecionadasList = Array.from(modelosSelecionados.entries())
+    .map(([id, qtd]) => {
+      const modelo = modelos.find((m) => m.id === id);
+      return modelo ? { modelo, qtd } : null;
+    })
+    .filter((x): x is { modelo: Modelo; qtd: number } => !!x);
 
-  const totalVenda = laminasSelecionadasList.reduce((sum, m) => sum + m.preco_base, 0);
+  const totalQtd = laminasSelecionadasList.reduce((s, x) => s + x.qtd, 0);
+  const totalVenda = laminasSelecionadasList.reduce((sum, { modelo, qtd }) => sum + modelo.preco_base * qtd, 0);
   const totalCusto = laminasSelecionadasList.reduce(
-    (sum, m) => sum + m.preco_base * (1 - (margensProduto[m.id] ?? margemGlobal) / 100),
+    (sum, { modelo, qtd }) => sum + modelo.preco_base * (1 - (margensProduto[modelo.id] ?? margemGlobal) / 100) * qtd,
     0,
   );
   const totalLucro = totalVenda - totalCusto;
-  const faltamParaKit = Math.max(0, KIT_MIN_LAMINAS - modelosSelecionados.size);
-  const podeFecharCombo = modelosSelecionados.size >= KIT_MIN_LAMINAS;
-  const progresso = Math.min(100, (modelosSelecionados.size / KIT_MIN_LAMINAS) * 100);
+  const faltamParaKit = Math.max(0, KIT_MIN_LAMINAS - totalQtd);
+  const podeFecharCombo = totalQtd >= KIT_MIN_LAMINAS;
+  const progresso = Math.min(100, (totalQtd / KIT_MIN_LAMINAS) * 100);
 
   const enviarWhatsAppCombo = () => {
     if (!podeFecharCombo) {
       toast.error(`Adicione mais ${faltamParaKit} lâmina(s) para fechar o combo`);
       return;
     }
-    const linhas = laminasSelecionadasList.map((m, i) => {
+    const linhas = laminasSelecionadasList.map(({ modelo: m, qtd }, i) => {
       const custo = m.preco_base * (1 - (margensProduto[m.id] ?? margemGlobal) / 100);
-      return `${String(i + 1).padStart(2, '0')}. ${m.nome_modelo} — Custo R$ ${custo.toFixed(2)} · Venda R$ ${m.preco_base.toFixed(2)}`;
+      const qtdTxt = qtd > 1 ? ` (x${qtd})` : '';
+      return `${String(i + 1).padStart(2, '0')}. ${m.nome_modelo}${qtdTxt} — Custo R$ ${custo.toFixed(2)} · Venda R$ ${m.preco_base.toFixed(2)}`;
     }).join('\n');
     const mensagem =
-      `Olá! Quero fechar um *combo para revenda* com ${modelosSelecionados.size} lâminas ` +
-      `e gostaria de conversar sobre *margens especiais* para este volume.\n\n` +
+      `Olá! Quero fechar um *combo para revenda* com ${totalQtd} lâminas ` +
+      `e gostaria de conversar sobre *margens especiais* (15% a 30%) para este volume.\n\n` +
       `*LÂMINAS SELECIONADAS*\n${linhas}\n\n` +
       `*TOTAIS ESTIMADOS*\n` +
       `Custo base: R$ ${totalCusto.toFixed(2)}\n` +
@@ -399,6 +415,12 @@ export default function CatalogoRevendedor() {
 
     if (filtroProntaEntrega && !modelo.pronta_entrega) return false;
 
+    const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
+    if (!matchBusca) return false;
+
+    // Se está buscando, procura em TODAS as categorias
+    if (busca) return true;
+
     if (categoriasMultiplas.length > 0) {
       const categoriasExpandidas = new Set<string>();
       categoriasMultiplas.forEach((c) => {
@@ -408,9 +430,7 @@ export default function CatalogoRevendedor() {
           categoriasVisiveis.filter((cv) => cv.categoria_pai_id === catObj.id).forEach((child) => categoriasExpandidas.add(child.categoria));
         }
       });
-      const matchCategoria = modelo.categorias && Array.from(categoriasExpandidas).some((c) => modelo.categorias.includes(c));
-      const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
-      return matchCategoria && matchBusca;
+      return !!(modelo.categorias && Array.from(categoriasExpandidas).some((c) => modelo.categorias.includes(c)));
     }
 
     if (categoriaAtiva) {
@@ -419,19 +439,15 @@ export default function CatalogoRevendedor() {
       if (catObj) {
         categoriasVisiveis.filter((cv) => cv.categoria_pai_id === catObj.id).forEach((child) => categoriasExpandidas.add(child.categoria));
       }
-      const matchCategoria = modelo.categorias && Array.from(categoriasExpandidas).some((c) => modelo.categorias.includes(c));
-      const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
-      return matchCategoria && matchBusca;
+      return !!(modelo.categorias && Array.from(categoriasExpandidas).some((c) => modelo.categorias.includes(c)));
     }
     if (!filtroProntaEntrega) {
       const categoriaPermitida = categoriasVisiveis.length === 0 ||
-      modelo.categorias && modelo.categorias.some((c) => categoriasPermitidasTodas.has(c));
+        (modelo.categorias && modelo.categorias.some((c) => categoriasPermitidasTodas.has(c)));
       const produtoPermitido = modelo.visivel_todas !== false;
-      const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
-      return categoriaPermitida && produtoPermitido && matchBusca;
+      return !!categoriaPermitida && produtoPermitido;
     }
-    const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
-    return matchBusca;
+    return true;
   }).sort((a, b) => {
     if ((categoriaAtiva || categoriasMultiplas.length === 1) && Object.keys(ordemCategoria).length > 0) {
       const ordemA = ordemCategoria[a.id] ?? 999;
@@ -847,9 +863,9 @@ export default function CatalogoRevendedor() {
                   <p className="text-sm text-zinc-400">
                     Mostrando {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'produto' : 'produtos'}
                   </p>
-                  {modelosSelecionados.size > 0 && (
+                  {totalQtd > 0 && (
                     <Badge className="bg-accent text-white">
-                      {modelosSelecionados.size} selecionada(s)
+                      {totalQtd} lâmina{totalQtd > 1 ? 's' : ''}
                     </Badge>
                   )}
                 </div>
@@ -859,7 +875,8 @@ export default function CatalogoRevendedor() {
                   const margem = getMargemModelo(modelo.id);
                   const precoRevenda = getPrecoRevenda(modelo.preco_base, modelo.id);
                   const lucro = getLucro(modelo.preco_base, modelo.id);
-                  const selecionado = modelosSelecionados.has(modelo.id);
+                  const qtd = modelosSelecionados.get(modelo.id) ?? 0;
+                  const selecionado = qtd > 0;
 
                   return (
                     <div
@@ -887,20 +904,40 @@ export default function CatalogoRevendedor() {
                             }
                             </div>
 
-                            {/* Checkbox de seleção */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleSelecao(modelo.id);
-                              }}
-                              className={`absolute top-3 right-3 w-7 h-7 rounded-full transition-all z-20 ${
-                                selecionado
-                                  ? 'bg-emerald-500 border-[3px] border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.6)]'
-                                  : 'bg-transparent border-[3px] border-emerald-500/80 hover:border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
-                              }`}
-                            >
-                              {selecionado && <Check className="h-3.5 w-3.5 text-white mx-auto" />}
-                            </button>
+                            {/* Seletor de quantidade */}
+                            {selecionado ? (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute top-3 right-3 z-20 flex items-center gap-1 bg-emerald-500 rounded-full pl-1 pr-1 py-1 shadow-[0_0_12px_rgba(16,185,129,0.55)]"
+                              >
+                                <button
+                                  onClick={() => removerSelecao(modelo.id)}
+                                  className="h-6 w-6 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"
+                                  aria-label="Remover 1"
+                                >
+                                  <span className="text-sm font-bold leading-none">−</span>
+                                </button>
+                                <span className="min-w-[18px] text-center text-white text-xs font-bold">{qtd}</span>
+                                <button
+                                  onClick={() => adicionarSelecao(modelo.id)}
+                                  className="h-6 w-6 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"
+                                  aria-label="Adicionar 1"
+                                >
+                                  <span className="text-sm font-bold leading-none">+</span>
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  adicionarSelecao(modelo.id);
+                                }}
+                                className="absolute top-3 right-3 w-7 h-7 rounded-full transition-all z-20 bg-transparent border-[3px] border-emerald-500/80 hover:border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.3)] flex items-center justify-center text-emerald-400 hover:text-emerald-300"
+                                aria-label="Adicionar ao combo"
+                              >
+                                <span className="text-sm font-bold leading-none">+</span>
+                              </button>
+                            )}
 
                             {modelo.pronta_entrega &&
                           <Badge className="absolute top-3 left-3 bg-emerald-600 text-white border-0 text-[10px] gap-0.5 z-20">
@@ -982,60 +1019,62 @@ export default function CatalogoRevendedor() {
         </div>
       </div>
 
-      {/* Barra fixa do Combo (Big Tech style) */}
-      {modelosSelecionados.size > 0 && (
-        <div className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)]">
-          <div className="mx-auto max-w-3xl m-3 sm:m-4 rounded-2xl bg-zinc-950/95 backdrop-blur-xl border border-zinc-800 shadow-2xl overflow-hidden">
-            {/* Progresso */}
-            <div className="h-1 bg-zinc-900">
-              <div
-                className={`h-full transition-all duration-500 ${podeFecharCombo ? 'bg-emerald-500' : 'bg-accent'}`}
-                style={{ width: `${progresso}%` }}
-              />
-            </div>
-            <div className="flex items-center gap-3 p-3 sm:p-4">
-              <button
-                onClick={() => setComboAberto(true)}
-                className="relative flex items-center justify-center h-11 w-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 transition"
-                aria-label="Ver combo"
-              >
-                <ShoppingBag className="h-5 w-5 text-white" />
+      {/* Barra fixa do Combo (sempre visível) */}
+      <div className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto max-w-3xl m-3 sm:m-4 rounded-2xl bg-zinc-950/95 backdrop-blur-xl border border-zinc-800 shadow-2xl overflow-hidden">
+          <div className="h-1 bg-zinc-900">
+            <div
+              className={`h-full transition-all duration-500 ${podeFecharCombo ? 'bg-emerald-500' : 'bg-accent'}`}
+              style={{ width: `${progresso}%` }}
+            />
+          </div>
+          <div className="flex items-center gap-3 p-3 sm:p-4">
+            <button
+              onClick={() => setComboAberto(true)}
+              className="relative flex items-center justify-center h-11 w-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 transition"
+              aria-label="Ver combo"
+            >
+              <ShoppingBag className="h-5 w-5 text-white" />
+              {totalQtd > 0 && (
                 <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center">
-                  {modelosSelecionados.size}
+                  {totalQtd}
                 </span>
-              </button>
+              )}
+            </button>
 
-              <div className="flex-1 min-w-0">
-                {podeFecharCombo ? (
-                  <>
-                    <p className="text-[11px] uppercase tracking-wider text-emerald-400 font-semibold">Combo pronto</p>
-                    <p className="text-sm text-white truncate">
-                      {modelosSelecionados.size} lâminas · Lucro est. <strong className="text-emerald-400">R$ {totalLucro.toFixed(2)}</strong>
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold">Faltam {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''}</p>
-                    <p className="text-sm text-zinc-300 truncate">
-                      Mínimo {KIT_MIN_LAMINAS} para negociar margens especiais
-                    </p>
-                  </>
-                )}
-              </div>
-
-              <Button
-                size="lg"
-                disabled={!podeFecharCombo}
-                onClick={enviarWhatsAppCombo}
-                className={`rounded-xl font-semibold h-11 px-4 ${podeFecharCombo ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
-              >
-                {podeFecharCombo ? <MessageCircle className="h-4 w-4 sm:mr-2" /> : <Lock className="h-4 w-4 sm:mr-2" />}
-                <span className="hidden sm:inline">{podeFecharCombo ? 'Falar de margens' : 'Bloqueado'}</span>
-              </Button>
+            <div className="flex-1 min-w-0">
+              {podeFecharCombo ? (
+                <>
+                  <p className="text-[11px] uppercase tracking-wider text-emerald-400 font-semibold">Combo pronto</p>
+                  <p className="text-sm text-white truncate">
+                    {totalQtd} lâminas · Lucro est. <strong className="text-emerald-400">R$ {totalLucro.toFixed(2)}</strong>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold">
+                    {totalQtd === 0 ? 'Comece seu combo' : `Faltam ${faltamParaKit} lâmina${faltamParaKit > 1 ? 's' : ''}`}
+                  </p>
+                  <p className="text-sm text-zinc-300 truncate">
+                    Selecione 10 lâminas para margens de 15% a 30%
+                  </p>
+                </>
+              )}
             </div>
+
+            <Button
+              size="lg"
+              disabled={!podeFecharCombo}
+              onClick={enviarWhatsAppCombo}
+              className={`rounded-xl font-semibold h-11 px-4 ${podeFecharCombo ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
+            >
+              {podeFecharCombo ? <MessageCircle className="h-4 w-4 sm:mr-2" /> : <Lock className="h-4 w-4 sm:mr-2" />}
+              <span className="hidden sm:inline">{podeFecharCombo ? 'Falar de margens' : 'Bloqueado'}</span>
+            </Button>
           </div>
         </div>
-      )}
+      </div>
+
 
       {/* Sheet com detalhes do combo */}
       <Sheet open={comboAberto} onOpenChange={setComboAberto}>
@@ -1053,7 +1092,7 @@ export default function CatalogoRevendedor() {
               <div className="flex justify-between text-xs mb-2">
                 <span className="text-zinc-400">Progresso do combo</span>
                 <span className={podeFecharCombo ? 'text-emerald-400 font-semibold' : 'text-white font-semibold'}>
-                  {modelosSelecionados.size} / {KIT_MIN_LAMINAS}
+                  {totalQtd} / {KIT_MIN_LAMINAS}
                 </span>
               </div>
               <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
@@ -1064,14 +1103,14 @@ export default function CatalogoRevendedor() {
               </div>
               {!podeFecharCombo && (
                 <p className="text-[11px] text-zinc-500 mt-2">
-                  Adicione mais {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''} para desbloquear a negociação de margens no WhatsApp.
+                  Selecione 10 lâminas para margens de 15% a 30%.
                 </p>
               )}
             </div>
 
             {/* Lista */}
             <div className="space-y-2">
-              {laminasSelecionadasList.map((m) => {
+              {laminasSelecionadasList.map(({ modelo: m, qtd }) => {
                 const margem = margensProduto[m.id] ?? margemGlobal;
                 const custo = m.preco_base * (1 - margem / 100);
                 const lucro = m.preco_base - custo;
@@ -1086,10 +1125,27 @@ export default function CatalogoRevendedor() {
                         Custo R$ {custo.toFixed(2)} · <span className="text-emerald-400">+R$ {lucro.toFixed(2)}</span>
                       </p>
                     </div>
+                    <div className="flex items-center gap-1 bg-zinc-800 rounded-lg px-1 py-1">
+                      <button
+                        onClick={() => removerSelecao(m.id)}
+                        className="h-6 w-6 rounded-md hover:bg-zinc-700 text-zinc-300 flex items-center justify-center transition"
+                        aria-label="Remover 1"
+                      >
+                        <span className="text-sm font-bold leading-none">−</span>
+                      </button>
+                      <span className="min-w-[18px] text-center text-white text-xs font-bold">{qtd}</span>
+                      <button
+                        onClick={() => adicionarSelecao(m.id)}
+                        className="h-6 w-6 rounded-md hover:bg-zinc-700 text-zinc-300 flex items-center justify-center transition"
+                        aria-label="Adicionar 1"
+                      >
+                        <span className="text-sm font-bold leading-none">+</span>
+                      </button>
+                    </div>
                     <button
-                      onClick={() => toggleSelecao(m.id)}
+                      onClick={() => removerItemTodo(m.id)}
                       className="h-8 w-8 rounded-lg bg-zinc-800 hover:bg-red-500/20 hover:text-red-400 text-zinc-400 flex items-center justify-center transition"
-                      aria-label="Remover"
+                      aria-label="Remover item"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -1097,6 +1153,7 @@ export default function CatalogoRevendedor() {
                 );
               })}
             </div>
+
 
             {/* Totais */}
             <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3 space-y-1.5 text-sm">
