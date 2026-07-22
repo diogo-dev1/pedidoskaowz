@@ -823,8 +823,11 @@ export default function GerenciarConfiguracoes() {
         </DialogContent>
       </Dialog>
 
-
-
+      <CategoriasManagerDialog
+        open={gerenciarCategoriasOpen}
+        onOpenChange={setGerenciarCategoriasOpen}
+        onChanged={fetchCategorias}
+      />
     </div>
   );
 }
