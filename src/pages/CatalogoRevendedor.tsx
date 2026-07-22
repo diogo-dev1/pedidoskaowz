@@ -197,11 +197,14 @@ export default function CatalogoRevendedor() {
     if (catParam) {
       setCategoriaAtiva(catParam);
       setMostrarLanding(false);
+      setMostrarGateway(false);
     } else if (verTudoParam === 'tudo') {
       setMostrarLanding(false);
+      setMostrarGateway(false);
     } else if (prontaParam === 'true') {
       setFiltroProntaEntrega(true);
       setMostrarLanding(false);
+      setMostrarGateway(false);
     }
   }, []);
 
