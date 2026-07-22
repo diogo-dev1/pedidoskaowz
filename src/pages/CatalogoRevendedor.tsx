@@ -1083,7 +1083,7 @@ export default function CatalogoRevendedor() {
                 <>
                   <p className="text-[11px] uppercase tracking-wider text-emerald-400 font-semibold">Combo pronto</p>
                   <p className="text-sm text-white truncate">
-                    {totalQtd} lâminas · Lucro est. <strong className="text-emerald-400">R$ {totalLucro.toFixed(2)}</strong>
+                    {totalQtd} lâminas selecionadas
                   </p>
                 </>
               ) : (
@@ -1105,7 +1105,7 @@ export default function CatalogoRevendedor() {
               className={`rounded-xl font-semibold h-11 px-4 ${podeFecharCombo ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
             >
               {podeFecharCombo ? <MessageCircle className="h-4 w-4 sm:mr-2" /> : <Lock className="h-4 w-4 sm:mr-2" />}
-              <span className="hidden sm:inline">{podeFecharCombo ? 'Falar de margens' : 'Bloqueado'}</span>
+              <span className="hidden sm:inline">{podeFecharCombo ? 'Solicitar orçamento' : 'Bloqueado'}</span>
             </Button>
           </div>
         </div>
