@@ -863,9 +863,9 @@ export default function CatalogoRevendedor() {
                   <p className="text-sm text-zinc-400">
                     Mostrando {modelosFiltrados.length} {modelosFiltrados.length === 1 ? 'produto' : 'produtos'}
                   </p>
-                  {modelosSelecionados.size > 0 && (
+                  {totalQtd > 0 && (
                     <Badge className="bg-accent text-white">
-                      {modelosSelecionados.size} selecionada(s)
+                      {totalQtd} lâmina{totalQtd > 1 ? 's' : ''}
                     </Badge>
                   )}
                 </div>
