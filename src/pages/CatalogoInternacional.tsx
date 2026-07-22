@@ -448,7 +448,7 @@ export default function CatalogoInternacional() {
       const { data: midiasData } = await supabase.from('midias_catalogo').select('modelo_id');
       const modelosComMidia = new Set((midiasData || []).map((m) => m.modelo_id));
       const { data, error } = await supabase.from('catalogo_modelos').select('*')
-        .eq('visivel_catalogo', true).order('nome_modelo');
+        .eq('visivel_catalogo', true).eq('visivel_internacional', true).order('nome_modelo');
       if (error) throw error;
       const filtrados = (data || []).filter((m: any) => m.imagem_modelo || m.video_url || modelosComMidia.has(m.id));
       setModelos(filtrados as Modelo[]);
