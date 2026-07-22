@@ -379,6 +379,10 @@ export default function GerenciarConfiguracoes() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => setGerenciarCategoriasOpen(true)}>
+            <Tags className="mr-2 h-4 w-4" />
+            Categorias
+          </Button>
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button>
