@@ -7,6 +7,7 @@ import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLef
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 const SELECAO_REVENDEDOR_KEY = 'catalogo_revendedor_selecionados';
+const KIT_MIN_LAMINAS = 10;
 import { Slider } from '@/components/ui/slider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
