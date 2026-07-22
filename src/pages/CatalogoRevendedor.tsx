@@ -63,14 +63,18 @@ export default function CatalogoRevendedor() {
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const [categoriasMultiplas, setCategoriasMultiplas] = useState<string[]>([]);
   const [busca, setBusca] = useState('');
-  const [modelosSelecionados, setModelosSelecionados] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set();
+  const [modelosSelecionados, setModelosSelecionados] = useState<Map<string, number>>(() => {
+    if (typeof window === 'undefined') return new Map();
     const saved = sessionStorage.getItem(SELECAO_REVENDEDOR_KEY);
-    if (!saved) return new Set();
+    if (!saved) return new Map();
     try {
-      const ids = JSON.parse(saved);
-      return Array.isArray(ids) ? new Set(ids) : new Set();
-    } catch { return new Set(); }
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return new Map();
+      if (parsed.length && typeof parsed[0] === 'string') {
+        return new Map((parsed as string[]).map((id) => [id, 1]));
+      }
+      return new Map(parsed as [string, number][]);
+    } catch { return new Map(); }
   });
   const [loading, setLoading] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
@@ -106,47 +110,59 @@ export default function CatalogoRevendedor() {
       sessionStorage.removeItem(SELECAO_REVENDEDOR_KEY);
       return;
     }
-    sessionStorage.setItem(SELECAO_REVENDEDOR_KEY, JSON.stringify(Array.from(modelosSelecionados)));
+    sessionStorage.setItem(SELECAO_REVENDEDOR_KEY, JSON.stringify(Array.from(modelosSelecionados.entries())));
   }, [modelosSelecionados]);
 
-  const toggleSelecao = (id: string) => {
-    const novaSelecao = new Set(modelosSelecionados);
-    if (novaSelecao.has(id)) {
-      novaSelecao.delete(id);
-    } else {
-      novaSelecao.add(id);
-    }
-    setModelosSelecionados(novaSelecao);
+  const adicionarSelecao = (id: string, delta = 1) => {
+    setModelosSelecionados((prev) => {
+      const n = new Map(prev);
+      const cur = (n.get(id) ?? 0) + delta;
+      if (cur <= 0) n.delete(id); else n.set(id, cur);
+      return n;
+    });
+  };
+  const removerSelecao = (id: string) => adicionarSelecao(id, -1);
+  const removerItemTodo = (id: string) => {
+    setModelosSelecionados((prev) => {
+      const n = new Map(prev);
+      n.delete(id);
+      return n;
+    });
   };
 
   const [comboAberto, setComboAberto] = useState(false);
 
-  const laminasSelecionadasList = Array.from(modelosSelecionados)
-    .map(id => modelos.find(m => m.id === id))
-    .filter((m): m is Modelo => !!m);
+  const laminasSelecionadasList = Array.from(modelosSelecionados.entries())
+    .map(([id, qtd]) => {
+      const modelo = modelos.find((m) => m.id === id);
+      return modelo ? { modelo, qtd } : null;
+    })
+    .filter((x): x is { modelo: Modelo; qtd: number } => !!x);
 
-  const totalVenda = laminasSelecionadasList.reduce((sum, m) => sum + m.preco_base, 0);
+  const totalQtd = laminasSelecionadasList.reduce((s, x) => s + x.qtd, 0);
+  const totalVenda = laminasSelecionadasList.reduce((sum, { modelo, qtd }) => sum + modelo.preco_base * qtd, 0);
   const totalCusto = laminasSelecionadasList.reduce(
-    (sum, m) => sum + m.preco_base * (1 - (margensProduto[m.id] ?? margemGlobal) / 100),
+    (sum, { modelo, qtd }) => sum + modelo.preco_base * (1 - (margensProduto[modelo.id] ?? margemGlobal) / 100) * qtd,
     0,
   );
   const totalLucro = totalVenda - totalCusto;
-  const faltamParaKit = Math.max(0, KIT_MIN_LAMINAS - modelosSelecionados.size);
-  const podeFecharCombo = modelosSelecionados.size >= KIT_MIN_LAMINAS;
-  const progresso = Math.min(100, (modelosSelecionados.size / KIT_MIN_LAMINAS) * 100);
+  const faltamParaKit = Math.max(0, KIT_MIN_LAMINAS - totalQtd);
+  const podeFecharCombo = totalQtd >= KIT_MIN_LAMINAS;
+  const progresso = Math.min(100, (totalQtd / KIT_MIN_LAMINAS) * 100);
 
   const enviarWhatsAppCombo = () => {
     if (!podeFecharCombo) {
       toast.error(`Adicione mais ${faltamParaKit} lâmina(s) para fechar o combo`);
       return;
     }
-    const linhas = laminasSelecionadasList.map((m, i) => {
+    const linhas = laminasSelecionadasList.map(({ modelo: m, qtd }, i) => {
       const custo = m.preco_base * (1 - (margensProduto[m.id] ?? margemGlobal) / 100);
-      return `${String(i + 1).padStart(2, '0')}. ${m.nome_modelo} — Custo R$ ${custo.toFixed(2)} · Venda R$ ${m.preco_base.toFixed(2)}`;
+      const qtdTxt = qtd > 1 ? ` (x${qtd})` : '';
+      return `${String(i + 1).padStart(2, '0')}. ${m.nome_modelo}${qtdTxt} — Custo R$ ${custo.toFixed(2)} · Venda R$ ${m.preco_base.toFixed(2)}`;
     }).join('\n');
     const mensagem =
-      `Olá! Quero fechar um *combo para revenda* com ${modelosSelecionados.size} lâminas ` +
-      `e gostaria de conversar sobre *margens especiais* para este volume.\n\n` +
+      `Olá! Quero fechar um *combo para revenda* com ${totalQtd} lâminas ` +
+      `e gostaria de conversar sobre *margens especiais* (15% a 30%) para este volume.\n\n` +
       `*LÂMINAS SELECIONADAS*\n${linhas}\n\n` +
       `*TOTAIS ESTIMADOS*\n` +
       `Custo base: R$ ${totalCusto.toFixed(2)}\n` +
