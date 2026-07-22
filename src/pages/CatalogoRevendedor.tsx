@@ -415,6 +415,12 @@ export default function CatalogoRevendedor() {
 
     if (filtroProntaEntrega && !modelo.pronta_entrega) return false;
 
+    const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
+    if (!matchBusca) return false;
+
+    // Se está buscando, procura em TODAS as categorias
+    if (busca) return true;
+
     if (categoriasMultiplas.length > 0) {
       const categoriasExpandidas = new Set<string>();
       categoriasMultiplas.forEach((c) => {
@@ -424,9 +430,7 @@ export default function CatalogoRevendedor() {
           categoriasVisiveis.filter((cv) => cv.categoria_pai_id === catObj.id).forEach((child) => categoriasExpandidas.add(child.categoria));
         }
       });
-      const matchCategoria = modelo.categorias && Array.from(categoriasExpandidas).some((c) => modelo.categorias.includes(c));
-      const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
-      return matchCategoria && matchBusca;
+      return !!(modelo.categorias && Array.from(categoriasExpandidas).some((c) => modelo.categorias.includes(c)));
     }
 
     if (categoriaAtiva) {
@@ -435,19 +439,15 @@ export default function CatalogoRevendedor() {
       if (catObj) {
         categoriasVisiveis.filter((cv) => cv.categoria_pai_id === catObj.id).forEach((child) => categoriasExpandidas.add(child.categoria));
       }
-      const matchCategoria = modelo.categorias && Array.from(categoriasExpandidas).some((c) => modelo.categorias.includes(c));
-      const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
-      return matchCategoria && matchBusca;
+      return !!(modelo.categorias && Array.from(categoriasExpandidas).some((c) => modelo.categorias.includes(c)));
     }
     if (!filtroProntaEntrega) {
       const categoriaPermitida = categoriasVisiveis.length === 0 ||
-      modelo.categorias && modelo.categorias.some((c) => categoriasPermitidasTodas.has(c));
+        (modelo.categorias && modelo.categorias.some((c) => categoriasPermitidasTodas.has(c)));
       const produtoPermitido = modelo.visivel_todas !== false;
-      const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
-      return categoriaPermitida && produtoPermitido && matchBusca;
+      return !!categoriaPermitida && produtoPermitido;
     }
-    const matchBusca = !busca || modelo.nome_modelo.toLowerCase().includes(busca.toLowerCase());
-    return matchBusca;
+    return true;
   }).sort((a, b) => {
     if ((categoriaAtiva || categoriasMultiplas.length === 1) && Object.keys(ordemCategoria).length > 0) {
       const ordemA = ordemCategoria[a.id] ?? 999;
