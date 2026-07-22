@@ -119,22 +119,44 @@ export default function CatalogoRevendedor() {
     setModelosSelecionados(novaSelecao);
   };
 
+  const [comboAberto, setComboAberto] = useState(false);
+
+  const laminasSelecionadasList = Array.from(modelosSelecionados)
+    .map(id => modelos.find(m => m.id === id))
+    .filter((m): m is Modelo => !!m);
+
+  const totalVenda = laminasSelecionadasList.reduce((sum, m) => sum + m.preco_base, 0);
+  const totalCusto = laminasSelecionadasList.reduce(
+    (sum, m) => sum + m.preco_base * (1 - (margensProduto[m.id] ?? margemGlobal) / 100),
+    0,
+  );
+  const totalLucro = totalVenda - totalCusto;
+  const faltamParaKit = Math.max(0, KIT_MIN_LAMINAS - modelosSelecionados.size);
+  const podeFecharCombo = modelosSelecionados.size >= KIT_MIN_LAMINAS;
+  const progresso = Math.min(100, (modelosSelecionados.size / KIT_MIN_LAMINAS) * 100);
+
   const enviarWhatsAppCombo = () => {
-    if (modelosSelecionados.size === 0) {
-      toast.error('Selecione pelo menos uma lâmina');
+    if (!podeFecharCombo) {
+      toast.error(`Adicione mais ${faltamParaKit} lâmina(s) para fechar o combo`);
       return;
     }
-    const modelosTexto = Array.from(modelosSelecionados)
-      .map(id => {
-        const modelo = modelos.find(m => m.id === id);
-        return modelo ? `${modelo.nome_modelo}` : '';
-      })
-      .filter(Boolean)
-      .join('\n');
-    const mensagem = `Olá! Sou revendedor e gostaria de montar um kit com as seguintes lâminas:\n\n${modelosTexto}`;
+    const linhas = laminasSelecionadasList.map((m, i) => {
+      const custo = m.preco_base * (1 - (margensProduto[m.id] ?? margemGlobal) / 100);
+      return `${String(i + 1).padStart(2, '0')}. ${m.nome_modelo} — Custo R$ ${custo.toFixed(2)} · Venda R$ ${m.preco_base.toFixed(2)}`;
+    }).join('\n');
+    const mensagem =
+      `Olá! Quero fechar um *combo para revenda* com ${modelosSelecionados.size} lâminas ` +
+      `e gostaria de conversar sobre *margens especiais* para este volume.\n\n` +
+      `*LÂMINAS SELECIONADAS*\n${linhas}\n\n` +
+      `*TOTAIS ESTIMADOS*\n` +
+      `Custo base: R$ ${totalCusto.toFixed(2)}\n` +
+      `Venda sugerida: R$ ${totalVenda.toFixed(2)}\n` +
+      `Lucro estimado: R$ ${totalLucro.toFixed(2)}\n\n` +
+      `Podemos alinhar margem/condição para este combo?`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
+
   const handleFaixaPrecoChange = useCallback((v: number[]) => {
     setFaixaPrecoVisual(v as [number, number]);
     if (debounceRef.current) clearTimeout(debounceRef.current);
