@@ -301,7 +301,9 @@ export default function CatalogoRevendedor() {
       from('catalogo_modelos').
       select('*').
       eq('visivel_catalogo', true).
+      eq('visivel_revendedor', true).
       order('nome_modelo');
+
 
       if (error) throw error;
 
