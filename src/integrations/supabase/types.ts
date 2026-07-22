@@ -364,6 +364,10 @@ export type Database = {
           updated_at: string
           video_url: string | null
           visivel_catalogo: boolean
+          visivel_internacional: boolean
+          visivel_publico: boolean
+          visivel_publico_internacional: boolean
+          visivel_revendedor: boolean
           visivel_todas: boolean
         }
         Insert: {
@@ -388,6 +392,10 @@ export type Database = {
           updated_at?: string
           video_url?: string | null
           visivel_catalogo?: boolean
+          visivel_internacional?: boolean
+          visivel_publico?: boolean
+          visivel_publico_internacional?: boolean
+          visivel_revendedor?: boolean
           visivel_todas?: boolean
         }
         Update: {
@@ -412,6 +420,10 @@ export type Database = {
           updated_at?: string
           video_url?: string | null
           visivel_catalogo?: boolean
+          visivel_internacional?: boolean
+          visivel_publico?: boolean
+          visivel_publico_internacional?: boolean
+          visivel_revendedor?: boolean
           visivel_todas?: boolean
         }
         Relationships: []

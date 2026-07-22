@@ -3,9 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X, TrendingUp } from 'lucide-react';
+import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X, TrendingUp, ShoppingBag, Trash2, Lock, Sparkles } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 const SELECAO_REVENDEDOR_KEY = 'catalogo_revendedor_selecionados';
+const KIT_MIN_LAMINAS = 10;
 import { Slider } from '@/components/ui/slider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -117,22 +119,44 @@ export default function CatalogoRevendedor() {
     setModelosSelecionados(novaSelecao);
   };
 
+  const [comboAberto, setComboAberto] = useState(false);
+
+  const laminasSelecionadasList = Array.from(modelosSelecionados)
+    .map(id => modelos.find(m => m.id === id))
+    .filter((m): m is Modelo => !!m);
+
+  const totalVenda = laminasSelecionadasList.reduce((sum, m) => sum + m.preco_base, 0);
+  const totalCusto = laminasSelecionadasList.reduce(
+    (sum, m) => sum + m.preco_base * (1 - (margensProduto[m.id] ?? margemGlobal) / 100),
+    0,
+  );
+  const totalLucro = totalVenda - totalCusto;
+  const faltamParaKit = Math.max(0, KIT_MIN_LAMINAS - modelosSelecionados.size);
+  const podeFecharCombo = modelosSelecionados.size >= KIT_MIN_LAMINAS;
+  const progresso = Math.min(100, (modelosSelecionados.size / KIT_MIN_LAMINAS) * 100);
+
   const enviarWhatsAppCombo = () => {
-    if (modelosSelecionados.size === 0) {
-      toast.error('Selecione pelo menos uma lâmina');
+    if (!podeFecharCombo) {
+      toast.error(`Adicione mais ${faltamParaKit} lâmina(s) para fechar o combo`);
       return;
     }
-    const modelosTexto = Array.from(modelosSelecionados)
-      .map(id => {
-        const modelo = modelos.find(m => m.id === id);
-        return modelo ? `${modelo.nome_modelo}` : '';
-      })
-      .filter(Boolean)
-      .join('\n');
-    const mensagem = `Olá! Sou revendedor e gostaria de montar um kit com as seguintes lâminas:\n\n${modelosTexto}`;
+    const linhas = laminasSelecionadasList.map((m, i) => {
+      const custo = m.preco_base * (1 - (margensProduto[m.id] ?? margemGlobal) / 100);
+      return `${String(i + 1).padStart(2, '0')}. ${m.nome_modelo} — Custo R$ ${custo.toFixed(2)} · Venda R$ ${m.preco_base.toFixed(2)}`;
+    }).join('\n');
+    const mensagem =
+      `Olá! Quero fechar um *combo para revenda* com ${modelosSelecionados.size} lâminas ` +
+      `e gostaria de conversar sobre *margens especiais* para este volume.\n\n` +
+      `*LÂMINAS SELECIONADAS*\n${linhas}\n\n` +
+      `*TOTAIS ESTIMADOS*\n` +
+      `Custo base: R$ ${totalCusto.toFixed(2)}\n` +
+      `Venda sugerida: R$ ${totalVenda.toFixed(2)}\n` +
+      `Lucro estimado: R$ ${totalLucro.toFixed(2)}\n\n` +
+      `Podemos alinhar margem/condição para este combo?`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
+
   const handleFaixaPrecoChange = useCallback((v: number[]) => {
     setFaixaPrecoVisual(v as [number, number]);
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -301,7 +325,9 @@ export default function CatalogoRevendedor() {
       from('catalogo_modelos').
       select('*').
       eq('visivel_catalogo', true).
+      eq('visivel_revendedor', true).
       order('nome_modelo');
+
 
       if (error) throw error;
 
@@ -588,23 +614,16 @@ export default function CatalogoRevendedor() {
         </div>
       </div>
 
-      {/* Floating tip */}
-      {modelosSelecionados.size === 0 && (
-        <div className="w-full bg-gradient-to-r from-green-950/60 via-zinc-900/80 to-green-950/60 backdrop-blur-sm border-b border-green-800/30">
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-center gap-2.5 text-xs sm:text-sm">
-            <span className="flex items-center gap-1.5 text-green-400 shrink-0">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-              <MessageCircle className="h-3.5 w-3.5" />
-            </span>
-            <span className="text-zinc-300">
-              Selecione as lâminas e monte um <strong className="text-green-400">kit para revenda</strong>
-            </span>
-          </div>
+      {/* Combo tip topo */}
+      <div className="w-full bg-gradient-to-r from-accent/10 via-zinc-900/80 to-emerald-950/40 backdrop-blur-sm border-b border-accent/20">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-center gap-2.5 text-xs sm:text-sm">
+          <Sparkles className="h-3.5 w-3.5 text-accent shrink-0" />
+          <span className="text-zinc-300">
+            Monte um <strong className="text-accent">combo de revenda</strong> com no mínimo <strong className="text-white">{KIT_MIN_LAMINAS} lâminas</strong> e fale com a gente sobre <strong className="text-emerald-400">margens especiais</strong>.
+          </span>
         </div>
-      )}
+      </div>
+
 
       <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-3 md:py-6">
         <div className="flex flex-col lg:flex-row gap-2 md:gap-6 min-w-0">
@@ -963,19 +982,141 @@ export default function CatalogoRevendedor() {
         </div>
       </div>
 
-      {/* Botão WhatsApp Flutuante */}
+      {/* Barra fixa do Combo (Big Tech style) */}
       {modelosSelecionados.size > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button
-            size="lg"
-            onClick={enviarWhatsAppCombo}
-            className="rounded-full bg-accent hover:bg-accent/90 text-white font-semibold shadow-[0_0_40px_rgba(251,146,60,0.5)] hover:scale-105 transition-all"
-          >
-            <MessageCircle className="h-5 w-5 mr-2" />
-            Montar Kit ({modelosSelecionados.size})
-          </Button>
+        <div className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)]">
+          <div className="mx-auto max-w-3xl m-3 sm:m-4 rounded-2xl bg-zinc-950/95 backdrop-blur-xl border border-zinc-800 shadow-2xl overflow-hidden">
+            {/* Progresso */}
+            <div className="h-1 bg-zinc-900">
+              <div
+                className={`h-full transition-all duration-500 ${podeFecharCombo ? 'bg-emerald-500' : 'bg-accent'}`}
+                style={{ width: `${progresso}%` }}
+              />
+            </div>
+            <div className="flex items-center gap-3 p-3 sm:p-4">
+              <button
+                onClick={() => setComboAberto(true)}
+                className="relative flex items-center justify-center h-11 w-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 transition"
+                aria-label="Ver combo"
+              >
+                <ShoppingBag className="h-5 w-5 text-white" />
+                <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center">
+                  {modelosSelecionados.size}
+                </span>
+              </button>
+
+              <div className="flex-1 min-w-0">
+                {podeFecharCombo ? (
+                  <>
+                    <p className="text-[11px] uppercase tracking-wider text-emerald-400 font-semibold">Combo pronto</p>
+                    <p className="text-sm text-white truncate">
+                      {modelosSelecionados.size} lâminas · Lucro est. <strong className="text-emerald-400">R$ {totalLucro.toFixed(2)}</strong>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold">Faltam {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''}</p>
+                    <p className="text-sm text-zinc-300 truncate">
+                      Mínimo {KIT_MIN_LAMINAS} para negociar margens especiais
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <Button
+                size="lg"
+                disabled={!podeFecharCombo}
+                onClick={enviarWhatsAppCombo}
+                className={`rounded-xl font-semibold h-11 px-4 ${podeFecharCombo ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
+              >
+                {podeFecharCombo ? <MessageCircle className="h-4 w-4 sm:mr-2" /> : <Lock className="h-4 w-4 sm:mr-2" />}
+                <span className="hidden sm:inline">{podeFecharCombo ? 'Falar de margens' : 'Bloqueado'}</span>
+              </Button>
+            </div>
+          </div>
         </div>
       )}
+
+      {/* Sheet com detalhes do combo */}
+      <Sheet open={comboAberto} onOpenChange={setComboAberto}>
+        <SheetContent side="right" className="w-full sm:max-w-md bg-zinc-950 border-zinc-800 text-white overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-white flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5 text-accent" />
+              Seu Combo de Revenda
+            </SheetTitle>
+          </SheetHeader>
+
+          <div className="mt-4 space-y-4">
+            {/* Progresso */}
+            <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3">
+              <div className="flex justify-between text-xs mb-2">
+                <span className="text-zinc-400">Progresso do combo</span>
+                <span className={podeFecharCombo ? 'text-emerald-400 font-semibold' : 'text-white font-semibold'}>
+                  {modelosSelecionados.size} / {KIT_MIN_LAMINAS}
+                </span>
+              </div>
+              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all ${podeFecharCombo ? 'bg-emerald-500' : 'bg-accent'}`}
+                  style={{ width: `${progresso}%` }}
+                />
+              </div>
+              {!podeFecharCombo && (
+                <p className="text-[11px] text-zinc-500 mt-2">
+                  Adicione mais {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''} para desbloquear a negociação de margens no WhatsApp.
+                </p>
+              )}
+            </div>
+
+            {/* Lista */}
+            <div className="space-y-2">
+              {laminasSelecionadasList.map((m) => {
+                const margem = margensProduto[m.id] ?? margemGlobal;
+                const custo = m.preco_base * (1 - margem / 100);
+                const lucro = m.preco_base - custo;
+                return (
+                  <div key={m.id} className="flex items-center gap-3 rounded-xl bg-zinc-900/50 border border-zinc-800 p-2.5">
+                    {m.imagem_modelo && (
+                      <img src={m.imagem_modelo} alt="" className="h-12 w-12 rounded-lg object-cover bg-zinc-800" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{m.nome_modelo}</p>
+                      <p className="text-[11px] text-zinc-500">
+                        Custo R$ {custo.toFixed(2)} · <span className="text-emerald-400">+R$ {lucro.toFixed(2)}</span>
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => toggleSelecao(m.id)}
+                      className="h-8 w-8 rounded-lg bg-zinc-800 hover:bg-red-500/20 hover:text-red-400 text-zinc-400 flex items-center justify-center transition"
+                      aria-label="Remover"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Totais */}
+            <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3 space-y-1.5 text-sm">
+              <div className="flex justify-between text-zinc-400"><span>Custo total</span><span>R$ {totalCusto.toFixed(2)}</span></div>
+              <div className="flex justify-between text-zinc-400"><span>Venda sugerida</span><span>R$ {totalVenda.toFixed(2)}</span></div>
+              <div className="flex justify-between text-emerald-400 font-semibold pt-1.5 border-t border-zinc-800"><span>Lucro estimado</span><span>R$ {totalLucro.toFixed(2)}</span></div>
+            </div>
+
+            <Button
+              size="lg"
+              disabled={!podeFecharCombo}
+              onClick={enviarWhatsAppCombo}
+              className={`w-full rounded-xl font-semibold ${podeFecharCombo ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
+            >
+              {podeFecharCombo ? <><MessageCircle className="h-4 w-4 mr-2" /> Negociar margens no WhatsApp</> : <><Lock className="h-4 w-4 mr-2" /> Faltam {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''}</>}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
 
     </div>);
 

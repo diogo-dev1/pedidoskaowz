@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { IconPicker } from '@/components/IconPicker';
 import { getIconComponent } from '@/lib/icon-utils';
+import { VisibilidadeLaminasTab } from '@/components/admin/VisibilidadeLaminasTab';
 
 interface CategoriaVisivel {
   id: string;
@@ -410,10 +411,14 @@ export default function ConfiguracoesCatalogoRevendedor() {
       </div>
 
       <Tabs defaultValue="margens" className="w-full">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full h-auto gap-1">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full h-auto gap-1">
           <TabsTrigger value="margens" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
             <TrendingUp className="h-3.5 w-3.5 hidden sm:block" />
             Margens
+          </TabsTrigger>
+          <TabsTrigger value="visibilidade" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
+            <Eye className="h-3.5 w-3.5 hidden sm:block" />
+            Visibilidade
           </TabsTrigger>
           <TabsTrigger value="geral" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
             <DollarSign className="h-3.5 w-3.5 hidden sm:block" />
@@ -432,6 +437,11 @@ export default function ConfiguracoesCatalogoRevendedor() {
             Pronta Entrega
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="visibilidade" className="space-y-3 mt-4">
+          <VisibilidadeLaminasTab field="visivel_revendedor" catalogoLabel="Catálogo Revendedor" />
+        </TabsContent>
+
 
         {/* Aba Margens */}
         <TabsContent value="margens" className="space-y-4 mt-4">

@@ -10,11 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Loader2, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package, Check, Percent, TrendingUp, Globe, Languages, RefreshCw, AlertTriangle, CheckCircle2, Save } from 'lucide-react';
+import { Plus, Loader2, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package, Check, Percent, TrendingUp, Globe, Languages, RefreshCw, AlertTriangle, CheckCircle2, Save, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getIconComponent } from '@/lib/icon-utils';
 import { useExchangeRate, type ExchangeMode } from '@/hooks/useExchangeRate';
 import { TranslationManager } from '@/components/admin/TranslationManager';
+import { VisibilidadeLaminasTab } from '@/components/admin/VisibilidadeLaminasTab';
 
 const ALL_CURRENCIES = ['USD', 'BRL', 'EUR', 'AED'] as const;
 const ALL_LANGUAGES = [{ code: 'pt', label: 'Português' }, { code: 'en', label: 'English' }] as const;
@@ -310,14 +311,20 @@ export default function ConfiguracoesCatalogoInternacional() {
       </div>
 
       <Tabs defaultValue="idioma-moeda" className="w-full">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full h-auto gap-1">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-7 w-full h-auto gap-1">
           <TabsTrigger value="idioma-moeda" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><Languages className="h-3.5 w-3.5 hidden sm:block" />Idioma/Moeda</TabsTrigger>
           <TabsTrigger value="margens" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><TrendingUp className="h-3.5 w-3.5 hidden sm:block" />Margens</TabsTrigger>
+          <TabsTrigger value="visibilidade" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><Eye className="h-3.5 w-3.5 hidden sm:block" />Visibilidade</TabsTrigger>
           <TabsTrigger value="geral" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><DollarSign className="h-3.5 w-3.5 hidden sm:block" />Geral</TabsTrigger>
           <TabsTrigger value="destaques" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><Star className="h-3.5 w-3.5 hidden sm:block" />Destaques</TabsTrigger>
           <TabsTrigger value="categorias" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><Tags className="h-3.5 w-3.5 hidden sm:block" />Categorias</TabsTrigger>
           <TabsTrigger value="pronta-entrega" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><Package className="h-3.5 w-3.5 hidden sm:block" />Pronta Entrega</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="visibilidade" className="space-y-3 mt-4">
+          <VisibilidadeLaminasTab field="visivel_internacional" catalogoLabel="Catálogo Internacional" />
+        </TabsContent>
+
 
         {/* Aba Idioma/Moeda/Câmbio */}
         <TabsContent value="idioma-moeda" className="space-y-4 mt-4">

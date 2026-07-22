@@ -9,8 +9,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Globe, Languages, DollarSign, TrendingUp, Save, Loader2, Percent, RefreshCw, Copy, Share2 } from 'lucide-react';
+import { Globe, Languages, DollarSign, TrendingUp, Save, Loader2, Percent, RefreshCw, Copy, Share2, Eye } from 'lucide-react';
 import { useExchangeRate, type ExchangeMode } from '@/hooks/useExchangeRate';
+import { VisibilidadeLaminasTab } from '@/components/admin/VisibilidadeLaminasTab';
 
 const ALL_CURRENCIES = ['USD', 'BRL', 'EUR', 'AED'] as const;
 const ALL_LANGUAGES = [
@@ -209,10 +210,16 @@ export default function ConfiguracoesCatalogoPublicoInternacional() {
       </div>
 
       <Tabs defaultValue="idioma-moeda" className="w-full">
-        <TabsList className="grid grid-cols-2 w-full h-auto gap-1">
+        <TabsList className="grid grid-cols-3 w-full h-auto gap-1">
           <TabsTrigger value="idioma-moeda" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><Languages className="h-3.5 w-3.5" />Idioma & Câmbio</TabsTrigger>
           <TabsTrigger value="margens" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><TrendingUp className="h-3.5 w-3.5" />Margens</TabsTrigger>
+          <TabsTrigger value="visibilidade" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><Eye className="h-3.5 w-3.5" />Visibilidade</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="visibilidade" className="space-y-3 mt-4">
+          <VisibilidadeLaminasTab field="visivel_publico_internacional" catalogoLabel="Catálogo Público Internacional" />
+        </TabsContent>
+
 
         <TabsContent value="idioma-moeda" className="space-y-4 mt-4">
           <Card>

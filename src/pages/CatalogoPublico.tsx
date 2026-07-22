@@ -460,11 +460,14 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
 
       const modelosComMidiaCatalogo = new Set((midiasData || []).map(m => m.modelo_id));
 
+      const visField = isInternacional ? 'visivel_publico_internacional' : 'visivel_publico';
       const { data, error } = await supabase
         .from('catalogo_modelos')
         .select('*')
         .eq('visivel_catalogo', true)
+        .eq(visField, true)
         .order('nome_modelo');
+
 
       if (error) throw error;
       
