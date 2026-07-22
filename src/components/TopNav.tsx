@@ -175,7 +175,7 @@ export function TopNav({ title }: { title: string }) {
 
         {/* Menus por categoria — apenas desktop; mobile usa BottomNav */}
         <nav
-          className="hidden md:flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="hidden flex-1 min-w-0"
           aria-label="Menu principal"
         >
           <NavLink
