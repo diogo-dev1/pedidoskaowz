@@ -1019,60 +1019,62 @@ export default function CatalogoRevendedor() {
         </div>
       </div>
 
-      {/* Barra fixa do Combo (Big Tech style) */}
-      {modelosSelecionados.size > 0 && (
-        <div className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)]">
-          <div className="mx-auto max-w-3xl m-3 sm:m-4 rounded-2xl bg-zinc-950/95 backdrop-blur-xl border border-zinc-800 shadow-2xl overflow-hidden">
-            {/* Progresso */}
-            <div className="h-1 bg-zinc-900">
-              <div
-                className={`h-full transition-all duration-500 ${podeFecharCombo ? 'bg-emerald-500' : 'bg-accent'}`}
-                style={{ width: `${progresso}%` }}
-              />
-            </div>
-            <div className="flex items-center gap-3 p-3 sm:p-4">
-              <button
-                onClick={() => setComboAberto(true)}
-                className="relative flex items-center justify-center h-11 w-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 transition"
-                aria-label="Ver combo"
-              >
-                <ShoppingBag className="h-5 w-5 text-white" />
+      {/* Barra fixa do Combo (sempre visível) */}
+      <div className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto max-w-3xl m-3 sm:m-4 rounded-2xl bg-zinc-950/95 backdrop-blur-xl border border-zinc-800 shadow-2xl overflow-hidden">
+          <div className="h-1 bg-zinc-900">
+            <div
+              className={`h-full transition-all duration-500 ${podeFecharCombo ? 'bg-emerald-500' : 'bg-accent'}`}
+              style={{ width: `${progresso}%` }}
+            />
+          </div>
+          <div className="flex items-center gap-3 p-3 sm:p-4">
+            <button
+              onClick={() => setComboAberto(true)}
+              className="relative flex items-center justify-center h-11 w-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 transition"
+              aria-label="Ver combo"
+            >
+              <ShoppingBag className="h-5 w-5 text-white" />
+              {totalQtd > 0 && (
                 <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center">
-                  {modelosSelecionados.size}
+                  {totalQtd}
                 </span>
-              </button>
+              )}
+            </button>
 
-              <div className="flex-1 min-w-0">
-                {podeFecharCombo ? (
-                  <>
-                    <p className="text-[11px] uppercase tracking-wider text-emerald-400 font-semibold">Combo pronto</p>
-                    <p className="text-sm text-white truncate">
-                      {modelosSelecionados.size} lâminas · Lucro est. <strong className="text-emerald-400">R$ {totalLucro.toFixed(2)}</strong>
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold">Faltam {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''}</p>
-                    <p className="text-sm text-zinc-300 truncate">
-                      Mínimo {KIT_MIN_LAMINAS} para negociar margens especiais
-                    </p>
-                  </>
-                )}
-              </div>
-
-              <Button
-                size="lg"
-                disabled={!podeFecharCombo}
-                onClick={enviarWhatsAppCombo}
-                className={`rounded-xl font-semibold h-11 px-4 ${podeFecharCombo ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
-              >
-                {podeFecharCombo ? <MessageCircle className="h-4 w-4 sm:mr-2" /> : <Lock className="h-4 w-4 sm:mr-2" />}
-                <span className="hidden sm:inline">{podeFecharCombo ? 'Falar de margens' : 'Bloqueado'}</span>
-              </Button>
+            <div className="flex-1 min-w-0">
+              {podeFecharCombo ? (
+                <>
+                  <p className="text-[11px] uppercase tracking-wider text-emerald-400 font-semibold">Combo pronto</p>
+                  <p className="text-sm text-white truncate">
+                    {totalQtd} lâminas · Lucro est. <strong className="text-emerald-400">R$ {totalLucro.toFixed(2)}</strong>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold">
+                    {totalQtd === 0 ? 'Comece seu combo' : `Faltam ${faltamParaKit} lâmina${faltamParaKit > 1 ? 's' : ''}`}
+                  </p>
+                  <p className="text-sm text-zinc-300 truncate">
+                    Selecione 10 lâminas para margens de 15% a 30%
+                  </p>
+                </>
+              )}
             </div>
+
+            <Button
+              size="lg"
+              disabled={!podeFecharCombo}
+              onClick={enviarWhatsAppCombo}
+              className={`rounded-xl font-semibold h-11 px-4 ${podeFecharCombo ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
+            >
+              {podeFecharCombo ? <MessageCircle className="h-4 w-4 sm:mr-2" /> : <Lock className="h-4 w-4 sm:mr-2" />}
+              <span className="hidden sm:inline">{podeFecharCombo ? 'Falar de margens' : 'Bloqueado'}</span>
+            </Button>
           </div>
         </div>
-      )}
+      </div>
+
 
       {/* Sheet com detalhes do combo */}
       <Sheet open={comboAberto} onOpenChange={setComboAberto}>
