@@ -77,6 +77,7 @@ export default function CatalogoRevendedor() {
     } catch { return new Map(); }
   });
   const [loading, setLoading] = useState(true);
+  const [mostrarGateway, setMostrarGateway] = useState(true);
   const [mostrarLanding, setMostrarLanding] = useState(true);
   const [categoriasVisiveis, setCategoriasVisiveis] = useState<CategoriaVisivel[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -156,19 +157,14 @@ export default function CatalogoRevendedor() {
       return;
     }
     const linhas = laminasSelecionadasList.map(({ modelo: m, qtd }, i) => {
-      const custo = m.preco_base * (1 - (margensProduto[m.id] ?? margemGlobal) / 100);
       const qtdTxt = qtd > 1 ? ` (x${qtd})` : '';
-      return `${String(i + 1).padStart(2, '0')}. ${m.nome_modelo}${qtdTxt} — Custo R$ ${custo.toFixed(2)} · Venda R$ ${m.preco_base.toFixed(2)}`;
+      return `${String(i + 1).padStart(2, '0')}. ${m.nome_modelo}${qtdTxt} — R$ ${m.preco_base.toFixed(2)}`;
     }).join('\n');
     const mensagem =
-      `Olá! Quero fechar um *combo para revenda* com ${totalQtd} lâminas ` +
+      `Olá! Quero solicitar um *orçamento de revenda* com ${totalQtd} lâminas ` +
       `e gostaria de conversar sobre *margens especiais* (15% a 30%) para este volume.\n\n` +
       `*LÂMINAS SELECIONADAS*\n${linhas}\n\n` +
-      `*TOTAIS ESTIMADOS*\n` +
-      `Custo base: R$ ${totalCusto.toFixed(2)}\n` +
-      `Venda sugerida: R$ ${totalVenda.toFixed(2)}\n` +
-      `Lucro estimado: R$ ${totalLucro.toFixed(2)}\n\n` +
-      `Podemos alinhar margem/condição para este combo?`;
+      `Aguardo o retorno com as condições.`;
     const url = `https://wa.me/5528999025695?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
@@ -201,11 +197,14 @@ export default function CatalogoRevendedor() {
     if (catParam) {
       setCategoriaAtiva(catParam);
       setMostrarLanding(false);
+      setMostrarGateway(false);
     } else if (verTudoParam === 'tudo') {
       setMostrarLanding(false);
+      setMostrarGateway(false);
     } else if (prontaParam === 'true') {
       setFiltroProntaEntrega(true);
       setMostrarLanding(false);
+      setMostrarGateway(false);
     }
   }, []);
 
@@ -457,6 +456,55 @@ export default function CatalogoRevendedor() {
     return (a.ordem_catalogo || 999) - (b.ordem_catalogo || 999);
   });
 
+  // Gateway (primeira tela)
+  if (mostrarGateway) {
+    return (
+      <div className="min-h-screen bg-zinc-950 overflow-x-hidden max-w-[100vw] relative flex flex-col">
+        {/* Alerta flutuante topo */}
+        <div className="sticky top-3 z-40 mx-3 sm:mx-auto sm:max-w-2xl">
+          <div className="rounded-2xl bg-gradient-to-r from-accent/20 via-zinc-900/95 to-emerald-950/40 backdrop-blur-xl border border-accent/40 shadow-2xl px-4 py-3 flex items-center gap-3">
+            <Sparkles className="h-5 w-5 text-accent shrink-0" />
+            <p className="text-xs sm:text-sm text-zinc-100">
+              Selecione <strong className="text-white">10 lâminas</strong> para ter de <strong className="text-emerald-400">15% a 30% de margem</strong> e solicite um orçamento.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
+          <div className="max-w-xl w-full">
+            <span className="text-accent text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">B2B · Revenda</span>
+            <h1 className="text-4xl md:text-6xl font-black text-white mt-3 mb-4 tracking-tight leading-tight">
+              CATÁLOGO <span className="text-accent">REVENDEDOR</span>
+            </h1>
+            <p className="text-zinc-400 text-sm md:text-lg mb-10 max-w-md mx-auto">
+              Monte um kit de revenda e receba margens especiais.
+            </p>
+
+            <Button
+              onClick={() => setMostrarGateway(false)}
+              size="lg"
+              className="w-full h-16 bg-accent hover:bg-accent/90 text-white font-black text-base md:text-lg rounded-2xl shadow-[0_0_40px_rgba(251,146,60,0.35)] hover:shadow-[0_0_60px_rgba(251,146,60,0.55)] transition-all"
+            >
+              <Package className="h-5 w-5 mr-2" />
+              Montar kit para revenda
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+
+            <button
+              onClick={() => {
+                const url = `https://wa.me/5528999025695?text=${encodeURIComponent('Olá! Sou revendedor e gostaria de saber mais.')}`;
+                window.open(url, '_blank');
+              }}
+              className="mt-6 text-xs text-zinc-500 hover:text-zinc-300 underline underline-offset-4"
+            >
+              Falar com um consultor no WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Landing Page
   if (mostrarLanding) {
     return (
@@ -464,22 +512,12 @@ export default function CatalogoRevendedor() {
         <header className="relative py-10 md:py-16 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-accent/10 via-transparent to-transparent" />
           <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 text-center relative z-10">
-            <div className="inline-block mb-3">
-              <span className="text-accent text-xs md:text-sm font-semibold tracking-[0.3em] uppercase"></span>
-            </div>
             <h1 className="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight leading-tight">
               CATÁLOGO <span className="text-accent">REVENDEDOR</span>
             </h1>
             <p className="text-zinc-400 text-sm md:text-lg max-w-md mx-auto">
               Preços exclusivos para revendedores. Confira sua margem de lucro.
             </p>
-
-            
-
-
-
-
-            
           </div>
         </header>
 
@@ -493,7 +531,6 @@ export default function CatalogoRevendedor() {
                 className={`absolute inset-0 transition-opacity duration-700 ${idx === bannerAtual ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => banner.link && window.open(banner.link, '_blank')}
                 style={{ cursor: banner.link ? 'pointer' : 'default' }}>
-                
                     <img src={banner.imagem_url} alt={banner.titulo || 'Banner'} className="w-full h-full object-contain" />
                   </div>
               )}
@@ -505,59 +542,59 @@ export default function CatalogoRevendedor() {
                 key={idx}
                 onClick={() => setBannerAtual(idx)}
                 className={`w-2 h-2 rounded-full transition-all ${idx === bannerAtual ? 'bg-accent w-6' : 'bg-white/50 hover:bg-white/80'}`} />
-
               )}
                 </div>
             }
             </div>
           }
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 max-w-5xl mx-auto mb-10">
-            {categoriasVenda.map((cat, idx) => {
-              const Icon = cat.icon;
-              return (
-                <div key={idx} className="group cursor-pointer" onClick={() => selecionarCategoria(cat.categoria)}>
-                  <div className="relative bg-zinc-900 border border-zinc-800 hover:border-accent rounded-xl p-5 md:p-6 transition-all duration-300 text-center group-hover:bg-zinc-800 group-hover:shadow-[0_0_30px_rgba(251,146,60,0.15)] group-hover:-translate-y-1">
-                    <div className="w-12 h-12 md:w-14 md:h-14 mx-auto mb-3 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
-                      <Icon className="h-6 w-6 md:h-7 md:w-7 text-accent" />
-                    </div>
-                    <h3 className="text-white font-bold text-xs md:text-sm tracking-wide">{cat.subtitulo}</h3>
-                    <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ArrowRight className="h-4 w-4 text-accent mx-auto" />
-                    </div>
-                  </div>
-                </div>);
-
-            })}
+          {/* Pronta Entrega em destaque no topo */}
+          <div className="max-w-5xl mx-auto mb-8">
+            <button
+              onClick={verProntaEntrega}
+              className="w-full group relative overflow-hidden rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/60 via-zinc-900 to-emerald-950/60 hover:border-emerald-400 transition-all p-5 md:p-6 flex items-center gap-4 shadow-[0_0_30px_rgba(16,185,129,0.15)] hover:shadow-[0_0_40px_rgba(16,185,129,0.3)]"
+            >
+              <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center shrink-0">
+                <Zap className="h-7 w-7 md:h-8 md:w-8 text-emerald-400" />
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-[10px] md:text-xs uppercase tracking-[0.25em] text-emerald-400 font-bold">Envio imediato</p>
+                <h3 className="text-white font-black text-lg md:text-2xl leading-tight">Itens a pronta entrega</h3>
+                <p className="text-zinc-400 text-xs md:text-sm mt-0.5">Estoque disponível para revenda agora.</p>
+              </div>
+              <ArrowRight className="h-5 w-5 md:h-6 md:w-6 text-emerald-400 shrink-0" />
+            </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto">
+          {/* Categorias */}
+          <div className="max-w-5xl mx-auto mb-6">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-zinc-500 font-semibold mb-3 px-1">Categorias</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+              {categoriasVenda.map((cat, idx) => {
+                const Icon = cat.icon;
+                return (
+                  <div key={idx} className="group cursor-pointer" onClick={() => selecionarCategoria(cat.categoria)}>
+                    <div className="relative bg-zinc-900 border border-zinc-800 hover:border-accent rounded-xl p-5 md:p-6 transition-all duration-300 text-center group-hover:bg-zinc-800 group-hover:shadow-[0_0_30px_rgba(251,146,60,0.15)] group-hover:-translate-y-1">
+                      <div className="w-12 h-12 md:w-14 md:h-14 mx-auto mb-3 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                        <Icon className="h-6 w-6 md:h-7 md:w-7 text-accent" />
+                      </div>
+                      <h3 className="text-white font-bold text-xs md:text-sm tracking-wide">{cat.subtitulo}</h3>
+                      <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ArrowRight className="h-4 w-4 text-accent mx-auto" />
+                      </div>
+                    </div>
+                  </div>);
+              })}
+            </div>
+          </div>
+
+          <div className="flex justify-center max-w-lg mx-auto">
             <Button
               onClick={verTudo}
-              className="flex-1 bg-accent hover:bg-accent/90 text-white font-bold h-12 text-sm md:text-base rounded-xl shadow-[0_0_30px_rgba(251,146,60,0.3)] hover:shadow-[0_0_40px_rgba(251,146,60,0.5)] transition-all">
-              
+              variant="outline"
+              className="flex-1 border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent font-bold h-11 text-sm rounded-xl transition-all">
               <Star className="h-4 w-4 mr-2" />
               Ver todo o catálogo
-            </Button>
-            <Button
-              onClick={verProntaEntrega}
-              variant="outline"
-              className="flex-1 border-emerald-600/50 text-emerald-400 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 font-bold h-12 text-sm md:text-base rounded-xl transition-all">
-              
-              <Zap className="h-4 w-4 mr-2" />
-              Pronta Entrega
-            </Button>
-          </div>
-
-          {/* Monte seu Combo */}
-          <div className="flex justify-center max-w-lg mx-auto mt-3">
-            <Button
-              onClick={() => navigate('/catalogo-revendedor/montar-kit')}
-              variant="outline"
-              className="w-full border-accent/50 text-accent hover:bg-accent hover:text-white hover:border-accent font-bold h-12 text-sm md:text-base rounded-xl transition-all"
-            >
-              <Package className="h-4 w-4 mr-2" />
-              Monte um Kit
             </Button>
           </div>
 
@@ -570,15 +607,14 @@ export default function CatalogoRevendedor() {
                 window.open(url, '_blank');
               }}
               className="border-green-600/50 text-green-400 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all">
-              
               <MessageCircle className="h-4 w-4 mr-2" />
               Fale conosco no WhatsApp
             </Button>
           </div>
         </div>
       </div>);
-
   }
+
 
   // Catálogo de Produtos
   return (
@@ -1047,7 +1083,7 @@ export default function CatalogoRevendedor() {
                 <>
                   <p className="text-[11px] uppercase tracking-wider text-emerald-400 font-semibold">Combo pronto</p>
                   <p className="text-sm text-white truncate">
-                    {totalQtd} lâminas · Lucro est. <strong className="text-emerald-400">R$ {totalLucro.toFixed(2)}</strong>
+                    {totalQtd} lâminas selecionadas
                   </p>
                 </>
               ) : (
@@ -1069,7 +1105,7 @@ export default function CatalogoRevendedor() {
               className={`rounded-xl font-semibold h-11 px-4 ${podeFecharCombo ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
             >
               {podeFecharCombo ? <MessageCircle className="h-4 w-4 sm:mr-2" /> : <Lock className="h-4 w-4 sm:mr-2" />}
-              <span className="hidden sm:inline">{podeFecharCombo ? 'Falar de margens' : 'Bloqueado'}</span>
+              <span className="hidden sm:inline">{podeFecharCombo ? 'Solicitar orçamento' : 'Bloqueado'}</span>
             </Button>
           </div>
         </div>
@@ -1155,20 +1191,13 @@ export default function CatalogoRevendedor() {
             </div>
 
 
-            {/* Totais */}
-            <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3 space-y-1.5 text-sm">
-              <div className="flex justify-between text-zinc-400"><span>Custo total</span><span>R$ {totalCusto.toFixed(2)}</span></div>
-              <div className="flex justify-between text-zinc-400"><span>Venda sugerida</span><span>R$ {totalVenda.toFixed(2)}</span></div>
-              <div className="flex justify-between text-emerald-400 font-semibold pt-1.5 border-t border-zinc-800"><span>Lucro estimado</span><span>R$ {totalLucro.toFixed(2)}</span></div>
-            </div>
-
             <Button
               size="lg"
               disabled={!podeFecharCombo}
               onClick={enviarWhatsAppCombo}
               className={`w-full rounded-xl font-semibold ${podeFecharCombo ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
             >
-              {podeFecharCombo ? <><MessageCircle className="h-4 w-4 mr-2" /> Negociar margens no WhatsApp</> : <><Lock className="h-4 w-4 mr-2" /> Faltam {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''}</>}
+              {podeFecharCombo ? <><MessageCircle className="h-4 w-4 mr-2" /> Solicitar orçamento no WhatsApp</> : <><Lock className="h-4 w-4 mr-2" /> Faltam {faltamParaKit} lâmina{faltamParaKit > 1 ? 's' : ''}</>}
             </Button>
           </div>
         </SheetContent>

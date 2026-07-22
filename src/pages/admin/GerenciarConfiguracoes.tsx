@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Video, Search, Upload, Star, Loader2, X, Image as ImageIcon, Eye, EyeOff, Zap } from 'lucide-react';
+import { Plus, Pencil, Trash2, Video, Search, Upload, Star, Loader2, X, Image as ImageIcon, Eye, EyeOff, Zap, Tags, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import CategoriasManagerDialog from '@/components/admin/CategoriasManagerDialog';
 
 
 interface Configuracao {
@@ -65,6 +66,7 @@ export default function GerenciarConfiguracoes() {
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('todas');
+  const [gerenciarCategoriasOpen, setGerenciarCategoriasOpen] = useState(false);
   
 
   useEffect(() => {
@@ -377,6 +379,10 @@ export default function GerenciarConfiguracoes() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => setGerenciarCategoriasOpen(true)}>
+            <Tags className="mr-2 h-4 w-4" />
+            Categorias
+          </Button>
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button>
@@ -817,8 +823,11 @@ export default function GerenciarConfiguracoes() {
         </DialogContent>
       </Dialog>
 
-
-
+      <CategoriasManagerDialog
+        open={gerenciarCategoriasOpen}
+        onOpenChange={setGerenciarCategoriasOpen}
+        onChanged={fetchCategorias}
+      />
     </div>
   );
 }
