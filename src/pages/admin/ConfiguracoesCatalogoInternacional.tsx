@@ -311,14 +311,20 @@ export default function ConfiguracoesCatalogoInternacional() {
       </div>
 
       <Tabs defaultValue="idioma-moeda" className="w-full">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full h-auto gap-1">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-7 w-full h-auto gap-1">
           <TabsTrigger value="idioma-moeda" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><Languages className="h-3.5 w-3.5 hidden sm:block" />Idioma/Moeda</TabsTrigger>
           <TabsTrigger value="margens" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><TrendingUp className="h-3.5 w-3.5 hidden sm:block" />Margens</TabsTrigger>
+          <TabsTrigger value="visibilidade" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><Eye className="h-3.5 w-3.5 hidden sm:block" />Visibilidade</TabsTrigger>
           <TabsTrigger value="geral" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><DollarSign className="h-3.5 w-3.5 hidden sm:block" />Geral</TabsTrigger>
           <TabsTrigger value="destaques" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><Star className="h-3.5 w-3.5 hidden sm:block" />Destaques</TabsTrigger>
           <TabsTrigger value="categorias" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><Tags className="h-3.5 w-3.5 hidden sm:block" />Categorias</TabsTrigger>
           <TabsTrigger value="pronta-entrega" className="gap-1 text-xs sm:text-sm px-2 py-1.5"><Package className="h-3.5 w-3.5 hidden sm:block" />Pronta Entrega</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="visibilidade" className="space-y-3 mt-4">
+          <VisibilidadeLaminasTab field="visivel_internacional" catalogoLabel="Catálogo Internacional" />
+        </TabsContent>
+
 
         {/* Aba Idioma/Moeda/Câmbio */}
         <TabsContent value="idioma-moeda" className="space-y-4 mt-4">
