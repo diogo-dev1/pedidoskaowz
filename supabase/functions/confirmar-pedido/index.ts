@@ -72,7 +72,9 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         sucesso: true,
+        pedido_id: pedido.id,
         numero_pedido: pedido.numero_pedido,
+
         prazo: pedido.prazo_entrega,
         mensagem: `Pedido ${pedido.numero_pedido} confirmado! Prazo: ${pedido.prazo_entrega}`,
         bling: blingStatus,
