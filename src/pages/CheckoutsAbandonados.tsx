@@ -330,7 +330,8 @@ export default function CheckoutsAbandonados() {
 
       {/* Modal de contato */}
       <Dialog open={!!selecionado} onOpenChange={(v) => !v && setSelecionado(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full max-w-lg max-h-[88vh] overflow-y-auto p-4 sm:p-6 rounded-xl">
+
           {selecionado && (
             <>
               <DialogHeader>
