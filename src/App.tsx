@@ -65,6 +65,8 @@ import ProdutosShopify from "./pages/ProdutosShopify";
 import RelatorioVendas from "./pages/RelatorioVendas";
 import RelatorioVendasRelatorios from "./pages/RelatorioVendasRelatorios";
 import LancarPedidoBling from "./pages/LancarPedidoBling";
+import BlingPedido from "./pages/BlingPedido";
+
 import NotFound from "./pages/NotFound";
 import KnivesAdmin from "./pages/KnivesAdmin";
 import Showroom from "./pages/Showroom";
