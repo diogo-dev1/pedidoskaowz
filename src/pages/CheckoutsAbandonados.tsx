@@ -229,13 +229,13 @@ export default function CheckoutsAbandonados() {
       )}
 
       {/* Filtros */}
-      <div className="flex gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar por nome, e-mail, telefone ou produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Buscar nome, e-mail, telefone ou produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={dias} onValueChange={setDias}>
-          <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[140px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="7">Últimos 7 dias</SelectItem>
             <SelectItem value="15">Últimos 15 dias</SelectItem>
@@ -247,14 +247,15 @@ export default function CheckoutsAbandonados() {
       </div>
 
       <Tabs value={filtroStatus} onValueChange={setFiltroStatus}>
-        <TabsList className="w-full grid grid-cols-5 h-auto">
-          <TabsTrigger value="todos" className="text-xs">Todos</TabsTrigger>
-          <TabsTrigger value="pendente" className="text-xs">Pendentes ({stats.pendentes})</TabsTrigger>
-          <TabsTrigger value="contatado" className="text-xs">Contatados</TabsTrigger>
-          <TabsTrigger value="recuperado" className="text-xs">Recuperados</TabsTrigger>
-          <TabsTrigger value="perdido" className="text-xs">Perdidos</TabsTrigger>
+        <TabsList className="w-full grid grid-cols-3 sm:grid-cols-5 h-auto gap-1 p-1">
+          <TabsTrigger value="todos" className="text-[11px] sm:text-xs px-1 py-1.5">Todos</TabsTrigger>
+          <TabsTrigger value="pendente" className="text-[11px] sm:text-xs px-1 py-1.5">Pendentes ({stats.pendentes})</TabsTrigger>
+          <TabsTrigger value="contatado" className="text-[11px] sm:text-xs px-1 py-1.5">Contatados</TabsTrigger>
+          <TabsTrigger value="recuperado" className="text-[11px] sm:text-xs px-1 py-1.5">Recuperados</TabsTrigger>
+          <TabsTrigger value="perdido" className="text-[11px] sm:text-xs px-1 py-1.5">Perdidos</TabsTrigger>
         </TabsList>
       </Tabs>
+
 
       {/* Lista */}
       {isLoading ? (
