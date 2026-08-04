@@ -422,7 +422,7 @@ function TemplatesDialog({ open, onOpenChange, templates }: { open: boolean; onO
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full max-w-lg max-h-[88vh] overflow-y-auto p-4 sm:p-6 rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-base">Modelos de mensagem</DialogTitle>
         </DialogHeader>
