@@ -525,6 +525,69 @@ export type Database = {
           },
         ]
       }
+      checkouts_abandonados_contatos: {
+        Row: {
+          checkout_id: string
+          contatado_em: string | null
+          contatado_por: string | null
+          created_at: string
+          id: string
+          observacoes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          checkout_id: string
+          contatado_em?: string | null
+          contatado_por?: string | null
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          checkout_id?: string
+          contatado_em?: string | null
+          contatado_por?: string | null
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      checkouts_abandonados_templates: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          mensagem: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          mensagem: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          mensagem?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       config_internacional: {
         Row: {
           chave: string

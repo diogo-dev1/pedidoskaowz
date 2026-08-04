@@ -4,7 +4,7 @@ import {
   Calculator, Users, TrendingUp, MoreHorizontal, LayoutDashboard,
   ShoppingBag, MessageSquare, BookOpen, Image, DollarSign, Factory,
   CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User, Globe, Truck,
-  ClipboardList, Boxes, Download, Briefcase, Send,
+  ClipboardList, Boxes, Download, ShoppingCart, Briefcase, Send,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -78,6 +78,7 @@ const adminMoreItems: NavItem[] = [
   { title: 'Produtos Shopify', url: '/produtos-shopify', icon: ShoppingBag },
   { title: 'Estoque Shopify', url: '/inventory', icon: Boxes },
   { title: 'Vendas Site', url: '/shopify-orders', icon: Download },
+  { title: 'Checkouts Abandonados', url: '/checkouts-abandonados', icon: ShoppingCart },
 ];
 
 export function BottomNav() {

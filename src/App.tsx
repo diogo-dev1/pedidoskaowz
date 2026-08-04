@@ -48,6 +48,7 @@ import ParcelamentoPublico from "./pages/ParcelamentoPublico";
 import MonteSeuKitLaminas from "./pages/MonteSeuKitLaminas";
 import MonteSeuKitLaminasAdmin from "./pages/admin/MonteSeuKitLaminasAdmin";
 import Inventory from "./pages/Inventory";
+import CheckoutsAbandonados from "./pages/CheckoutsAbandonados";
 import ShopifyOrders from "./pages/ShopifyOrders";
 import Triagem from "./pages/Triagem";
 import Pedidos from "./pages/Pedidos";
@@ -430,6 +431,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <MonteSeuKitLaminasAdmin />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/checkouts-abandonados"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CheckoutsAbandonados />
                   </Layout>
                 </ProtectedRoute>
               }
