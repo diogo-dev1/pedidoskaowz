@@ -568,6 +568,27 @@ const App = () => (
               }
             />
             <Route
+              path="/bling-pedido"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <BlingPedido />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bling-pedido/:id"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <BlingPedido />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/admin/knives"
               element={
                 <ProtectedRoute requireAdmin>
