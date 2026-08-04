@@ -194,28 +194,29 @@ export default function CheckoutsAbandonados() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
+    <div className="w-full max-w-5xl mx-auto py-4 sm:py-6 px-3 sm:px-4 space-y-4 sm:space-y-5 overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <ShoppingCart className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Checkouts Abandonados</h1>
-            <p className="text-xs text-muted-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-bold leading-tight">Checkouts Abandonados</h1>
+            <p className="text-[11px] sm:text-xs text-muted-foreground">
               {isLoading ? 'Carregando...' : `${checkouts.length} carrinho(s) · ${stats.comWpp} com WhatsApp · ${brl(stats.total)} em jogo`}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => setGerenciarOpen(true)}>
+        <div className="flex gap-2 shrink-0">
+          <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => setGerenciarOpen(true)}>
             <Settings2 className="h-4 w-4" /> Modelos
           </Button>
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => refetch()} disabled={isFetching}>
+          <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => refetch()} disabled={isFetching}>
             {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Atualizar
           </Button>
         </div>
       </div>
+
 
       {error && (
         <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
