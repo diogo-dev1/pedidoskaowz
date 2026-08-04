@@ -194,28 +194,29 @@ export default function CheckoutsAbandonados() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
+    <div className="w-full max-w-5xl mx-auto py-4 sm:py-6 px-3 sm:px-4 space-y-4 sm:space-y-5 overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <ShoppingCart className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Checkouts Abandonados</h1>
-            <p className="text-xs text-muted-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-bold leading-tight">Checkouts Abandonados</h1>
+            <p className="text-[11px] sm:text-xs text-muted-foreground">
               {isLoading ? 'Carregando...' : `${checkouts.length} carrinho(s) · ${stats.comWpp} com WhatsApp · ${brl(stats.total)} em jogo`}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => setGerenciarOpen(true)}>
+        <div className="flex gap-2 shrink-0">
+          <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => setGerenciarOpen(true)}>
             <Settings2 className="h-4 w-4" /> Modelos
           </Button>
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => refetch()} disabled={isFetching}>
+          <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => refetch()} disabled={isFetching}>
             {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Atualizar
           </Button>
         </div>
       </div>
+
 
       {error && (
         <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
@@ -228,13 +229,13 @@ export default function CheckoutsAbandonados() {
       )}
 
       {/* Filtros */}
-      <div className="flex gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar por nome, e-mail, telefone ou produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Buscar nome, e-mail, telefone ou produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={dias} onValueChange={setDias}>
-          <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[140px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="7">Últimos 7 dias</SelectItem>
             <SelectItem value="15">Últimos 15 dias</SelectItem>
@@ -246,14 +247,15 @@ export default function CheckoutsAbandonados() {
       </div>
 
       <Tabs value={filtroStatus} onValueChange={setFiltroStatus}>
-        <TabsList className="w-full grid grid-cols-5 h-auto">
-          <TabsTrigger value="todos" className="text-xs">Todos</TabsTrigger>
-          <TabsTrigger value="pendente" className="text-xs">Pendentes ({stats.pendentes})</TabsTrigger>
-          <TabsTrigger value="contatado" className="text-xs">Contatados</TabsTrigger>
-          <TabsTrigger value="recuperado" className="text-xs">Recuperados</TabsTrigger>
-          <TabsTrigger value="perdido" className="text-xs">Perdidos</TabsTrigger>
+        <TabsList className="w-full grid grid-cols-3 sm:grid-cols-5 h-auto gap-1 p-1">
+          <TabsTrigger value="todos" className="text-[11px] sm:text-xs px-1 py-1.5">Todos</TabsTrigger>
+          <TabsTrigger value="pendente" className="text-[11px] sm:text-xs px-1 py-1.5">Pendentes ({stats.pendentes})</TabsTrigger>
+          <TabsTrigger value="contatado" className="text-[11px] sm:text-xs px-1 py-1.5">Contatados</TabsTrigger>
+          <TabsTrigger value="recuperado" className="text-[11px] sm:text-xs px-1 py-1.5">Recuperados</TabsTrigger>
+          <TabsTrigger value="perdido" className="text-[11px] sm:text-xs px-1 py-1.5">Perdidos</TabsTrigger>
         </TabsList>
       </Tabs>
+
 
       {/* Lista */}
       {isLoading ? (
@@ -273,15 +275,15 @@ export default function CheckoutsAbandonados() {
             const meta = STATUS_META[status] ?? STATUS_META.pendente;
             const fone = normalizarTelefone(c.telefone);
             return (
-              <div key={c.id} className="border rounded-xl p-3.5 bg-card space-y-2.5">
-                <div className="flex items-start justify-between gap-3">
+              <div key={c.id} className="border rounded-xl p-3 sm:p-3.5 bg-card space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-semibold text-sm truncate">{c.nome}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">
+                    <p className="text-[11px] text-muted-foreground break-words line-clamp-2">
                       {[c.email, c.telefone, [c.cidade, c.estado].filter(Boolean).join('/')].filter(Boolean).join(' · ') || 'Sem contato informado'}
                     </p>
                   </div>
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-right shrink-0">
                     <p className="font-bold text-primary text-sm">{brl(c.total)}</p>
                     <p className="text-[10px] text-muted-foreground">{horasAtras(c.criado_em)}</p>
                   </div>
@@ -289,38 +291,38 @@ export default function CheckoutsAbandonados() {
 
                 <p className="text-xs text-muted-foreground line-clamp-2">{resumoItens(c) || 'Sem itens'}</p>
 
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-1.5">
-                    <Badge variant="outline" className={`text-[10px] ${meta.className}`}>{meta.label}</Badge>
-                    {contato?.contatado_em && (
-                      <span className="text-[10px] text-muted-foreground">{dataHora(contato.contatado_em)}</span>
-                    )}
-                    {!fone && <Badge variant="outline" className="text-[10px]">Sem WhatsApp</Badge>}
-                  </div>
-                  <div className="flex gap-1.5">
-                    {c.abandoned_checkout_url && (
-                      <Button size="sm" variant="ghost" className="h-8 px-2" asChild>
-                        <a href={c.abandoned_checkout_url} target="_blank" rel="noreferrer" title="Abrir carrinho">
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                      </Button>
-                    )}
-                    {status !== 'recuperado' && (
-                      <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-600" title="Marcar como recuperado" onClick={() => marcarStatus(c.id, 'recuperado')}>
-                        <Check className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                    {status !== 'perdido' && (
-                      <Button size="sm" variant="ghost" className="h-8 px-2 text-muted-foreground" title="Marcar como perdido" onClick={() => marcarStatus(c.id, 'perdido')}>
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                    <Button size="sm" className="h-8 gap-1.5" disabled={!fone} onClick={() => abrirContato(c)}>
-                      <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge variant="outline" className={`text-[10px] ${meta.className}`}>{meta.label}</Badge>
+                  {contato?.contatado_em && (
+                    <span className="text-[10px] text-muted-foreground">{dataHora(contato.contatado_em)}</span>
+                  )}
+                  {!fone && <Badge variant="outline" className="text-[10px]">Sem WhatsApp</Badge>}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {c.abandoned_checkout_url && (
+                    <Button size="sm" variant="ghost" className="h-9 px-2.5 shrink-0" asChild>
+                      <a href={c.abandoned_checkout_url} target="_blank" rel="noreferrer" title="Abrir carrinho">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
                     </Button>
-                  </div>
+                  )}
+                  {status !== 'recuperado' && (
+                    <Button size="sm" variant="ghost" className="h-9 px-2.5 text-emerald-600 shrink-0" title="Marcar como recuperado" onClick={() => marcarStatus(c.id, 'recuperado')}>
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {status !== 'perdido' && (
+                    <Button size="sm" variant="ghost" className="h-9 px-2.5 text-muted-foreground shrink-0" title="Marcar como perdido" onClick={() => marcarStatus(c.id, 'perdido')}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button size="sm" className="h-9 gap-1.5 flex-1 sm:flex-none sm:ml-auto" disabled={!fone} onClick={() => abrirContato(c)}>
+                    <MessageCircle className="h-4 w-4" /> WhatsApp
+                  </Button>
                 </div>
               </div>
+
             );
           })}
         </div>
@@ -328,7 +330,8 @@ export default function CheckoutsAbandonados() {
 
       {/* Modal de contato */}
       <Dialog open={!!selecionado} onOpenChange={(v) => !v && setSelecionado(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full max-w-lg max-h-[88vh] overflow-y-auto p-4 sm:p-6 rounded-xl">
+
           {selecionado && (
             <>
               <DialogHeader>
@@ -355,17 +358,18 @@ export default function CheckoutsAbandonados() {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mensagem (editável)</label>
-                  <Textarea value={mensagem} onChange={(e) => setMensagem(e.target.value)} rows={9} className="text-sm" />
+                  <Textarea value={mensagem} onChange={(e) => setMensagem(e.target.value)} rows={8} className="text-sm min-h-[160px]" />
                 </div>
               </div>
-              <DialogFooter className="gap-2 sm:gap-2">
-                <Button variant="outline" className="gap-2" onClick={() => { navigator.clipboard.writeText(mensagem); toast.success('Mensagem copiada'); }}>
+              <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+                <Button variant="outline" className="gap-2 w-full sm:w-auto" onClick={() => { navigator.clipboard.writeText(mensagem); toast.success('Mensagem copiada'); }}>
                   <Copy className="h-4 w-4" /> Copiar
                 </Button>
-                <Button className="gap-2" onClick={enviarWhatsApp}>
+                <Button className="gap-2 w-full sm:w-auto" onClick={enviarWhatsApp}>
                   <MessageCircle className="h-4 w-4" /> Abrir WhatsApp
                 </Button>
               </DialogFooter>
+
             </>
           )}
         </DialogContent>
@@ -418,7 +422,7 @@ function TemplatesDialog({ open, onOpenChange, templates }: { open: boolean; onO
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full max-w-lg max-h-[88vh] overflow-y-auto p-4 sm:p-6 rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-base">Modelos de mensagem</DialogTitle>
         </DialogHeader>
@@ -434,17 +438,18 @@ function TemplatesDialog({ open, onOpenChange, templates }: { open: boolean; onO
         <div className="space-y-3">
           {rascunhos.map((t) => (
             <div key={t.id} className="border rounded-lg p-3 space-y-2">
-              <div className="flex gap-2">
-                <Input value={t.nome} onChange={(e) => atualizar(t.id, 'nome', e.target.value)} className="h-8 text-sm" />
-                <Button size="sm" variant={t.ativo ? 'secondary' : 'outline'} className="h-8 text-xs shrink-0" onClick={() => atualizar(t.id, 'ativo', !t.ativo)}>
+              <div className="flex flex-wrap gap-2">
+                <Input value={t.nome} onChange={(e) => atualizar(t.id, 'nome', e.target.value)} className="h-9 text-sm flex-1 min-w-[140px]" />
+                <Button size="sm" variant={t.ativo ? 'secondary' : 'outline'} className="h-9 text-xs shrink-0" onClick={() => atualizar(t.id, 'ativo', !t.ativo)}>
                   {t.ativo ? 'Ativo' : 'Inativo'}
                 </Button>
-                <Button size="sm" variant="ghost" className="h-8 px-2 text-destructive shrink-0" onClick={() => remover(t.id)}>
-                  <Trash2 className="h-3.5 w-3.5" />
+                <Button size="sm" variant="ghost" className="h-9 px-2.5 text-destructive shrink-0" onClick={() => remover(t.id)}>
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
               <Textarea value={t.mensagem} onChange={(e) => atualizar(t.id, 'mensagem', e.target.value)} rows={5} className="text-sm" />
-              <Button size="sm" className="h-8 w-full text-xs" disabled={salvando} onClick={() => salvar(t)}>Salvar modelo</Button>
+              <Button size="sm" className="h-9 w-full text-xs" disabled={salvando} onClick={() => salvar(t)}>Salvar modelo</Button>
+
             </div>
           ))}
         </div>
