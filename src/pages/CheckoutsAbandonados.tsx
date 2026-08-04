@@ -425,6 +425,7 @@ function TemplatesDialog({ open, onOpenChange, templates }: { open: boolean; onO
         <p className="text-[11px] text-muted-foreground">
           Variáveis: <code className="bg-muted px-1 rounded">{'{nome}'}</code>{' '}
           <code className="bg-muted px-1 rounded">{'{nome_completo}'}</code>{' '}
+          <code className="bg-muted px-1 rounded">{'{vendedor}'}</code>{' '}
           <code className="bg-muted px-1 rounded">{'{itens}'}</code>{' '}
           <code className="bg-muted px-1 rounded">{'{total}'}</code>{' '}
           <code className="bg-muted px-1 rounded">{'{link}'}</code>{' '}
