@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -60,11 +61,12 @@ function resumoItens(c: Checkout): string {
   return c.itens.map((i) => `${i.quantidade}x ${i.titulo}${i.variante && i.variante !== 'Default Title' ? ` (${i.variante})` : ''}`).join(', ');
 }
 
-function montarMensagem(tpl: string, c: Checkout): string {
+function montarMensagem(tpl: string, c: Checkout, vendedor: string): string {
   const primeiroNome = c.nome.split(' ')[0] || 'tudo bem';
   const vars: Record<string, string> = {
     '{nome_completo}': c.nome,
     '{nome}': primeiroNome,
+    '{vendedor}': vendedor,
     '{itens}': resumoItens(c) || 'seu pedido',
     '{total}': brl(c.total),
     '{link}': c.abandoned_checkout_url ?? '',
@@ -78,6 +80,8 @@ function montarMensagem(tpl: string, c: Checkout): string {
 
 // ── Página ───────────────────────────────────────────────────────────────────
 export default function CheckoutsAbandonados() {
+  const { profile } = useAuth();
+  const vendedorNome = profile?.nome_vendedor?.split(' ')[0] ?? '';
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [dias, setDias] = useState('30');
@@ -155,13 +159,13 @@ export default function CheckoutsAbandonados() {
     const ativos = (templates ?? []).filter((t) => t.ativo);
     const tpl = ativos[0];
     setTemplateId(tpl?.id ?? '');
-    setMensagem(tpl ? montarMensagem(tpl.mensagem, c) : '');
+    setMensagem(tpl ? montarMensagem(tpl.mensagem, c, vendedorNome) : '');
   };
 
   useEffect(() => {
     if (!selecionado || !templateId) return;
     const tpl = (templates ?? []).find((t) => t.id === templateId);
-    if (tpl) setMensagem(montarMensagem(tpl.mensagem, selecionado));
+    if (tpl) setMensagem(montarMensagem(tpl.mensagem, selecionado, vendedorNome));
   }, [templateId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const marcarStatus = async (checkoutId: string, status: string) => {
@@ -421,6 +425,7 @@ function TemplatesDialog({ open, onOpenChange, templates }: { open: boolean; onO
         <p className="text-[11px] text-muted-foreground">
           Variáveis: <code className="bg-muted px-1 rounded">{'{nome}'}</code>{' '}
           <code className="bg-muted px-1 rounded">{'{nome_completo}'}</code>{' '}
+          <code className="bg-muted px-1 rounded">{'{vendedor}'}</code>{' '}
           <code className="bg-muted px-1 rounded">{'{itens}'}</code>{' '}
           <code className="bg-muted px-1 rounded">{'{total}'}</code>{' '}
           <code className="bg-muted px-1 rounded">{'{link}'}</code>{' '}
