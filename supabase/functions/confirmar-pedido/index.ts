@@ -29,11 +29,11 @@ Deno.serve(async (req) => {
     const { pedido, itens } = await salvarNoBanco(supabase, payload);
 
     // PASSO 2A: Bling síncrono (quando solicitado)
-    let blingStatus: { sucesso: boolean; erro?: string } | null = null;
+    let blingStatus: { sucesso: boolean; erro?: string; nfe?: any } | null = null;
     if (waitForBling) {
       try {
-        await criarNoBling(supabase, pedido, itens);
-        blingStatus = { sucesso: true };
+        const r: any = await criarNoBling(supabase, pedido, itens);
+        blingStatus = { sucesso: true, nfe: r?.nfe ?? null };
       } catch (blingErr: any) {
         blingStatus = { sucesso: false, erro: blingErr?.message ?? 'Erro desconhecido' };
         console.error('[bling] Erro síncrono:', blingErr?.message);
