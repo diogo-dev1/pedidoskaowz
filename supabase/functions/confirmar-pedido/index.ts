@@ -52,9 +52,10 @@ Deno.serve(async (req) => {
 
 
     const distribuir = Promise.allSettled(tarefasBackground).then(resultados => {
-      const handlers = waitForBling
+      const handlers = waitForBling || skipBling
         ? ['expedicao', 'financeiro']
         : ['expedicao', 'financeiro', 'bling'];
+
       const log = resultados.map((r, i) => ({
         handler: handlers[i],
         status: r.status,
