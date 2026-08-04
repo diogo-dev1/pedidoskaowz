@@ -62,14 +62,19 @@ function resumoItens(c: Checkout): string {
 
 function montarMensagem(tpl: string, c: Checkout): string {
   const primeiroNome = c.nome.split(' ')[0] || 'tudo bem';
-  return tpl
-    .replaceAll('{nome}', primeiroNome)
-    .replaceAll('{nome_completo}', c.nome)
-    .replaceAll('{itens}', resumoItens(c) || 'seu pedido')
-    .replaceAll('{total}', brl(c.total))
-    .replaceAll('{link}', c.abandoned_checkout_url ?? '')
-    .replaceAll('{cidade}', c.cidade ?? '');
+  const vars: Record<string, string> = {
+    '{nome_completo}': c.nome,
+    '{nome}': primeiroNome,
+    '{itens}': resumoItens(c) || 'seu pedido',
+    '{total}': brl(c.total),
+    '{link}': c.abandoned_checkout_url ?? '',
+    '{cidade}': c.cidade ?? '',
+  };
+  let out = tpl;
+  for (const [k, v] of Object.entries(vars)) out = out.split(k).join(v);
+  return out;
 }
+
 
 // ── Página ───────────────────────────────────────────────────────────────────
 export default function CheckoutsAbandonados() {
