@@ -159,13 +159,13 @@ export default function CheckoutsAbandonados() {
     const ativos = (templates ?? []).filter((t) => t.ativo);
     const tpl = ativos[0];
     setTemplateId(tpl?.id ?? '');
-    setMensagem(tpl ? montarMensagem(tpl.mensagem, c) : '');
+    setMensagem(tpl ? montarMensagem(tpl.mensagem, c, vendedorNome) : '');
   };
 
   useEffect(() => {
     if (!selecionado || !templateId) return;
     const tpl = (templates ?? []).find((t) => t.id === templateId);
-    if (tpl) setMensagem(montarMensagem(tpl.mensagem, selecionado));
+    if (tpl) setMensagem(montarMensagem(tpl.mensagem, selecionado, vendedorNome));
   }, [templateId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const marcarStatus = async (checkoutId: string, status: string) => {
