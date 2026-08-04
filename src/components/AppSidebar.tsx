@@ -5,7 +5,7 @@ import {
   Calculator, Users, TrendingUp, LayoutDashboard,
   ShoppingBag, MessageSquare, BookOpen, Image, DollarSign, Factory,
   CheckSquare, Store, Layers, Package, Settings, Info, Link2, Globe, Truck,
-  ClipboardList, Boxes, Download, Briefcase, Send, Eye, LogOut,
+  ClipboardList, Boxes, Download, ShoppingCart, Briefcase, Send, Eye, LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -76,6 +76,7 @@ const ADMIN: NavItem[] = [
   { title: 'Produtos Shopify', url: '/produtos-shopify', icon: ShoppingBag },
   { title: 'Estoque Shopify', url: '/inventory', icon: Boxes },
   { title: 'Vendas Site', url: '/shopify-orders', icon: Download },
+  { title: 'Checkouts Abandonados', url: '/checkouts-abandonados', icon: ShoppingCart },
 ];
 
 function match(pathname: string, url: string) {
