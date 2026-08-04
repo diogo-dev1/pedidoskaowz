@@ -358,17 +358,18 @@ export default function CheckoutsAbandonados() {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mensagem (editável)</label>
-                  <Textarea value={mensagem} onChange={(e) => setMensagem(e.target.value)} rows={9} className="text-sm" />
+                  <Textarea value={mensagem} onChange={(e) => setMensagem(e.target.value)} rows={8} className="text-sm min-h-[160px]" />
                 </div>
               </div>
-              <DialogFooter className="gap-2 sm:gap-2">
-                <Button variant="outline" className="gap-2" onClick={() => { navigator.clipboard.writeText(mensagem); toast.success('Mensagem copiada'); }}>
+              <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+                <Button variant="outline" className="gap-2 w-full sm:w-auto" onClick={() => { navigator.clipboard.writeText(mensagem); toast.success('Mensagem copiada'); }}>
                   <Copy className="h-4 w-4" /> Copiar
                 </Button>
-                <Button className="gap-2" onClick={enviarWhatsApp}>
+                <Button className="gap-2 w-full sm:w-auto" onClick={enviarWhatsApp}>
                   <MessageCircle className="h-4 w-4" /> Abrir WhatsApp
                 </Button>
               </DialogFooter>
+
             </>
           )}
         </DialogContent>
