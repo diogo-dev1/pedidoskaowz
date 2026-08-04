@@ -438,17 +438,18 @@ function TemplatesDialog({ open, onOpenChange, templates }: { open: boolean; onO
         <div className="space-y-3">
           {rascunhos.map((t) => (
             <div key={t.id} className="border rounded-lg p-3 space-y-2">
-              <div className="flex gap-2">
-                <Input value={t.nome} onChange={(e) => atualizar(t.id, 'nome', e.target.value)} className="h-8 text-sm" />
-                <Button size="sm" variant={t.ativo ? 'secondary' : 'outline'} className="h-8 text-xs shrink-0" onClick={() => atualizar(t.id, 'ativo', !t.ativo)}>
+              <div className="flex flex-wrap gap-2">
+                <Input value={t.nome} onChange={(e) => atualizar(t.id, 'nome', e.target.value)} className="h-9 text-sm flex-1 min-w-[140px]" />
+                <Button size="sm" variant={t.ativo ? 'secondary' : 'outline'} className="h-9 text-xs shrink-0" onClick={() => atualizar(t.id, 'ativo', !t.ativo)}>
                   {t.ativo ? 'Ativo' : 'Inativo'}
                 </Button>
-                <Button size="sm" variant="ghost" className="h-8 px-2 text-destructive shrink-0" onClick={() => remover(t.id)}>
-                  <Trash2 className="h-3.5 w-3.5" />
+                <Button size="sm" variant="ghost" className="h-9 px-2.5 text-destructive shrink-0" onClick={() => remover(t.id)}>
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
               <Textarea value={t.mensagem} onChange={(e) => atualizar(t.id, 'mensagem', e.target.value)} rows={5} className="text-sm" />
-              <Button size="sm" className="h-8 w-full text-xs" disabled={salvando} onClick={() => salvar(t)}>Salvar modelo</Button>
+              <Button size="sm" className="h-9 w-full text-xs" disabled={salvando} onClick={() => salvar(t)}>Salvar modelo</Button>
+
             </div>
           ))}
         </div>
