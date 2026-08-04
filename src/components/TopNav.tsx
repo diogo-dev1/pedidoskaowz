@@ -39,6 +39,7 @@ const GRUPOS: NavGroup[] = [
       { title: 'Simulador de Preços', url: '/simulador-precos', icon: Calculator },
       { title: 'Relatório de Vendas', url: '/relatorio-vendas', icon: TrendingUp },
       { title: 'Lançar no Bling', url: '/lancar-bling', icon: Send },
+      { title: 'Bling — Pedido/NF-e', url: '/bling-pedido', icon: Send },
     ],
   },
   {
