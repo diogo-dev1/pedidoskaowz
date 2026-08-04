@@ -1057,6 +1057,9 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
           'confirmar-pedido',
           {
             body: {
+              // Bling é lançado manualmente na aba Bling
+              skipBling: true,
+
               // Cliente
               nomeCompleto,
               cpf,
