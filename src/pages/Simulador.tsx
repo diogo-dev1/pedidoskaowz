@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+
 import { useOpcoesN8n } from '@/hooks/useOpcoesN8n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +63,8 @@ interface LaminaCustomizada {
 
 export default function Simulador() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
+
   const { opcoes: opcoesN8n } = useOpcoesN8n();
   const calcularPrazo65Dias = () => {
     const hoje = new Date();
@@ -1053,6 +1057,9 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
           'confirmar-pedido',
           {
             body: {
+              // Bling é lançado manualmente na aba Bling
+              skipBling: true,
+
               // Cliente
               nomeCompleto,
               cpf,
@@ -1098,7 +1105,12 @@ OBS: ${[observacao, produtosSelecionados ? `ADICIONAIS: ${produtosSelecionados}`
         } else {
           console.log('Pedido confirmado:', confirmacao);
           toast.success(`✅ ${confirmacao.mensagem}`);
+          if (confirmacao?.pedido_id) {
+            // Encaminha para a aba Bling para lançar o pedido de venda / NF-e
+            navigate(`/bling-pedido/${confirmacao.pedido_id}`);
+          }
         }
+
       } catch (erroCatch) {
         console.error('Erro inesperado ao confirmar pedido:', erroCatch);
         // Não bloqueia — pedido já foi para o Sheets

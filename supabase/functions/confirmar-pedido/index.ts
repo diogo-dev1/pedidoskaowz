@@ -24,13 +24,16 @@ Deno.serve(async (req) => {
     // Quando waitForBling=true, o Bling roda de forma síncrona e o resultado
     // é retornado na resposta — permite que o cliente saiba se deu certo.
     const waitForBling = payload.waitForBling === true;
+    // Quando skipBling=true o Bling não é chamado aqui — o lançamento é feito
+    // manualmente na aba Bling (/bling-pedido/:id).
+    const skipBling = payload.skipBling === true;
 
     // PASSO 1: Salvar no banco (síncrono — crítico)
     const { pedido, itens } = await salvarNoBanco(supabase, payload);
 
     // PASSO 2A: Bling síncrono (quando solicitado)
     let blingStatus: { sucesso: boolean; erro?: string; nfe?: any } | null = null;
-    if (waitForBling) {
+    if (waitForBling && !skipBling) {
       try {
         const r: any = await criarNoBling(supabase, pedido, itens);
         blingStatus = { sucesso: true, nfe: r?.nfe ?? null };
@@ -44,13 +47,15 @@ Deno.serve(async (req) => {
     const tarefasBackground = [
       criarExpedicao(supabase, pedido),
       registrarFinanceiro(supabase, pedido),
-      ...(waitForBling ? [] : [criarNoBling(supabase, pedido, itens)]),
+      ...(waitForBling || skipBling ? [] : [criarNoBling(supabase, pedido, itens)]),
     ];
 
+
     const distribuir = Promise.allSettled(tarefasBackground).then(resultados => {
-      const handlers = waitForBling
+      const handlers = waitForBling || skipBling
         ? ['expedicao', 'financeiro']
         : ['expedicao', 'financeiro', 'bling'];
+
       const log = resultados.map((r, i) => ({
         handler: handlers[i],
         status: r.status,
@@ -67,7 +72,9 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         sucesso: true,
+        pedido_id: pedido.id,
         numero_pedido: pedido.numero_pedido,
+
         prazo: pedido.prazo_entrega,
         mensagem: `Pedido ${pedido.numero_pedido} confirmado! Prazo: ${pedido.prazo_entrega}`,
         bling: blingStatus,
