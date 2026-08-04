@@ -275,15 +275,15 @@ export default function CheckoutsAbandonados() {
             const meta = STATUS_META[status] ?? STATUS_META.pendente;
             const fone = normalizarTelefone(c.telefone);
             return (
-              <div key={c.id} className="border rounded-xl p-3.5 bg-card space-y-2.5">
-                <div className="flex items-start justify-between gap-3">
+              <div key={c.id} className="border rounded-xl p-3 sm:p-3.5 bg-card space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-semibold text-sm truncate">{c.nome}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">
+                    <p className="text-[11px] text-muted-foreground break-words line-clamp-2">
                       {[c.email, c.telefone, [c.cidade, c.estado].filter(Boolean).join('/')].filter(Boolean).join(' · ') || 'Sem contato informado'}
                     </p>
                   </div>
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-right shrink-0">
                     <p className="font-bold text-primary text-sm">{brl(c.total)}</p>
                     <p className="text-[10px] text-muted-foreground">{horasAtras(c.criado_em)}</p>
                   </div>
@@ -291,38 +291,38 @@ export default function CheckoutsAbandonados() {
 
                 <p className="text-xs text-muted-foreground line-clamp-2">{resumoItens(c) || 'Sem itens'}</p>
 
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-1.5">
-                    <Badge variant="outline" className={`text-[10px] ${meta.className}`}>{meta.label}</Badge>
-                    {contato?.contatado_em && (
-                      <span className="text-[10px] text-muted-foreground">{dataHora(contato.contatado_em)}</span>
-                    )}
-                    {!fone && <Badge variant="outline" className="text-[10px]">Sem WhatsApp</Badge>}
-                  </div>
-                  <div className="flex gap-1.5">
-                    {c.abandoned_checkout_url && (
-                      <Button size="sm" variant="ghost" className="h-8 px-2" asChild>
-                        <a href={c.abandoned_checkout_url} target="_blank" rel="noreferrer" title="Abrir carrinho">
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                      </Button>
-                    )}
-                    {status !== 'recuperado' && (
-                      <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-600" title="Marcar como recuperado" onClick={() => marcarStatus(c.id, 'recuperado')}>
-                        <Check className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                    {status !== 'perdido' && (
-                      <Button size="sm" variant="ghost" className="h-8 px-2 text-muted-foreground" title="Marcar como perdido" onClick={() => marcarStatus(c.id, 'perdido')}>
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                    <Button size="sm" className="h-8 gap-1.5" disabled={!fone} onClick={() => abrirContato(c)}>
-                      <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge variant="outline" className={`text-[10px] ${meta.className}`}>{meta.label}</Badge>
+                  {contato?.contatado_em && (
+                    <span className="text-[10px] text-muted-foreground">{dataHora(contato.contatado_em)}</span>
+                  )}
+                  {!fone && <Badge variant="outline" className="text-[10px]">Sem WhatsApp</Badge>}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {c.abandoned_checkout_url && (
+                    <Button size="sm" variant="ghost" className="h-9 px-2.5 shrink-0" asChild>
+                      <a href={c.abandoned_checkout_url} target="_blank" rel="noreferrer" title="Abrir carrinho">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
                     </Button>
-                  </div>
+                  )}
+                  {status !== 'recuperado' && (
+                    <Button size="sm" variant="ghost" className="h-9 px-2.5 text-emerald-600 shrink-0" title="Marcar como recuperado" onClick={() => marcarStatus(c.id, 'recuperado')}>
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {status !== 'perdido' && (
+                    <Button size="sm" variant="ghost" className="h-9 px-2.5 text-muted-foreground shrink-0" title="Marcar como perdido" onClick={() => marcarStatus(c.id, 'perdido')}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button size="sm" className="h-9 gap-1.5 flex-1 sm:flex-none sm:ml-auto" disabled={!fone} onClick={() => abrirContato(c)}>
+                    <MessageCircle className="h-4 w-4" /> WhatsApp
+                  </Button>
                 </div>
               </div>
+
             );
           })}
         </div>
