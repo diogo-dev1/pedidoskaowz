@@ -63,6 +63,8 @@ interface LaminaCustomizada {
 
 export default function Simulador() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
+
   const { opcoes: opcoesN8n } = useOpcoesN8n();
   const calcularPrazo65Dias = () => {
     const hoje = new Date();
