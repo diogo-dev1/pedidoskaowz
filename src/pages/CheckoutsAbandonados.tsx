@@ -61,11 +61,12 @@ function resumoItens(c: Checkout): string {
   return c.itens.map((i) => `${i.quantidade}x ${i.titulo}${i.variante && i.variante !== 'Default Title' ? ` (${i.variante})` : ''}`).join(', ');
 }
 
-function montarMensagem(tpl: string, c: Checkout): string {
+function montarMensagem(tpl: string, c: Checkout, vendedor: string): string {
   const primeiroNome = c.nome.split(' ')[0] || 'tudo bem';
   const vars: Record<string, string> = {
     '{nome_completo}': c.nome,
     '{nome}': primeiroNome,
+    '{vendedor}': vendedor,
     '{itens}': resumoItens(c) || 'seu pedido',
     '{total}': brl(c.total),
     '{link}': c.abandoned_checkout_url ?? '',
