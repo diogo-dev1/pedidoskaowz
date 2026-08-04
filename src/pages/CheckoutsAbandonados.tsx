@@ -80,6 +80,8 @@ function montarMensagem(tpl: string, c: Checkout, vendedor: string): string {
 
 // ── Página ───────────────────────────────────────────────────────────────────
 export default function CheckoutsAbandonados() {
+  const { profile } = useAuth();
+  const vendedorNome = profile?.nome_vendedor?.split(' ')[0] ?? '';
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [dias, setDias] = useState('30');
