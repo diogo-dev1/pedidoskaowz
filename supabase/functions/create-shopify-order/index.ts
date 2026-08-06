@@ -11,9 +11,8 @@ let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
 
 async function getShopifyToken(shopDomain: string): Promise<string> {
-  // Prefer the Admin API access token (shpat_...) when configured
-  const staticTokenFirst = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
-  if (staticTokenFirst) return staticTokenFirst;
+  // client_credentials primeiro (token estático fica como fallback)
+
 
   const clientId = Deno.env.get('SHOPIFY_CLIENT_ID');
   const clientSecret = Deno.env.get('SHOPIFY_CLIENT_SECRET');
