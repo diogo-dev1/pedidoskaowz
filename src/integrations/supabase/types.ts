@@ -1757,6 +1757,8 @@ export type Database = {
           numero_pedido: string
           observacao: string | null
           prazo_entrega: string | null
+          shopify_order_id: number | null
+          shopify_order_name: string | null
           status: string | null
           updated_at: string | null
           valor_total: number | null
@@ -1795,6 +1797,8 @@ export type Database = {
           numero_pedido: string
           observacao?: string | null
           prazo_entrega?: string | null
+          shopify_order_id?: number | null
+          shopify_order_name?: string | null
           status?: string | null
           updated_at?: string | null
           valor_total?: number | null
@@ -1833,6 +1837,8 @@ export type Database = {
           numero_pedido?: string
           observacao?: string | null
           prazo_entrega?: string | null
+          shopify_order_id?: number | null
+          shopify_order_name?: string | null
           status?: string | null
           updated_at?: string | null
           valor_total?: number | null
