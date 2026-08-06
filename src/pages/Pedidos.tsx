@@ -72,8 +72,9 @@ export default function Pedidos() {
     setLoading(true);
     const { data, error } = await supabase
       .from('pedidos')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*, pedido_itens(*)')
+      .order('created_at', { ascending: false })
+      .limit(200);
 
     if (error) {
       toast.error('Erro ao carregar pedidos');
@@ -81,16 +82,7 @@ export default function Pedidos() {
       return;
     }
 
-    const pedidosComItens: Pedido[] = [];
-    for (const pedido of (data || [])) {
-      const { data: itens } = await supabase
-        .from('pedido_itens')
-        .select('*')
-        .eq('pedido_id', pedido.id);
-      pedidosComItens.push({ ...pedido, pedido_itens: itens || [] } as Pedido);
-    }
-
-    setPedidos(pedidosComItens);
+    setPedidos((data || []) as Pedido[]);
     setLoading(false);
   };
 
