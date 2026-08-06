@@ -11,6 +11,9 @@ let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
 
 async function getShopifyToken(shopDomain: string): Promise<string> {
+  // client_credentials primeiro (token estático fica como fallback)
+
+
   const clientId = Deno.env.get('SHOPIFY_CLIENT_ID');
   const clientSecret = Deno.env.get('SHOPIFY_CLIENT_SECRET');
 
@@ -60,6 +63,8 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const { pedido_id } = body;
+
+
 
     if (!pedido_id) {
       return new Response(
