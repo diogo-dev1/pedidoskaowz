@@ -7,20 +7,28 @@ const corsHeaders = {
 
 const API_VERSION = Deno.env.get('SHOPIFY_API_VERSION') ?? '2024-01';
 
+let cachedToken: string | null = null;
+let tokenExpiresAt = 0;
+
 async function getShopifyToken(shopDomain: string): Promise<string> {
   const clientId = Deno.env.get('SHOPIFY_CLIENT_ID');
   const clientSecret = Deno.env.get('SHOPIFY_CLIENT_SECRET');
 
   if (clientId && clientSecret) {
+    if (cachedToken && Date.now() < tokenExpiresAt) return cachedToken;
+
     const res = await fetch(`https://${shopDomain}/admin/oauth/access_token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret }),
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.access_token) return data.access_token;
-    }
+    if (!res.ok) throw new Error(`Shopify token error [${res.status}]: ${await res.text()}`);
+    const data = await res.json();
+    if (!data?.access_token) throw new Error('Shopify token response missing access_token');
+    cachedToken = data.access_token;
+    const expiresIn = typeof data.expires_in === 'number' ? data.expires_in : 86400;
+    tokenExpiresAt = Date.now() + Math.max(0, expiresIn - 60) * 1000;
+    return cachedToken!;
   }
 
   const staticToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
@@ -31,7 +39,17 @@ async function getShopifyToken(shopDomain: string): Promise<string> {
 async function resolveShopDomain(): Promise<string> {
   const raw = Deno.env.get('SHOPIFY_SHOP') ?? Deno.env.get('SHOPIFY_STORE_URL');
   if (!raw) throw new Error('Shopify shop not configured');
-  return raw.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  let domain = raw.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  if (!domain.endsWith('.myshopify.com')) {
+    try {
+      const metaRes = await fetch(`https://${domain}/meta.json`);
+      if (metaRes.ok) {
+        const meta = await metaRes.json();
+        if (meta?.myshopify_domain) domain = meta.myshopify_domain;
+      }
+    } catch (_) {}
+  }
+  return domain;
 }
 
 Deno.serve(async (req) => {
