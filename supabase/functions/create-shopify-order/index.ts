@@ -63,7 +63,39 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { pedido_id } = body;
+    const { pedido_id, debug } = body;
+
+    if (debug) {
+      const dom = await resolveShopDomain();
+      const results: Record<string, unknown> = { shop: dom };
+      for (const mode of ['cc', 'static'] as const) {
+        try {
+          let tk: string;
+          if (mode === 'cc') {
+            const cid = Deno.env.get('SHOPIFY_CLIENT_ID');
+            const cs = Deno.env.get('SHOPIFY_CLIENT_SECRET');
+            if (!cid || !cs) { results[mode] = 'not configured'; continue; }
+            const r = await fetch(`https://${dom}/admin/oauth/access_token`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ grant_type: 'client_credentials', client_id: cid, client_secret: cs }),
+            });
+            const d = await r.json();
+            tk = d.access_token;
+          } else {
+            tk = Deno.env.get('SHOPIFY_ACCESS_TOKEN') ?? '';
+            if (!tk) { results[mode] = 'not configured'; continue; }
+          }
+          const rc = await fetch(`https://${dom}/admin/api/${API_VERSION}/orders/count.json`, {
+            headers: { 'X-Shopify-Access-Token': tk },
+          });
+          results[mode] = { read_orders_status: rc.status, body: (await rc.text()).slice(0, 200) };
+        } catch (e: any) {
+          results[mode] = 'erro: ' + e.message;
+        }
+      }
+      return new Response(JSON.stringify(results), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
 
     if (!pedido_id) {
       return new Response(
