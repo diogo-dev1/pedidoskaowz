@@ -11,8 +11,9 @@ let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
 
 async function getShopifyToken(shopDomain: string): Promise<string> {
-  // client_credentials primeiro (token estático fica como fallback)
-
+  // Token estático primeiro (é o que tem os escopos aprovados)
+  const staticToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+  if (staticToken) return staticToken;
 
   const clientId = Deno.env.get('SHOPIFY_CLIENT_ID');
   const clientSecret = Deno.env.get('SHOPIFY_CLIENT_SECRET');
@@ -34,8 +35,6 @@ async function getShopifyToken(shopDomain: string): Promise<string> {
     return cachedToken!;
   }
 
-  const staticToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
-  if (staticToken) return staticToken;
   throw new Error('Shopify credentials not configured');
 }
 
