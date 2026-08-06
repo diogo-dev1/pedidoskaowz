@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, RefreshCw, ChevronRight, X, Package, Clock, CheckCircle2, Truck, Box, AlertTriangle } from 'lucide-react';
+import { Loader2, RefreshCw, ChevronRight, X, Package, Clock, CheckCircle2, Truck, Box, AlertTriangle, ShoppingBag } from 'lucide-react';
 
 interface PedidoItem {
   id: string;
@@ -45,6 +45,8 @@ interface Pedido {
   bloqueado_expedicao: boolean;
   motivo_bloqueio: string;
   bling_pedido_id: number;
+  shopify_order_id: number | null;
+  shopify_order_name: string | null;
   cupom: string;
   created_at: string;
   pedido_itens?: PedidoItem[];
@@ -64,6 +66,7 @@ export default function Pedidos() {
   const [loading, setLoading] = useState(true);
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [filtro, setFiltro] = useState('todos');
+  const [criandoShopify, setCriandoShopify] = useState(false);
 
   const carregarPedidos = async () => {
     setLoading(true);
@@ -113,6 +116,26 @@ export default function Pedidos() {
   const formatarValor = (valor: number) => {
     if (!valor) return '-';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+  };
+
+  const criarNoShopify = async (pedidoId: string) => {
+    setCriandoShopify(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-shopify-order', {
+        body: { pedido_id: pedidoId },
+      });
+      if (error) throw error;
+      if (data?.sucesso) {
+        toast.success(data.mensagem || 'Criado no Shopify!');
+        carregarPedidos();
+      } else {
+        toast.error('Erro: ' + (data?.erro || 'Erro desconhecido'));
+      }
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || err));
+    } finally {
+      setCriandoShopify(false);
+    }
   };
 
   const atualizarStatus = async (pedidoId: string, novoStatus: string) => {
@@ -250,6 +273,27 @@ export default function Pedidos() {
 
         {/* Ações */}
         <div className="space-y-2">
+          {/* Shopify */}
+          {pedidoAberto.shopify_order_id ? (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
+              <ShoppingBag className="h-4 w-4 flex-shrink-0" />
+              <span>Shopify: {pedidoAberto.shopify_order_name || `#${pedidoAberto.shopify_order_id}`}</span>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              className="w-full border-green-600 text-green-700 hover:bg-green-600 hover:text-white"
+              onClick={() => criarNoShopify(pedidoAberto.id)}
+              disabled={criandoShopify}
+            >
+              {criandoShopify
+                ? <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                : <ShoppingBag className="h-4 w-4 mr-2" />
+              }
+              Criar no Shopify
+            </Button>
+          )}
+
           {pedidoAberto.status === 'aguardando_triagem' && (
             <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => atualizarStatus(pedidoAberto.id, 'aprovado')}>
               <CheckCircle2 className="h-4 w-4 mr-2" />
