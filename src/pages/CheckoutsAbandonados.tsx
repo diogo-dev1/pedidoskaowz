@@ -259,6 +259,25 @@ export default function CheckoutsAbandonados() {
         </Select>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex gap-2 flex-1 min-w-0">
+          <Input type="number" inputMode="decimal" placeholder="Valor mín. (R$)" value={valorMin} onChange={(e) => setValorMin(e.target.value)} className="flex-1 min-w-0" />
+          <Input type="number" inputMode="decimal" placeholder="Valor máx. (R$)" value={valorMax} onChange={(e) => setValorMax(e.target.value)} className="flex-1 min-w-0" />
+        </div>
+        <Select value={ordem} onValueChange={setOrdem}>
+          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="recentes">Mais recentes</SelectItem>
+            <SelectItem value="maior">Maior valor</SelectItem>
+            <SelectItem value="menor">Menor valor</SelectItem>
+          </SelectContent>
+        </Select>
+        {(valorMin || valorMax) && (
+          <Button variant="ghost" size="sm" onClick={() => { setValorMin(''); setValorMax(''); }}>Limpar valor</Button>
+        )}
+      </div>
+
+
       <Tabs value={filtroStatus} onValueChange={setFiltroStatus}>
         <TabsList className="w-full grid grid-cols-3 sm:grid-cols-5 h-auto gap-1 p-1">
           <TabsTrigger value="todos" className="text-[11px] sm:text-xs px-1 py-1.5">Todos</TabsTrigger>
