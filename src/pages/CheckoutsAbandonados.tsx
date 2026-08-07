@@ -133,9 +133,14 @@ export default function CheckoutsAbandonados() {
 
   const filtrados = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return checkouts.filter((c) => {
+    const min = parseFloat(valorMin.replace(',', '.'));
+    const max = parseFloat(valorMax.replace(',', '.'));
+    const lista = checkouts.filter((c) => {
       const status = mapaContatos.get(c.id)?.status ?? 'pendente';
       if (filtroStatus !== 'todos' && status !== filtroStatus) return false;
+      const valor = parseFloat(c.total) || 0;
+      if (!isNaN(min) && valor < min) return false;
+      if (!isNaN(max) && valor > max) return false;
       if (!q) return true;
       return (
         c.nome.toLowerCase().includes(q) ||
@@ -144,7 +149,11 @@ export default function CheckoutsAbandonados() {
         resumoItens(c).toLowerCase().includes(q)
       );
     });
-  }, [checkouts, search, filtroStatus, mapaContatos]);
+    if (ordem === 'maior') lista.sort((a, b) => (parseFloat(b.total) || 0) - (parseFloat(a.total) || 0));
+    if (ordem === 'menor') lista.sort((a, b) => (parseFloat(a.total) || 0) - (parseFloat(b.total) || 0));
+    return lista;
+  }, [checkouts, search, filtroStatus, mapaContatos, valorMin, valorMax, ordem]);
+
 
   const stats = useMemo(() => {
     const total = checkouts.reduce((s, c) => s + (parseFloat(c.total) || 0), 0);
