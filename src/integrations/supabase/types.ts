@@ -2134,6 +2134,69 @@ export type Database = {
         }
         Relationships: []
       }
+      upsell_clientes_contatos: {
+        Row: {
+          contatado_em: string | null
+          contatado_por: string | null
+          created_at: string
+          id: string
+          observacoes: string | null
+          order_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contatado_em?: string | null
+          contatado_por?: string | null
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          order_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contatado_em?: string | null
+          contatado_por?: string | null
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          order_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      upsell_clientes_templates: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          mensagem: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          mensagem: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          mensagem?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       urban_edc_config: {
         Row: {
           chave: string
