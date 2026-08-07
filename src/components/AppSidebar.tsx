@@ -78,6 +78,7 @@ const ADMIN: NavItem[] = [
   { title: 'Estoque Shopify', url: '/inventory', icon: Boxes },
   { title: 'Vendas Site', url: '/shopify-orders', icon: Download },
   { title: 'Checkouts Abandonados', url: '/checkouts-abandonados', icon: ShoppingCart },
+  { title: 'Upsell Clientes', url: '/upsell-clientes', icon: TrendingUp },
 ];
 
 function match(pathname: string, url: string) {
