@@ -86,6 +86,10 @@ export default function CheckoutsAbandonados() {
   const [search, setSearch] = useState('');
   const [dias, setDias] = useState('30');
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [valorMin, setValorMin] = useState('');
+  const [valorMax, setValorMax] = useState('');
+  const [ordem, setOrdem] = useState('recentes');
+
   const [selecionado, setSelecionado] = useState<Checkout | null>(null);
   const [mensagem, setMensagem] = useState('');
   const [templateId, setTemplateId] = useState<string>('');
@@ -133,9 +137,14 @@ export default function CheckoutsAbandonados() {
 
   const filtrados = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return checkouts.filter((c) => {
+    const min = parseFloat(valorMin.replace(',', '.'));
+    const max = parseFloat(valorMax.replace(',', '.'));
+    const lista = checkouts.filter((c) => {
       const status = mapaContatos.get(c.id)?.status ?? 'pendente';
       if (filtroStatus !== 'todos' && status !== filtroStatus) return false;
+      const valor = parseFloat(c.total) || 0;
+      if (!isNaN(min) && valor < min) return false;
+      if (!isNaN(max) && valor > max) return false;
       if (!q) return true;
       return (
         c.nome.toLowerCase().includes(q) ||
@@ -144,7 +153,11 @@ export default function CheckoutsAbandonados() {
         resumoItens(c).toLowerCase().includes(q)
       );
     });
-  }, [checkouts, search, filtroStatus, mapaContatos]);
+    if (ordem === 'maior') lista.sort((a, b) => (parseFloat(b.total) || 0) - (parseFloat(a.total) || 0));
+    if (ordem === 'menor') lista.sort((a, b) => (parseFloat(a.total) || 0) - (parseFloat(b.total) || 0));
+    return lista;
+  }, [checkouts, search, filtroStatus, mapaContatos, valorMin, valorMax, ordem]);
+
 
   const stats = useMemo(() => {
     const total = checkouts.reduce((s, c) => s + (parseFloat(c.total) || 0), 0);
@@ -245,6 +258,25 @@ export default function CheckoutsAbandonados() {
           </SelectContent>
         </Select>
       </div>
+
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex gap-2 flex-1 min-w-0">
+          <Input type="number" inputMode="decimal" placeholder="Valor mín. (R$)" value={valorMin} onChange={(e) => setValorMin(e.target.value)} className="flex-1 min-w-0" />
+          <Input type="number" inputMode="decimal" placeholder="Valor máx. (R$)" value={valorMax} onChange={(e) => setValorMax(e.target.value)} className="flex-1 min-w-0" />
+        </div>
+        <Select value={ordem} onValueChange={setOrdem}>
+          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="recentes">Mais recentes</SelectItem>
+            <SelectItem value="maior">Maior valor</SelectItem>
+            <SelectItem value="menor">Menor valor</SelectItem>
+          </SelectContent>
+        </Select>
+        {(valorMin || valorMax) && (
+          <Button variant="ghost" size="sm" onClick={() => { setValorMin(''); setValorMax(''); }}>Limpar valor</Button>
+        )}
+      </div>
+
 
       <Tabs value={filtroStatus} onValueChange={setFiltroStatus}>
         <TabsList className="w-full grid grid-cols-3 sm:grid-cols-5 h-auto gap-1 p-1">
