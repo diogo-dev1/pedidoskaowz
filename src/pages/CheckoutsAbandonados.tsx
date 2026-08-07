@@ -86,6 +86,10 @@ export default function CheckoutsAbandonados() {
   const [search, setSearch] = useState('');
   const [dias, setDias] = useState('30');
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [valorMin, setValorMin] = useState('');
+  const [valorMax, setValorMax] = useState('');
+  const [ordem, setOrdem] = useState('recentes');
+
   const [selecionado, setSelecionado] = useState<Checkout | null>(null);
   const [mensagem, setMensagem] = useState('');
   const [templateId, setTemplateId] = useState<string>('');
