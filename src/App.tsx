@@ -49,6 +49,7 @@ import MonteSeuKitLaminas from "./pages/MonteSeuKitLaminas";
 import MonteSeuKitLaminasAdmin from "./pages/admin/MonteSeuKitLaminasAdmin";
 import Inventory from "./pages/Inventory";
 import CheckoutsAbandonados from "./pages/CheckoutsAbandonados";
+import UpsellClientes from "./pages/UpsellClientes";
 import ShopifyOrders from "./pages/ShopifyOrders";
 import Triagem from "./pages/Triagem";
 import Pedidos from "./pages/Pedidos";
@@ -443,6 +444,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <CheckoutsAbandonados />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/upsell-clientes"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <UpsellClientes />
                   </Layout>
                 </ProtectedRoute>
               }
