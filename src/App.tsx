@@ -469,6 +469,17 @@ const App = () => (
               }
             />
             <Route
+              path="/estoque-feira"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <EstoqueFeira />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/triagem"
               element={
                 <ProtectedRoute>
