@@ -48,6 +48,8 @@ import ParcelamentoPublico from "./pages/ParcelamentoPublico";
 import MonteSeuKitLaminas from "./pages/MonteSeuKitLaminas";
 import MonteSeuKitLaminasAdmin from "./pages/admin/MonteSeuKitLaminasAdmin";
 import Inventory from "./pages/Inventory";
+import EstoqueFeira from "./pages/EstoqueFeira";
+
 import CheckoutsAbandonados from "./pages/CheckoutsAbandonados";
 import UpsellClientes from "./pages/UpsellClientes";
 import ShopifyOrders from "./pages/ShopifyOrders";
@@ -468,6 +470,17 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/estoque-feira"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <EstoqueFeira />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
             <Route
               path="/triagem"
               element={

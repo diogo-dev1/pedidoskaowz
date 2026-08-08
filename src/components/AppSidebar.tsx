@@ -76,6 +76,8 @@ const ADMIN: NavItem[] = [
   { title: 'Bling', url: '/bling', icon: Link2 },
   { title: 'Produtos Shopify', url: '/produtos-shopify', icon: ShoppingBag },
   { title: 'Estoque Shopify', url: '/inventory', icon: Boxes },
+  { title: 'Estoque Feira', url: '/estoque-feira', icon: Boxes },
+
   { title: 'Vendas Site', url: '/shopify-orders', icon: Download },
   { title: 'Checkouts Abandonados', url: '/checkouts-abandonados', icon: ShoppingCart },
   { title: 'Upsell Clientes', url: '/upsell-clientes', icon: TrendingUp },
