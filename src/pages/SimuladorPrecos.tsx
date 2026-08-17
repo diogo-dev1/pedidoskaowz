@@ -15,9 +15,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcEntry, gerarOrcamento,
-  novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom,
+  novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, espacadorIdx, nomeBainha,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
 } from '@/lib/simuladorData';
+
 
 /* ════════════════ UI: átomos ════════════════ */
 
