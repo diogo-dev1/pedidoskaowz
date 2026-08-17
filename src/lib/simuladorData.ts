@@ -38,9 +38,20 @@ export interface ItemCfg {
   empIdx: number;      // default 0 (Grafite inclusa)
   empCor: string | null; // cor da empunhadura, quando a opção tem `cores`
   dragonScale: boolean; // opcional da empunhadura
+  espacador: boolean;   // opcional da empunhadura (soma ao valor da empunhadura)
+  espacadorCor: string | null; // cor do espaçador
   acabIdx: number;     // default 0 (Acetinado incluso)
-  bainhaIdx: number;   // default 0 (Preta inclusa)
+  /** Bainhas escolhidas (múltiplas): índices em data.bainhas */
+  bainhaIdxs: number[];
+  /** Cor por bainha escolhida: { [idxBainha]: cor } */
+  bainhaCores: Record<number, string | null>;
 }
+
+/** Índice da opção "Espaçador" na lista de empunhaduras (opcional, não é uma empunhadura). */
+export function espacadorIdx(data: SimuladorData): number {
+  return data.empunhaduras.findIndex((e) => /espa[çc]ador/i.test(e.nome));
+}
+
 
 /** Item avulso — um produto do catálogo de Adicionais comprado fora da
  *  configuração de uma faca (ex.: brinde, acessório vendido à parte). */
