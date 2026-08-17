@@ -279,12 +279,38 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
 
               <Secao title="Bainha">
                 <div className="flex flex-wrap gap-1.5">
-                  {data.bainhas.map((b, i) => (
-                    <Chip key={i} label={b.nome} price={precoClasse(b.precos, c)}
-                      selected={cfg.bainhaIdx === i} onClick={() => onChange({ ...cfg, bainhaIdx: cfg.bainhaIdx === i ? 0 : i })} />
-                  ))}
+                  {data.bainhas.map((b, i) => {
+                    const sel = (cfg.bainhaIdxs ?? []).includes(i);
+                    return (
+                      <Chip key={i} label={b.nome} price={precoClasse(b.precos, c)} selected={sel}
+                        onClick={() => {
+                          const atuais = cfg.bainhaIdxs ?? [];
+                          const novas = sel ? atuais.filter((x) => x !== i) : [...atuais, i];
+                          const cores = { ...(cfg.bainhaCores ?? {}) };
+                          if (sel) delete cores[i];
+                          onChange({ ...cfg, bainhaIdxs: novas, bainhaCores: cores });
+                        }} />
+                    );
+                  })}
                 </div>
+                <p className="text-[10px] text-muted-foreground">Pode escolher as duas bainhas — selecione a cor de cada uma.</p>
+                {(cfg.bainhaIdxs ?? []).map((bi) => (
+                  !!data.bainhas[bi]?.cores?.length && (
+                    <div key={bi} className="flex flex-wrap gap-1.5 pt-1">
+                      <span className="w-full text-[10px] text-muted-foreground">Cor da bainha {data.bainhas[bi].nome}:</span>
+                      {data.bainhas[bi]!.cores!.map((cor) => (
+                        <button key={cor} type="button"
+                          onClick={() => onChange({ ...cfg, bainhaCores: { ...(cfg.bainhaCores ?? {}), [bi]: (cfg.bainhaCores ?? {})[bi] === cor ? null : cor } })}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all
+                            ${(cfg.bainhaCores ?? {})[bi] === cor ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-border bg-background hover:bg-muted active:scale-95'}`}>
+                          {cor}
+                        </button>
+                      ))}
+                    </div>
+                  )
+                ))}
               </Secao>
+
 
               <div className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/15">
                 <span className="text-sm font-medium">Subtotal</span>
