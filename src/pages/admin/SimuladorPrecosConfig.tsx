@@ -249,7 +249,7 @@ export default function SimuladorPrecosConfig() {
 
           <section className="space-y-2">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Bainha</h2>
-            {draft.bainhas.map((o, i) => <OpcaoPrecos key={i} op={o} onChange={(x) => updateOpcao('bainhas', i, x)} />)}
+            {draft.bainhas.map((o, i) => <OpcaoPrecos key={i} op={o} comCores onChange={(x) => updateOpcao('bainhas', i, x)} />)}
           </section>
         </TabsContent>
 
