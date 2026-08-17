@@ -138,8 +138,14 @@ export function calcItem(data: SimuladorData, cfg: ItemCfg): number {
   if (cfg.bruteForge) t += precoClasse(data.bruteForge, c);
   t += precoClasse(data.empunhaduras[cfg.empIdx]?.precos ?? {}, c);
   if (cfg.dragonScale) t += precoClasse(data.dragonScale, c);
+  if (cfg.espacador) {
+    const ei = espacadorIdx(data);
+    if (ei >= 0) t += precoClasse(data.empunhaduras[ei].precos, c);
+  }
   t += precoClasse(data.acabamentos[cfg.acabIdx]?.precos ?? {}, c);
-  t += precoClasse(data.bainhas[cfg.bainhaIdx]?.precos ?? {}, c);
+  (cfg.bainhaIdxs ?? []).forEach((i) => {
+    t += precoClasse(data.bainhas[i]?.precos ?? {}, c);
+  });
   return t;
 }
 
@@ -151,17 +157,20 @@ export function textoItem(data: SimuladorData, cfg: ItemCfg, n: number): string[
   let emp = data.empunhaduras[cfg.empIdx]?.nome ?? '';
   if (cfg.empCor) emp += ` (${cfg.empCor})`;
   emp += cfg.dragonScale ? ' + Dragon Scale' : '';
+  if (cfg.espacador) emp += ` + Espaçador${cfg.espacadorCor ? ` (${cfg.espacadorCor})` : ''}`;
+  const bainhas = (cfg.bainhaIdxs ?? []).map((i) => nomeBainha(data, cfg, i)).filter(Boolean);
   const l = [
     `Item ${n}:`,
     m.nome,
     `Aço: ${aco}`,
     `Empunhadura: ${emp}`,
     `Acabamento: ${data.acabamentos[cfg.acabIdx]?.nome ?? '-'}`,
-    `Bainha: ${data.bainhas[cfg.bainhaIdx]?.nome ?? '-'}`,
+    `Bainha: ${bainhas.length ? bainhas.join(' + ') : '-'}`,
   ];
   l.push(`Valor: ${BRL(calcItem(data, cfg))}`);
   return l;
 }
+
 
 /** Valor total de um item avulso (produto do catálogo de Adicionais). */
 export function calcAvulso(data: SimuladorData, cfg: AvulsoCfg): number {
