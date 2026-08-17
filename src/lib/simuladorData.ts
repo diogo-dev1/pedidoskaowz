@@ -309,10 +309,10 @@ export const SEED: SimuladorData = {
     { nome: 'Tactical', precos: { P: 90, M: 90, G: 125 } },
   ],
   bainhas: [
-    { nome: 'Preta', precos: { P: 0, M: 0, G: 0 }, incluso: true },
-    { nome: 'Colorida', precos: { P: 195, M: 195, G: 250 } },
-    { nome: 'Bainha adicional', precos: { P: 195, M: 195, G: 250 } },
+    { nome: 'Velada', precos: { P: 0, M: 0, G: 0 }, incluso: true, cores: ['Preto', 'Coyote', 'Vermelho', 'Azul', 'Verde'] },
+    { nome: 'Multifuncional', precos: { P: 0, M: 0, G: 0 }, incluso: true, cores: ['Preto', 'Coyote', 'Vermelho', 'Azul', 'Verde'] },
   ],
+
   adicionais: [
     { nome: 'Strop', preco: 95 },
     { nome: 'Café Médio ou Escuro', preco: 45 },
