@@ -38,9 +38,20 @@ export interface ItemCfg {
   empIdx: number;      // default 0 (Grafite inclusa)
   empCor: string | null; // cor da empunhadura, quando a opção tem `cores`
   dragonScale: boolean; // opcional da empunhadura
+  espacador: boolean;   // opcional da empunhadura (soma ao valor da empunhadura)
+  espacadorCor: string | null; // cor do espaçador
   acabIdx: number;     // default 0 (Acetinado incluso)
-  bainhaIdx: number;   // default 0 (Preta inclusa)
+  /** Bainhas escolhidas (múltiplas): índices em data.bainhas */
+  bainhaIdxs: number[];
+  /** Cor por bainha escolhida: { [idxBainha]: cor } */
+  bainhaCores: Record<number, string | null>;
 }
+
+/** Índice da opção "Espaçador" na lista de empunhaduras (opcional, não é uma empunhadura). */
+export function espacadorIdx(data: SimuladorData): number {
+  return data.empunhaduras.findIndex((e) => /espa[çc]ador/i.test(e.nome));
+}
+
 
 /** Item avulso — um produto do catálogo de Adicionais comprado fora da
  *  configuração de uma faca (ex.: brinde, acessório vendido à parte). */
@@ -76,9 +87,19 @@ export function newItem(): ItemCfg {
   return {
     id: crypto.randomUUID(), modeloIdx: null,
     acoIdx: 0, bruteForge: false, empIdx: 0, empCor: null, dragonScale: false,
-    acabIdx: 0, bainhaIdx: 0,
+    espacador: false, espacadorCor: null,
+    acabIdx: 0, bainhaIdxs: [0], bainhaCores: {},
   };
 }
+
+/** Nome legível de uma bainha escolhida, com a cor quando houver. */
+export function nomeBainha(data: SimuladorData, cfg: ItemCfg, idx: number): string {
+  const b = data.bainhas[idx];
+  if (!b) return '';
+  const cor = cfg.bainhaCores?.[idx];
+  return cor ? `${b.nome} (${cor})` : b.nome;
+}
+
 
 export function newAvulso(adicionalIdx: number, quantidade = 1): AvulsoCfg {
   return { id: crypto.randomUUID(), adicionalIdx, quantidade };
@@ -117,8 +138,14 @@ export function calcItem(data: SimuladorData, cfg: ItemCfg): number {
   if (cfg.bruteForge) t += precoClasse(data.bruteForge, c);
   t += precoClasse(data.empunhaduras[cfg.empIdx]?.precos ?? {}, c);
   if (cfg.dragonScale) t += precoClasse(data.dragonScale, c);
+  if (cfg.espacador) {
+    const ei = espacadorIdx(data);
+    if (ei >= 0) t += precoClasse(data.empunhaduras[ei].precos, c);
+  }
   t += precoClasse(data.acabamentos[cfg.acabIdx]?.precos ?? {}, c);
-  t += precoClasse(data.bainhas[cfg.bainhaIdx]?.precos ?? {}, c);
+  (cfg.bainhaIdxs ?? []).forEach((i) => {
+    t += precoClasse(data.bainhas[i]?.precos ?? {}, c);
+  });
   return t;
 }
 
@@ -130,17 +157,20 @@ export function textoItem(data: SimuladorData, cfg: ItemCfg, n: number): string[
   let emp = data.empunhaduras[cfg.empIdx]?.nome ?? '';
   if (cfg.empCor) emp += ` (${cfg.empCor})`;
   emp += cfg.dragonScale ? ' + Dragon Scale' : '';
+  if (cfg.espacador) emp += ` + Espaçador${cfg.espacadorCor ? ` (${cfg.espacadorCor})` : ''}`;
+  const bainhas = (cfg.bainhaIdxs ?? []).map((i) => nomeBainha(data, cfg, i)).filter(Boolean);
   const l = [
     `Item ${n}:`,
     m.nome,
     `Aço: ${aco}`,
     `Empunhadura: ${emp}`,
     `Acabamento: ${data.acabamentos[cfg.acabIdx]?.nome ?? '-'}`,
-    `Bainha: ${data.bainhas[cfg.bainhaIdx]?.nome ?? '-'}`,
+    `Bainha: ${bainhas.length ? bainhas.join(' + ') : '-'}`,
   ];
   l.push(`Valor: ${BRL(calcItem(data, cfg))}`);
   return l;
 }
+
 
 /** Valor total de um item avulso (produto do catálogo de Adicionais). */
 export function calcAvulso(data: SimuladorData, cfg: AvulsoCfg): number {
@@ -279,10 +309,10 @@ export const SEED: SimuladorData = {
     { nome: 'Tactical', precos: { P: 90, M: 90, G: 125 } },
   ],
   bainhas: [
-    { nome: 'Preta', precos: { P: 0, M: 0, G: 0 }, incluso: true },
-    { nome: 'Colorida', precos: { P: 195, M: 195, G: 250 } },
-    { nome: 'Bainha adicional', precos: { P: 195, M: 195, G: 250 } },
+    { nome: 'Velada', precos: { P: 0, M: 0, G: 0 }, incluso: true, cores: ['Preto', 'Coyote', 'Vermelho', 'Azul', 'Verde'] },
+    { nome: 'Multifuncional', precos: { P: 0, M: 0, G: 0 }, incluso: true, cores: ['Preto', 'Coyote', 'Vermelho', 'Azul', 'Verde'] },
   ],
+
   adicionais: [
     { nome: 'Strop', preco: 95 },
     { nome: 'Café Médio ou Escuro', preco: 45 },
