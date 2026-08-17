@@ -135,9 +135,11 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
     nomeOpt(data.empunhaduras, cfg.empIdx) ?? (cfg.dragonScale ? data.empunhaduras[cfg.empIdx]?.nome : null),
     cfg.empCor,
     cfg.dragonScale ? 'DS' : null,
+    cfg.espacador ? `Espaçador${cfg.espacadorCor ? ` ${cfg.espacadorCor}` : ''}` : null,
     nomeOpt(data.acabamentos, cfg.acabIdx),
-    nomeOpt(data.bainhas, cfg.bainhaIdx),
+    ...(cfg.bainhaIdxs ?? []).map((i) => nomeBainha(data, cfg, i)),
   ].filter(Boolean) : [];
+
 
   return (
     <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
