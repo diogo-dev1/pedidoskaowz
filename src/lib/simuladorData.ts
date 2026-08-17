@@ -87,9 +87,19 @@ export function newItem(): ItemCfg {
   return {
     id: crypto.randomUUID(), modeloIdx: null,
     acoIdx: 0, bruteForge: false, empIdx: 0, empCor: null, dragonScale: false,
-    acabIdx: 0, bainhaIdx: 0,
+    espacador: false, espacadorCor: null,
+    acabIdx: 0, bainhaIdxs: [0], bainhaCores: {},
   };
 }
+
+/** Nome legível de uma bainha escolhida, com a cor quando houver. */
+export function nomeBainha(data: SimuladorData, cfg: ItemCfg, idx: number): string {
+  const b = data.bainhas[idx];
+  if (!b) return '';
+  const cor = cfg.bainhaCores?.[idx];
+  return cor ? `${b.nome} (${cor})` : b.nome;
+}
+
 
 export function newAvulso(adicionalIdx: number, quantidade = 1): AvulsoCfg {
   return { id: crypto.randomUUID(), adicionalIdx, quantidade };
