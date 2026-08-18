@@ -47,6 +47,92 @@ export type Database = {
         }
         Relationships: []
       }
+      arsenais: {
+        Row: {
+          created_at: string
+          id: string
+          nome_cliente: string | null
+          perfil: Json | null
+          token: string
+          ultima_visita: string | null
+          updated_at: string
+          visitas: number
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome_cliente?: string | null
+          perfil?: Json | null
+          token: string
+          ultima_visita?: string | null
+          updated_at?: string
+          visitas?: number
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome_cliente?: string | null
+          perfil?: Json | null
+          token?: string
+          ultima_visita?: string | null
+          updated_at?: string
+          visitas?: number
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      arsenal_projetos: {
+        Row: {
+          arsenal_id: string
+          configuracao: Json
+          created_at: string
+          id: string
+          modelo_id: string | null
+          modelo_nome: string | null
+          nome: string
+          preco: number | null
+          resumo: string | null
+          tirar_do_papel: boolean
+          updated_at: string
+        }
+        Insert: {
+          arsenal_id: string
+          configuracao?: Json
+          created_at?: string
+          id?: string
+          modelo_id?: string | null
+          modelo_nome?: string | null
+          nome: string
+          preco?: number | null
+          resumo?: string | null
+          tirar_do_papel?: boolean
+          updated_at?: string
+        }
+        Update: {
+          arsenal_id?: string
+          configuracao?: Json
+          created_at?: string
+          id?: string
+          modelo_id?: string | null
+          modelo_nome?: string | null
+          nome?: string
+          preco?: number | null
+          resumo?: string | null
+          tirar_do_papel?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arsenal_projetos_arsenal_id_fkey"
+            columns: ["arsenal_id"]
+            isOneToOne: false
+            referencedRelation: "arsenais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       banners_catalogo: {
         Row: {
           ativo: boolean
@@ -346,21 +432,29 @@ export type Database = {
           apresentacao_venda: string | null
           area_util_corte: number | null
           aspect_ratio: string
+          casos_uso: string[]
           categoria: string | null
           categorias: string[] | null
           comprimento_total: number | null
           created_at: string
           descricao_html: string | null
           descricao_html_en: string | null
+          forma_enxoval: string[]
           garantia: string | null
+          grupo_escada: string | null
           id: string
           imagem_modelo: string | null
+          manutencao: string | null
+          nivel_envolvimento: string[]
           nome_modelo: string
           nome_modelo_en: string | null
           ordem_catalogo: number
+          porque_texto: string | null
+          posicao_escada: string | null
           prazo_entrega: string | null
           preco_base: number
           pronta_entrega: boolean
+          tipo_porte: string[]
           updated_at: string
           video_url: string | null
           visivel_catalogo: boolean
@@ -374,21 +468,29 @@ export type Database = {
           apresentacao_venda?: string | null
           area_util_corte?: number | null
           aspect_ratio?: string
+          casos_uso?: string[]
           categoria?: string | null
           categorias?: string[] | null
           comprimento_total?: number | null
           created_at?: string
           descricao_html?: string | null
           descricao_html_en?: string | null
+          forma_enxoval?: string[]
           garantia?: string | null
+          grupo_escada?: string | null
           id?: string
           imagem_modelo?: string | null
+          manutencao?: string | null
+          nivel_envolvimento?: string[]
           nome_modelo: string
           nome_modelo_en?: string | null
           ordem_catalogo?: number
+          porque_texto?: string | null
+          posicao_escada?: string | null
           prazo_entrega?: string | null
           preco_base: number
           pronta_entrega?: boolean
+          tipo_porte?: string[]
           updated_at?: string
           video_url?: string | null
           visivel_catalogo?: boolean
@@ -402,21 +504,29 @@ export type Database = {
           apresentacao_venda?: string | null
           area_util_corte?: number | null
           aspect_ratio?: string
+          casos_uso?: string[]
           categoria?: string | null
           categorias?: string[] | null
           comprimento_total?: number | null
           created_at?: string
           descricao_html?: string | null
           descricao_html_en?: string | null
+          forma_enxoval?: string[]
           garantia?: string | null
+          grupo_escada?: string | null
           id?: string
           imagem_modelo?: string | null
+          manutencao?: string | null
+          nivel_envolvimento?: string[]
           nome_modelo?: string
           nome_modelo_en?: string | null
           ordem_catalogo?: number
+          porque_texto?: string | null
+          posicao_escada?: string | null
           prazo_entrega?: string | null
           preco_base?: number
           pronta_entrega?: boolean
+          tipo_porte?: string[]
           updated_at?: string
           video_url?: string | null
           visivel_catalogo?: boolean
