@@ -1,0 +1,140 @@
+/* Área pública Kaowz — helpers compartilhados entre quiz, vitrine,
+   configurador e arsenal. Sem login, sem dependência do app interno. */
+
+import { supabase } from '@/integrations/supabase/client';
+import type { ModeloRecomendavel, RespostasQuiz } from '@/lib/recomendacao';
+import type { ItemCfg } from '@/lib/simuladorData';
+
+export const WHATSAPP_KAOWZ = '5528999025695';
+
+export const linkWhatsApp = (mensagem: string) =>
+  `https://wa.me/${WHATSAPP_KAOWZ}?text=${encodeURIComponent(mensagem)}`;
+
+/* ── Persistência local do quiz (permite refazer e voltar) ── */
+
+const CHAVE_QUIZ = 'kaowz_quiz_respostas';
+
+export const salvarRespostas = (r: RespostasQuiz) => {
+  try { sessionStorage.setItem(CHAVE_QUIZ, JSON.stringify(r)); } catch { /* ignore */ }
+};
+
+export const lerRespostas = (): RespostasQuiz | null => {
+  try {
+    const raw = sessionStorage.getItem(CHAVE_QUIZ);
+    return raw ? (JSON.parse(raw) as RespostasQuiz) : null;
+  } catch { return null; }
+};
+
+/* ── Token do arsenal (o link é o objeto) ── */
+
+const CHAVE_TOKEN = 'kaowz_arsenal_token';
+export const lerToken = () => { try { return localStorage.getItem(CHAVE_TOKEN); } catch { return null; } };
+export const gravarToken = (t: string) => { try { localStorage.setItem(CHAVE_TOKEN, t); } catch { /* ignore */ } };
+
+/* ── Modelos públicos com atributos de recomendação ── */
+
+export async function carregarModelosPublicos(): Promise<ModeloRecomendavel[]> {
+  const { data, error } = await supabase
+    .from('catalogo_modelos')
+    .select(
+      'id, nome_modelo, preco_base, imagem_modelo, descricao_html, apresentacao_venda, categoria, casos_uso, tipo_porte, nivel_envolvimento, posicao_escada, grupo_escada, forma_enxoval, manutencao, porque_texto',
+    )
+    .eq('visivel_catalogo', true)
+    .eq('visivel_publico', true)
+    .order('nome_modelo');
+  if (error || !data) return [];
+  return (data as any[]).map((m) => ({
+    ...m,
+    casos_uso: m.casos_uso ?? [],
+    tipo_porte: m.tipo_porte ?? [],
+    nivel_envolvimento: m.nivel_envolvimento ?? [],
+    forma_enxoval: m.forma_enxoval ?? [],
+  })) as ModeloRecomendavel[];
+}
+
+/* ── Traduções em linguagem de cliente (uma linha por opção) ── */
+
+export const TRADUCOES: Record<string, string> = {
+  // Aços
+  'Inox': 'Não enferruja, aguenta descuido, manutenção simples.',
+  'Sandvik 14C28N': 'Corte fino e duradouro, ainda resistente à corrosão.',
+  '52100': 'Corte extremo de aço carbono — pede óleo e cuidado.',
+  'Brute Forge': 'Superfície forjada bruta, cada peça com marca própria.',
+  // Empunhaduras
+  'Grafite': 'Leve, seca e firme na mão, discreta.',
+  'G10': 'Aderência alta mesmo molhada, praticamente indestrutível.',
+  'Imbuia': 'Madeira nobre, aquece na mão, peça com identidade.',
+  'Espaçador': 'Detalhe de cor entre as escamas, personaliza a peça.',
+  'Dragon Scale': 'Textura em escamas, agarra mais sob suor e chuva.',
+  'Micarta': 'Leve, absorve suor, aderência melhora com o uso.',
+  // Acabamentos
+  'Acetinado': 'Acabamento limpo e clássico, fácil de manter.',
+  'Stone Washed': 'Fosco, disfarça riscos, baixa reflexão de luz.',
+  'Black Stone Washed': 'Preto fosco, discreto, esconde marcas de uso.',
+  'Tactical': 'Baixíssima reflexão, feito para não chamar atenção.',
+  // Bainhas
+  'Velada': 'Feita para sumir sob a roupa, saque discreto.',
+  'Multifuncional': 'Cinto, colete ou mochila — muda de posição sem ferramenta.',
+};
+
+export const traducao = (nome: string) => TRADUCOES[nome] ?? '';
+
+/* ── Resumo da configuração para WhatsApp e para o arsenal ── */
+
+export interface ResumoConfig {
+  titulo: string;
+  linhas: string[];
+  preco: number;
+}
+
+export const mensagemConfiguracao = (r: ResumoConfig, nomeProjeto?: string) =>
+  [
+    'Olá! Montei uma configuração no site da Kaowz e quero tirar do papel:',
+    '',
+    nomeProjeto ? `Projeto: ${nomeProjeto}` : null,
+    r.titulo,
+    ...r.linhas,
+    '',
+    `Valor estimado: ${r.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+/* ── Chamadas ao arsenal (edge function, sem login) ── */
+
+interface RespostaArsenal {
+  token: string;
+  arsenal: { token: string; nome_cliente: string | null; visitas: number };
+  projetos: {
+    id: string; nome: string; modelo_nome: string | null; preco: number | null;
+    resumo: string | null; configuracao: any; tirar_do_papel: boolean; created_at: string;
+  }[];
+}
+
+const invocar = async (body: Record<string, unknown>) => {
+  const { data, error } = await supabase.functions.invoke('arsenal', { body });
+  if (error) throw error;
+  return data as RespostaArsenal;
+};
+
+export const abrirArsenal = (token: string) => invocar({ acao: 'obter', token });
+
+export const salvarProjeto = (p: {
+  token?: string | null;
+  whatsapp?: string;
+  nomeCliente?: string;
+  nome: string;
+  modeloId?: string | null;
+  modeloNome?: string | null;
+  preco: number;
+  resumo: string;
+  configuracao: ItemCfg | Record<string, unknown>;
+  perfil?: RespostasQuiz | null;
+  etiquetas?: string[];
+}) => invocar({ acao: 'salvar', ...p });
+
+export const tirarDoPapel = (token: string, projetoId: string) =>
+  invocar({ acao: 'tirar_do_papel', token, projetoId });
+
+export const removerProjeto = (token: string, projetoId: string) =>
+  invocar({ acao: 'remover', token, projetoId });

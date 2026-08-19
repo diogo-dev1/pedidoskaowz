@@ -7,12 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package, Check, RefreshCw } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package, Check, RefreshCw, Compass } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { IconPicker } from '@/components/IconPicker';
 import { getIconComponent } from '@/lib/icon-utils';
 import { VisibilidadeLaminasTab } from '@/components/admin/VisibilidadeLaminasTab';
+import { AtributosRecomendacaoTab } from '@/components/admin/AtributosRecomendacaoTab';
 
 interface CategoriaVisivel {
   id: string;
@@ -623,7 +624,7 @@ export default function ConfiguracoesCatalogo() {
       </div>
 
       <Tabs defaultValue="geral" className="w-full">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full h-auto gap-1">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-7 w-full h-auto gap-1">
           <TabsTrigger value="geral" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
             <DollarSign className="h-3.5 w-3.5 hidden sm:block" />
             Geral
@@ -631,6 +632,10 @@ export default function ConfiguracoesCatalogo() {
           <TabsTrigger value="visibilidade" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
             <Eye className="h-3.5 w-3.5 hidden sm:block" />
             Visibilidade
+          </TabsTrigger>
+          <TabsTrigger value="atributos" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
+            <Compass className="h-3.5 w-3.5 hidden sm:block" />
+            Atributos
           </TabsTrigger>
           <TabsTrigger value="destaques" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
             <Star className="h-3.5 w-3.5 hidden sm:block" />
@@ -653,6 +658,11 @@ export default function ConfiguracoesCatalogo() {
         <TabsContent value="visibilidade" className="space-y-3 mt-4">
           <VisibilidadeLaminasTab field="visivel_publico" catalogoLabel="Catálogo Público" />
         </TabsContent>
+
+        <TabsContent value="atributos" className="space-y-3 mt-4">
+          <AtributosRecomendacaoTab />
+        </TabsContent>
+
 
 
         {/* Aba Geral */}
