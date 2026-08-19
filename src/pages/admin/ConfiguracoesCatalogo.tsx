@@ -623,7 +623,7 @@ export default function ConfiguracoesCatalogo() {
       </div>
 
       <Tabs defaultValue="geral" className="w-full">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full h-auto gap-1">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-7 w-full h-auto gap-1">
           <TabsTrigger value="geral" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
             <DollarSign className="h-3.5 w-3.5 hidden sm:block" />
             Geral
@@ -631,6 +631,10 @@ export default function ConfiguracoesCatalogo() {
           <TabsTrigger value="visibilidade" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
             <Eye className="h-3.5 w-3.5 hidden sm:block" />
             Visibilidade
+          </TabsTrigger>
+          <TabsTrigger value="atributos" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
+            <Compass className="h-3.5 w-3.5 hidden sm:block" />
+            Atributos
           </TabsTrigger>
           <TabsTrigger value="destaques" className="gap-1 text-xs sm:text-sm px-2 py-1.5">
             <Star className="h-3.5 w-3.5 hidden sm:block" />
@@ -653,6 +657,11 @@ export default function ConfiguracoesCatalogo() {
         <TabsContent value="visibilidade" className="space-y-3 mt-4">
           <VisibilidadeLaminasTab field="visivel_publico" catalogoLabel="Catálogo Público" />
         </TabsContent>
+
+        <TabsContent value="atributos" className="space-y-3 mt-4">
+          <AtributosRecomendacaoTab />
+        </TabsContent>
+
 
 
         {/* Aba Geral */}
