@@ -7,12 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package, Check, RefreshCw } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Loader2, Eye, EyeOff, Megaphone, Tags, DollarSign, Star, ArrowUp, ArrowDown, X, Share2, Copy, Package, Check, RefreshCw, Compass } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { IconPicker } from '@/components/IconPicker';
 import { getIconComponent } from '@/lib/icon-utils';
 import { VisibilidadeLaminasTab } from '@/components/admin/VisibilidadeLaminasTab';
+import { AtributosRecomendacaoTab } from '@/components/admin/AtributosRecomendacaoTab';
 
 interface CategoriaVisivel {
   id: string;
