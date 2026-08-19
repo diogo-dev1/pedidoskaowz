@@ -31,24 +31,51 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // 1. Restaurar sessão e escutar mudanças
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (!session) setLoading(false);
-    });
+    let ativo = true;
+
+    // Se o backend estiver reiniciando ou o refresh token estiver vencido,
+    // nunca deixamos a tela presa em "carregando".
+    const destravar = setTimeout(() => {
+      if (ativo) setLoading(false);
+    }, 8000);
+
+    supabase.auth
+      .getSession()
+      .then(async ({ data, error }) => {
+        if (!ativo) return;
+        if (error) {
+          // Sessão inválida (token expirado / backend reiniciado): limpa e segue.
+          console.warn('Sessão inválida, limpando:', error.message);
+          await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+        if (!data.session) setLoading(false);
+      })
+      .catch(() => {
+        if (ativo) setLoading(false);
+      });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        if (!session) {
+        if (!session || event === 'SIGNED_OUT') {
           setProfile(null);
           setLoading(false);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      ativo = false;
+      clearTimeout(destravar);
+      subscription.unsubscribe();
+    };
   }, []);
 
   // 2. Buscar profile quando user muda (separado do auth para evitar loop)
@@ -63,16 +90,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
-      .single()
-      .then(({ data }) => {
-        if (!cancelled) {
-          setProfile(data as Profile | null);
-          setLoading(false);
-        }
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) console.warn('Falha ao carregar perfil:', error.message);
+        setProfile((data as Profile | null) ?? null);
+        setLoading(false);
       });
 
     return () => { cancelled = true; };
   }, [user?.id]);
+
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
