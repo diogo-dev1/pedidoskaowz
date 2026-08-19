@@ -7,6 +7,11 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
 import Auth from "./pages/Auth";
+import Descubra from "./pages/publico/Descubra";
+import Resultado from "./pages/publico/Resultado";
+import Vitrine from "./pages/publico/Vitrine";
+import Montar from "./pages/publico/Montar";
+import ArsenalPublico from "./pages/publico/Arsenal";
 import Home from "./pages/Home";
 import Simulador from "./pages/Simulador";
 import Lote from "./pages/Lote";
@@ -85,6 +90,12 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            {/* ── Área pública (cliente final, sem login) ── */}
+            <Route path="/descubra" element={<Descubra />} />
+            <Route path="/descubra/resultado" element={<Resultado />} />
+            <Route path="/vitrine" element={<Vitrine />} />
+            <Route path="/montar" element={<Montar />} />
+            <Route path="/arsenal/:token" element={<ArsenalPublico />} />
             <Route path="/install" element={<Install />} />
             <Route
               path="/"

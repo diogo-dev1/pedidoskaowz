@@ -13,6 +13,7 @@ import {
   POSICOES_ESCADA,
   type ModeloRecomendavel,
   type Recomendacao,
+  respostasVazias,
   type RespostasQuiz,
 } from '@/lib/recomendacao';
 import { Loader2, ExternalLink, Wrench, RotateCcw } from 'lucide-react';
@@ -73,14 +74,13 @@ export default function Resultado() {
   const navigate = useNavigate();
   const [modelos, setModelos] = useState<ModeloRecomendavel[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const respostas = useMemo<RespostasQuiz | null>(() => lerRespostas(), []);
+  const respostasSalvas = useMemo<RespostasQuiz | null>(() => lerRespostas(), []);
+  const respostas = respostasSalvas ?? respostasVazias();
 
   useEffect(() => {
-    if (!respostas) { navigate('/descubra', { replace: true }); return; }
+    if (!respostasSalvas) { navigate('/descubra', { replace: true }); return; }
     carregarModelosPublicos().then((m) => { setModelos(m); setCarregando(false); });
-  }, [respostas, navigate]);
-
-  if (!respostas) return null;
+  }, [respostasSalvas, navigate]);
 
   const enxoval = useMemo(
     () => (modelos.length ? montarEnxoval(modelos, respostas) : []),
@@ -97,6 +97,8 @@ export default function Resultado() {
     () => (ancora ? montarEscada(modelos, ancora, respostas) : []),
     [modelos, ancora, respostas],
   );
+
+  if (!respostasSalvas) return null;
 
   return (
     <PublicoLayout>
