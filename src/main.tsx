@@ -4,6 +4,34 @@ import "./index.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
 
+// --- Purga única de cache/service worker antigo ---
+// Ao subir uma nova versão, incremente APP_CACHE_VERSION: todos os dispositivos
+// que ainda estiverem com cache antigo apagam tudo e recarregam uma única vez.
+const APP_CACHE_VERSION = "2026-08-19-1";
+if (typeof window !== "undefined" && window.location.protocol.startsWith("http")) {
+  const chave = "app-cache-version";
+  if (localStorage.getItem(chave) !== APP_CACHE_VERSION) {
+    (async () => {
+      try {
+        if ("serviceWorker" in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+        }
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+      } catch (e) {
+        console.warn("Falha ao limpar cache antigo:", e);
+      } finally {
+        localStorage.setItem(chave, APP_CACHE_VERSION);
+        window.location.reload();
+      }
+    })();
+  }
+}
+
+
 // Service Worker com auto-reload quando há nova versão publicada.
 // Assim, ao publicar uma atualização, todos os dispositivos conectados
 // pegam a versão nova sem precisar limpar cache.
