@@ -182,8 +182,17 @@ export default function CatalogoRevendedor() {
   const categoriasVenda = categorias.map((cat) => ({
     subtitulo: cat.categoria,
     categoria: cat.categoria,
-    icon: getIconComponent(cat.icone)
+    icon: getIconComponent(cat.icone),
+    especial: undefined as 'push-dagger' | undefined,
   }));
+
+  // Card especial "Push Daggers" — aponta para o configurador dedicado
+  {
+    const idxDefesa = categoriasVenda.findIndex((c) => c.categoria === 'Defesa');
+    categoriasVenda.splice(idxDefesa === -1 ? 0 : idxDefesa + 1, 0, {
+      subtitulo: 'Push Daggers', categoria: '__push_dagger__', icon: Swords, especial: 'push-dagger',
+    });
+  }
 
   useEffect(() => {
     carregarModelos();
