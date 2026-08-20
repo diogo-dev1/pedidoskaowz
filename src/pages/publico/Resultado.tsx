@@ -256,7 +256,7 @@ export default function Resultado() {
         ) : (
           <>
             <p className="text-sm text-zinc-400">
-              Guarde {varias ? 'este conjunto' : 'esta indicação'} num link só seu — com as peças e o seu perfil.
+              Guarde estas lâminas num link só seu — com as peças e o seu perfil.
             </p>
             <Button
               onClick={salvarNoArsenal}
