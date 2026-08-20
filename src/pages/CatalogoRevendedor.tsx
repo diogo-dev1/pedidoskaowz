@@ -582,7 +582,7 @@ export default function CatalogoRevendedor() {
               {categoriasVenda.map((cat, idx) => {
                 const Icon = cat.icon;
                 return (
-                  <div key={idx} className="group cursor-pointer" onClick={() => selecionarCategoria(cat.categoria)}>
+                  <div key={idx} className="group cursor-pointer" onClick={() => cat.especial === 'push-dagger' ? navigate('/push-dagger-kaowz') : selecionarCategoria(cat.categoria)}>
                     <div className="relative bg-zinc-900 border border-zinc-800 hover:border-accent rounded-xl p-5 md:p-6 transition-all duration-300 text-center group-hover:bg-zinc-800 group-hover:shadow-[0_0_30px_rgba(251,146,60,0.15)] group-hover:-translate-y-1">
                       <div className="w-12 h-12 md:w-14 md:h-14 mx-auto mb-3 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
                         <Icon className="h-6 w-6 md:h-7 md:w-7 text-accent" />
