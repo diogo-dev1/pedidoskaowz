@@ -2,7 +2,7 @@
    configurador e arsenal. Sem login, sem dependência do app interno. */
 
 import { supabase } from '@/integrations/supabase/client';
-import { PERGUNTAS } from '@/lib/recomendacao';
+import { PERGUNTAS, normalizarRespostas } from '@/lib/recomendacao';
 import type { ModeloRecomendavel, PerguntaQuiz, RespostasQuiz } from '@/lib/recomendacao';
 import type { ItemCfg } from '@/lib/simuladorData';
 
@@ -21,10 +21,11 @@ export const salvarRespostas = (r: RespostasQuiz) => {
   try { localStorage.setItem(CHAVE_QUIZ, JSON.stringify(r)); } catch { /* ignore */ }
 };
 
+/** B7 — respostas antigas (porte/funcao em string ou null) viram array. */
 export const lerRespostas = (): RespostasQuiz | null => {
   try {
     const raw = localStorage.getItem(CHAVE_QUIZ);
-    return raw ? (JSON.parse(raw) as RespostasQuiz) : null;
+    return raw ? normalizarRespostas(JSON.parse(raw)) : null;
   } catch { return null; }
 };
 
@@ -42,7 +43,9 @@ export const salvarProgressoQuiz = (p: ProgressoQuiz) => {
 export const lerProgressoQuiz = (): ProgressoQuiz | null => {
   try {
     const raw = localStorage.getItem(CHAVE_QUIZ_PROGRESSO);
-    return raw ? (JSON.parse(raw) as ProgressoQuiz) : null;
+    if (!raw) return null;
+    const p = JSON.parse(raw) as ProgressoQuiz;
+    return { ...p, respostas: normalizarRespostas(p.respostas) };
   } catch { return null; }
 };
 

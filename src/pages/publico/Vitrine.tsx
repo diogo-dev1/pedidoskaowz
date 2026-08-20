@@ -19,7 +19,7 @@ export default function Vitrine() {
   const [busca, setBusca] = useState('');
   const respostas = useMemo(() => lerRespostas(), []);
   const [usos, setUsos] = useState<string[]>([]);
-  const [portes, setPortes] = useState<string[]>(() => (respostas?.porte ? [respostas.porte] : []));
+  const [portes, setPortes] = useState<string[]>(() => respostas?.porte ?? []);
 
   useEffect(() => {
     carregarModelosPublicos().then((m) => { setModelos(m); setCarregando(false); });
