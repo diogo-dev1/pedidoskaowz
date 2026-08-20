@@ -444,7 +444,7 @@ export type Database = {
           grupo_escada: string | null
           id: string
           imagem_modelo: string | null
-          manutencao: string | null
+          manutencao: string[] | null
           nivel_envolvimento: string[]
           nome_modelo: string
           nome_modelo_en: string | null
@@ -480,7 +480,7 @@ export type Database = {
           grupo_escada?: string | null
           id?: string
           imagem_modelo?: string | null
-          manutencao?: string | null
+          manutencao?: string[] | null
           nivel_envolvimento?: string[]
           nome_modelo: string
           nome_modelo_en?: string | null
@@ -516,7 +516,7 @@ export type Database = {
           grupo_escada?: string | null
           id?: string
           imagem_modelo?: string | null
-          manutencao?: string | null
+          manutencao?: string[] | null
           nivel_envolvimento?: string[]
           nome_modelo?: string
           nome_modelo_en?: string | null
