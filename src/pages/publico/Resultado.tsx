@@ -11,13 +11,11 @@ import {
   salvarProjeto,
 } from '@/lib/publico';
 import {
-  casosRelevantes,
   etiquetasDoPerfil,
   fraseDoPerfil,
   labelDe,
-  montarEnxoval,
+  laminasQueAtendem,
   montarEscada,
-  recomendar,
   ETIQUETA_FUNCAO,
   POSICOES_ESCADA,
   type CasoUso,
@@ -30,7 +28,7 @@ import { toast } from 'sonner';
 import { Copy, Loader2, MessageCircle, RotateCcw, Save } from 'lucide-react';
 
 const CHAVE_FRASE = 'kaowz_frase_perfil_exibida';
-const BRL = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 
 /** Frase do perfil montada palavra por palavra — só na primeira exibição da sessão. */
 function FrasePerfil({ frase }: { frase: string }) {
@@ -85,25 +83,16 @@ export default function Resultado() {
     carregarModelosPublicos().then((m) => { setModelos(m); setCarregando(false); });
   }, [respostasSalvas, navigate]);
 
-  const enxoval = useMemo(
-    () => (modelos.length ? montarEnxoval(modelos, respostas) : []),
+  // F2–F7 — lista de lâminas que atendem: um cartão por modelo, de 3 a 6.
+  const principais = useMemo(
+    () => (modelos.length ? laminasQueAtendem(modelos, respostas, 3, 6) : []),
     [modelos, respostas],
   );
-  const ranking = useMemo(
-    () => (modelos.length ? recomendar(modelos, respostas, 3) : []),
-    [modelos, respostas],
-  );
-  // F1/F2 — o enxoval é o padrão: só cai no ranking com um único caso relevante.
-  const conjunto = casosRelevantes(respostas).length >= 2 && enxoval.length > 0;
-  const principais = conjunto ? enxoval : ranking;
   const ancora = principais[0]?.modelo;
   const escada = useMemo(
     () => (ancora ? montarEscada(modelos, ancora, respostas) : []),
     [modelos, ancora, respostas],
   );
-
-  const total = principais.reduce((s, rec) => s + (rec.modelo.preco_base ?? 0), 0);
-  const varias = principais.length > 1;
 
   const salvarNoArsenal = async () => {
     if (!principais.length) return;
@@ -111,23 +100,22 @@ export default function Resultado() {
     try {
       const resumo = principais
         .map((rec) => {
-          const etq = rec.casoUso ? ETIQUETA_FUNCAO[rec.casoUso as CasoUso] : 'Indicação';
-          return `• ${etq}: ${rec.modelo.nome_modelo} — ${BRL(rec.modelo.preco_base ?? 0)}`;
+          const etq = rec.casos.map((c) => ETIQUETA_FUNCAO[c as CasoUso]).join(' · ');
+          return `• ${rec.modelo.nome_modelo}${etq ? ` — ${etq}` : ''}`;
         })
         .join('\n');
       const res = await salvarProjeto({
         token: lerToken(),
-        nome: varias ? 'Meu conjunto Kaowz' : 'Minha lâmina Kaowz',
+        nome: 'Lâminas que me atendem',
         modeloNome: principais.map((r) => r.modelo.nome_modelo).join(' + '),
-        preco: total,
+        preco: 0,
         resumo,
         configuracao: {
           origem: 'quiz',
           pecas: principais.map((rec) => ({
             id: rec.modelo.id,
             nome: rec.modelo.nome_modelo,
-            preco: rec.modelo.preco_base ?? 0,
-            funcao: rec.casoUso ? ETIQUETA_FUNCAO[rec.casoUso as CasoUso] : null,
+            funcoes: rec.casos.map((c) => ETIQUETA_FUNCAO[c as CasoUso]),
             porque: rec.porque,
           })),
           respostas,
@@ -154,15 +142,15 @@ export default function Resultado() {
   const enviarWhatsApp = () => {
     if (!linkArsenal) return;
     const msg = [
-      'Olá! Fiz o quiz da Kaowz e guardei o meu arsenal:',
+      'Olá! Fiz o quiz da Kaowz e guardei as lâminas que me atendem:',
       '',
       ...principais.map((rec) => `• ${rec.modelo.nome_modelo}`),
       '',
-      `Total do conjunto: ${BRL(total)}`,
       linkArsenal,
     ].join('\n');
     window.open(linkWhatsApp(msg), '_blank');
   };
+
 
   if (!respostasSalvas) return null;
 
@@ -174,9 +162,7 @@ export default function Resultado() {
           <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-accent">Seu perfil</span>
           <TituloPublico className="mt-2"><FrasePerfil frase={fraseDoPerfil(respostas)} /></TituloPublico>
           <p className="mt-2 text-sm text-zinc-400 md:text-base">
-            {conjunto
-              ? 'Seu perfil não cabe em uma peça só — abaixo vai um conjunto, uma lâmina por função.'
-              : 'Estas são as lâminas que fazem sentido para o seu uso.'}
+            Estas são as lâminas que atendem ao que você marcou.
           </p>
         </div>
       </section>
@@ -197,16 +183,14 @@ export default function Resultado() {
         </p>
       ) : (
         <>
-          {/* F5 — título do bloco */}
+          {/* F2 — título do bloco */}
           <section className="mt-8">
             <h2 className="text-xl font-black tracking-tight text-white md:text-2xl">
-              {varias ? <>SEU <span className="text-accent">CONJUNTO</span></> : <>SUA <span className="text-accent">LÂMINA</span></>}
+              LÂMINAS QUE <span className="text-accent">ATENDEM {respostas.presente ? 'ESSA PESSOA' : 'VOCÊ'}</span>
             </h2>
-            {varias && (
-              <p className="mt-1 text-sm text-zinc-400">
-                Cada peça cobre uma função diferente do seu dia — juntas, fecham o seu uso.
-              </p>
-            )}
+            <p className="mt-1 text-sm text-zinc-400">
+              Cada uma cobre o que você marcou — escolha a que fizer mais sentido.
+            </p>
 
             <div className="mt-4 grid grid-cols-2 gap-1.5 md:gap-4 lg:grid-cols-3">
               {principais.map((rec, i) => (
@@ -216,25 +200,13 @@ export default function Resultado() {
                     porque={rec.porque}
                     destaque={i === 0}
                     semConfigurador
-                    etiqueta={rec.casoUso ? ETIQUETA_FUNCAO[rec.casoUso as CasoUso] : undefined}
+                    etiquetas={rec.casos.map((c) => ETIQUETA_FUNCAO[c as CasoUso])}
                   />
                 </div>
               ))}
             </div>
-
-            {/* F6 — soma do conjunto */}
-            {varias && (
-              <div className="mt-4 flex flex-wrap items-baseline justify-between gap-2 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-zinc-500">Valor do conjunto</p>
-                  <p className="text-xs text-zinc-500">
-                    As peças podem ser adquiridas separadamente, no seu tempo.
-                  </p>
-                </div>
-                <p className="text-2xl font-black text-accent md:text-3xl">{BRL(total)}</p>
-              </div>
-            )}
           </section>
+
 
           {escada.length > 1 && (
             <section className="mt-12">
@@ -284,7 +256,7 @@ export default function Resultado() {
         ) : (
           <>
             <p className="text-sm text-zinc-400">
-              Guarde {varias ? 'este conjunto' : 'esta indicação'} num link só seu — com as peças e o seu perfil.
+              Guarde estas lâminas num link só seu — com as peças e o seu perfil.
             </p>
             <Button
               onClick={salvarNoArsenal}
