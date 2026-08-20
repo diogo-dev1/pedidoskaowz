@@ -44,11 +44,19 @@ export const MANUTENCOES = [
   { valor: 'resistente', label: 'Resistente (esquece e não enferruja)' },
 ] as const;
 
+/** Lista fixa de famílias da escada de valor (C8 — select, sem texto livre). */
+export const GRUPOS_ESCADA = [
+  'Nimbowie', 'Nimbus', 'Jagunço', 'Adaga', 'Defcon', 'Camp Knife', 'Ring',
+  'Tantô', 'Wharncliffe', 'EDC Mini', 'EDC', 'Canivete', 'Butcher',
+  'Chef Royal', 'Picanheira', 'Kiritsuke',
+] as const;
+
 export type CasoUso = (typeof CASOS_USO)[number]['valor'];
 export type TipoPorte = (typeof TIPOS_PORTE)[number]['valor'];
 export type Nivel = (typeof NIVEIS_ENVOLVIMENTO)[number]['valor'];
 export type PosicaoEscada = (typeof POSICOES_ESCADA)[number]['valor'];
 export type Manutencao = (typeof MANUTENCOES)[number]['valor'];
+
 
 export const labelDe = (
   lista: readonly { valor: string; label: string }[],
@@ -71,12 +79,16 @@ export interface ModeloRecomendavel {
   posicao_escada: string | null;
   grupo_escada: string | null;
   forma_enxoval: string[];
-  manutencao: string | null;
+  /** C7 — manutenção é multivalorada: uma lâmina pode atender os dois perfis. */
+  manutencao: string[];
   porque_texto: string | null;
   /* Campos do catálogo (mesma fonte das lâminas do catálogo público) */
   video_url?: string | null;
   pronta_entrega?: boolean;
   categorias?: string[];
+  /** Quantidade de mídias cadastradas (usada em desempates). */
+  midias_count?: number;
+
 }
 
 /* ─────────── Respostas do quiz ─────────── */
@@ -251,15 +263,52 @@ export interface Recomendacao {
 
 const PESO_PORTE = 4;
 const PESO_MANUTENCAO = 3;
-const PESO_NIVEL = 3;
+const PESO_NIVEL = 6; // C3 — nível precisa competir com os casos de uso.
+
+/** Quantidade de mídias conhecida do modelo (imagem + vídeo + galeria). */
+export const midiasDe = (m: ModeloRecomendavel): number =>
+  typeof m.midias_count === 'number'
+    ? m.midias_count
+    : (m.imagem_modelo ? 1 : 0) + (m.video_url ? 1 : 0);
+
+/** C7 — manutenção da lâmina como array (tolera dado antigo em string). */
+export const manutencoesDe = (m: ModeloRecomendavel): string[] =>
+  Array.isArray(m.manutencao) ? m.manutencao : m.manutencao ? [m.manutencao as unknown as string] : [];
 
 /** Pontua um modelo contra as respostas. */
 export function pontuar(m: ModeloRecomendavel, r: RespostasQuiz, pesos: Pesos): number {
   let s = 0;
-  m.casos_uso.forEach((c) => { s += pesos.get(c as CasoUso) ?? 0; });
+
+  // C2 — caça e pesca são um par irmão: vale o MAIOR dos dois pesos, nunca a soma.
+  const irmaos: CasoUso[] = ['caca', 'pesca'];
+  m.casos_uso.forEach((c) => {
+    if (irmaos.includes(c as CasoUso)) return;
+    s += pesos.get(c as CasoUso) ?? 0;
+  });
+  if (m.casos_uso.some((c) => irmaos.includes(c as CasoUso))) {
+    s += Math.max(pesos.get('caca') ?? 0, pesos.get('pesca') ?? 0);
+  }
+
   if (r.porte && m.tipo_porte.includes(r.porte)) s += PESO_PORTE;
-  if (r.manutencao && m.manutencao === r.manutencao) s += PESO_MANUTENCAO;
+  if (r.manutencao && manutencoesDe(m).includes(r.manutencao)) s += PESO_MANUTENCAO;
   if (r.envolvimento && m.nivel_envolvimento.includes(r.envolvimento)) s += PESO_NIVEL;
+
+  // C3 — escada pesa de acordo com o envolvimento declarado.
+  if (r.envolvimento === 'colecionador') {
+    if (m.posicao_escada === 'definitiva') s += 5;
+    if (m.posicao_escada === 'entrada') s -= 4;
+  }
+  if (r.envolvimento === 'iniciante') {
+    if (m.posicao_escada === 'entrada') s += 3;
+    if (m.posicao_escada === 'definitiva') s -= 2;
+  }
+
+  // C4 — presente tem lógica própria.
+  if (r.quem.includes('presente')) {
+    if (m.posicao_escada === 'ideal') s += 4;
+    if (midiasDe(m) >= 3) s += 2;
+  }
+
   // Desempate suave por completude de cadastro, para não empatar tudo em zero.
   s += Math.min(m.casos_uso.length, 3) * 0.1;
   return s;
@@ -271,11 +320,21 @@ function porqueDe(m: ModeloRecomendavel, r: RespostasQuiz, caso: CasoUso | null)
   const partes: string[] = [];
   if (caso) partes.push(`atende ${labelDe(CASOS_USO, caso).toLowerCase()}`);
   if (r.porte && m.tipo_porte.includes(r.porte)) partes.push(`aceita porte ${labelDe(TIPOS_PORTE, r.porte).toLowerCase()}`);
-  if (r.manutencao && m.manutencao === r.manutencao) {
+  if (r.manutencao && manutencoesDe(m).includes(r.manutencao)) {
     partes.push(r.manutencao === 'resistente' ? 'aguenta descuido sem enferrujar' : 'entrega corte extremo para quem cuida');
   }
   return partes.length ? `Indicada porque ${partes.join(', ')}.` : 'Indicada pelo conjunto do seu perfil.';
 }
+
+/** C1 — desempate: 'ideal' primeiro, depois mais mídias, depois preço MAIOR. */
+const desempatar = (a: ModeloRecomendavel, b: ModeloRecomendavel): number => {
+  const ideal = (m: ModeloRecomendavel) => (m.posicao_escada === 'ideal' ? 0 : 1);
+  return (
+    ideal(a) - ideal(b) ||
+    midiasDe(b) - midiasDe(a) ||
+    (b.preco_base ?? 0) - (a.preco_base ?? 0)
+  );
+};
 
 /** Ranking geral — nunca vazio. */
 export function recomendar(modelos: ModeloRecomendavel[], r: RespostasQuiz, limite = 6): Recomendacao[] {
@@ -289,9 +348,10 @@ export function recomendar(modelos: ModeloRecomendavel[], r: RespostasQuiz, limi
       const score = pontuar(m, r, pesos);
       return { modelo: m, score, casoUso: caso, porque: porqueDe(m, r, caso) };
     })
-    .sort((a, b) => b.score - a.score || a.modelo.preco_base - b.modelo.preco_base)
+    .sort((a, b) => b.score - a.score || desempatar(a.modelo, b.modelo))
     .slice(0, limite);
 }
+
 
 /** Caso de uso dominante do perfil. */
 export function casoPrincipal(r: RespostasQuiz): CasoUso | null {
@@ -299,10 +359,12 @@ export function casoPrincipal(r: RespostasQuiz): CasoUso | null {
   return pesos.length ? pesos[0][0] : null;
 }
 
-/** Perfil misto: dois ou mais casos de uso relevantes → resultado vira enxoval. */
-export function casosRelevantes(r: RespostasQuiz, minimo = 3): CasoUso[] {
-  const pesos = [...pesosDeCasoUso(r).entries()].filter(([, v]) => v >= minimo).sort((a, b) => b[1] - a[1]);
-  return pesos.slice(0, 4).map(([k]) => k);
+/** C5 — corte RELATIVO: só entra caso com peso >= 60% do principal, máx. 3. */
+export function casosRelevantes(r: RespostasQuiz, fracao = 0.6): CasoUso[] {
+  const pesos = [...pesosDeCasoUso(r).entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  if (!pesos.length) return [];
+  const corte = pesos[0][1] * fracao;
+  return pesos.filter(([, v]) => v >= corte).slice(0, 3).map(([k]) => k);
 }
 
 /** Enxoval: a melhor peça para cada uso relevante, sem repetir modelo. */
@@ -314,7 +376,7 @@ export function montarEnxoval(modelos: ModeloRecomendavel[], r: RespostasQuiz): 
     const melhor = modelos
       .filter((m) => m.casos_uso.includes(caso) && !usados.has(m.id))
       .map((m) => ({ m, s: pontuar(m, r, pesos) }))
-      .sort((a, b) => b.s - a.s)[0];
+      .sort((a, b) => b.s - a.s || desempatar(a.m, b.m))[0];
     if (melhor) {
       usados.add(melhor.m.id);
       out.push({ modelo: melhor.m, score: melhor.s, casoUso: caso, porque: porqueDe(melhor.m, r, caso) });
@@ -323,7 +385,10 @@ export function montarEnxoval(modelos: ModeloRecomendavel[], r: RespostasQuiz): 
   return out;
 }
 
-/** Escada de valor (entrada / ideal / definitiva) a partir do modelo âncora. */
+/** Escada de valor (entrada / ideal / definitiva) a partir do modelo âncora.
+ *  C6 — sempre 3 degraus: o que faltar no grupo é completado por fora, desde
+ *  que o candidato compartilhe ao menos um caso de uso com a âncora.
+ *  Se ainda assim não fechar os três, devolve vazio (escada não é exibida). */
 export function montarEscada(
   modelos: ModeloRecomendavel[],
   ancora: ModeloRecomendavel,
@@ -334,16 +399,30 @@ export function montarEscada(
     ? modelos.filter((m) => m.grupo_escada === ancora.grupo_escada)
     : modelos.filter((m) => m.casos_uso.some((c) => ancora.casos_uso.includes(c)));
   const pool = grupo.length ? grupo : modelos;
+  const fora = modelos.filter(
+    (m) => !pool.some((p) => p.id === m.id) && m.casos_uso.some((c) => ancora.casos_uso.includes(c)),
+  );
+
+  const melhorDe = (lista: ModeloRecomendavel[], pos: PosicaoEscada, usados: Set<string>) =>
+    lista
+      .filter((m) => m.posicao_escada === pos && !usados.has(m.id))
+      .map((m) => ({ m, s: pontuar(m, r, pesos) }))
+      .sort((a, b) => b.s - a.s || desempatar(a.m, b.m))[0]?.m ?? null;
+
+  const usados = new Set<string>();
   const degraus: { posicao: PosicaoEscada; modelo: ModeloRecomendavel; porque: string }[] = [];
   (['entrada', 'ideal', 'definitiva'] as PosicaoEscada[]).forEach((pos) => {
-    const cand = pool
-      .filter((m) => m.posicao_escada === pos)
-      .map((m) => ({ m, s: pontuar(m, r, pesos) }))
-      .sort((a, b) => b.s - a.s)[0];
-    if (cand) degraus.push({ posicao: pos, modelo: cand.m, porque: porqueDe(cand.m, r, null) });
+    const escolhido = melhorDe(pool, pos, usados) ?? melhorDe(fora, pos, usados);
+    if (escolhido) {
+      usados.add(escolhido.id);
+      degraus.push({ posicao: pos, modelo: escolhido, porque: porqueDe(escolhido, r, null) });
+    }
   });
+
+  if (degraus.length < 3) return [];
   return ordenarEscada(degraus, r.envolvimento);
 }
+
 
 /** Hierarquia visual: iniciante vê a entrada primeiro; colecionador, a definitiva. */
 export function ordenarEscada<T extends { posicao: PosicaoEscada }>(degraus: T[], envolvimento: string | null): T[] {
@@ -360,9 +439,16 @@ export function fraseDoPerfil(r: RespostasQuiz): string {
     campo: 'de campo', caca: 'de caça', pesca: 'de pesca', edc_urbano: 'urbano',
     defesa: 'voltado à defesa', tatico: 'operacional', churrasco: 'de mesa e churrasco', colecao: 'colecionador',
   };
-  const base = casos.length
-    ? `Você é um usuário ${casos.slice(0, 2).map((c) => nomeCaso[c]).join(' e ')}`
-    : 'Você é um usuário versátil';
+  // C4 — quando é presente, a frase fala de quem vai receber, não do comprador.
+  const presente = r.quem.includes('presente');
+  const base = presente
+    ? (casos.length
+        ? `Você está escolhendo para outra pessoa — o perfil é ${casos.slice(0, 2).map((c) => nomeCaso[c]).join(' e ')}`
+        : 'Você está escolhendo para outra pessoa — o perfil é versátil')
+    : casos.length
+      ? `Você é um usuário ${casos.slice(0, 2).map((c) => nomeCaso[c]).join(' e ')}`
+      : 'Você é um usuário versátil';
+
   const porte =
     r.porte === 'velado' ? ' que valoriza discrição no dia a dia'
     : r.porte === 'ostensivo_cintura' ? ' que quer a peça à mão, sem esconder'

@@ -6,29 +6,225 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Search, Loader2, Save, ChevronDown } from 'lucide-react';
+import { Search, Loader2, Save, ChevronDown, Wand2, AlertTriangle } from 'lucide-react';
 import {
   CASOS_USO,
   TIPOS_PORTE,
   NIVEIS_ENVOLVIMENTO,
   POSICOES_ESCADA,
   MANUTENCOES,
+  GRUPOS_ESCADA,
 } from '@/lib/recomendacao';
 
 interface Linha {
   id: string;
   nome_modelo: string;
   imagem_modelo: string | null;
+  video_url: string | null;
+  categoria: string | null;
+  categorias: string[];
+  preco_base: number;
+  created_at: string | null;
+  midias: number;
   casos_uso: string[];
   tipo_porte: string[];
   nivel_envolvimento: string[];
   posicao_escada: string | null;
   grupo_escada: string | null;
   forma_enxoval: string[];
-  manutencao: string | null;
+  manutencao: string[];
   porque_texto: string | null;
 }
+
+/* ═══════════ PARTE A — filtros da listagem ═══════════ */
+
+const CATEGORIAS_EXCLUIDAS = ['vestuário', 'vestuario', 'utensílios', 'utensilios', 'cafés', 'cafes', 'kits', 'upsell'];
+
+const NOMES_EXCLUIDOS = [
+  'boné', 'bone', 'bucket hat', 'camiseta', 'moletom', 'cinto', 'chaira', 'afiador',
+  'garfo', 'tábua', 'tabua', 'strop', 'bainha', 'clipe', 'ulticlip', 'passador',
+  'patch', 'café', 'cafe', 'personalização', 'personalizacao', 'produto sob encomenda',
+];
+
+const semAcento = (s: string) =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+/** minúsculas, sem acento, hífen e espaço como o mesmo separador, espaços colapsados */
+const normalizarNome = (s: string) =>
+  semAcento(s).replace(/[-_]+/g, ' ').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+const ehLamina = (l: Linha): boolean => {
+  // A1 — precisa de mídia
+  if (!l.imagem_modelo && !l.video_url && l.midias === 0) return false;
+  // A4 — preço zerado fora
+  if (!l.preco_base || Number(l.preco_base) === 0) return false;
+  // A2 — categorias excluídas
+  const cats = [l.categoria ?? '', ...(l.categorias ?? [])].map((c) => semAcento(c));
+  if (cats.some((c) => c && CATEGORIAS_EXCLUIDAS.includes(c))) return false;
+  // A3 — nomes excluídos
+  const nome = semAcento(l.nome_modelo);
+  if (NOMES_EXCLUIDOS.some((t) => nome.includes(semAcento(t)))) return false;
+  return true;
+};
+
+/** A5 — esconde duplicatas: fica quem tem mais mídias; empate, o mais recente. */
+const removerDuplicatas = (linhas: Linha[]): Linha[] => {
+  const mapa = new Map<string, Linha>();
+  linhas.forEach((l) => {
+    const chave = normalizarNome(l.nome_modelo);
+    const atual = mapa.get(chave);
+    if (!atual) { mapa.set(chave, l); return; }
+    const midiasL = l.midias + (l.imagem_modelo ? 1 : 0) + (l.video_url ? 1 : 0);
+    const midiasA = atual.midias + (atual.imagem_modelo ? 1 : 0) + (atual.video_url ? 1 : 0);
+    if (midiasL > midiasA) { mapa.set(chave, l); return; }
+    if (midiasL === midiasA && (l.created_at ?? '') > (atual.created_at ?? '')) mapa.set(chave, l);
+  });
+  return [...mapa.values()];
+};
+
+/* ═══════════ PARTE B — inferência de atributos ═══════════ */
+
+const CASOS_POR_CATEGORIA: Record<string, string[]> = {
+  'defesa': ['defesa', 'edc_urbano'],
+  'campo': ['campo', 'caca', 'pesca'],
+  'cozinha': ['churrasco'],
+  'churrasco': ['churrasco'],
+  'edc': ['edc_urbano'],
+  'edcs': ['edc_urbano'],
+  'edc mini': ['edc_urbano'],
+  'canivetes': ['edc_urbano'],
+  'kzr': ['tatico', 'defesa'],
+  'adaga': ['defesa', 'tatico'],
+  'porte velado': ['defesa', 'edc_urbano'],
+};
+
+const casosPorCategoria = (l: Linha): string[] => {
+  const arr = (l.categorias ?? []).filter(Boolean);
+  // O array `categorias` vale mais que a coluna singular.
+  const principal = semAcento(arr[0] ?? l.categoria ?? '');
+  if (principal === 'novidades') {
+    const segunda = semAcento(arr[1] ?? '');
+    return CASOS_POR_CATEGORIA[segunda] ?? [];
+  }
+  return CASOS_POR_CATEGORIA[principal] ?? [];
+};
+
+const contemAlgum = (nome: string, termos: string[]) =>
+  termos.some((t) => semAcento(nome).includes(semAcento(t)));
+
+const inferirPorte = (l: Linha): string[] => {
+  const n = l.nome_modelo;
+  const cat = semAcento((l.categorias ?? [])[0] ?? l.categoria ?? '');
+  if (contemAlgum(n, ['Velad'])) return ['velado'];
+  if (contemAlgum(n, ['Multi'])) return ['velado', 'ostensivo_cintura', 'mochila_colete'];
+  if (contemAlgum(n, ['Ring', 'Mini'])) return ['velado', 'ostensivo_cintura'];
+  if (contemAlgum(n, ['Full Size', 'Full-Size', 'Camp', 'Nimbowie', 'Big']))
+    return ['ostensivo_cintura', 'mochila_colete'];
+  if (cat === 'cozinha' || cat === 'churrasco') return ['nao_se_aplica'];
+  return ['ostensivo_cintura'];
+};
+
+const inferirPosicao = (l: Linha): string => {
+  const n = l.nome_modelo;
+  if (contemAlgum(n, ['Inox'])) return 'entrada';
+  if (contemAlgum(n, ['Sandvik'])) return 'ideal';
+  if (contemAlgum(n, ['High Carbon', 'HC', 'Carbon', '52100', 'San Mai', 'Brute Forge'])) return 'definitiva';
+  return 'entrada';
+};
+
+const FAMILIAS: { chave: string[]; nome: string }[] = [
+  { chave: ['Nimbowie'], nome: 'Nimbowie' },
+  { chave: ['Nimbus'], nome: 'Nimbus' },
+  { chave: ['Jagunço', 'Jagunco'], nome: 'Jagunço' },
+  { chave: ['Adaga'], nome: 'Adaga' },
+  { chave: ['Defcon'], nome: 'Defcon' },
+  { chave: ['Camp Knife'], nome: 'Camp Knife' },
+  { chave: ['Ring'], nome: 'Ring' },
+  { chave: ['Tantô', 'Tantō', 'Tanto'], nome: 'Tantô' },
+  { chave: ['Wharncliffe', 'Warncliffe'], nome: 'Wharncliffe' },
+  { chave: ['EDC Mini'], nome: 'EDC Mini' },
+  { chave: ['EDC'], nome: 'EDC' },
+  { chave: ['Canivete'], nome: 'Canivete' },
+  { chave: ['Butcher'], nome: 'Butcher' },
+  { chave: ['Chef Royal'], nome: 'Chef Royal' },
+  { chave: ['Picanheira'], nome: 'Picanheira' },
+  { chave: ['Kiritsuke'], nome: 'Kiritsuke' },
+];
+
+const inferirGrupo = (l: Linha): string | null =>
+  FAMILIAS.find((f) => contemAlgum(l.nome_modelo, f.chave))?.nome ?? null;
+
+const inferirNivel = (l: Linha): string[] => {
+  const n = l.nome_modelo;
+  if (contemAlgum(n, ['Tactical', 'Dragon Scale', 'Signature', 'Espaçador', 'Espacador', 'Cerakote', 'Vintage']))
+    return ['experiente', 'colecionador'];
+  if (contemAlgum(n, ['Inox'])) return ['iniciante', 'usuario'];
+  if (contemAlgum(n, ['Canivete']) || /k-[1-5]\b/i.test(n)) return ['iniciante', 'usuario'];
+  return ['usuario', 'experiente'];
+};
+
+const inferirManutencao = (l: Linha): string[] => {
+  const n = l.nome_modelo;
+  if (contemAlgum(n, ['Inox', 'Sandvik'])) return ['resistente'];
+  if (contemAlgum(n, ['High Carbon', 'HC', 'Carbon', '52100'])) return ['corte_extremo'];
+  return ['resistente'];
+};
+
+interface Sugestao {
+  id: string;
+  nome: string;
+  campos: Partial<Pick<Linha, 'casos_uso' | 'tipo_porte' | 'nivel_envolvimento' | 'posicao_escada' | 'grupo_escada' | 'manutencao'>>;
+}
+
+/** Só sugere para campo vazio — nunca sobrescreve trabalho manual. */
+const sugerirPara = (l: Linha): Sugestao | null => {
+  const campos: Sugestao['campos'] = {};
+  if (!l.casos_uso.length) {
+    const c = casosPorCategoria(l);
+    if (c.length) campos.casos_uso = c;
+  }
+  if (!l.tipo_porte.length) campos.tipo_porte = inferirPorte(l);
+  if (!l.nivel_envolvimento.length) campos.nivel_envolvimento = inferirNivel(l);
+  if (!l.posicao_escada) campos.posicao_escada = inferirPosicao(l);
+  if (!l.grupo_escada) {
+    const g = inferirGrupo(l);
+    if (g) campos.grupo_escada = g;
+  }
+  if (!l.manutencao.length) campos.manutencao = inferirManutencao(l);
+  // Camada 6 (forma_enxoval): não infere.
+  return Object.keys(campos).length ? { id: l.id, nome: l.nome_modelo, campos } : null;
+};
+
+const rotuloCampos = (c: Sugestao['campos']) =>
+  [
+    c.casos_uso && `casos: ${c.casos_uso.join(', ')}`,
+    c.tipo_porte && `porte: ${c.tipo_porte.join(', ')}`,
+    c.nivel_envolvimento && `nível: ${c.nivel_envolvimento.join(', ')}`,
+    c.posicao_escada && `escada: ${c.posicao_escada}`,
+    c.grupo_escada && `grupo: ${c.grupo_escada}`,
+    c.manutencao && `manutenção: ${c.manutencao.join(', ')}`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+/* ═══════════ UI ═══════════ */
 
 const Chips = ({
   opcoes,
@@ -60,46 +256,97 @@ const Chips = ({
   </div>
 );
 
+const CAMPOS_SALVOS = [
+  'casos_uso', 'tipo_porte', 'nivel_envolvimento', 'posicao_escada',
+  'grupo_escada', 'forma_enxoval', 'manutencao', 'porque_texto',
+] as const;
+
 export function AtributosRecomendacaoTab() {
   const [linhas, setLinhas] = useState<Linha[]>([]);
   const [busca, setBusca] = useState('');
   const [loading, setLoading] = useState(true);
   const [aberto, setAberto] = useState<string | null>(null);
   const [salvando, setSalvando] = useState<string | null>(null);
+  const [mostrarTodos, setMostrarTodos] = useState(false);
+  const [filtroAtributos, setFiltroAtributos] = useState<'todas' | 'sem' | 'com'>('todas');
+  const [sujos, setSujos] = useState<Set<string>>(new Set());
+  const [previa, setPrevia] = useState<Sugestao[] | null>(null);
+  const [salvandoLote, setSalvandoLote] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from('catalogo_modelos')
-        .select(
-          'id, nome_modelo, imagem_modelo, casos_uso, tipo_porte, nivel_envolvimento, posicao_escada, grupo_escada, forma_enxoval, manutencao, porque_texto',
-        )
-        .eq('visivel_catalogo', true)
-        .order('nome_modelo');
+      const [{ data: midias }, { data, error }] = await Promise.all([
+        supabase.from('midias_catalogo').select('modelo_id'),
+        supabase
+          .from('catalogo_modelos')
+          .select(
+            'id, nome_modelo, imagem_modelo, video_url, categoria, categorias, preco_base, created_at, casos_uso, tipo_porte, nivel_envolvimento, posicao_escada, grupo_escada, forma_enxoval, manutencao, porque_texto',
+          )
+          .eq('visivel_catalogo', true)
+          .order('nome_modelo'),
+      ]);
       if (error) toast.error('Erro ao carregar lâminas');
-      else
+      else {
+        const contagem = new Map<string, number>();
+        (midias || []).forEach((m: any) => contagem.set(m.modelo_id, (contagem.get(m.modelo_id) ?? 0) + 1));
         setLinhas(
           (data as any[]).map((m) => ({
             ...m,
+            categorias: m.categorias ?? [],
+            preco_base: Number(m.preco_base ?? 0),
+            midias: contagem.get(m.id) ?? 0,
             casos_uso: m.casos_uso ?? [],
             tipo_porte: m.tipo_porte ?? [],
             nivel_envolvimento: m.nivel_envolvimento ?? [],
             forma_enxoval: m.forma_enxoval ?? [],
+            manutencao: Array.isArray(m.manutencao) ? m.manutencao : m.manutencao ? [m.manutencao] : [],
           })),
         );
+      }
       setLoading(false);
     })();
   }, []);
 
-  const filtradas = useMemo(
-    () => linhas.filter((l) => l.nome_modelo.toLowerCase().includes(busca.toLowerCase())),
-    [linhas, busca],
+  /* Aviso ao sair com alterações não salvas (D1) */
+  useEffect(() => {
+    if (!sujos.size) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [sujos]);
+
+  const visiveis = useMemo(
+    () => (mostrarTodos ? linhas : removerDuplicatas(linhas.filter(ehLamina))),
+    [linhas, mostrarTodos],
   );
 
-  const patch = (id: string, campo: keyof Linha, valor: any) =>
-    setLinhas((prev) => prev.map((l) => (l.id === id ? { ...l, [campo]: valor } : l)));
+  const filtradas = useMemo(
+    () =>
+      visiveis
+        .filter((l) => l.nome_modelo.toLowerCase().includes(busca.toLowerCase()))
+        .filter((l) =>
+          filtroAtributos === 'todas'
+            ? true
+            : filtroAtributos === 'sem'
+              ? l.casos_uso.length === 0
+              : l.casos_uso.length > 0,
+        ),
+    [visiveis, busca, filtroAtributos],
+  );
 
-  const toggle = (id: string, campo: 'casos_uso' | 'tipo_porte' | 'nivel_envolvimento' | 'forma_enxoval', v: string) =>
+  const marcarSujo = (id: string) => setSujos((p) => new Set(p).add(id));
+
+  const patch = (id: string, campo: keyof Linha, valor: any) => {
+    marcarSujo(id);
+    setLinhas((prev) => prev.map((l) => (l.id === id ? { ...l, [campo]: valor } : l)));
+  };
+
+  const toggle = (
+    id: string,
+    campo: 'casos_uso' | 'tipo_porte' | 'nivel_envolvimento' | 'forma_enxoval' | 'manutencao',
+    v: string,
+  ) => {
+    marcarSujo(id);
     setLinhas((prev) =>
       prev.map((l) =>
         l.id === id
@@ -107,28 +354,78 @@ export function AtributosRecomendacaoTab() {
           : l,
       ),
     );
+  };
+
+  /* C9 — forma_enxoval recíproco: marcar A↔B grava dos dois lados. */
+  const toggleEnxoval = (id: string, outroId: string) => {
+    setSujos((p) => new Set(p).add(id).add(outroId));
+    setLinhas((prev) => {
+      const alvo = prev.find((l) => l.id === id);
+      if (!alvo) return prev;
+      const ligar = !alvo.forma_enxoval.includes(outroId);
+      return prev.map((l) => {
+        if (l.id === id)
+          return { ...l, forma_enxoval: ligar ? [...l.forma_enxoval, outroId] : l.forma_enxoval.filter((x) => x !== outroId) };
+        if (l.id === outroId)
+          return { ...l, forma_enxoval: ligar ? [...new Set([...l.forma_enxoval, id])] : l.forma_enxoval.filter((x) => x !== id) };
+        return l;
+      });
+    });
+  };
+
+  const payload = (l: Linha) =>
+    Object.fromEntries(CAMPOS_SALVOS.map((c) => [c, (l as any)[c]])) as Record<string, unknown>;
 
   const salvar = async (l: Linha) => {
     setSalvando(l.id);
-    const { error } = await supabase
-      .from('catalogo_modelos')
-      .update({
-        casos_uso: l.casos_uso,
-        tipo_porte: l.tipo_porte,
-        nivel_envolvimento: l.nivel_envolvimento,
-        posicao_escada: l.posicao_escada,
-        grupo_escada: l.grupo_escada,
-        forma_enxoval: l.forma_enxoval,
-        manutencao: l.manutencao,
-        porque_texto: l.porque_texto,
-      } as any)
-      .eq('id', l.id);
+    const { error } = await supabase.from('catalogo_modelos').update(payload(l) as any).eq('id', l.id);
     setSalvando(null);
-    if (error) toast.error('Erro ao salvar atributos');
-    else toast.success(`${l.nome_modelo} atualizada`);
+    if (error) { toast.error('Erro ao salvar atributos'); return; }
+    setSujos((p) => { const n = new Set(p); n.delete(l.id); return n; });
+    toast.success(`${l.nome_modelo} atualizada`);
   };
 
-  const cadastradas = linhas.filter((l) => l.casos_uso.length > 0).length;
+  /* D1 — salvar tudo o que foi editado na sessão */
+  const salvarTudo = async () => {
+    const alvos = linhas.filter((l) => sujos.has(l.id));
+    if (!alvos.length) return;
+    setSalvandoLote(true);
+    const resultados = await Promise.all(
+      alvos.map((l) => supabase.from('catalogo_modelos').update(payload(l) as any).eq('id', l.id)),
+    );
+    setSalvandoLote(false);
+    const erros = resultados.filter((r) => r.error).length;
+    if (erros) toast.error(`${erros} lâmina(s) não foram salvas`);
+    else { setSujos(new Set()); toast.success(`${alvos.length} lâmina(s) salvas`); }
+  };
+
+  /* PARTE B — prévia e confirmação */
+  const gerarPrevia = () => {
+    const s = visiveis.map(sugerirPara).filter(Boolean) as Sugestao[];
+    if (!s.length) { toast.info('Nada a pré-preencher — todos os campos já têm valor.'); return; }
+    setPrevia(s);
+  };
+
+  const confirmarPrevia = async () => {
+    if (!previa) return;
+    setSalvandoLote(true);
+    const resultados = await Promise.all(
+      previa.map((s) => supabase.from('catalogo_modelos').update(s.campos as any).eq('id', s.id)),
+    );
+    setSalvandoLote(false);
+    const erros = resultados.filter((r) => r.error).length;
+    setLinhas((prev) =>
+      prev.map((l) => {
+        const s = previa.find((x) => x.id === l.id);
+        return s ? ({ ...l, ...s.campos } as Linha) : l;
+      }),
+    );
+    setPrevia(null);
+    if (erros) toast.error(`${erros} lâmina(s) não foram preenchidas`);
+    else toast.success('Atributos pré-preenchidos — revise peça por peça.');
+  };
+
+  const cadastradas = visiveis.filter((l) => l.casos_uso.length > 0).length;
 
   if (loading)
     return (
@@ -150,8 +447,63 @@ export function AtributosRecomendacaoTab() {
           />
         </div>
         <Badge variant="secondary" className="self-start sm:self-auto">
-          {cadastradas}/{linhas.length} com atributos
+          {cadastradas}/{visiveis.length} com atributos
         </Badge>
+      </div>
+
+      {/* A6 — contador e switch de filtro */}
+      <div className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">{visiveis.length}</span> lâminas exibidas de{' '}
+          <span className="font-medium text-foreground">{linhas.length}</span> registros no catálogo
+        </p>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">Mostrar todos os registros</Label>
+          <Switch checked={mostrarTodos} onCheckedChange={setMostrarTodos} />
+        </div>
+      </div>
+
+      {/* D2 — filtro rápido */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {([
+          { v: 'sem', l: 'Sem atributos' },
+          { v: 'com', l: 'Com atributos' },
+          { v: 'todas', l: 'Todas' },
+        ] as const).map((f) => (
+          <button
+            key={f.v}
+            type="button"
+            onClick={() => setFiltroAtributos(f.v)}
+            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+              filtroAtributos === f.v
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-background text-muted-foreground hover:border-primary/50'
+            }`}
+          >
+            {f.l}
+          </button>
+        ))}
+      </div>
+
+      {/* PARTE B — aviso + botão + salvar em lote */}
+      <div className="space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
+        <p className="flex gap-2 text-xs text-muted-foreground">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+          Pré-preenchimento é rascunho. A inferência acerta o óbvio e erra no que diferencia a Kaowz —
+          geometria, espessura e comprimento de lâmina não aparecem no nome. Revise peça por peça.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="outline" onClick={gerarPrevia}>
+            <Wand2 className="mr-1.5 h-4 w-4" /> Pré-preencher atributos
+          </Button>
+          <Button size="sm" onClick={salvarTudo} disabled={!sujos.size || salvandoLote}>
+            {salvandoLote ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
+            Salvar todas as alterações
+          </Button>
+          {sujos.size > 0 && (
+            <Badge variant="destructive">{sujos.size} pendente(s)</Badge>
+          )}
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground">
@@ -161,7 +513,7 @@ export function AtributosRecomendacaoTab() {
       {filtradas.map((l) => {
         const expandido = aberto === l.id;
         return (
-          <Card key={l.id}>
+          <Card key={l.id} className={sujos.has(l.id) ? 'border-amber-500/60' : ''}>
             <CardContent className="p-3">
               <button
                 type="button"
@@ -179,6 +531,7 @@ export function AtributosRecomendacaoTab() {
                       : 'Sem atributos'}
                   </p>
                 </div>
+                {sujos.has(l.id) && <Badge variant="outline" className="shrink-0 text-[10px]">não salvo</Badge>}
                 <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${expandido ? 'rotate-180' : ''}`} />
               </button>
 
@@ -201,11 +554,11 @@ export function AtributosRecomendacaoTab() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Manutenção</Label>
+                    <Label className="text-xs">Manutenção (pode marcar as duas)</Label>
                     <Chips
                       opcoes={MANUTENCOES}
-                      valores={l.manutencao ? [l.manutencao] : []}
-                      onToggle={(v) => patch(l.id, 'manutencao', l.manutencao === v ? null : v)}
+                      valores={l.manutencao}
+                      onToggle={(v) => toggle(l.id, 'manutencao', v)}
                     />
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -219,22 +572,32 @@ export function AtributosRecomendacaoTab() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">Grupo da escada</Label>
-                      <Input
-                        value={l.grupo_escada ?? ''}
-                        placeholder="ex: edc-urbano"
-                        onChange={(e) => patch(l.id, 'grupo_escada', e.target.value)}
-                      />
+                      {/* C8 — lista fixa, sem texto livre */}
+                      <Select
+                        value={l.grupo_escada ?? '__nenhum__'}
+                        onValueChange={(v) => patch(l.id, 'grupo_escada', v === '__nenhum__' ? null : v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="(nenhum)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__nenhum__">(nenhum)</SelectItem>
+                          {GRUPOS_ESCADA.map((g) => (
+                            <SelectItem key={g} value={g}>{g}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Compõe enxoval com</Label>
+                    <Label className="text-xs">Compõe enxoval com (recíproco)</Label>
                     <div className="max-h-40 overflow-y-auto rounded border p-2">
                       <Chips
-                        opcoes={linhas
+                        opcoes={visiveis
                           .filter((o) => o.id !== l.id)
                           .map((o) => ({ valor: o.id, label: o.nome_modelo }))}
                         valores={l.forma_enxoval}
-                        onToggle={(v) => toggle(l.id, 'forma_enxoval', v)}
+                        onToggle={(v) => toggleEnxoval(l.id, v)}
                       />
                     </div>
                   </div>
@@ -261,6 +624,44 @@ export function AtributosRecomendacaoTab() {
           </Card>
         );
       })}
+
+      {/* Prévia do pré-preenchimento */}
+      <Dialog open={!!previa} onOpenChange={(o) => !o && setPrevia(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Prévia do pré-preenchimento</DialogTitle>
+            <DialogDescription>
+              {previa?.length} lâmina(s) serão preenchidas. Só campos vazios são alterados — nada já cadastrado
+              à mão é sobrescrito.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[50vh] overflow-y-auto rounded border">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-muted">
+                <tr>
+                  <th className="p-2 text-left font-medium">Lâmina</th>
+                  <th className="p-2 text-left font-medium">Será preenchido</th>
+                </tr>
+              </thead>
+              <tbody>
+                {previa?.map((s) => (
+                  <tr key={s.id} className="border-t align-top">
+                    <td className="p-2 font-medium">{s.nome}</td>
+                    <td className="p-2 text-muted-foreground">{rotuloCampos(s.campos)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPrevia(null)}>Cancelar</Button>
+            <Button onClick={confirmarPrevia} disabled={salvandoLote}>
+              {salvandoLote && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

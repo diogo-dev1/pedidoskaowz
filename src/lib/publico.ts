@@ -46,19 +46,24 @@ export async function carregarModelosPublicos(): Promise<ModeloRecomendavel[]> {
       .order('nome_modelo'),
   ]);
   if (error || !data) return [];
-  const comMidia = new Set((midias || []).map((m: any) => m.modelo_id));
+  const contagem = new Map<string, number>();
+  (midias || []).forEach((m: any) => contagem.set(m.modelo_id, (contagem.get(m.modelo_id) ?? 0) + 1));
   return (data as any[])
-    .filter((m) => m.imagem_modelo || m.video_url || comMidia.has(m.id))
+    .filter((m) => m.imagem_modelo || m.video_url || contagem.has(m.id))
     .map((m) => ({
       ...m,
       casos_uso: m.casos_uso ?? [],
       tipo_porte: m.tipo_porte ?? [],
       nivel_envolvimento: m.nivel_envolvimento ?? [],
       forma_enxoval: m.forma_enxoval ?? [],
+      manutencao: Array.isArray(m.manutencao) ? m.manutencao : m.manutencao ? [m.manutencao] : [],
       categorias: m.categorias ?? [],
       pronta_entrega: !!m.pronta_entrega,
+      midias_count:
+        (contagem.get(m.id) ?? 0) + (m.imagem_modelo ? 1 : 0) + (m.video_url ? 1 : 0),
     })) as ModeloRecomendavel[];
 }
+
 
 /* ── Etapas do quiz configuráveis pelo admin ──
    Só textos e visibilidade são editáveis; os ids/valores continuam fixos
