@@ -324,7 +324,16 @@ export default function CatalogoInternacional() {
   const categorias = categoriasVisiveis.filter((c) => c.visivel);
   const categoriasVenda = categorias.map((cat) => ({
     subtitulo: getNomeCategoria(cat), categoria: cat.categoria, icon: getIconComponent(cat.icone),
+    especial: undefined as 'push-dagger' | undefined,
   }));
+
+  // Card especial "Push Daggers" — aponta para o configurador dedicado
+  {
+    const idxDefesa = categoriasVenda.findIndex((c) => c.categoria === 'Defesa');
+    categoriasVenda.splice(idxDefesa === -1 ? 0 : idxDefesa + 1, 0, {
+      subtitulo: 'Push Daggers', categoria: '__push_dagger__', icon: Swords, especial: 'push-dagger',
+    });
+  }
 
   useEffect(() => {
     carregarModelos();
