@@ -177,12 +177,6 @@ export const PERGUNTAS: PerguntaQuiz[] = [
     ],
   },
   {
-    id: 'desempate',
-    titulo: 'Entre o que você marcou, o que pesa mais no dia a dia?',
-    multipla: false,
-    opcoes: [], // preenchido dinamicamente por opcoesDesempate()
-  },
-  {
     id: 'envolvimento',
     titulo: 'Como é a sua relação com lâminas hoje?',
     multipla: false,
@@ -193,6 +187,13 @@ export const PERGUNTAS: PerguntaQuiz[] = [
       { valor: 'colecionador', titulo: 'Tenho coleção', descricao: 'Valorizo a peça em si' },
     ],
   },
+  {
+    id: 'desempate',
+    titulo: 'Entre o que você marcou, o que pesa mais no dia a dia?',
+    multipla: false,
+    opcoes: [], // preenchido dinamicamente por opcoesDesempate()
+  },
+
 ];
 
 /** Opções do desempate: casos de uso derivados do que a pessoa já marcou. */
