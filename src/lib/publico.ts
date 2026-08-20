@@ -33,23 +33,30 @@ export const gravarToken = (t: string) => { try { localStorage.setItem(CHAVE_TOK
 
 /* ── Modelos públicos com atributos de recomendação ── */
 
+/** Mesma fonte e mesmos filtros do catálogo público (inclui exigência de mídia). */
 export async function carregarModelosPublicos(): Promise<ModeloRecomendavel[]> {
-  const { data, error } = await supabase
-    .from('catalogo_modelos')
-    .select(
-      'id, nome_modelo, preco_base, imagem_modelo, descricao_html, apresentacao_venda, categoria, casos_uso, tipo_porte, nivel_envolvimento, posicao_escada, grupo_escada, forma_enxoval, manutencao, porque_texto',
-    )
-    .eq('visivel_catalogo', true)
-    .eq('visivel_publico', true)
-    .order('nome_modelo');
+  const [{ data: midias }, { data, error }] = await Promise.all([
+    supabase.from('midias_catalogo').select('modelo_id'),
+    supabase
+      .from('catalogo_modelos')
+      .select('*')
+      .eq('visivel_catalogo', true)
+      .eq('visivel_publico', true)
+      .order('nome_modelo'),
+  ]);
   if (error || !data) return [];
-  return (data as any[]).map((m) => ({
-    ...m,
-    casos_uso: m.casos_uso ?? [],
-    tipo_porte: m.tipo_porte ?? [],
-    nivel_envolvimento: m.nivel_envolvimento ?? [],
-    forma_enxoval: m.forma_enxoval ?? [],
-  })) as ModeloRecomendavel[];
+  const comMidia = new Set((midias || []).map((m: any) => m.modelo_id));
+  return (data as any[])
+    .filter((m) => m.imagem_modelo || m.video_url || comMidia.has(m.id))
+    .map((m) => ({
+      ...m,
+      casos_uso: m.casos_uso ?? [],
+      tipo_porte: m.tipo_porte ?? [],
+      nivel_envolvimento: m.nivel_envolvimento ?? [],
+      forma_enxoval: m.forma_enxoval ?? [],
+      categorias: m.categorias ?? [],
+      pronta_entrega: !!m.pronta_entrega,
+    })) as ModeloRecomendavel[];
 }
 
 /* ── Traduções em linguagem de cliente (uma linha por opção) ── */
