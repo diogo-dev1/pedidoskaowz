@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import Layout from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,7 +59,6 @@ export default function DescubraConfig() {
   const restaurar = () => { setCfg(quizConfigPadrao()); toast.info('Textos padrão restaurados — salve para aplicar'); };
 
   return (
-    <Layout>
       <div className="mx-auto max-w-6xl space-y-4 p-3 md:p-6">
         <div>
           <h1 className="text-xl font-bold md:text-2xl">Configurar Descubra</h1>
@@ -194,6 +192,5 @@ export default function DescubraConfig() {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
   );
 }
