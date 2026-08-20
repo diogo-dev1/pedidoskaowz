@@ -14,10 +14,12 @@ interface Props {
   /** Etiqueta acima do nome (caso de uso / degrau da escada). */
   etiqueta?: string;
   destaque?: boolean;
+  /** G2 — esconde o caminho para o configurador (usado na tela de resultado). */
+  semConfigurador?: boolean;
 }
 
 /** Card de lâmina no mesmo padrão visual do catálogo público. */
-export default function LaminaCard({ modelo: m, porque, etiqueta, destaque }: Props) {
+export default function LaminaCard({ modelo: m, porque, etiqueta, destaque, semConfigurador }: Props) {
   return (
     <div
       className={`group relative overflow-hidden rounded-lg transition-all ${
@@ -65,7 +67,7 @@ export default function LaminaCard({ modelo: m, porque, etiqueta, destaque }: Pr
             <p className="text-[10px] text-zinc-400 md:text-xs">a partir de</p>
           </div>
 
-          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+          <div className={`mt-1.5 grid gap-1.5 ${semConfigurador ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <Button
               asChild
               size="sm"
@@ -76,16 +78,18 @@ export default function LaminaCard({ modelo: m, porque, etiqueta, destaque }: Pr
                 <ExternalLink className="mr-1 h-3 w-3" /> Na loja
               </a>
             </Button>
-            <Button
-              asChild
-              size="sm"
-              className="h-8 rounded-lg bg-accent text-[10px] font-semibold text-white shadow-[0_4px_15px_rgba(251,146,60,0.25)] hover:bg-accent/90 md:h-10 md:text-xs"
-            >
-              <Link to={`/montar?modelo=${encodeURIComponent(m.nome_modelo)}`}>
-                <Wrench className="mr-1 h-3 w-3" /> Monte a sua
-                <ArrowRight className="ml-1 hidden h-3 w-3 md:inline" />
-              </Link>
-            </Button>
+            {!semConfigurador && (
+              <Button
+                asChild
+                size="sm"
+                className="h-8 rounded-lg bg-accent text-[10px] font-semibold text-white shadow-[0_4px_15px_rgba(251,146,60,0.25)] hover:bg-accent/90 md:h-10 md:text-xs"
+              >
+                <Link to={`/montar?modelo=${encodeURIComponent(m.nome_modelo)}`}>
+                  <Wrench className="mr-1 h-3 w-3" /> Monte a sua
+                  <ArrowRight className="ml-1 hidden h-3 w-3 md:inline" />
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </div>
