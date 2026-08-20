@@ -13,13 +13,16 @@ interface Props {
   porque?: string;
   /** Etiqueta acima do nome (caso de uso / degrau da escada). */
   etiqueta?: string;
+  /** F3 — todas as funções que a peça cobre, num cartão único. */
+  etiquetas?: string[];
   destaque?: boolean;
   /** G2 — esconde o caminho para o configurador (usado na tela de resultado). */
   semConfigurador?: boolean;
 }
 
 /** Card de lâmina no mesmo padrão visual do catálogo público. */
-export default function LaminaCard({ modelo: m, porque, etiqueta, destaque, semConfigurador }: Props) {
+export default function LaminaCard({ modelo: m, porque, etiqueta, etiquetas, destaque, semConfigurador }: Props) {
+  const marcas = etiquetas?.length ? etiquetas : etiqueta ? [etiqueta] : [];
   return (
     <div
       className={`group relative overflow-hidden rounded-lg transition-all ${
@@ -52,8 +55,12 @@ export default function LaminaCard({ modelo: m, porque, etiqueta, destaque, semC
             </Badge>
           )}
 
-          {etiqueta && (
-            <Badge className="absolute bottom-3 left-3 border-0 bg-accent text-white">{etiqueta}</Badge>
+          {marcas.length > 0 && (
+            <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1">
+              {marcas.map((t) => (
+                <Badge key={t} className="border-0 bg-accent text-[10px] text-white">{t}</Badge>
+              ))}
+            </div>
           )}
         </div>
 
