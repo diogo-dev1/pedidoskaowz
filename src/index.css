@@ -300,3 +300,49 @@ All colors MUST be HSL.
   margin: 0.5rem 0;
   max-width: 100%;
 }
+
+/* ── Quiz público: movimento que responde ao gesto ── */
+@keyframes quiz-entra-direita {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes quiz-entra-esquerda {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes quiz-cascata {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes quiz-toque {
+  0% { transform: scale(1); }
+  45% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+@keyframes quiz-check {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes quiz-brilho {
+  from { transform: translateX(-100%); opacity: 0.9; }
+  to   { transform: translateX(400%); opacity: 0; }
+}
+
+.quiz-entra-direita { animation: quiz-entra-direita 280ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.quiz-entra-esquerda { animation: quiz-entra-esquerda 280ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.quiz-cascata { animation: quiz-cascata 220ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.quiz-toque { animation: quiz-toque 180ms ease-out; }
+.quiz-check { animation: quiz-check 200ms ease-out both; }
+.quiz-brilho {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: quiz-brilho 700ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-entra-direita,
+  .quiz-entra-esquerda,
+  .quiz-cascata,
+  .quiz-toque,
+  .quiz-check,
+  .quiz-brilho { animation: none !important; }
+}
