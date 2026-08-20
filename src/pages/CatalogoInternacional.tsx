@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, Zap, Package, SlidersHorizontal, X, TrendingUp, Globe, Languages, DollarSign } from 'lucide-react';
+import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, Zap, Package, SlidersHorizontal, X, TrendingUp, Globe, Languages, DollarSign, Swords } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
