@@ -359,10 +359,12 @@ export function casoPrincipal(r: RespostasQuiz): CasoUso | null {
   return pesos.length ? pesos[0][0] : null;
 }
 
-/** Perfil misto: dois ou mais casos de uso relevantes → resultado vira enxoval. */
-export function casosRelevantes(r: RespostasQuiz, minimo = 3): CasoUso[] {
-  const pesos = [...pesosDeCasoUso(r).entries()].filter(([, v]) => v >= minimo).sort((a, b) => b[1] - a[1]);
-  return pesos.slice(0, 4).map(([k]) => k);
+/** C5 — corte RELATIVO: só entra caso com peso >= 60% do principal, máx. 3. */
+export function casosRelevantes(r: RespostasQuiz, fracao = 0.6): CasoUso[] {
+  const pesos = [...pesosDeCasoUso(r).entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  if (!pesos.length) return [];
+  const corte = pesos[0][1] * fracao;
+  return pesos.filter(([, v]) => v >= corte).slice(0, 3).map(([k]) => k);
 }
 
 /** Enxoval: a melhor peça para cada uso relevante, sem repetir modelo. */
@@ -374,7 +376,7 @@ export function montarEnxoval(modelos: ModeloRecomendavel[], r: RespostasQuiz): 
     const melhor = modelos
       .filter((m) => m.casos_uso.includes(caso) && !usados.has(m.id))
       .map((m) => ({ m, s: pontuar(m, r, pesos) }))
-      .sort((a, b) => b.s - a.s)[0];
+      .sort((a, b) => b.s - a.s || desempatar(a.m, b.m))[0];
     if (melhor) {
       usados.add(melhor.m.id);
       out.push({ modelo: melhor.m, score: melhor.s, casoUso: caso, porque: porqueDe(melhor.m, r, caso) });
@@ -383,7 +385,10 @@ export function montarEnxoval(modelos: ModeloRecomendavel[], r: RespostasQuiz): 
   return out;
 }
 
-/** Escada de valor (entrada / ideal / definitiva) a partir do modelo âncora. */
+/** Escada de valor (entrada / ideal / definitiva) a partir do modelo âncora.
+ *  C6 — sempre 3 degraus: o que faltar no grupo é completado por fora, desde
+ *  que o candidato compartilhe ao menos um caso de uso com a âncora.
+ *  Se ainda assim não fechar os três, devolve vazio (escada não é exibida). */
 export function montarEscada(
   modelos: ModeloRecomendavel[],
   ancora: ModeloRecomendavel,
@@ -394,16 +399,30 @@ export function montarEscada(
     ? modelos.filter((m) => m.grupo_escada === ancora.grupo_escada)
     : modelos.filter((m) => m.casos_uso.some((c) => ancora.casos_uso.includes(c)));
   const pool = grupo.length ? grupo : modelos;
+  const fora = modelos.filter(
+    (m) => !pool.some((p) => p.id === m.id) && m.casos_uso.some((c) => ancora.casos_uso.includes(c)),
+  );
+
+  const melhorDe = (lista: ModeloRecomendavel[], pos: PosicaoEscada, usados: Set<string>) =>
+    lista
+      .filter((m) => m.posicao_escada === pos && !usados.has(m.id))
+      .map((m) => ({ m, s: pontuar(m, r, pesos) }))
+      .sort((a, b) => b.s - a.s || desempatar(a.m, b.m))[0]?.m ?? null;
+
+  const usados = new Set<string>();
   const degraus: { posicao: PosicaoEscada; modelo: ModeloRecomendavel; porque: string }[] = [];
   (['entrada', 'ideal', 'definitiva'] as PosicaoEscada[]).forEach((pos) => {
-    const cand = pool
-      .filter((m) => m.posicao_escada === pos)
-      .map((m) => ({ m, s: pontuar(m, r, pesos) }))
-      .sort((a, b) => b.s - a.s)[0];
-    if (cand) degraus.push({ posicao: pos, modelo: cand.m, porque: porqueDe(cand.m, r, null) });
+    const escolhido = melhorDe(pool, pos, usados) ?? melhorDe(fora, pos, usados);
+    if (escolhido) {
+      usados.add(escolhido.id);
+      degraus.push({ posicao: pos, modelo: escolhido, porque: porqueDe(escolhido, r, null) });
+    }
   });
+
+  if (degraus.length < 3) return [];
   return ordenarEscada(degraus, r.envolvimento);
 }
+
 
 /** Hierarquia visual: iniciante vê a entrada primeiro; colecionador, a definitiva. */
 export function ordenarEscada<T extends { posicao: PosicaoEscada }>(degraus: T[], envolvimento: string | null): T[] {
