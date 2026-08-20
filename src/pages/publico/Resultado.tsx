@@ -162,9 +162,7 @@ export default function Resultado() {
           <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-accent">Seu perfil</span>
           <TituloPublico className="mt-2"><FrasePerfil frase={fraseDoPerfil(respostas)} /></TituloPublico>
           <p className="mt-2 text-sm text-zinc-400 md:text-base">
-            {conjunto
-              ? 'Seu perfil não cabe em uma peça só — abaixo vai um conjunto, uma lâmina por função.'
-              : 'Estas são as lâminas que fazem sentido para o seu uso.'}
+            Estas são as lâminas que atendem ao que você marcou.
           </p>
         </div>
       </section>
@@ -185,16 +183,14 @@ export default function Resultado() {
         </p>
       ) : (
         <>
-          {/* F5 — título do bloco */}
+          {/* F2 — título do bloco */}
           <section className="mt-8">
             <h2 className="text-xl font-black tracking-tight text-white md:text-2xl">
-              {varias ? <>SEU <span className="text-accent">CONJUNTO</span></> : <>SUA <span className="text-accent">LÂMINA</span></>}
+              LÂMINAS QUE <span className="text-accent">ATENDEM {respostas.presente ? 'ESSA PESSOA' : 'VOCÊ'}</span>
             </h2>
-            {varias && (
-              <p className="mt-1 text-sm text-zinc-400">
-                Cada peça cobre uma função diferente do seu dia — juntas, fecham o seu uso.
-              </p>
-            )}
+            <p className="mt-1 text-sm text-zinc-400">
+              Cada uma cobre o que você marcou — escolha a que fizer mais sentido.
+            </p>
 
             <div className="mt-4 grid grid-cols-2 gap-1.5 md:gap-4 lg:grid-cols-3">
               {principais.map((rec, i) => (
@@ -204,25 +200,13 @@ export default function Resultado() {
                     porque={rec.porque}
                     destaque={i === 0}
                     semConfigurador
-                    etiqueta={rec.casoUso ? ETIQUETA_FUNCAO[rec.casoUso as CasoUso] : undefined}
+                    etiquetas={rec.casos.map((c) => ETIQUETA_FUNCAO[c as CasoUso])}
                   />
                 </div>
               ))}
             </div>
-
-            {/* F6 — soma do conjunto */}
-            {varias && (
-              <div className="mt-4 flex flex-wrap items-baseline justify-between gap-2 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-zinc-500">Valor do conjunto</p>
-                  <p className="text-xs text-zinc-500">
-                    As peças podem ser adquiridas separadamente, no seu tempo.
-                  </p>
-                </div>
-                <p className="text-2xl font-black text-accent md:text-3xl">{BRL(total)}</p>
-              </div>
-            )}
           </section>
+
 
           {escada.length > 1 && (
             <section className="mt-12">
