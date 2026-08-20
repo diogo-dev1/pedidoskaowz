@@ -163,8 +163,14 @@ export async function salvarQuizConfig(cfg: QuizPerguntaConfig[]) {
 
 /** Perguntas prontas para o quiz público (aplica textos e filtros do admin). */
 export function perguntasDoConfig(cfg: QuizPerguntaConfig[]): PerguntaQuiz[] {
+  const indice = (id: string) => {
+    const i = PERGUNTAS.findIndex((x) => (x.id as string) === id);
+    return i < 0 ? 999 : i;
+  };
   return cfg
-    .filter((p) => p.ativo)
+    .filter((p) => p.ativo && PERGUNTAS.some((x) => (x.id as string) === p.id))
+    // A ordem do motor é soberana: desempate sempre por último.
+    .sort((a, b) => indice(a.id) - indice(b.id))
     .map((p) => {
       const base = PERGUNTAS.find((x) => (x.id as string) === p.id)!;
       return {
@@ -175,6 +181,7 @@ export function perguntasDoConfig(cfg: QuizPerguntaConfig[]): PerguntaQuiz[] {
       } as PerguntaQuiz;
     });
 }
+
 
 /* ── Traduções em linguagem de cliente (uma linha por opção) ── */
 
