@@ -263,15 +263,52 @@ export interface Recomendacao {
 
 const PESO_PORTE = 4;
 const PESO_MANUTENCAO = 3;
-const PESO_NIVEL = 3;
+const PESO_NIVEL = 6; // C3 — nível precisa competir com os casos de uso.
+
+/** Quantidade de mídias conhecida do modelo (imagem + vídeo + galeria). */
+export const midiasDe = (m: ModeloRecomendavel): number =>
+  typeof m.midias_count === 'number'
+    ? m.midias_count
+    : (m.imagem_modelo ? 1 : 0) + (m.video_url ? 1 : 0);
+
+/** C7 — manutenção da lâmina como array (tolera dado antigo em string). */
+export const manutencoesDe = (m: ModeloRecomendavel): string[] =>
+  Array.isArray(m.manutencao) ? m.manutencao : m.manutencao ? [m.manutencao as unknown as string] : [];
 
 /** Pontua um modelo contra as respostas. */
 export function pontuar(m: ModeloRecomendavel, r: RespostasQuiz, pesos: Pesos): number {
   let s = 0;
-  m.casos_uso.forEach((c) => { s += pesos.get(c as CasoUso) ?? 0; });
+
+  // C2 — caça e pesca são um par irmão: vale o MAIOR dos dois pesos, nunca a soma.
+  const irmaos: CasoUso[] = ['caca', 'pesca'];
+  m.casos_uso.forEach((c) => {
+    if (irmaos.includes(c as CasoUso)) return;
+    s += pesos.get(c as CasoUso) ?? 0;
+  });
+  if (m.casos_uso.some((c) => irmaos.includes(c as CasoUso))) {
+    s += Math.max(pesos.get('caca') ?? 0, pesos.get('pesca') ?? 0);
+  }
+
   if (r.porte && m.tipo_porte.includes(r.porte)) s += PESO_PORTE;
-  if (r.manutencao && m.manutencao === r.manutencao) s += PESO_MANUTENCAO;
+  if (r.manutencao && manutencoesDe(m).includes(r.manutencao)) s += PESO_MANUTENCAO;
   if (r.envolvimento && m.nivel_envolvimento.includes(r.envolvimento)) s += PESO_NIVEL;
+
+  // C3 — escada pesa de acordo com o envolvimento declarado.
+  if (r.envolvimento === 'colecionador') {
+    if (m.posicao_escada === 'definitiva') s += 5;
+    if (m.posicao_escada === 'entrada') s -= 4;
+  }
+  if (r.envolvimento === 'iniciante') {
+    if (m.posicao_escada === 'entrada') s += 3;
+    if (m.posicao_escada === 'definitiva') s -= 2;
+  }
+
+  // C4 — presente tem lógica própria.
+  if (r.quem.includes('presente')) {
+    if (m.posicao_escada === 'ideal') s += 4;
+    if (midiasDe(m) >= 3) s += 2;
+  }
+
   // Desempate suave por completude de cadastro, para não empatar tudo em zero.
   s += Math.min(m.casos_uso.length, 3) * 0.1;
   return s;
@@ -283,11 +320,21 @@ function porqueDe(m: ModeloRecomendavel, r: RespostasQuiz, caso: CasoUso | null)
   const partes: string[] = [];
   if (caso) partes.push(`atende ${labelDe(CASOS_USO, caso).toLowerCase()}`);
   if (r.porte && m.tipo_porte.includes(r.porte)) partes.push(`aceita porte ${labelDe(TIPOS_PORTE, r.porte).toLowerCase()}`);
-  if (r.manutencao && m.manutencao === r.manutencao) {
+  if (r.manutencao && manutencoesDe(m).includes(r.manutencao)) {
     partes.push(r.manutencao === 'resistente' ? 'aguenta descuido sem enferrujar' : 'entrega corte extremo para quem cuida');
   }
   return partes.length ? `Indicada porque ${partes.join(', ')}.` : 'Indicada pelo conjunto do seu perfil.';
 }
+
+/** C1 — desempate: 'ideal' primeiro, depois mais mídias, depois preço MAIOR. */
+const desempatar = (a: ModeloRecomendavel, b: ModeloRecomendavel): number => {
+  const ideal = (m: ModeloRecomendavel) => (m.posicao_escada === 'ideal' ? 0 : 1);
+  return (
+    ideal(a) - ideal(b) ||
+    midiasDe(b) - midiasDe(a) ||
+    (b.preco_base ?? 0) - (a.preco_base ?? 0)
+  );
+};
 
 /** Ranking geral — nunca vazio. */
 export function recomendar(modelos: ModeloRecomendavel[], r: RespostasQuiz, limite = 6): Recomendacao[] {
@@ -301,9 +348,10 @@ export function recomendar(modelos: ModeloRecomendavel[], r: RespostasQuiz, limi
       const score = pontuar(m, r, pesos);
       return { modelo: m, score, casoUso: caso, porque: porqueDe(m, r, caso) };
     })
-    .sort((a, b) => b.score - a.score || a.modelo.preco_base - b.modelo.preco_base)
+    .sort((a, b) => b.score - a.score || desempatar(a.modelo, b.modelo))
     .slice(0, limite);
 }
+
 
 /** Caso de uso dominante do perfil. */
 export function casoPrincipal(r: RespostasQuiz): CasoUso | null {
