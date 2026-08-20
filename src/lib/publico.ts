@@ -2,7 +2,8 @@
    configurador e arsenal. Sem login, sem dependência do app interno. */
 
 import { supabase } from '@/integrations/supabase/client';
-import type { ModeloRecomendavel, RespostasQuiz } from '@/lib/recomendacao';
+import { PERGUNTAS } from '@/lib/recomendacao';
+import type { ModeloRecomendavel, PerguntaQuiz, RespostasQuiz } from '@/lib/recomendacao';
 import type { ItemCfg } from '@/lib/simuladorData';
 
 export const WHATSAPP_KAOWZ = '5528999025695';
@@ -57,6 +58,92 @@ export async function carregarModelosPublicos(): Promise<ModeloRecomendavel[]> {
       categorias: m.categorias ?? [],
       pronta_entrega: !!m.pronta_entrega,
     })) as ModeloRecomendavel[];
+}
+
+/* ── Etapas do quiz configuráveis pelo admin ──
+   Só textos e visibilidade são editáveis; os ids/valores continuam fixos
+   porque o motor de recomendação depende deles. */
+
+export const CHAVE_QUIZ_CONFIG = 'quiz_perguntas';
+
+export interface QuizOpcaoConfig { valor: string; titulo: string; descricao: string; ativo: boolean }
+export interface QuizPerguntaConfig {
+  id: string;
+  titulo: string;
+  ajuda: string;
+  ativo: boolean;
+  ordem: number;
+  opcoes: QuizOpcaoConfig[];
+}
+
+/** Config padrão derivada do motor — usada quando nada foi salvo ainda. */
+export function quizConfigPadrao(): QuizPerguntaConfig[] {
+  return PERGUNTAS.map((p, i) => ({
+    id: p.id as string,
+    titulo: p.titulo,
+    ajuda: p.ajuda ?? '',
+    ativo: true,
+    ordem: i,
+    opcoes: p.opcoes.map((o) => ({ ...o, ativo: true })),
+  }));
+}
+
+/** Mescla o que está salvo com o padrão (novas perguntas/opções aparecem sozinhas). */
+export function mesclarQuizConfig(salvo: QuizPerguntaConfig[] | null): QuizPerguntaConfig[] {
+  const padrao = quizConfigPadrao();
+  if (!salvo?.length) return padrao;
+  return padrao
+    .map((p) => {
+      const s = salvo.find((x) => x.id === p.id);
+      if (!s) return p;
+      return {
+        ...p,
+        titulo: s.titulo || p.titulo,
+        ajuda: s.ajuda ?? p.ajuda,
+        ativo: s.ativo !== false,
+        ordem: typeof s.ordem === 'number' ? s.ordem : p.ordem,
+        opcoes: p.opcoes.map((o) => {
+          const so = s.opcoes?.find((x) => x.valor === o.valor);
+          return so ? { ...o, titulo: so.titulo || o.titulo, descricao: so.descricao ?? o.descricao, ativo: so.ativo !== false } : o;
+        }),
+      };
+    })
+    .sort((a, b) => a.ordem - b.ordem);
+}
+
+export async function carregarQuizConfig(): Promise<QuizPerguntaConfig[]> {
+  const { data } = await supabase
+    .from('configuracoes_catalogo')
+    .select('valor')
+    .eq('chave', CHAVE_QUIZ_CONFIG)
+    .maybeSingle();
+  try {
+    return mesclarQuizConfig(data?.valor ? (JSON.parse(data.valor) as QuizPerguntaConfig[]) : null);
+  } catch {
+    return quizConfigPadrao();
+  }
+}
+
+export async function salvarQuizConfig(cfg: QuizPerguntaConfig[]) {
+  const { error } = await supabase
+    .from('configuracoes_catalogo')
+    .upsert({ chave: CHAVE_QUIZ_CONFIG, valor: JSON.stringify(cfg) }, { onConflict: 'chave' });
+  if (error) throw error;
+}
+
+/** Perguntas prontas para o quiz público (aplica textos e filtros do admin). */
+export function perguntasDoConfig(cfg: QuizPerguntaConfig[]): PerguntaQuiz[] {
+  return cfg
+    .filter((p) => p.ativo)
+    .map((p) => {
+      const base = PERGUNTAS.find((x) => (x.id as string) === p.id)!;
+      return {
+        ...base,
+        titulo: p.titulo,
+        ajuda: p.ajuda || undefined,
+        opcoes: p.opcoes.filter((o) => o.ativo).map((o) => ({ valor: o.valor, titulo: o.titulo, descricao: o.descricao })),
+      } as PerguntaQuiz;
+    });
 }
 
 /* ── Traduções em linguagem de cliente (uma linha por opção) ── */

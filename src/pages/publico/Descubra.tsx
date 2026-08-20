@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PublicoLayout, TituloPublico } from '@/components/publico/PublicoLayout';
-import { PERGUNTAS, opcoesDesempate, respostasVazias, type RespostasQuiz } from '@/lib/recomendacao';
-import { salvarRespostas } from '@/lib/publico';
+import { PERGUNTAS, opcoesDesempate, respostasVazias, type PerguntaQuiz, type RespostasQuiz } from '@/lib/recomendacao';
+import { carregarQuizConfig, perguntasDoConfig, salvarRespostas } from '@/lib/publico';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
@@ -11,13 +11,24 @@ export default function Descubra() {
   const navigate = useNavigate();
   const [passo, setPasso] = useState(0);
   const [r, setR] = useState<RespostasQuiz>(respostasVazias());
+  const [perguntas, setPerguntas] = useState<PerguntaQuiz[]>(PERGUNTAS);
 
-  const pergunta = PERGUNTAS[passo];
+  // Etapas configuradas no painel admin (textos, ordem e opções visíveis).
+  useEffect(() => {
+    carregarQuizConfig()
+      .then((cfg) => {
+        const lista = perguntasDoConfig(cfg);
+        if (lista.length) setPerguntas(lista);
+      })
+      .catch(() => { /* mantém o padrão */ });
+  }, []);
+
+  const pergunta = perguntas[Math.min(passo, perguntas.length - 1)];
   const opcoes = pergunta.id === 'desempate' ? opcoesDesempate(r) : pergunta.opcoes;
   const valorAtual = r[pergunta.id];
   const selecionadas = Array.isArray(valorAtual) ? valorAtual : valorAtual ? [valorAtual as string] : [];
   const podeAvancar = selecionadas.length > 0;
-  const ultimo = passo === PERGUNTAS.length - 1;
+  const ultimo = passo === perguntas.length - 1;
 
   const escolher = (v: string) => {
     setR((prev) => {
@@ -41,10 +52,10 @@ export default function Descubra() {
       navigate('/descubra/resultado');
       return;
     }
-    setPasso((p) => Math.min(p + 1, PERGUNTAS.length - 1));
+    setPasso((p) => Math.min(p + 1, perguntas.length - 1));
   };
 
-  const progresso = useMemo(() => ((passo + 1) / PERGUNTAS.length) * 100, [passo]);
+  const progresso = useMemo(() => ((passo + 1) / perguntas.length) * 100, [passo]);
 
   return (
     <PublicoLayout>
@@ -58,7 +69,7 @@ export default function Descubra() {
           </div>
           <div className="mt-2 flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-zinc-500">
-              Pergunta {passo + 1} de {PERGUNTAS.length}
+              Pergunta {passo + 1} de {perguntas.length}
             </p>
             {selecionadas.length > 0 && pergunta.multipla && (
               <Badge className="border-0 bg-accent text-[10px] text-white">{selecionadas.length} selecionada(s)</Badge>
