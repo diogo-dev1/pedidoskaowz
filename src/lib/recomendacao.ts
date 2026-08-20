@@ -79,12 +79,16 @@ export interface ModeloRecomendavel {
   posicao_escada: string | null;
   grupo_escada: string | null;
   forma_enxoval: string[];
-  manutencao: string | null;
+  /** C7 — manutenção é multivalorada: uma lâmina pode atender os dois perfis. */
+  manutencao: string[];
   porque_texto: string | null;
   /* Campos do catálogo (mesma fonte das lâminas do catálogo público) */
   video_url?: string | null;
   pronta_entrega?: boolean;
   categorias?: string[];
+  /** Quantidade de mídias cadastradas (usada em desempates). */
+  midias_count?: number;
+
 }
 
 /* ─────────── Respostas do quiz ─────────── */
