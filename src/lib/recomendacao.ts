@@ -73,6 +73,10 @@ export interface ModeloRecomendavel {
   forma_enxoval: string[];
   manutencao: string | null;
   porque_texto: string | null;
+  /* Campos do catálogo (mesma fonte das lâminas do catálogo público) */
+  video_url?: string | null;
+  pronta_entrega?: boolean;
+  categorias?: string[];
 }
 
 /* ─────────── Respostas do quiz ─────────── */

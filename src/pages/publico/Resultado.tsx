@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PublicoLayout, TituloPublico } from '@/components/publico/PublicoLayout';
+import LaminaCard from '@/components/publico/LaminaCard';
 import { carregarModelosPublicos, lerRespostas } from '@/lib/publico';
 import {
   casosRelevantes,
@@ -12,63 +13,10 @@ import {
   CASOS_USO,
   POSICOES_ESCADA,
   type ModeloRecomendavel,
-  type Recomendacao,
   respostasVazias,
   type RespostasQuiz,
 } from '@/lib/recomendacao';
-import { Loader2, ExternalLink, Wrench, RotateCcw } from 'lucide-react';
-
-const BRL = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-const linkLoja = (nome: string) =>
-  `https://kaowz.com.br/search?q=${encodeURIComponent(nome)}`;
-
-function CardRecomendacao({
-  rec,
-  destaque,
-  etiqueta,
-}: {
-  rec: Recomendacao;
-  destaque?: boolean;
-  etiqueta?: string;
-}) {
-  const m = rec.modelo;
-  return (
-    <div
-      className={`overflow-hidden rounded-lg border bg-[hsl(0_0%_8%)] transition-all ${
-        destaque ? 'border-[hsl(42_72%_58%)]' : 'border-[hsl(0_0%_16%)]'
-      }`}
-    >
-      {m.imagem_modelo && (
-        <img src={m.imagem_modelo} alt={m.nome_modelo} loading="lazy" className="h-44 w-full object-cover" />
-      )}
-      <div className="space-y-2 p-4">
-        {etiqueta && (
-          <span className="text-[10px] uppercase tracking-widest text-[hsl(42_72%_58%)]">{etiqueta}</span>
-        )}
-        <h3 className="font-bebas text-2xl tracking-wide">{m.nome_modelo}</h3>
-        <p className="text-sm leading-relaxed text-[hsl(0_0%_62%)]">{rec.porque}</p>
-        <p className="font-bebas text-xl text-[hsl(42_72%_58%)]">a partir de {BRL(m.preco_base)}</p>
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <a
-            href={linkLoja(m.nome_modelo)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 rounded border border-[hsl(0_0%_22%)] px-3 py-2 text-[11px] uppercase tracking-widest text-[hsl(0_0%_75%)] transition-colors hover:border-[hsl(42_72%_58%)]"
-          >
-            <ExternalLink className="h-3.5 w-3.5" /> Pronta entrega
-          </a>
-          <Link
-            to={`/montar?modelo=${encodeURIComponent(m.nome_modelo)}`}
-            className="flex items-center justify-center gap-1.5 rounded bg-[hsl(0_72%_45%)] px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-white"
-          >
-            <Wrench className="h-3.5 w-3.5" /> Monte a sua
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { RotateCcw } from 'lucide-react';
 
 export default function Resultado() {
   const navigate = useNavigate();
@@ -102,28 +50,41 @@ export default function Resultado() {
 
   return (
     <PublicoLayout>
-      <TituloPublico className="text-[hsl(42_72%_58%)]">{fraseDoPerfil(respostas)}</TituloPublico>
-      <p className="mt-2 text-sm text-[hsl(0_0%_58%)]">
-        {perfilMisto
-          ? 'Seu perfil não cabe em uma peça só — abaixo vai um enxoval, uma lâmina por uso.'
-          : 'Estas são as lâminas que fazem sentido para o seu uso.'}
-      </p>
+      <section className="relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 p-5 md:p-8">
+        <div className="absolute inset-0 bg-gradient-to-b from-accent/10 via-transparent to-transparent" />
+        <div className="relative">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-accent">Seu perfil</span>
+          <TituloPublico className="mt-2">{fraseDoPerfil(respostas)}</TituloPublico>
+          <p className="mt-2 text-sm text-zinc-400 md:text-base">
+            {perfilMisto
+              ? 'Seu perfil não cabe em uma peça só — abaixo vai um enxoval, uma lâmina por uso.'
+              : 'Estas são as lâminas que fazem sentido para o seu uso.'}
+          </p>
+        </div>
+      </section>
 
       {carregando ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-[hsl(0_0%_40%)]" />
+        <div className="mt-6 grid grid-cols-2 gap-1.5 md:gap-4 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="animate-pulse rounded-lg border border-zinc-700 bg-zinc-800 p-3">
+              <div className="mb-2 aspect-[3/4] rounded-lg bg-zinc-700" />
+              <div className="mb-1.5 h-3 rounded bg-zinc-700" />
+              <div className="h-5 w-1/2 rounded bg-zinc-700" />
+            </div>
+          ))}
         </div>
       ) : principais.length === 0 ? (
-        <p className="py-16 text-center text-sm text-[hsl(0_0%_55%)]">
+        <p className="py-16 text-center text-sm text-zinc-400">
           Ainda estamos cadastrando as lâminas. Veja a vitrine completa enquanto isso.
         </p>
       ) : (
         <>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid grid-cols-2 gap-1.5 md:gap-4 lg:grid-cols-3">
             {principais.map((rec) => (
-              <CardRecomendacao
+              <LaminaCard
                 key={rec.modelo.id}
-                rec={rec}
+                modelo={rec.modelo}
+                porque={rec.porque}
                 destaque={rec === principais[0]}
                 etiqueta={rec.casoUso ? labelDe(CASOS_USO, rec.casoUso) : undefined}
               />
@@ -132,15 +93,18 @@ export default function Resultado() {
 
           {escada.length > 1 && (
             <section className="mt-12">
-              <h2 className="font-bebas text-2xl tracking-wide">Três caminhos para a mesma função</h2>
-              <p className="mt-1 text-sm text-[hsl(0_0%_58%)]">
+              <h2 className="text-xl font-black tracking-tight text-white md:text-2xl">
+                TRÊS CAMINHOS PARA A <span className="text-accent">MESMA FUNÇÃO</span>
+              </h2>
+              <p className="mt-1 text-sm text-zinc-400">
                 Da porta de entrada à peça definitiva — todas resolvem, mudam o nível de acabamento e material.
               </p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <div className="mt-4 grid grid-cols-2 gap-1.5 md:gap-4 lg:grid-cols-3">
                 {escada.map((d, i) => (
-                  <CardRecomendacao
+                  <LaminaCard
                     key={d.modelo.id}
-                    rec={{ modelo: d.modelo, score: 0, casoUso: null, porque: d.porque }}
+                    modelo={d.modelo}
+                    porque={d.porque}
                     destaque={i === 0}
                     etiqueta={labelDe(POSICOES_ESCADA, d.posicao)}
                   />
@@ -151,15 +115,18 @@ export default function Resultado() {
         </>
       )}
 
-      <div className="mt-12 flex flex-wrap items-center gap-4">
+      <div className="mt-12 flex flex-wrap items-center gap-4 border-t border-zinc-800/60 pt-6">
         <button
           type="button"
           onClick={() => navigate('/descubra')}
-          className="flex items-center gap-2 text-xs uppercase tracking-widest text-[hsl(0_0%_50%)] hover:text-[hsl(42_72%_58%)]"
+          className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-zinc-500 transition-colors hover:text-accent"
         >
           <RotateCcw className="h-4 w-4" /> Refazer
         </button>
-        <Link to="/vitrine" className="text-xs uppercase tracking-widest text-[hsl(0_0%_50%)] hover:text-[hsl(42_72%_58%)]">
+        <Link
+          to="/vitrine"
+          className="text-xs font-semibold uppercase tracking-widest text-zinc-500 transition-colors hover:text-accent"
+        >
           Ver todas as lâminas
         </Link>
       </div>
