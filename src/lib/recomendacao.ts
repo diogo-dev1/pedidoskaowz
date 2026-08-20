@@ -420,6 +420,67 @@ export function montarEnxoval(modelos: ModeloRecomendavel[], r: RespostasQuiz): 
   return out;
 }
 
+/* ─────────── F — lâminas que atendem (resultado do quiz) ─────────── */
+
+export interface LaminaQueAtende {
+  modelo: ModeloRecomendavel;
+  score: number;
+  /** Todos os usos marcados que esta peça cobre (etiquetas do cartão). */
+  casos: CasoUso[];
+  /** Portes marcados que esta peça cobre. */
+  portes: string[];
+  /** Quantos itens marcados a peça cobre (aderência). */
+  cobertura: number;
+  porque: string;
+}
+
+/** F6 — porquê amarrado ao que o cliente marcou, nunca descrição genérica. */
+function porqueCobertura(casos: CasoUso[], portes: string[]): string {
+  const juntar = (l: string[]) =>
+    l.length <= 1 ? (l[0] ?? '') : `${l.slice(0, -1).join(', ')} e ${l[l.length - 1]}`;
+  const partes: string[] = [];
+  if (portes.length) partes.push(`ao porte ${juntar(portes.map((p) => labelDe(TIPOS_PORTE, p).toLowerCase()))}`);
+  if (casos.length) partes.push(`${juntar(casos.map((c) => labelDe(CASOS_USO, c).toLowerCase()))}`);
+  return partes.length ? `Atende ${partes.join(' e a ')}.` : 'Atende ao conjunto do que você marcou.';
+}
+
+/** F2–F7 — lista de lâminas que atendem: um cartão por modelo, de 3 a 6. */
+export function laminasQueAtendem(
+  modelos: ModeloRecomendavel[],
+  r: RespostasQuiz,
+  min = 3,
+  max = 6,
+): LaminaQueAtende[] {
+  const pesos = pesosDeCasoUso(r);
+  const relevantes = casosRelevantes(r);
+  const portesMarcados = r.porte.filter((p) => p !== 'nao_se_aplica');
+
+  const avaliadas = modelos.map((m) => {
+    const casos = relevantes.filter((c) => m.casos_uso.includes(c));
+    const portes = portesMarcados.filter((p) => m.tipo_porte.includes(p));
+    return {
+      modelo: m,
+      score: pontuar(m, r, pesos),
+      casos,
+      portes,
+      cobertura: casos.length + portes.length,
+      porque: m.porque_texto?.trim() || porqueCobertura(casos, portes),
+    } as LaminaQueAtende;
+  });
+
+  const ordenar = (a: LaminaQueAtende, b: LaminaQueAtende) =>
+    b.cobertura - a.cobertura || b.score - a.score || desempatar(a.modelo, b.modelo);
+
+  const atendem = avaliadas.filter((x) => x.cobertura > 0).sort(ordenar);
+  if (atendem.length >= min) return atendem.slice(0, max);
+
+  // F5 — completa até o mínimo com os melhores parciais, sem repetir modelo.
+  const usados = new Set(atendem.map((x) => x.modelo.id));
+  const resto = avaliadas.filter((x) => !usados.has(x.modelo.id)).sort(ordenar);
+  return [...atendem, ...resto].slice(0, Math.min(Math.max(min, atendem.length), max));
+}
+
+
 /** Escada de valor (entrada / ideal / definitiva) a partir do modelo âncora.
  *  C6 — sempre 3 degraus: o que faltar no grupo é completado por fora, desde
  *  que o candidato compartilhe ao menos um caso de uso com a âncora.
