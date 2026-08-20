@@ -83,25 +83,16 @@ export default function Resultado() {
     carregarModelosPublicos().then((m) => { setModelos(m); setCarregando(false); });
   }, [respostasSalvas, navigate]);
 
-  const enxoval = useMemo(
-    () => (modelos.length ? montarEnxoval(modelos, respostas) : []),
+  // F2–F7 — lista de lâminas que atendem: um cartão por modelo, de 3 a 6.
+  const principais = useMemo(
+    () => (modelos.length ? laminasQueAtendem(modelos, respostas, 3, 6) : []),
     [modelos, respostas],
   );
-  const ranking = useMemo(
-    () => (modelos.length ? recomendar(modelos, respostas, 3) : []),
-    [modelos, respostas],
-  );
-  // F1/F2 — o enxoval é o padrão: só cai no ranking com um único caso relevante.
-  const conjunto = casosRelevantes(respostas).length >= 2 && enxoval.length > 0;
-  const principais = conjunto ? enxoval : ranking;
   const ancora = principais[0]?.modelo;
   const escada = useMemo(
     () => (ancora ? montarEscada(modelos, ancora, respostas) : []),
     [modelos, ancora, respostas],
   );
-
-  const total = principais.reduce((s, rec) => s + (rec.modelo.preco_base ?? 0), 0);
-  const varias = principais.length > 1;
 
   const salvarNoArsenal = async () => {
     if (!principais.length) return;
@@ -109,23 +100,22 @@ export default function Resultado() {
     try {
       const resumo = principais
         .map((rec) => {
-          const etq = rec.casoUso ? ETIQUETA_FUNCAO[rec.casoUso as CasoUso] : 'Indicação';
-          return `• ${etq}: ${rec.modelo.nome_modelo} — ${BRL(rec.modelo.preco_base ?? 0)}`;
+          const etq = rec.casos.map((c) => ETIQUETA_FUNCAO[c as CasoUso]).join(' · ');
+          return `• ${rec.modelo.nome_modelo}${etq ? ` — ${etq}` : ''}`;
         })
         .join('\n');
       const res = await salvarProjeto({
         token: lerToken(),
-        nome: varias ? 'Meu conjunto Kaowz' : 'Minha lâmina Kaowz',
+        nome: 'Lâminas que me atendem',
         modeloNome: principais.map((r) => r.modelo.nome_modelo).join(' + '),
-        preco: total,
+        preco: 0,
         resumo,
         configuracao: {
           origem: 'quiz',
           pecas: principais.map((rec) => ({
             id: rec.modelo.id,
             nome: rec.modelo.nome_modelo,
-            preco: rec.modelo.preco_base ?? 0,
-            funcao: rec.casoUso ? ETIQUETA_FUNCAO[rec.casoUso as CasoUso] : null,
+            funcoes: rec.casos.map((c) => ETIQUETA_FUNCAO[c as CasoUso]),
             porque: rec.porque,
           })),
           respostas,
@@ -152,15 +142,15 @@ export default function Resultado() {
   const enviarWhatsApp = () => {
     if (!linkArsenal) return;
     const msg = [
-      'Olá! Fiz o quiz da Kaowz e guardei o meu arsenal:',
+      'Olá! Fiz o quiz da Kaowz e guardei as lâminas que me atendem:',
       '',
       ...principais.map((rec) => `• ${rec.modelo.nome_modelo}`),
       '',
-      `Total do conjunto: ${BRL(total)}`,
       linkArsenal,
     ].join('\n');
     window.open(linkWhatsApp(msg), '_blank');
   };
+
 
   if (!respostasSalvas) return null;
 
