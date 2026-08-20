@@ -439,9 +439,16 @@ export function fraseDoPerfil(r: RespostasQuiz): string {
     campo: 'de campo', caca: 'de caça', pesca: 'de pesca', edc_urbano: 'urbano',
     defesa: 'voltado à defesa', tatico: 'operacional', churrasco: 'de mesa e churrasco', colecao: 'colecionador',
   };
-  const base = casos.length
-    ? `Você é um usuário ${casos.slice(0, 2).map((c) => nomeCaso[c]).join(' e ')}`
-    : 'Você é um usuário versátil';
+  // C4 — quando é presente, a frase fala de quem vai receber, não do comprador.
+  const presente = r.quem.includes('presente');
+  const base = presente
+    ? (casos.length
+        ? `Você está escolhendo para outra pessoa — o perfil é ${casos.slice(0, 2).map((c) => nomeCaso[c]).join(' e ')}`
+        : 'Você está escolhendo para outra pessoa — o perfil é versátil')
+    : casos.length
+      ? `Você é um usuário ${casos.slice(0, 2).map((c) => nomeCaso[c]).join(' e ')}`
+      : 'Você é um usuário versátil';
+
   const porte =
     r.porte === 'velado' ? ' que valoriza discrição no dia a dia'
     : r.porte === 'ostensivo_cintura' ? ' que quer a peça à mão, sem esconder'
