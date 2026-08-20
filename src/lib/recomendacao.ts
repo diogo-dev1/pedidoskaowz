@@ -44,11 +44,19 @@ export const MANUTENCOES = [
   { valor: 'resistente', label: 'Resistente (esquece e não enferruja)' },
 ] as const;
 
+/** Lista fixa de famílias da escada de valor (C8 — select, sem texto livre). */
+export const GRUPOS_ESCADA = [
+  'Nimbowie', 'Nimbus', 'Jagunço', 'Adaga', 'Defcon', 'Camp Knife', 'Ring',
+  'Tantô', 'Wharncliffe', 'EDC Mini', 'EDC', 'Canivete', 'Butcher',
+  'Chef Royal', 'Picanheira', 'Kiritsuke',
+] as const;
+
 export type CasoUso = (typeof CASOS_USO)[number]['valor'];
 export type TipoPorte = (typeof TIPOS_PORTE)[number]['valor'];
 export type Nivel = (typeof NIVEIS_ENVOLVIMENTO)[number]['valor'];
 export type PosicaoEscada = (typeof POSICOES_ESCADA)[number]['valor'];
 export type Manutencao = (typeof MANUTENCOES)[number]['valor'];
+
 
 export const labelDe = (
   lista: readonly { valor: string; label: string }[],
