@@ -2,7 +2,8 @@
    configurador e arsenal. Sem login, sem dependência do app interno. */
 
 import { supabase } from '@/integrations/supabase/client';
-import type { ModeloRecomendavel, RespostasQuiz } from '@/lib/recomendacao';
+import { PERGUNTAS } from '@/lib/recomendacao';
+import type { ModeloRecomendavel, PerguntaQuiz, RespostasQuiz } from '@/lib/recomendacao';
 import type { ItemCfg } from '@/lib/simuladorData';
 
 export const WHATSAPP_KAOWZ = '5528999025695';
