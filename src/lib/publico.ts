@@ -11,20 +11,45 @@ export const WHATSAPP_KAOWZ = '5528999025695';
 export const linkWhatsApp = (mensagem: string) =>
   `https://wa.me/${WHATSAPP_KAOWZ}?text=${encodeURIComponent(mensagem)}`;
 
-/* ── Persistência local do quiz (permite refazer e voltar) ── */
+/* ── Persistência local do quiz (permite refazer, voltar e retomar) ──
+   localStorage: o público entra pelo navegador do WhatsApp e troca de app. */
 
 const CHAVE_QUIZ = 'kaowz_quiz_respostas';
+const CHAVE_QUIZ_PROGRESSO = 'kaowz_quiz_progresso';
 
 export const salvarRespostas = (r: RespostasQuiz) => {
-  try { sessionStorage.setItem(CHAVE_QUIZ, JSON.stringify(r)); } catch { /* ignore */ }
+  try { localStorage.setItem(CHAVE_QUIZ, JSON.stringify(r)); } catch { /* ignore */ }
 };
 
 export const lerRespostas = (): RespostasQuiz | null => {
   try {
-    const raw = sessionStorage.getItem(CHAVE_QUIZ);
+    const raw = localStorage.getItem(CHAVE_QUIZ);
     return raw ? (JSON.parse(raw) as RespostasQuiz) : null;
   } catch { return null; }
 };
+
+export interface ProgressoQuiz {
+  passo: number;
+  respostas: RespostasQuiz;
+  assinatura: string; // ids das perguntas ativas na sessão em que foi salvo
+  atualizadoEm: number;
+}
+
+export const salvarProgressoQuiz = (p: ProgressoQuiz) => {
+  try { localStorage.setItem(CHAVE_QUIZ_PROGRESSO, JSON.stringify(p)); } catch { /* ignore */ }
+};
+
+export const lerProgressoQuiz = (): ProgressoQuiz | null => {
+  try {
+    const raw = localStorage.getItem(CHAVE_QUIZ_PROGRESSO);
+    return raw ? (JSON.parse(raw) as ProgressoQuiz) : null;
+  } catch { return null; }
+};
+
+export const limparProgressoQuiz = () => {
+  try { localStorage.removeItem(CHAVE_QUIZ_PROGRESSO); } catch { /* ignore */ }
+};
+
 
 /* ── Token do arsenal (o link é o objeto) ── */
 
@@ -138,8 +163,14 @@ export async function salvarQuizConfig(cfg: QuizPerguntaConfig[]) {
 
 /** Perguntas prontas para o quiz público (aplica textos e filtros do admin). */
 export function perguntasDoConfig(cfg: QuizPerguntaConfig[]): PerguntaQuiz[] {
+  const indice = (id: string) => {
+    const i = PERGUNTAS.findIndex((x) => (x.id as string) === id);
+    return i < 0 ? 999 : i;
+  };
   return cfg
-    .filter((p) => p.ativo)
+    .filter((p) => p.ativo && PERGUNTAS.some((x) => (x.id as string) === p.id))
+    // A ordem do motor é soberana: desempate sempre por último.
+    .sort((a, b) => indice(a.id) - indice(b.id))
     .map((p) => {
       const base = PERGUNTAS.find((x) => (x.id as string) === p.id)!;
       return {
@@ -150,6 +181,7 @@ export function perguntasDoConfig(cfg: QuizPerguntaConfig[]): PerguntaQuiz[] {
       } as PerguntaQuiz;
     });
 }
+
 
 /* ── Traduções em linguagem de cliente (uma linha por opção) ── */
 

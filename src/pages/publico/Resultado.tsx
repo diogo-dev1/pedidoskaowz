@@ -18,6 +18,47 @@ import {
 } from '@/lib/recomendacao';
 import { RotateCcw } from 'lucide-react';
 
+const CHAVE_FRASE = 'kaowz_frase_perfil_exibida';
+
+/** Frase do perfil montada palavra por palavra — só na primeira exibição da sessão. */
+function FrasePerfil({ frase }: { frase: string }) {
+  const palavras = useMemo(() => frase.split(' '), [frase]);
+  const jaExibiu = useMemo(() => {
+    try { return sessionStorage.getItem(CHAVE_FRASE) === '1'; } catch { return true; }
+  }, []);
+  const semMovimento = useMemo(
+    () =>
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    [],
+  );
+  const animar = !jaExibiu && !semMovimento;
+  const [visiveis, setVisiveis] = useState(animar ? 0 : palavras.length);
+
+  useEffect(() => {
+    if (!animar) return;
+    try { sessionStorage.setItem(CHAVE_FRASE, '1'); } catch { /* ignore */ }
+    const id = window.setInterval(() => {
+      setVisiveis((n) => {
+        if (n >= palavras.length) { window.clearInterval(id); return n; }
+        return n + 1;
+      });
+    }, 45);
+    return () => window.clearInterval(id);
+  }, [animar, palavras.length]);
+
+  return (
+    <>
+      {palavras.map((p, i) => (
+        <span key={`${p}-${i}`} className={i < visiveis ? 'opacity-100' : 'opacity-0'}>
+          {p}{i < palavras.length - 1 ? ' ' : ''}
+        </span>
+      ))}
+    </>
+  );
+}
+
 export default function Resultado() {
   const navigate = useNavigate();
   const [modelos, setModelos] = useState<ModeloRecomendavel[]>([]);
@@ -54,7 +95,7 @@ export default function Resultado() {
         <div className="absolute inset-0 bg-gradient-to-b from-accent/10 via-transparent to-transparent" />
         <div className="relative">
           <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-accent">Seu perfil</span>
-          <TituloPublico className="mt-2">{fraseDoPerfil(respostas)}</TituloPublico>
+          <TituloPublico className="mt-2"><FrasePerfil frase={fraseDoPerfil(respostas)} /></TituloPublico>
           <p className="mt-2 text-sm text-zinc-400 md:text-base">
             {perfilMisto
               ? 'Seu perfil não cabe em uma peça só — abaixo vai um enxoval, uma lâmina por uso.'
@@ -80,14 +121,15 @@ export default function Resultado() {
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-1.5 md:gap-4 lg:grid-cols-3">
-            {principais.map((rec) => (
+            {principais.map((rec, i) => (
+              <div key={rec.modelo.id} className="quiz-cascata" style={{ animationDelay: `${i * 80}ms` }}>
               <LaminaCard
-                key={rec.modelo.id}
                 modelo={rec.modelo}
                 porque={rec.porque}
                 destaque={rec === principais[0]}
                 etiqueta={rec.casoUso ? labelDe(CASOS_USO, rec.casoUso) : undefined}
               />
+              </div>
             ))}
           </div>
 
@@ -101,13 +143,14 @@ export default function Resultado() {
               </p>
               <div className="mt-4 grid grid-cols-2 gap-1.5 md:gap-4 lg:grid-cols-3">
                 {escada.map((d, i) => (
+                  <div key={d.modelo.id} className="quiz-cascata" style={{ animationDelay: `${i * 80}ms` }}>
                   <LaminaCard
-                    key={d.modelo.id}
                     modelo={d.modelo}
                     porque={d.porque}
                     destaque={i === 0}
                     etiqueta={labelDe(POSICOES_ESCADA, d.posicao)}
                   />
+                  </div>
                 ))}
               </div>
             </section>
