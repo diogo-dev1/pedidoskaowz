@@ -11,13 +11,11 @@ import {
   salvarProjeto,
 } from '@/lib/publico';
 import {
-  casosRelevantes,
   etiquetasDoPerfil,
   fraseDoPerfil,
   labelDe,
-  montarEnxoval,
+  laminasQueAtendem,
   montarEscada,
-  recomendar,
   ETIQUETA_FUNCAO,
   POSICOES_ESCADA,
   type CasoUso,
@@ -30,7 +28,7 @@ import { toast } from 'sonner';
 import { Copy, Loader2, MessageCircle, RotateCcw, Save } from 'lucide-react';
 
 const CHAVE_FRASE = 'kaowz_frase_perfil_exibida';
-const BRL = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 
 /** Frase do perfil montada palavra por palavra — só na primeira exibição da sessão. */
 function FrasePerfil({ frase }: { frase: string }) {
