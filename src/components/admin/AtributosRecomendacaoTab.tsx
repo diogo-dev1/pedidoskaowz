@@ -23,7 +23,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Search, Loader2, Save, ChevronDown, Wand2, AlertTriangle } from 'lucide-react';
+import { Search, Loader2, Save, ChevronDown, Wand2, AlertTriangle, EyeOff } from 'lucide-react';
 import {
   CASOS_USO,
   TIPOS_PORTE,
@@ -51,6 +51,17 @@ interface Linha {
   forma_enxoval: string[];
   manutencao: string[];
   porque_texto: string | null;
+}
+
+interface RegistroDiag {
+  id: string;
+  nome_modelo: string;
+  temMidia: boolean;
+  visivel_catalogo: boolean;
+  visivel_publico: boolean;
+  casos_uso: string[];
+  categoria: string | null;
+  categorias: string[];
 }
 
 /* ═══════════ PARTE A — filtros da listagem ═══════════ */
@@ -272,6 +283,9 @@ export function AtributosRecomendacaoTab() {
   const [sujos, setSujos] = useState<Set<string>>(new Set());
   const [previa, setPrevia] = useState<Sugestao[] | null>(null);
   const [salvandoLote, setSalvandoLote] = useState(false);
+  /* H2 — diagnóstico das lâminas que ficam fora da recomendação */
+  const [todosRegistros, setTodosRegistros] = useState<RegistroDiag[]>([]);
+  const [motivoAberto, setMotivoAberto] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -304,8 +318,54 @@ export function AtributosRecomendacaoTab() {
         );
       }
       setLoading(false);
+
+      const { data: todos } = await supabase
+        .from('catalogo_modelos')
+        .select('id, nome_modelo, imagem_modelo, video_url, categoria, categorias, casos_uso, visivel_catalogo, visivel_publico')
+        .order('nome_modelo');
+      const cont = new Map<string, number>();
+      (midias || []).forEach((m: any) => cont.set(m.modelo_id, (cont.get(m.modelo_id) ?? 0) + 1));
+      setTodosRegistros(
+        ((todos as any[]) || []).map((m) => ({
+          id: m.id,
+          nome_modelo: m.nome_modelo,
+          temMidia: !!(m.imagem_modelo || m.video_url || cont.get(m.id)),
+          visivel_catalogo: m.visivel_catalogo !== false,
+          visivel_publico: m.visivel_publico === true,
+          casos_uso: m.casos_uso ?? [],
+          categoria: m.categoria,
+          categorias: m.categorias ?? [],
+        })),
+      );
     })();
   }, []);
+
+  /* H2 — agrupamento por motivo de exclusão */
+  const diagnostico = useMemo(() => {
+    const grupos: Record<string, RegistroDiag[]> = {
+      'sem mídia': [],
+      'sem "visível no catálogo"': [],
+      'sem "visível ao público"': [],
+      'sem casos_uso cadastrados': [],
+      'categoria excluída': [],
+    };
+    todosRegistros.forEach((r) => {
+      const cats = [r.categoria ?? '', ...(r.categorias ?? [])].map((c) => semAcento(c));
+      if (!r.temMidia) grupos['sem mídia'].push(r);
+      if (!r.visivel_catalogo) grupos['sem "visível no catálogo"'].push(r);
+      if (!r.visivel_publico) grupos['sem "visível ao público"'].push(r);
+      if (!r.casos_uso.length) grupos['sem casos_uso cadastrados'].push(r);
+      if (cats.some((c) => c && CATEGORIAS_EXCLUIDAS.includes(c))) grupos['categoria excluída'].push(r);
+    });
+    return grupos;
+  }, [todosRegistros]);
+
+  const marcarVisivel = async (id: string, campo: 'visivel_catalogo' | 'visivel_publico') => {
+    const { error } = await supabase.from('catalogo_modelos').update({ [campo]: true } as any).eq('id', id);
+    if (error) { toast.error('Não foi possível atualizar'); return; }
+    setTodosRegistros((prev) => prev.map((r) => (r.id === id ? { ...r, [campo]: true } : r)));
+    toast.success('Visibilidade atualizada');
+  };
 
   /* Aviso ao sair com alterações não salvas (D1) */
   useEffect(() => {
@@ -461,6 +521,60 @@ export function AtributosRecomendacaoTab() {
           <Label className="text-xs">Mostrar todos os registros</Label>
           <Switch checked={mostrarTodos} onCheckedChange={setMostrarTodos} />
         </div>
+      </div>
+
+      {/* H2 — painel de lâminas fora da recomendação */}
+      <div className="space-y-2 rounded-lg border p-3">
+        <p className="flex items-center gap-2 text-xs font-medium">
+          <EyeOff className="h-4 w-4 text-muted-foreground" /> Lâminas fora da recomendação
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {Object.entries(diagnostico).map(([motivo, lista]) => (
+            <button
+              key={motivo}
+              type="button"
+              onClick={() => setMotivoAberto(motivoAberto === motivo ? null : motivo)}
+              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                motivoAberto === motivo
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-background text-muted-foreground hover:border-primary/50'
+              }`}
+            >
+              {motivo} · {lista.length}
+            </button>
+          ))}
+        </div>
+        {motivoAberto && (
+          <div className="max-h-60 space-y-1 overflow-y-auto rounded-md border bg-muted/30 p-2">
+            {(diagnostico[motivoAberto] ?? []).length === 0 ? (
+              <p className="text-xs text-muted-foreground">Nenhuma lâmina neste motivo.</p>
+            ) : (
+              diagnostico[motivoAberto].map((r) => (
+                <div key={r.id} className="flex items-center justify-between gap-2 text-xs">
+                  <span className="truncate">{r.nome_modelo}</span>
+                  {motivoAberto === 'sem \"visível no catálogo\"' ? (
+                    <Button size="sm" variant="outline" className="h-6 px-2 text-[11px]" onClick={() => marcarVisivel(r.id, 'visivel_catalogo')}>
+                      Tornar visível
+                    </Button>
+                  ) : motivoAberto === 'sem \"visível ao público\"' ? (
+                    <Button size="sm" variant="outline" className="h-6 px-2 text-[11px]" onClick={() => marcarVisivel(r.id, 'visivel_publico')}>
+                      Tornar visível
+                    </Button>
+                  ) : motivoAberto === 'sem casos_uso cadastrados' ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-[11px]"
+                      onClick={() => { setMostrarTodos(true); setBusca(r.nome_modelo); setAberto(r.id); }}
+                    >
+                      Corrigir
+                    </Button>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* D2 — filtro rápido */}
