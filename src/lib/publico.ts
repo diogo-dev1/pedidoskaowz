@@ -11,20 +11,45 @@ export const WHATSAPP_KAOWZ = '5528999025695';
 export const linkWhatsApp = (mensagem: string) =>
   `https://wa.me/${WHATSAPP_KAOWZ}?text=${encodeURIComponent(mensagem)}`;
 
-/* ── Persistência local do quiz (permite refazer e voltar) ── */
+/* ── Persistência local do quiz (permite refazer, voltar e retomar) ──
+   localStorage: o público entra pelo navegador do WhatsApp e troca de app. */
 
 const CHAVE_QUIZ = 'kaowz_quiz_respostas';
+const CHAVE_QUIZ_PROGRESSO = 'kaowz_quiz_progresso';
 
 export const salvarRespostas = (r: RespostasQuiz) => {
-  try { sessionStorage.setItem(CHAVE_QUIZ, JSON.stringify(r)); } catch { /* ignore */ }
+  try { localStorage.setItem(CHAVE_QUIZ, JSON.stringify(r)); } catch { /* ignore */ }
 };
 
 export const lerRespostas = (): RespostasQuiz | null => {
   try {
-    const raw = sessionStorage.getItem(CHAVE_QUIZ);
+    const raw = localStorage.getItem(CHAVE_QUIZ);
     return raw ? (JSON.parse(raw) as RespostasQuiz) : null;
   } catch { return null; }
 };
+
+export interface ProgressoQuiz {
+  passo: number;
+  respostas: RespostasQuiz;
+  assinatura: string; // ids das perguntas ativas na sessão em que foi salvo
+  atualizadoEm: number;
+}
+
+export const salvarProgressoQuiz = (p: ProgressoQuiz) => {
+  try { localStorage.setItem(CHAVE_QUIZ_PROGRESSO, JSON.stringify(p)); } catch { /* ignore */ }
+};
+
+export const lerProgressoQuiz = (): ProgressoQuiz | null => {
+  try {
+    const raw = localStorage.getItem(CHAVE_QUIZ_PROGRESSO);
+    return raw ? (JSON.parse(raw) as ProgressoQuiz) : null;
+  } catch { return null; }
+};
+
+export const limparProgressoQuiz = () => {
+  try { localStorage.removeItem(CHAVE_QUIZ_PROGRESSO); } catch { /* ignore */ }
+};
+
 
 /* ── Token do arsenal (o link é o objeto) ── */
 
