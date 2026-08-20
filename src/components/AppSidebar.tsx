@@ -73,6 +73,7 @@ const ADMIN: NavItem[] = [
   { title: 'Configurações', url: '/admin/configuracoes', icon: Settings },
   { title: 'Informativos', url: '/admin/informativos', icon: Info },
   { title: 'Config. Preview', url: '/admin/preview', icon: Eye },
+  { title: 'Descubra (Quiz)', url: '/admin/descubra', icon: Compass },
   { title: 'Bling', url: '/bling', icon: Link2 },
   { title: 'Produtos Shopify', url: '/produtos-shopify', icon: ShoppingBag },
   { title: 'Estoque Shopify', url: '/inventory', icon: Boxes },
