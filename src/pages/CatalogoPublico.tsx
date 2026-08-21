@@ -232,7 +232,7 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
 
   // Card especial "Push Daggers" — não vem do banco, aponta para o configurador dedicado.
   // Inserido logo após "Defesa" (ou no início, se a categoria não existir).
-  if (!isInternacional) {
+  {
     const idxDefesa = categoriasVenda.findIndex(c => c.categoria === 'Defesa');
     categoriasVenda.splice(idxDefesa === -1 ? 0 : idxDefesa + 1, 0, {
       subtitulo: 'Push Daggers',
