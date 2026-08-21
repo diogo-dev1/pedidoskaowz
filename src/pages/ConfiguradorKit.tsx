@@ -640,7 +640,7 @@ export default function ConfiguradorKit() {
       <style>{css}</style>
 
       <header className="ck-header">
-        <a href="/push-dagger-kaowz" className="logo" aria-label="Kaowz">
+        <a href={isInternacional ? "/push-dagger-kaowz?intl=1" : "/push-dagger-kaowz"} className="logo" aria-label="Kaowz">
           <img src={kaowzLogo} alt="Kaowz - Ferramentas de Corte" className="logo-img" />
         </a>
       </header>
