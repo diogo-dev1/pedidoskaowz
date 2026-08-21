@@ -479,6 +479,51 @@ function renderHeroTitle(t: string) {
 }
 
 export default function ConfiguradorKit() {
+  const [searchParams] = useSearchParams();
+  const isInternacional = searchParams.get('intl') === '1';
+
+  // Conversão internacional — mesma fonte de dados do catálogo público internacional
+  const [currency, setCurrency] = useState('USD');
+  const [marginGlobal, setMarginGlobal] = useState(0);
+  const [exchangeMode, setExchangeMode] = useState<'auto' | 'manual'>('auto');
+  const [manualRates, setManualRates] = useState<Record<string, number>>({});
+  const [manualRatesUpdatedAt, setManualRatesUpdatedAt] = useState<string | null>(null);
+
+  const exchange = useExchangeRate({
+    mode: exchangeMode,
+    baseCurrency: 'BRL',
+    manualRates,
+    manualRatesUpdatedAt,
+  });
+
+  useEffect(() => {
+    if (!isInternacional) return;
+    supabase
+      .from('config_publico_internacional')
+      .select('chave, valor')
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, string> = {};
+        data.forEach((d: any) => { map[d.chave] = d.valor; });
+        if (map.default_currency) setCurrency(map.default_currency);
+        if (map.exchange_mode) setExchangeMode(map.exchange_mode === 'manual' ? 'manual' : 'auto');
+        const margem = map.margin_global ?? map.margin_percent;
+        if (margem) setMarginGlobal(parseFloat(margem) || 0);
+        if (map.manual_rates) {
+          try { setManualRates(JSON.parse(map.manual_rates)); } catch { /* noop */ }
+        }
+        if (map.manual_rates_updated_at) setManualRatesUpdatedAt(map.manual_rates_updated_at);
+      });
+  }, [isInternacional]);
+
+  const money = useCallback(
+    (n: number) =>
+      isInternacional
+        ? exchange.convertAndFormat(n * (1 + marginGlobal / 100), currency)
+        : BRL(n),
+    [isInternacional, exchange, marginGlobal, currency],
+  );
+
   const [cfg, setCfg] = useState<KitConfig>(DEFAULT_CONFIG);
   const [qty, setQty] = useState<QtyKey>(1);
   const [units, setUnits] = useState<UnitConfig[]>([newUnit(), newUnit(), newUnit()]);
