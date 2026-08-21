@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { supabase } from '@/integrations/supabase/client';
 import kaowzLogo from '@/assets/kaowz-logo.png';
 import kitCard from '@/assets/push-dagger-kit-card.jpeg';
@@ -479,6 +481,51 @@ function renderHeroTitle(t: string) {
 }
 
 export default function ConfiguradorKit() {
+  const [searchParams] = useSearchParams();
+  const isInternacional = searchParams.get('intl') === '1';
+
+  // Conversão internacional — mesma fonte de dados do catálogo público internacional
+  const [currency, setCurrency] = useState('USD');
+  const [marginGlobal, setMarginGlobal] = useState(0);
+  const [exchangeMode, setExchangeMode] = useState<'auto' | 'manual'>('auto');
+  const [manualRates, setManualRates] = useState<Record<string, number>>({});
+  const [manualRatesUpdatedAt, setManualRatesUpdatedAt] = useState<string | null>(null);
+
+  const exchange = useExchangeRate({
+    mode: exchangeMode,
+    baseCurrency: 'BRL',
+    manualRates,
+    manualRatesUpdatedAt,
+  });
+
+  useEffect(() => {
+    if (!isInternacional) return;
+    supabase
+      .from('config_publico_internacional')
+      .select('chave, valor')
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, string> = {};
+        data.forEach((d: any) => { map[d.chave] = d.valor; });
+        if (map.default_currency) setCurrency(map.default_currency);
+        if (map.exchange_mode) setExchangeMode(map.exchange_mode === 'manual' ? 'manual' : 'auto');
+        const margem = map.margin_global ?? map.margin_percent;
+        if (margem) setMarginGlobal(parseFloat(margem) || 0);
+        if (map.manual_rates) {
+          try { setManualRates(JSON.parse(map.manual_rates)); } catch { /* noop */ }
+        }
+        if (map.manual_rates_updated_at) setManualRatesUpdatedAt(map.manual_rates_updated_at);
+      });
+  }, [isInternacional]);
+
+  const money = useCallback(
+    (n: number) =>
+      isInternacional
+        ? exchange.convertAndFormat(n * (1 + marginGlobal / 100), currency)
+        : BRL(n),
+    [isInternacional, exchange, marginGlobal, currency],
+  );
+
   const [cfg, setCfg] = useState<KitConfig>(DEFAULT_CONFIG);
   const [qty, setQty] = useState<QtyKey>(1);
   const [units, setUnits] = useState<UnitConfig[]>([newUnit(), newUnit(), newUnit()]);
@@ -575,16 +622,16 @@ export default function ConfiguradorKit() {
     const lines = activeUnits.map((u, i) => {
       const ver = cfg.versions[u.version];
       const ex = u.bainhaExtra
-        ? ` + Bainha Extra ${BAINHA_EXTRA_NAMES[u.bainhaExtraTipo]} (${BRL(ver.bainhaExtraPrice)})`
+        ? ` + Bainha Extra ${BAINHA_EXTRA_NAMES[u.bainhaExtraTipo]} (${money(ver.bainhaExtraPrice)})`
         : '';
       const sizeName = SIZE_LIST.find((s) => s.key === u.size)!.name;
       const finishPart = ver.hasFinishes ? ` — ${FINISH_NAMES[u.finish]}` : '';
       const acoPart = ver.hasAcoEmpunhadura ? ` — ${ACO_NAMES[u.aco]} · ${EMPUNHADURA_NAMES[u.empunhadura]}` : '';
-      return `• Unidade ${i + 1}: ${ver.texts.tabLabel} — ${sizeName}${finishPart}${acoPart} (${BRL(unitPrice(u))})\n   Bainha: Velada${ex}`;
+      return `• Unidade ${i + 1}: ${ver.texts.tabLabel} — ${sizeName}${finishPart}${acoPart} (${money(unitPrice(u))})\n   Bainha: Velada${ex}`;
     });
-    const desc = discountPct > 0 ? `\nDesconto: ${discountPct}% (-${BRL(discountValue)})` : '';
-    return encodeURIComponent(`${header}\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`);
-  }, [activeUnits, qty, cfg, discountPct, discountValue, total]);
+    const desc = discountPct > 0 ? `\nDesconto: ${discountPct}% (-${money(discountValue)})` : '';
+    return encodeURIComponent(`${header}\n${lines.join('\n')}${desc}\n\nTotal: ${money(total)}`);
+  }, [activeUnits, qty, cfg, discountPct, discountValue, total, money]);
 
   const waUrl = `https://wa.me/${cfg.whatsappPhone}?text=${waMessage}`;
 
@@ -593,7 +640,7 @@ export default function ConfiguradorKit() {
       <style>{css}</style>
 
       <header className="ck-header">
-        <a href="/push-dagger-kaowz" className="logo" aria-label="Kaowz">
+        <a href={isInternacional ? "/push-dagger-kaowz?intl=1" : "/push-dagger-kaowz"} className="logo" aria-label="Kaowz">
           <img src={kaowzLogo} alt="Kaowz - Ferramentas de Corte" className="logo-img" />
         </a>
       </header>
@@ -679,7 +726,7 @@ export default function ConfiguradorKit() {
                   />
                   <div className="product-card-overlay" />
                   {ver.hasFinishes && <div className="product-card-tag">{FINISH_NAMES[u.finish]}</div>}
-                  <div className="product-card-price">{BRL(unitPrice(u))}</div>
+                  <div className="product-card-price">{money(unitPrice(u))}</div>
                 </div>
               </div>
 
@@ -779,7 +826,7 @@ export default function ConfiguradorKit() {
                     onChange={(e) => updateUnit(idx, { bainhaExtra: e.target.checked })}
                   />
                   <span className="bainha-extra-title">Bainha Extra</span>
-                  <span className="bainha-extra-price">+ {BRL(ver.bainhaExtraPrice)}</span>
+                  <span className="bainha-extra-price">+ {money(ver.bainhaExtraPrice)}</span>
                 </label>
                 {u.bainhaExtra && (
                   <div className="finish-options bainha-options">
@@ -807,12 +854,12 @@ export default function ConfiguradorKit() {
           {discountPct > 0 && (
             <div className="total-de">
               <span className="total-de-label">De</span>
-              <span className="total-old">{BRL(beforeDiscount)}</span>
+              <span className="total-old">{money(beforeDiscount)}</span>
             </div>
           )}
           <div className="total-por">
             {discountPct > 0 && <span className="total-por-label">Por</span>}
-            <span className="total-val">{BRL(total)}</span>
+            <span className="total-val">{money(total)}</span>
           </div>
         </div>
         {discountPct > 0 && (
@@ -914,7 +961,7 @@ export default function ConfiguradorKit() {
                                   <tr key={s.key}>
                                     {sizeDimCell(s)}
                                     {FINISH_KEYS.map((fk) => (
-                                      <td key={fk} className="price-cell">{BRL(ver.pricesByConfig![s.key][ak][ek][fk])}</td>
+                                      <td key={fk} className="price-cell">{money(ver.pricesByConfig![s.key][ak][ek][fk])}</td>
                                     ))}
                                   </tr>
                                 ))}
@@ -940,9 +987,9 @@ export default function ConfiguradorKit() {
                                 {sizeDimCell(s)}
                                 {ver.hasFinishes
                                   ? FINISH_KEYS.map((fk) => (
-                                      <td key={fk} className="price-cell">{BRL(ver.prices[s.key][fk])}</td>
+                                      <td key={fk} className="price-cell">{money(ver.prices[s.key][fk])}</td>
                                     ))
-                                  : <td className="price-cell">{BRL(ver.prices[s.key].satin)}</td>}
+                                  : <td className="price-cell">{money(ver.prices[s.key].satin)}</td>}
                               </tr>
                             ))}
                           </tbody>
@@ -952,7 +999,7 @@ export default function ConfiguradorKit() {
 
                   <div className="price-extra">
                     <span>Bainha Extra</span>
-                    <strong>+ {BRL(ver.bainhaExtraPrice)}</strong>
+                    <strong>+ {money(ver.bainhaExtraPrice)}</strong>
                   </div>
                 </div>
               );
