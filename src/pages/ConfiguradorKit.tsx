@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { supabase } from '@/integrations/supabase/client';
 import kaowzLogo from '@/assets/kaowz-logo.png';
 import kitCard from '@/assets/push-dagger-kit-card.jpeg';
@@ -520,7 +522,7 @@ export default function ConfiguradorKit() {
     (n: number) =>
       isInternacional
         ? exchange.convertAndFormat(n * (1 + marginGlobal / 100), currency)
-        : BRL(n),
+        : money(n),
     [isInternacional, exchange, marginGlobal, currency],
   );
 
@@ -620,15 +622,15 @@ export default function ConfiguradorKit() {
     const lines = activeUnits.map((u, i) => {
       const ver = cfg.versions[u.version];
       const ex = u.bainhaExtra
-        ? ` + Bainha Extra ${BAINHA_EXTRA_NAMES[u.bainhaExtraTipo]} (${BRL(ver.bainhaExtraPrice)})`
+        ? ` + Bainha Extra ${BAINHA_EXTRA_NAMES[u.bainhaExtraTipo]} (${money(ver.bainhaExtraPrice)})`
         : '';
       const sizeName = SIZE_LIST.find((s) => s.key === u.size)!.name;
       const finishPart = ver.hasFinishes ? ` — ${FINISH_NAMES[u.finish]}` : '';
       const acoPart = ver.hasAcoEmpunhadura ? ` — ${ACO_NAMES[u.aco]} · ${EMPUNHADURA_NAMES[u.empunhadura]}` : '';
-      return `• Unidade ${i + 1}: ${ver.texts.tabLabel} — ${sizeName}${finishPart}${acoPart} (${BRL(unitPrice(u))})\n   Bainha: Velada${ex}`;
+      return `• Unidade ${i + 1}: ${ver.texts.tabLabel} — ${sizeName}${finishPart}${acoPart} (${money(unitPrice(u))})\n   Bainha: Velada${ex}`;
     });
-    const desc = discountPct > 0 ? `\nDesconto: ${discountPct}% (-${BRL(discountValue)})` : '';
-    return encodeURIComponent(`${header}\n${lines.join('\n')}${desc}\n\nTotal: ${BRL(total)}`);
+    const desc = discountPct > 0 ? `\nDesconto: ${discountPct}% (-${money(discountValue)})` : '';
+    return encodeURIComponent(`${header}\n${lines.join('\n')}${desc}\n\nTotal: ${money(total)}`);
   }, [activeUnits, qty, cfg, discountPct, discountValue, total]);
 
   const waUrl = `https://wa.me/${cfg.whatsappPhone}?text=${waMessage}`;
@@ -724,7 +726,7 @@ export default function ConfiguradorKit() {
                   />
                   <div className="product-card-overlay" />
                   {ver.hasFinishes && <div className="product-card-tag">{FINISH_NAMES[u.finish]}</div>}
-                  <div className="product-card-price">{BRL(unitPrice(u))}</div>
+                  <div className="product-card-price">{money(unitPrice(u))}</div>
                 </div>
               </div>
 
@@ -824,7 +826,7 @@ export default function ConfiguradorKit() {
                     onChange={(e) => updateUnit(idx, { bainhaExtra: e.target.checked })}
                   />
                   <span className="bainha-extra-title">Bainha Extra</span>
-                  <span className="bainha-extra-price">+ {BRL(ver.bainhaExtraPrice)}</span>
+                  <span className="bainha-extra-price">+ {money(ver.bainhaExtraPrice)}</span>
                 </label>
                 {u.bainhaExtra && (
                   <div className="finish-options bainha-options">
@@ -852,12 +854,12 @@ export default function ConfiguradorKit() {
           {discountPct > 0 && (
             <div className="total-de">
               <span className="total-de-label">De</span>
-              <span className="total-old">{BRL(beforeDiscount)}</span>
+              <span className="total-old">{money(beforeDiscount)}</span>
             </div>
           )}
           <div className="total-por">
             {discountPct > 0 && <span className="total-por-label">Por</span>}
-            <span className="total-val">{BRL(total)}</span>
+            <span className="total-val">{money(total)}</span>
           </div>
         </div>
         {discountPct > 0 && (
@@ -959,7 +961,7 @@ export default function ConfiguradorKit() {
                                   <tr key={s.key}>
                                     {sizeDimCell(s)}
                                     {FINISH_KEYS.map((fk) => (
-                                      <td key={fk} className="price-cell">{BRL(ver.pricesByConfig![s.key][ak][ek][fk])}</td>
+                                      <td key={fk} className="price-cell">{money(ver.pricesByConfig![s.key][ak][ek][fk])}</td>
                                     ))}
                                   </tr>
                                 ))}
@@ -985,9 +987,9 @@ export default function ConfiguradorKit() {
                                 {sizeDimCell(s)}
                                 {ver.hasFinishes
                                   ? FINISH_KEYS.map((fk) => (
-                                      <td key={fk} className="price-cell">{BRL(ver.prices[s.key][fk])}</td>
+                                      <td key={fk} className="price-cell">{money(ver.prices[s.key][fk])}</td>
                                     ))
-                                  : <td className="price-cell">{BRL(ver.prices[s.key].satin)}</td>}
+                                  : <td className="price-cell">{money(ver.prices[s.key].satin)}</td>}
                               </tr>
                             ))}
                           </tbody>
@@ -997,7 +999,7 @@ export default function ConfiguradorKit() {
 
                   <div className="price-extra">
                     <span>Bainha Extra</span>
-                    <strong>+ {BRL(ver.bainhaExtraPrice)}</strong>
+                    <strong>+ {money(ver.bainhaExtraPrice)}</strong>
                   </div>
                 </div>
               );
