@@ -522,7 +522,7 @@ export default function ConfiguradorKit() {
     (n: number) =>
       isInternacional
         ? exchange.convertAndFormat(n * (1 + marginGlobal / 100), currency)
-        : money(n),
+        : BRL(n),
     [isInternacional, exchange, marginGlobal, currency],
   );
 
@@ -631,7 +631,7 @@ export default function ConfiguradorKit() {
     });
     const desc = discountPct > 0 ? `\nDesconto: ${discountPct}% (-${money(discountValue)})` : '';
     return encodeURIComponent(`${header}\n${lines.join('\n')}${desc}\n\nTotal: ${money(total)}`);
-  }, [activeUnits, qty, cfg, discountPct, discountValue, total]);
+  }, [activeUnits, qty, cfg, discountPct, discountValue, total, money]);
 
   const waUrl = `https://wa.me/${cfg.whatsappPhone}?text=${waMessage}`;
 
