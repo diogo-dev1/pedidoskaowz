@@ -48,7 +48,7 @@ let tokenExpiresAt = 0;
 
 async function getToken(domain: string): Promise<string> {
   // Token estático tem prioridade: é o que carrega os escopos aprovados manualmente
-  const staticToken = Deno.env.get('SHOPIFY_ADMIN_TOKEN') ?? Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+  const staticToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN') ?? Deno.env.get('SHOPIFY_ADMIN_TOKEN');
   if (staticToken) return staticToken;
 
   const clientId = Deno.env.get('SHOPIFY_CLIENT_ID');
