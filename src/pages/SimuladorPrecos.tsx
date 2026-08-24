@@ -971,6 +971,10 @@ export default function SimuladorPrecos() {
 
       <OrcamentoModal open={modalOpen} onOpenChange={setModalOpen} texto={orcamento} total={totalGeral}
         vendedorPadrao={profile?.nome_vendedor ?? ''} />
+
+      <ShopifyDraftModal open={shopifyOpen} onOpenChange={setShopifyOpen}
+        data={data} entries={entries} total={totalGeral} />
     </div>
   );
 }
+
