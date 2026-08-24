@@ -141,13 +141,19 @@ async function resolveCustomer(cliente: Payload['cliente'], metafields: any[]): 
   };
   if (metafields.length) input.metafields = metafields;
 
-  const created = await shopify(CUSTOMER_CREATE, { input });
-  const errs = created?.customerCreate?.userErrors ?? [];
-  if (errs.length) {
-    console.error('customerCreate userErrors', errs);
+  try {
+    const created = await shopify(CUSTOMER_CREATE, { input });
+    const errs = created?.customerCreate?.userErrors ?? [];
+    if (errs.length) {
+      console.error('customerCreate userErrors', errs);
+      return null;
+    }
+    return created?.customerCreate?.customer?.id ?? null;
+  } catch (e) {
+    // Sem escopo write_customers (ou outra falha): segue sem vincular cliente.
+    console.warn('customerCreate falhou, seguindo sem cliente vinculado:', (e as Error)?.message);
     return null;
   }
-  return created?.customerCreate?.customer?.id ?? null;
 }
 
 Deno.serve(async (req) => {
@@ -201,7 +207,15 @@ Deno.serve(async (req) => {
       tags: ['Kaowz-Simulador'],
       useCustomerDefaultAddress: !!customerId,
     };
-    if (customerId) input.purchasingEntity = { customerId };
+    if (customerId) {
+      input.purchasingEntity = { customerId };
+    } else {
+      // Sem cliente vinculado: registra contato nos atributos para não perder o dado
+      if (cliente.nome?.trim()) customAttributes.push({ key: 'Cliente', value: cliente.nome.trim() });
+      if (cliente.email?.trim()) customAttributes.push({ key: 'E-mail', value: cliente.email.trim() });
+      const tel = normalizaTelefone(cliente.telefone);
+      if (tel) customAttributes.push({ key: 'Telefone', value: tel });
+    }
     if (payload.observacao?.trim()) input.note = payload.observacao.trim();
 
     const temEndereco = !!(end.endereco || end.cep || end.cidade);
