@@ -207,7 +207,15 @@ Deno.serve(async (req) => {
       tags: ['Kaowz-Simulador'],
       useCustomerDefaultAddress: !!customerId,
     };
-    if (customerId) input.purchasingEntity = { customerId };
+    if (customerId) {
+      input.purchasingEntity = { customerId };
+    } else {
+      // Sem cliente vinculado: registra contato nos atributos para não perder o dado
+      if (cliente.nome?.trim()) customAttributes.push({ key: 'Cliente', value: cliente.nome.trim() });
+      if (cliente.email?.trim()) customAttributes.push({ key: 'E-mail', value: cliente.email.trim() });
+      const tel = normalizaTelefone(cliente.telefone);
+      if (tel) customAttributes.push({ key: 'Telefone', value: tel });
+    }
     if (payload.observacao?.trim()) input.note = payload.observacao.trim();
 
     const temEndereco = !!(end.endereco || end.cep || end.cidade);
