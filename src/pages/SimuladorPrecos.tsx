@@ -8,10 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Calculator, Plus, Minus, Trash2, Copy, MessageCircle, Search, X,
   ChevronDown, ChevronUp, CopyPlus, Send, Loader2, Check, ClipboardCheck, Eraser,
-  Hammer, PackagePlus, Pencil, FilePlus2,
+  Hammer, PackagePlus, Pencil, FilePlus2, ShoppingBag,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import ShopifyDraftModal from '@/components/simulador/ShopifyDraftModal';
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcEntry, gerarOrcamento,
@@ -811,6 +812,7 @@ export default function SimuladorPrecos() {
   const [modalOpen, setModalOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
+  const [shopifyOpen, setShopifyOpen] = useState(false);
 
   const addFaca = () => { const e = novaEntradaFaca(); setEntries((p) => [...p, e]); setExpandedId(e.id); };
   const addAvulso = (adicionalIdx: number) => {
