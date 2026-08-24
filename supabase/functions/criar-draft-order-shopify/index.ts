@@ -141,13 +141,19 @@ async function resolveCustomer(cliente: Payload['cliente'], metafields: any[]): 
   };
   if (metafields.length) input.metafields = metafields;
 
-  const created = await shopify(CUSTOMER_CREATE, { input });
-  const errs = created?.customerCreate?.userErrors ?? [];
-  if (errs.length) {
-    console.error('customerCreate userErrors', errs);
+  try {
+    const created = await shopify(CUSTOMER_CREATE, { input });
+    const errs = created?.customerCreate?.userErrors ?? [];
+    if (errs.length) {
+      console.error('customerCreate userErrors', errs);
+      return null;
+    }
+    return created?.customerCreate?.customer?.id ?? null;
+  } catch (e) {
+    // Sem escopo write_customers (ou outra falha): segue sem vincular cliente.
+    console.warn('customerCreate falhou, seguindo sem cliente vinculado:', (e as Error)?.message);
     return null;
   }
-  return created?.customerCreate?.customer?.id ?? null;
 }
 
 Deno.serve(async (req) => {
