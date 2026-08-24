@@ -37,14 +37,41 @@ interface Payload {
 }
 
 function resolveDomain(): string {
-  const raw = Deno.env.get('SHOPIFY_STORE_DOMAIN') ?? Deno.env.get('SHOPIFY_STORE_URL') ?? '';
+  const raw = Deno.env.get('SHOPIFY_STORE_DOMAIN') ?? Deno.env.get('SHOPIFY_SHOP')
+    ?? Deno.env.get('SHOPIFY_STORE_URL') ?? '';
   return raw.replace(/^https?:\/\//, '').replace(/\/$/, '');
+}
+
+// Mesma estratégia das demais funções: client_credentials com cache + fallback estático.
+let cachedToken: string | null = null;
+let tokenExpiresAt = 0;
+
+async function getToken(domain: string): Promise<string> {
+  const clientId = Deno.env.get('SHOPIFY_CLIENT_ID');
+  const clientSecret = Deno.env.get('SHOPIFY_CLIENT_SECRET');
+  if (clientId && clientSecret) {
+    if (cachedToken && Date.now() < tokenExpiresAt) return cachedToken;
+    const res = await fetch(`https://${domain}/admin/oauth/access_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret }),
+    });
+    if (!res.ok) throw new Error(`Shopify token error [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+    const data = await res.json();
+    if (!data?.access_token) throw new Error('Shopify token response missing access_token');
+    cachedToken = data.access_token as string;
+    tokenExpiresAt = Date.now() + Math.max(0, (data.expires_in ?? 86400) - 60) * 1000;
+    return cachedToken;
+  }
+  const staticToken = Deno.env.get('SHOPIFY_ADMIN_TOKEN') ?? Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+  if (staticToken) return staticToken;
+  throw new Error('Shopify não configurado (defina SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET ou SHOPIFY_ADMIN_TOKEN)');
 }
 
 async function shopify(query: string, variables: Record<string, unknown>) {
   const domain = resolveDomain();
-  const token = Deno.env.get('SHOPIFY_ADMIN_TOKEN') ?? Deno.env.get('SHOPIFY_ACCESS_TOKEN');
-  if (!domain || !token) throw new Error('Shopify não configurado (domínio ou token ausente)');
+  if (!domain) throw new Error('Shopify não configurado (domínio ausente)');
+  const token = await getToken(domain);
 
   const res = await fetch(`https://${domain}/admin/api/${API_VERSION}/graphql.json`, {
     method: 'POST',
@@ -52,11 +79,16 @@ async function shopify(query: string, variables: Record<string, unknown>) {
     body: JSON.stringify({ query, variables }),
   });
   const text = await res.text();
+  if (res.status === 401) {
+    cachedToken = null;
+    tokenExpiresAt = 0;
+  }
   if (!res.ok) throw new Error(`Shopify HTTP ${res.status}: ${text.slice(0, 500)}`);
   const json = JSON.parse(text);
   if (json.errors?.length) throw new Error(json.errors.map((e: any) => e.message).join(' | '));
   return json.data;
 }
+
 
 function normalizaTelefone(t?: string): string | undefined {
   if (!t) return undefined;
