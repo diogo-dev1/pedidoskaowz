@@ -1,0 +1,351 @@
+import { useMemo, useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Loader2, ShoppingBag, Sparkles, Copy, Send, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  BRL, calcEntry, calcItem, nomeBainha, espacadorIdx,
+  type SimuladorData, type PedidoEntry,
+} from '@/lib/simuladorData';
+
+interface DraftLineItem {
+  title: string;
+  quantity: number;
+  price: number;
+  properties: { name: string; value: string }[];
+}
+
+/** Converte as entradas do simulador em custom line items da Shopify. */
+export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): DraftLineItem[] {
+  const out: DraftLineItem[] = [];
+
+  entries.forEach((e) => {
+    if (e.kind === 'faca') {
+      const cfg = e.faca;
+      const m = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
+      if (!m) return;
+
+      const aco = data.acos[cfg.acoIdx]?.nome ?? '';
+      let emp = data.empunhaduras[cfg.empIdx]?.nome ?? '';
+      if (cfg.empCor) emp += ` ${cfg.empCor}`;
+      const bainhas = (cfg.bainhaIdxs ?? []).map((i) => nomeBainha(data, cfg, i)).filter(Boolean);
+
+      const tituloPartes = [m.nome];
+      if (aco) tituloPartes.push(`Aço ${aco}${cfg.bruteForge ? ' + Brute Forge' : ''}`);
+      if (emp) tituloPartes.push(`Empunhadura ${emp}${cfg.dragonScale ? ' + Dragon Scale' : ''}`);
+
+      const props: { name: string; value: string }[] = [
+        { name: 'Modelo', value: m.nome },
+        { name: 'Aço', value: aco },
+        { name: 'Brute Forge', value: cfg.bruteForge ? 'Sim' : 'Não' },
+        { name: 'Empunhadura', value: data.empunhaduras[cfg.empIdx]?.nome ?? '' },
+      ];
+      if (cfg.empCor) props.push({ name: 'Cor da empunhadura', value: cfg.empCor });
+      props.push({ name: 'Dragon Scale', value: cfg.dragonScale ? 'Sim' : 'Não' });
+      if (cfg.espacador) {
+        const ei = espacadorIdx(data);
+        props.push({
+          name: 'Espaçador',
+          value: cfg.espacadorCor ? `Sim (${cfg.espacadorCor})` : 'Sim',
+        });
+        if (ei < 0) props.pop();
+      }
+      props.push({ name: 'Acabamento', value: data.acabamentos[cfg.acabIdx]?.nome ?? '' });
+      bainhas.forEach((b, i) => props.push({ name: `Bainha ${i + 1}`, value: b }));
+
+      out.push({
+        title: tituloPartes.join(' — '),
+        quantity: 1,
+        price: calcItem(data, cfg),
+        properties: props.filter((p) => p.value),
+      });
+      return;
+    }
+
+    if (e.kind === 'avulso') {
+      const a = data.adicionais[e.avulso.adicionalIdx];
+      if (!a) return;
+      out.push({
+        title: a.nome,
+        quantity: Math.max(1, e.avulso.quantidade),
+        price: a.preco,
+        properties: [],
+      });
+      return;
+    }
+
+    const c = e.custom;
+    out.push({
+      title: c.descricao.trim() || 'Item personalizado',
+      quantity: Math.max(1, c.quantidade),
+      price: Math.max(0, c.preco),
+      properties: [],
+    });
+  });
+
+  return out;
+}
+
+interface Resultado {
+  nome?: string;
+  invoiceUrl?: string;
+}
+
+export default function ShopifyDraftModal({ open, onOpenChange, data, entries, total }: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  data: SimuladorData;
+  entries: PedidoEntry[];
+  total: number;
+}) {
+  const [nome, setNome] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [email, setEmail] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [nascimento, setNascimento] = useState('');
+  const [cep, setCep] = useState('');
+  const [estado, setEstado] = useState('');
+  const [cidade, setCidade] = useState('');
+  const [bairro, setBairro] = useState('');
+  const [endereco, setEndereco] = useState('');
+  const [numero, setNumero] = useState('');
+  const [complemento, setComplemento] = useState('');
+  const [colado, setColado] = useState('');
+  const [observacao, setObservacao] = useState('');
+  const [parsing, setParsing] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [resultado, setResultado] = useState<Resultado | null>(null);
+
+  useEffect(() => { if (!open) { setResultado(null); setEnviando(false); } }, [open]);
+
+  const itens = useMemo(() => montarLineItems(data, entries), [data, entries]);
+
+  const preencherComIA = async () => {
+    if (!colado.trim()) { toast.error('Cole a mensagem do cliente primeiro'); return; }
+    setParsing(true);
+    try {
+      const { data: res, error } = await supabase.functions.invoke('parse-order-data', {
+        body: { text: colado },
+      });
+      if (error) throw error;
+      if (res?.error) throw new Error(res.error);
+      const c = res?.data?.cliente ?? {};
+      if (c.nomeCompleto) setNome(c.nomeCompleto);
+      if (c.celular) setTelefone(c.celular);
+      if (c.email) setEmail(c.email);
+      if (c.cpf) setCpf(c.cpf);
+      if (c.dataNascimento) setNascimento(c.dataNascimento);
+      if (c.cep) setCep(c.cep);
+      if (c.estado) setEstado(c.estado);
+      if (c.cidade) setCidade(c.cidade);
+      if (c.bairro) setBairro(c.bairro);
+      if (c.endereco) setEndereco(c.endereco);
+      if (c.numero) setNumero(c.numero);
+      if (c.complemento) setComplemento(c.complemento);
+      if (res?.data?.pedido?.observacao) setObservacao(res.data.pedido.observacao);
+      toast.success('Dados preenchidos!');
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Não foi possível ler os dados');
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const enviar = async () => {
+    if (!itens.length) { toast.error('Nenhum item para enviar'); return; }
+    setEnviando(true);
+    try {
+      const { data: res, error } = await supabase.functions.invoke('criar-draft-order-shopify', {
+        body: {
+          itens,
+          cliente: {
+            nome: nome.trim() || undefined,
+            email: email.trim() || undefined,
+            telefone: telefone.trim() || undefined,
+            cpf: cpf.trim() || undefined,
+            dataNascimento: nascimento.trim() || undefined,
+          },
+          endereco: {
+            cep: cep.trim() || undefined,
+            estado: estado.trim() || undefined,
+            cidade: cidade.trim() || undefined,
+            bairro: bairro.trim() || undefined,
+            endereco: endereco.trim() || undefined,
+            numero: numero.trim() || undefined,
+            complemento: complemento.trim() || undefined,
+          },
+          observacao: observacao.trim() || undefined,
+        },
+      });
+      if (error) throw error;
+      if (!res?.sucesso) throw new Error(res?.erro ?? 'Falha ao criar o pedido na Shopify');
+      setResultado({ nome: res.nome, invoiceUrl: res.invoiceUrl });
+      toast.success(`Draft ${res.nome} criado na Shopify`);
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Erro ao criar o pedido');
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const copiarLink = async () => {
+    if (!resultado?.invoiceUrl) return;
+    try { await navigator.clipboard.writeText(resultado.invoiceUrl); toast.success('Link copiado!'); }
+    catch { toast.error('Não foi possível copiar'); }
+  };
+
+  const telDigits = telefone.replace(/\D/g, '');
+  const whatsappUrl = useMemo(() => {
+    const numeroWa = telDigits.length <= 11 ? `55${telDigits}` : telDigits;
+    const msg = [
+      nome.trim() ? `Olá, ${nome.trim()}!` : 'Olá!',
+      '',
+      `Seu pedido Kaowz ${resultado?.nome ?? ''} está pronto para pagamento.`,
+      `Total: ${BRL(total)}`,
+      '',
+      'Finalize por aqui (endereço e frete são escolhidos no checkout):',
+      resultado?.invoiceUrl ?? '',
+    ].join('\n');
+    return `https://wa.me/${numeroWa}?text=${encodeURIComponent(msg)}`;
+  }, [telDigits, nome, resultado, total]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ShoppingBag className="h-5 w-5 text-primary" /> Lançar no Shopify
+          </DialogTitle>
+          <DialogDescription>
+            Cria um pedido rascunho (draft order) com link de pagamento. O frete usa as regras da loja.
+          </DialogDescription>
+        </DialogHeader>
+
+        {resultado ? (
+          <div className="space-y-4">
+            <div className="rounded-xl border-2 border-accent/40 bg-accent/5 p-4 space-y-2 text-center">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Draft criado</p>
+              <p className="text-2xl font-bold">{resultado.nome}</p>
+              <p className="text-sm text-muted-foreground break-all">{resultado.invoiceUrl}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" className="h-11 rounded-xl gap-2" onClick={copiarLink}>
+                <Copy className="h-4 w-4" /> Copiar link
+              </Button>
+              {telDigits.length >= 10 ? (
+                <Button asChild className="h-11 rounded-xl gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                    <Send className="h-4 w-4" /> WhatsApp
+                  </a>
+                </Button>
+              ) : (
+                <Button asChild variant="secondary" className="h-11 rounded-xl gap-2">
+                  <a href={resultado.invoiceUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" /> Abrir
+                  </a>
+                </Button>
+              )}
+            </div>
+            <Button variant="ghost" className="w-full" onClick={() => onOpenChange(false)}>Fechar</Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Resumo dos itens */}
+            <div className="rounded-xl border p-3 space-y-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {itens.length} {itens.length === 1 ? 'item' : 'itens'}
+              </span>
+              <ul className="space-y-1.5">
+                {itens.map((i, idx) => (
+                  <li key={idx} className="flex items-start justify-between gap-2 text-xs">
+                    <span className="min-w-0 flex-1">{i.title}{i.quantity > 1 ? ` ×${i.quantity}` : ''}</span>
+                    <span className="tabular-nums font-semibold flex-shrink-0">{BRL(i.price * i.quantity)}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex items-center justify-between border-t pt-2 text-sm font-bold">
+                <span>Total</span><span className="text-accent tabular-nums">{BRL(total)}</span>
+              </div>
+            </div>
+
+            {/* Colar mensagem + IA */}
+            <div className="space-y-1.5">
+              <Label htmlFor="sh-colar" className="text-xs">Colar dados do cliente (WhatsApp)</Label>
+              <Textarea id="sh-colar" value={colado} onChange={(e) => setColado(e.target.value)}
+                rows={4} placeholder="Cole aqui a mensagem com nome, CPF, endereço..." className="text-xs resize-y" />
+              <Button variant="outline" className="w-full h-10 rounded-xl gap-2" onClick={preencherComIA} disabled={parsing}>
+                {parsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                Preencher automaticamente
+              </Button>
+            </div>
+
+            {/* Cliente */}
+            <div className="grid grid-cols-1 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="sh-nome" className="text-xs">Nome (opcional)</Label>
+                <Input id="sh-nome" value={nome} onChange={(e) => setNome(e.target.value)} className="h-10" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="sh-tel" className="text-xs">Telefone</Label>
+                  <Input id="sh-tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" className="h-10" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="sh-email" className="text-xs">E-mail</Label>
+                  <Input id="sh-email" value={email} onChange={(e) => setEmail(e.target.value)} inputMode="email" className="h-10" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="sh-cpf" className="text-xs">CPF</Label>
+                  <Input id="sh-cpf" value={cpf} onChange={(e) => setCpf(e.target.value)} inputMode="numeric" className="h-10" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="sh-nasc" className="text-xs">Nascimento</Label>
+                  <Input id="sh-nasc" value={nascimento} onChange={(e) => setNascimento(e.target.value)} placeholder="dd/mm/aaaa" className="h-10" />
+                </div>
+              </div>
+            </div>
+
+            {/* Endereço opcional */}
+            <details className="rounded-xl border p-3">
+              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Endereço (opcional)
+              </summary>
+              <div className="mt-3 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Input value={cep} onChange={(e) => setCep(e.target.value)} placeholder="CEP" className="h-10" />
+                  <Input value={estado} onChange={(e) => setEstado(e.target.value)} placeholder="UF" className="h-10" />
+                </div>
+                <Input value={cidade} onChange={(e) => setCidade(e.target.value)} placeholder="Cidade" className="h-10" />
+                <Input value={bairro} onChange={(e) => setBairro(e.target.value)} placeholder="Bairro" className="h-10" />
+                <div className="grid grid-cols-3 gap-3">
+                  <Input value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua" className="h-10 col-span-2" />
+                  <Input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="Nº" className="h-10" />
+                </div>
+                <Input value={complemento} onChange={(e) => setComplemento(e.target.value)} placeholder="Complemento" className="h-10" />
+                <p className="text-[10px] text-muted-foreground">
+                  Se ficar em branco, o cliente preenche o endereço e escolhe o frete no checkout da loja.
+                </p>
+              </div>
+            </details>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="sh-obs" className="text-xs">Observação do pedido</Label>
+              <Textarea id="sh-obs" value={observacao} onChange={(e) => setObservacao(e.target.value)} rows={2} className="text-sm resize-none" />
+            </div>
+
+            <Button className="w-full h-11 rounded-xl gap-2" onClick={enviar} disabled={enviando || !itens.length}>
+              {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}
+              Criar pedido na Shopify
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
