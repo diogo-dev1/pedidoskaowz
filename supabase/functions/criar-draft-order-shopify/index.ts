@@ -47,6 +47,10 @@ let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
 
 async function getToken(domain: string): Promise<string> {
+  // Token estático tem prioridade: é o que carrega os escopos aprovados manualmente
+  const staticToken = Deno.env.get('SHOPIFY_ADMIN_TOKEN') ?? Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+  if (staticToken) return staticToken;
+
   const clientId = Deno.env.get('SHOPIFY_CLIENT_ID');
   const clientSecret = Deno.env.get('SHOPIFY_CLIENT_SECRET');
   if (clientId && clientSecret) {
@@ -63,9 +67,7 @@ async function getToken(domain: string): Promise<string> {
     tokenExpiresAt = Date.now() + Math.max(0, (data.expires_in ?? 86400) - 60) * 1000;
     return cachedToken;
   }
-  const staticToken = Deno.env.get('SHOPIFY_ADMIN_TOKEN') ?? Deno.env.get('SHOPIFY_ACCESS_TOKEN');
-  if (staticToken) return staticToken;
-  throw new Error('Shopify não configurado (defina SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET ou SHOPIFY_ADMIN_TOKEN)');
+  throw new Error('Shopify não configurado (defina SHOPIFY_ADMIN_TOKEN ou SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET)');
 }
 
 async function shopify(query: string, variables: Record<string, unknown>) {
