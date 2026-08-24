@@ -8,10 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Calculator, Plus, Minus, Trash2, Copy, MessageCircle, Search, X,
   ChevronDown, ChevronUp, CopyPlus, Send, Loader2, Check, ClipboardCheck, Eraser,
-  Hammer, PackagePlus, Pencil, FilePlus2,
+  Hammer, PackagePlus, Pencil, FilePlus2, ShoppingBag,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import ShopifyDraftModal from '@/components/simulador/ShopifyDraftModal';
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcEntry, gerarOrcamento,
@@ -811,6 +812,7 @@ export default function SimuladorPrecos() {
   const [modalOpen, setModalOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
+  const [shopifyOpen, setShopifyOpen] = useState(false);
 
   const addFaca = () => { const e = novaEntradaFaca(); setEntries((p) => [...p, e]); setExpandedId(e.id); };
   const addAvulso = (adicionalIdx: number) => {
@@ -948,10 +950,15 @@ export default function SimuladorPrecos() {
           <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl flex-shrink-0" onClick={copiarRapido} title="Copiar orçamento">
             <Copy className="h-4 w-4" />
           </Button>
-          <Button className="gap-2 h-11 rounded-xl flex-shrink-0 bg-accent hover:bg-accent/90 text-accent-foreground"
-            onClick={() => setModalOpen(true)} disabled={itensValidos === 0}>
-            <ClipboardCheck className="h-4 w-4" /> Enviar formulário
+          <Button variant="outline" className="gap-2 h-11 rounded-xl flex-shrink-0 px-3"
+            onClick={() => setShopifyOpen(true)} disabled={itensValidos === 0}>
+            <ShoppingBag className="h-4 w-4" /> Shopify
           </Button>
+          <Button className="gap-2 h-11 rounded-xl flex-shrink-0 bg-accent hover:bg-accent/90 text-accent-foreground px-3"
+            onClick={() => setModalOpen(true)} disabled={itensValidos === 0}>
+            <ClipboardCheck className="h-4 w-4" /> Formulário
+          </Button>
+
         </div>
       </div>
 
@@ -966,6 +973,10 @@ export default function SimuladorPrecos() {
 
       <OrcamentoModal open={modalOpen} onOpenChange={setModalOpen} texto={orcamento} total={totalGeral}
         vendedorPadrao={profile?.nome_vendedor ?? ''} />
+
+      <ShopifyDraftModal open={shopifyOpen} onOpenChange={setShopifyOpen}
+        data={data} entries={entries} total={totalGeral} />
     </div>
   );
 }
+
