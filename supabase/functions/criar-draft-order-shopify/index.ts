@@ -42,54 +42,63 @@ function resolveDomain(): string {
   return raw.replace(/^https?:\/\//, '').replace(/\/$/, '');
 }
 
-// Mesma estratégia das demais funções: client_credentials com cache + fallback estático.
+// Tenta os tokens disponíveis em ordem e usa o primeiro que autenticar.
 let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
 
-async function getToken(domain: string): Promise<string> {
-  // Token estático tem prioridade: é o que carrega os escopos aprovados manualmente
-  const staticToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN') ?? Deno.env.get('SHOPIFY_ADMIN_TOKEN');
-  if (staticToken) return staticToken;
-
+async function getOAuthToken(domain: string): Promise<string | null> {
   const clientId = Deno.env.get('SHOPIFY_CLIENT_ID');
   const clientSecret = Deno.env.get('SHOPIFY_CLIENT_SECRET');
-  if (clientId && clientSecret) {
-    if (cachedToken && Date.now() < tokenExpiresAt) return cachedToken;
-    const res = await fetch(`https://${domain}/admin/oauth/access_token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret }),
-    });
-    if (!res.ok) throw new Error(`Shopify token error [${res.status}]: ${(await res.text()).slice(0, 300)}`);
-    const data = await res.json();
-    if (!data?.access_token) throw new Error('Shopify token response missing access_token');
-    cachedToken = data.access_token as string;
-    tokenExpiresAt = Date.now() + Math.max(0, (data.expires_in ?? 86400) - 60) * 1000;
-    return cachedToken;
-  }
-  throw new Error('Shopify não configurado (defina SHOPIFY_ADMIN_TOKEN ou SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET)');
+  if (!clientId || !clientSecret) return null;
+  if (cachedToken && Date.now() < tokenExpiresAt) return cachedToken;
+  const res = await fetch(`https://${domain}/admin/oauth/access_token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data?.access_token) return null;
+  cachedToken = data.access_token as string;
+  tokenExpiresAt = Date.now() + Math.max(0, (data.expires_in ?? 86400) - 60) * 1000;
+  return cachedToken;
 }
 
 async function shopify(query: string, variables: Record<string, unknown>) {
   const domain = resolveDomain();
   if (!domain) throw new Error('Shopify não configurado (domínio ausente)');
-  const token = await getToken(domain);
 
-  const res = await fetch(`https://${domain}/admin/api/${API_VERSION}/graphql.json`, {
-    method: 'POST',
-    headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, variables }),
-  });
-  const text = await res.text();
-  if (res.status === 401) {
-    cachedToken = null;
-    tokenExpiresAt = 0;
+  const candidates: string[] = [];
+  for (const name of ['SHOPIFY_ACCESS_TOKEN', 'SHOPIFY_ADMIN_TOKEN']) {
+    const v = Deno.env.get(name);
+    if (v && !candidates.includes(v)) candidates.push(v);
   }
-  if (!res.ok) throw new Error(`Shopify HTTP ${res.status}: ${text.slice(0, 500)}`);
-  const json = JSON.parse(text);
-  if (json.errors?.length) throw new Error(json.errors.map((e: any) => e.message).join(' | '));
-  return json.data;
+  const oauth = await getOAuthToken(domain);
+  if (oauth && !candidates.includes(oauth)) candidates.push(oauth);
+  if (!candidates.length) throw new Error('Shopify não configurado (nenhum token disponível)');
+
+  let lastError = '';
+  for (const token of candidates) {
+    const res = await fetch(`https://${domain}/admin/api/${API_VERSION}/graphql.json`, {
+      method: 'POST',
+      headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
+    });
+    const text = await res.text();
+    if (res.status === 401) {
+      cachedToken = null;
+      tokenExpiresAt = 0;
+      lastError = `Shopify HTTP 401: ${text.slice(0, 300)}`;
+      continue; // token inválido → tenta o próximo
+    }
+    if (!res.ok) throw new Error(`Shopify HTTP ${res.status}: ${text.slice(0, 500)}`);
+    const json = JSON.parse(text);
+    if (json.errors?.length) throw new Error(json.errors.map((e: any) => e.message).join(' | '));
+    return json.data;
+  }
+  throw new Error(lastError || 'Falha de autenticação na Shopify');
 }
+
 
 
 function normalizaTelefone(t?: string): string | undefined {
