@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.add-sale]
 verify_jwt = false
+
+[functions.criar-draft-order-shopify]
+verify_jwt = false
