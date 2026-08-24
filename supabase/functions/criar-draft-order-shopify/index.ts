@@ -171,7 +171,31 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const payload: Payload = await req.json();
+    const payload: Payload & { diagnostico?: boolean } = await req.json();
+
+    if (payload.diagnostico) {
+      const domain = resolveDomain();
+      const out: Record<string, unknown> = { domain };
+      const checks: [string, string | null][] = [
+        ['SHOPIFY_ACCESS_TOKEN', Deno.env.get('SHOPIFY_ACCESS_TOKEN') ?? null],
+        ['SHOPIFY_ADMIN_TOKEN', Deno.env.get('SHOPIFY_ADMIN_TOKEN') ?? null],
+        ['oauth_client_credentials', await getOAuthToken(domain)],
+      ];
+      for (const [nome, tok] of checks) {
+        if (!tok) { out[nome] = 'ausente'; continue; }
+        const r = await fetch(`https://${domain}/admin/api/${API_VERSION}/oauth/access_scopes.json`, {
+          headers: { 'X-Shopify-Access-Token': tok },
+        });
+        const t = await r.text();
+        out[nome] = r.ok
+          ? (JSON.parse(t).access_scopes ?? []).map((s: any) => s.handle)
+          : `HTTP ${r.status}: ${t.slice(0, 120)}`;
+      }
+      return new Response(JSON.stringify(out, null, 2), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const itens = (payload.itens ?? []).filter((i) => i?.title && Number(i.price) >= 0);
     if (!itens.length) {
       return new Response(JSON.stringify({ sucesso: false, erro: 'Nenhum item enviado' }), {
