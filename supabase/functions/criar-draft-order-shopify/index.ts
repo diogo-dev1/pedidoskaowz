@@ -171,7 +171,43 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const payload: Payload = await req.json();
+    const payload: Payload & { diagnostico?: boolean } = await req.json();
+
+    if (payload.diagnostico) {
+      const domains = [
+        Deno.env.get('SHOPIFY_STORE_DOMAIN'),
+        Deno.env.get('SHOPIFY_SHOP'),
+        Deno.env.get('SHOPIFY_STORE_URL'),
+      ].filter(Boolean).map((d) => d!.replace(/^https?:\/\//, '').replace(/\/$/, ''));
+      const uniqueDomains = [...new Set(domains)];
+      const out: Record<string, unknown> = { domains: uniqueDomains };
+      const toks: [string, string | null][] = [
+        ['SHOPIFY_ACCESS_TOKEN', Deno.env.get('SHOPIFY_ACCESS_TOKEN') ?? null],
+        ['SHOPIFY_ADMIN_TOKEN', Deno.env.get('SHOPIFY_ADMIN_TOKEN') ?? null],
+      ];
+      for (const dom of uniqueDomains) {
+        for (const [nome, tok] of toks) {
+          const chave = `${dom} :: ${nome}`;
+          if (!tok) { out[chave] = 'ausente'; continue; }
+          try {
+            const r = await fetch(`https://${dom}/admin/api/${API_VERSION}/oauth/access_scopes.json`, {
+              headers: { 'X-Shopify-Access-Token': tok },
+            });
+            const t = await r.text();
+            out[chave] = r.ok
+              ? (JSON.parse(t).access_scopes ?? []).map((s: any) => s.handle)
+              : `HTTP ${r.status}: ${t.slice(0, 100)}`;
+          } catch (e) {
+            out[chave] = `erro: ${(e as Error).message}`;
+          }
+        }
+      }
+      return new Response(JSON.stringify(out, null, 2), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+
     const itens = (payload.itens ?? []).filter((i) => i?.title && Number(i.price) >= 0);
     if (!itens.length) {
       return new Response(JSON.stringify({ sucesso: false, erro: 'Nenhum item enviado' }), {
