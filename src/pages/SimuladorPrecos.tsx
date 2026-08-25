@@ -294,7 +294,9 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                     );
                   })}
                 </div>
-                <p className="text-[10px] text-muted-foreground">Pode escolher as duas bainhas — selecione a cor de cada uma.</p>
+                <p className="text-[10px] text-muted-foreground">
+                  A 1ª bainha já está inclusa no valor. Cada bainha adicional custa {BRL(BAINHA_ADICIONAL_PRECO)}.
+                </p>
                 {(cfg.bainhaIdxs ?? []).map((bi) => (
                   !!data.bainhas[bi]?.cores?.length && (
                     <div key={bi} className="flex flex-wrap gap-1.5 pt-1">
@@ -312,11 +314,69 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                 ))}
               </Secao>
 
+              {/* Personalização à laser — mesma regra do Novo Pedido */}
+              <Secao title="Personalização">
+                <Input value={cfg.textoLaser ?? ''} maxLength={60}
+                  onChange={(e) => onChange({ ...cfg, textoLaser: e.target.value })}
+                  placeholder="Texto da gravação (deixe vazio para sem gravação)" className="h-10 text-sm" />
+                <p className="text-[10px] text-muted-foreground">
+                  Gravação à laser: +{BRL(LASER_PRECO)} quando houver texto.
+                </p>
+              </Secao>
 
-              <div className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/15">
-                <span className="text-sm font-medium">Subtotal</span>
-                <span className="text-lg font-bold text-primary" data-numeric>{BRL(total)}</span>
+              <Secao title="Certificado">
+                <Input value={cfg.certificado ?? ''}
+                  onChange={(e) => onChange({ ...cfg, certificado: e.target.value })}
+                  placeholder={clienteNome || 'Nome que vai no certificado'} className="h-10 text-sm" />
+                <p className="text-[10px] text-muted-foreground">
+                  Preenchido com o nome do cliente — edite para presentes.
+                </p>
+              </Secao>
+
+              <Secao title="Embalagem (interno)">
+                <div className="flex flex-wrap gap-1.5">
+                  {EMBALAGENS.map((emb) => (
+                    <button key={emb} type="button"
+                      onClick={() => onChange({ ...cfg, embalagem: cfg.embalagem === emb ? '' : emb })}
+                      className={`px-3 py-2 rounded-full text-xs font-medium border transition-all
+                        ${cfg.embalagem === emb ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-border bg-background hover:bg-muted active:scale-95'}`}>
+                      {emb}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Uso interno de produção — não aparece para o cliente no checkout.
+                </p>
+              </Secao>
+
+              <div className="p-3 rounded-xl bg-primary/5 border border-primary/15 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Subtotal</span>
+                  <span className="text-lg font-bold text-primary" data-numeric>{BRL(total)}</span>
+                </div>
+                {manual ? (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Input type="number" min={0} step="0.01" value={cfg.subtotalManual ?? 0}
+                        onChange={(e) => onChange({ ...cfg, subtotalManual: e.target.value === '' ? 0 : Math.max(0, parseFloat(e.target.value) || 0) })}
+                        className="h-9 text-sm tabular-nums" />
+                      <Button type="button" variant="outline" size="sm" className="h-9 shrink-0 gap-1.5"
+                        onClick={() => onChange({ ...cfg, subtotalManual: null })}>
+                        <Eraser className="w-3.5 h-3.5" /> Calculado
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-amber-600 font-medium">
+                      Valor ajustado manualmente · calculado: {BRL(calculado)}
+                    </p>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => onChange({ ...cfg, subtotalManual: calculado })}
+                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors">
+                    <Pencil className="w-3 h-3" /> Editar subtotal manualmente
+                  </button>
+                )}
               </div>
+
             </>
           )}
 
