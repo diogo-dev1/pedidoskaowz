@@ -324,9 +324,10 @@ export function calcEntry(data: SimuladorData, e: PedidoEntry): number {
 /** Bloco de texto de uma entrada. */
 export function textoEntry(data: SimuladorData, e: PedidoEntry, n: number): string[] {
   if (e.kind === 'faca') return textoItem(data, e.faca, n);
-
   if (e.kind === 'avulso') return textoAvulso(data, e.avulso, n);
+  if (e.kind === 'catalogo') return textoCatalogo(e.catalogo, n);
   return textoCustom(e.custom, n);
+
 }
 
 /** Orçamento completo — formato "Pedido: / Item N: / Total:". Mistura facas e avulsos. */
