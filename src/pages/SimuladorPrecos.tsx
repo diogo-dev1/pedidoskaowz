@@ -947,9 +947,12 @@ export default function SimuladorPrecos() {
   const limparTudo = () => {
     setEntries([]);
     setExpandedId(null);
+    setTotalManual(null);
+    setEditandoTotal(false);
     if (navigator.vibrate) navigator.vibrate(20);
     toast.success('Limpo! Configurações resetadas.');
   };
+
 
   return (
     <div className="max-w-lg mx-auto py-4 px-1 sm:px-4 space-y-4 pb-44 md:pb-28">
