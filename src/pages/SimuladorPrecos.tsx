@@ -972,7 +972,15 @@ export default function SimuladorPrecos() {
         )}
       </div>
 
+      {/* Nome do cliente — alimenta o campo Certificado de cada faca */}
+      <div className="space-y-1">
+        <Label htmlFor="sp-cliente" className="text-[11px] text-muted-foreground uppercase tracking-wider">Cliente</Label>
+        <Input id="sp-cliente" value={clienteNome} onChange={(e) => setClienteNome(e.target.value)}
+          placeholder="Nome do cliente (usado no certificado)" className="h-10 text-sm" />
+      </div>
+
       {/* Cards de entrada — mobile first, minimalista */}
+
       <div className="grid grid-cols-3 gap-2">
         <button type="button" onClick={addFaca}
           className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-primary/20 bg-primary/5 p-3 text-center transition-all hover:border-primary/40 hover:bg-primary/10 active:scale-[0.97]">
