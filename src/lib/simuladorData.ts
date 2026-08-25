@@ -134,9 +134,10 @@ export function novaEntradaAvulso(adicionalIdx: number, quantidade = 1): PedidoE
   return { id: crypto.randomUUID(), kind: 'avulso', avulso: newAvulso(adicionalIdx, quantidade) };
 }
 
-export function novaEntradaCustom(descricao = '', preco = 0, quantidade = 1): PedidoEntry {
-  return { id: crypto.randomUUID(), kind: 'custom', custom: { id: crypto.randomUUID(), descricao, preco, quantidade } };
+export function novaEntradaCustom(descricao = '', preco = 0, quantidade = 1, brinde = false): PedidoEntry {
+  return { id: crypto.randomUUID(), kind: 'custom', custom: { id: crypto.randomUUID(), descricao, preco, quantidade, brinde } };
 }
+
 
 /** Regra da planilha: M usa P quando não definido; G cai para M→P. */
 export function precoClasse(p: Precos, c: Classe): number {
