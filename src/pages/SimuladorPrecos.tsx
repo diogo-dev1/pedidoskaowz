@@ -932,7 +932,20 @@ export default function SimuladorPrecos() {
   const updateCustom = (id: string, u: CustomCfg) =>
     setEntries((p) => p.map((e) => (e.id === id ? { ...e, custom: u } : e)));
 
+  // Certificado: preenche automaticamente com o nome do cliente (mantém edições manuais)
+  const certAutoRef = useRef('');
+  useEffect(() => {
+    const anterior = certAutoRef.current;
+    certAutoRef.current = clienteNome;
+    setEntries((p) => p.map((e) => (
+      e.kind === 'faca' && (!e.faca.certificado?.trim() || e.faca.certificado === anterior)
+        ? { ...e, faca: { ...e.faca, certificado: clienteNome } }
+        : e
+    )));
+  }, [clienteNome]);
+
   const totalCalculado = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
+
   const totalGeral = totalManual !== null ? totalManual : totalCalculado;
   const itensValidos = entries.filter((e) => e.kind === 'avulso' || e.kind === 'custom' || (e.kind === 'faca' && e.faca.modeloIdx !== null)).length;
   const orcamento = useMemo(() => gerarOrcamento(data, entries, totalGeral), [data, entries, totalGeral]);
