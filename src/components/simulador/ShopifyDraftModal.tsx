@@ -330,67 +330,91 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
 
             </div>
 
-            {/* Colar mensagem + IA */}
-            <div className="space-y-1.5">
-              <Label htmlFor="sh-colar" className="text-xs">Colar dados do cliente (WhatsApp)</Label>
-              <Textarea id="sh-colar" value={colado} onChange={(e) => setColado(e.target.value)}
-                rows={4} placeholder="Cole aqui a mensagem com nome, CPF, endereço..." className="text-xs resize-y" />
-              <Button variant="outline" className="w-full h-10 rounded-xl gap-2" onClick={preencherComIA} disabled={parsing}>
-                {parsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                Preencher automaticamente
-              </Button>
-            </div>
+            {/* Dados do cliente — colapsado por padrão */}
+            {!dadosExpandidos ? (
+              <div className="space-y-0.5">
+                <button
+                  type="button"
+                  onClick={() => setDadosExpandidos(true)}
+                  className="text-xs text-primary underline-offset-4 hover:underline"
+                >
+                  Colar dados do cliente (manualmente)
+                </button>
+                <p className="text-[10px] text-muted-foreground">(cliente preenche dados no checkout)</p>
+              </div>
+            ) : (
+              <div className="space-y-4 rounded-xl border p-3">
+                {/* Colar mensagem + IA */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="sh-colar" className="text-xs">Colar dados do cliente (WhatsApp)</Label>
+                  <Textarea id="sh-colar" value={colado} onChange={(e) => setColado(e.target.value)}
+                    rows={3} placeholder="Cole aqui a mensagem com nome, CPF, endereço..." className="text-xs resize-y" />
+                  <Button variant="outline" className="w-full h-10 rounded-xl gap-2" onClick={preencherComIA} disabled={parsing}>
+                    {parsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    Preencher automaticamente
+                  </Button>
+                </div>
 
-            {/* Cliente */}
-            <div className="grid grid-cols-1 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="sh-nome" className="text-xs">Nome (opcional)</Label>
-                <Input id="sh-nome" value={nome} onChange={(e) => { setNome(e.target.value); onNomeChange?.(e.target.value); }} className="h-10" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="sh-tel" className="text-xs">Telefone</Label>
-                  <Input id="sh-tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" className="h-10" />
+                {/* Cliente */}
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sh-nome" className="text-xs">Nome (opcional)</Label>
+                    <Input id="sh-nome" value={nome} onChange={(e) => { setNome(e.target.value); onNomeChange?.(e.target.value); }} className="h-10" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="sh-tel" className="text-xs">Telefone</Label>
+                      <Input id="sh-tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" className="h-10" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="sh-email" className="text-xs">E-mail</Label>
+                      <Input id="sh-email" value={email} onChange={(e) => setEmail(e.target.value)} inputMode="email" className="h-10" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="sh-cpf" className="text-xs">CPF</Label>
+                      <Input id="sh-cpf" value={cpf} onChange={(e) => setCpf(e.target.value)} inputMode="numeric" className="h-10" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="sh-nasc" className="text-xs">Nascimento</Label>
+                      <Input id="sh-nasc" value={nascimento} onChange={(e) => setNascimento(e.target.value)} placeholder="dd/mm/aaaa" className="h-10" />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="sh-email" className="text-xs">E-mail</Label>
-                  <Input id="sh-email" value={email} onChange={(e) => setEmail(e.target.value)} inputMode="email" className="h-10" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="sh-cpf" className="text-xs">CPF</Label>
-                  <Input id="sh-cpf" value={cpf} onChange={(e) => setCpf(e.target.value)} inputMode="numeric" className="h-10" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="sh-nasc" className="text-xs">Nascimento</Label>
-                  <Input id="sh-nasc" value={nascimento} onChange={(e) => setNascimento(e.target.value)} placeholder="dd/mm/aaaa" className="h-10" />
-                </div>
-              </div>
-            </div>
 
-            {/* Endereço opcional */}
-            <details className="rounded-xl border p-3">
-              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Endereço (opcional)
-              </summary>
-              <div className="mt-3 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <Input value={cep} onChange={(e) => setCep(e.target.value)} placeholder="CEP" className="h-10" />
-                  <Input value={estado} onChange={(e) => setEstado(e.target.value)} placeholder="UF" className="h-10" />
-                </div>
-                <Input value={cidade} onChange={(e) => setCidade(e.target.value)} placeholder="Cidade" className="h-10" />
-                <Input value={bairro} onChange={(e) => setBairro(e.target.value)} placeholder="Bairro" className="h-10" />
-                <div className="grid grid-cols-3 gap-3">
-                  <Input value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua" className="h-10 col-span-2" />
-                  <Input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="Nº" className="h-10" />
-                </div>
-                <Input value={complemento} onChange={(e) => setComplemento(e.target.value)} placeholder="Complemento" className="h-10" />
-                <p className="text-[10px] text-muted-foreground">
-                  Se ficar em branco, o cliente preenche o endereço e escolhe o frete no checkout da loja.
-                </p>
+                {/* Endereço opcional */}
+                <details className="rounded-xl border p-3">
+                  <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Endereço (opcional)
+                  </summary>
+                  <div className="mt-3 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input value={cep} onChange={(e) => setCep(e.target.value)} placeholder="CEP" className="h-10" />
+                      <Input value={estado} onChange={(e) => setEstado(e.target.value)} placeholder="UF" className="h-10" />
+                    </div>
+                    <Input value={cidade} onChange={(e) => setCidade(e.target.value)} placeholder="Cidade" className="h-10" />
+                    <Input value={bairro} onChange={(e) => setBairro(e.target.value)} placeholder="Bairro" className="h-10" />
+                    <div className="grid grid-cols-3 gap-3">
+                      <Input value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua" className="h-10 col-span-2" />
+                      <Input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="Nº" className="h-10" />
+                    </div>
+                    <Input value={complemento} onChange={(e) => setComplemento(e.target.value)} placeholder="Complemento" className="h-10" />
+                    <p className="text-[10px] text-muted-foreground">
+                      Se ficar em branco, o cliente preenche o endereço e escolhe o frete no checkout da loja.
+                    </p>
+                  </div>
+                </details>
+
+                <button
+                  type="button"
+                  onClick={() => setDadosExpandidos(false)}
+                  className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Ocultar dados do cliente
+                </button>
               </div>
-            </details>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="sh-obs" className="text-xs">Observação do pedido</Label>
