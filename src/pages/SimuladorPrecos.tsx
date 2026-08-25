@@ -17,8 +17,9 @@ import CatalogoShopifyPicker, { type ProdutoShopify } from '@/components/simulad
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
-  novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, espacadorIdx, nomeBainha,
-  nomeCatalogo, calcCatalogo,
+  novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, novaEntradaFacaDeCatalogo,
+  espacadorIdx, nomeBainha, nomeCatalogo, calcCatalogo,
+
   BAINHA_ADICIONAL_PRECO, LASER_PRECO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
   type CatalogoCfg,
@@ -171,10 +172,20 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
 
       {expanded && (
         <div className="px-4 pb-4 space-y-5 border-t pt-4">
+          {cfg.origem && (
+            <div className="flex items-center gap-2 rounded-lg border border-dashed bg-muted/30 px-2.5 py-1.5">
+              <ShoppingBag className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+              <span className="text-[10px] text-muted-foreground truncate">
+                Base do site: {cfg.origem.produtoTitulo}{cfg.origem.varianteTitulo ? ` — ${cfg.origem.varianteTitulo}` : ''}
+              </span>
+            </div>
+          )}
+
           <Secao title="Modelo">
             <ModeloSearch modelos={data.modelos} currentIdx={cfg.modeloIdx}
-              onSelect={(i) => onChange({ ...newItem(), id: cfg.id, modeloIdx: i })} />
+              onSelect={(i) => onChange({ ...newItem(), id: cfg.id, modeloIdx: i, certificado: cfg.certificado, origem: cfg.origem })} />
           </Secao>
+
 
           {modelo && (
             <>
@@ -1034,13 +1045,15 @@ export default function SimuladorPrecos() {
     toast.success('Item adicionado!');
   };
   const addCatalogo = (p: ProdutoShopify) => {
-    const e = novaEntradaCatalogo({
+    const e = novaEntradaFacaDeCatalogo(data, {
       variantId: p.variantId, titulo: p.titulo, variante: p.variante, imagem: p.imagem, preco: p.preco,
     });
     setEntries((prev) => [...prev, e]);
+    setExpandedId(e.id);
     if (navigator.vibrate) navigator.vibrate(15);
-    toast.success('Produto adicionado!');
+    toast.success('Produto adicionado — ajuste as opções se precisar');
   };
+
   const escolherTipo = (t: 'catalogo' | 'faca' | 'avulso' | 'custom') => {
     if (t === 'catalogo') setCatalogoOpen(true);
     else if (t === 'faca') addFaca();
