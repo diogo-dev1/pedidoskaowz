@@ -1,5 +1,5 @@
 // Cria um Draft Order na Shopify a partir do Simulador de Preços.
-// Usa Admin API GraphQL com as secrets SHOPIFY_ADMIN_TOKEN e SHOPIFY_STORE_DOMAIN.
+// Autentica via client_credentials (SHOPIFY_CLIENT_ID/SECRET) contra SHOPIFY_STORE_DOMAIN.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
