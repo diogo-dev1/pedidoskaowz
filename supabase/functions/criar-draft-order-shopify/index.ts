@@ -242,7 +242,36 @@ Deno.serve(async (req) => {
       const tel = normalizaTelefone(cliente.telefone);
       if (tel) customAttributes.push({ key: 'Telefone', value: tel });
     }
-    if (payload.observacao?.trim()) input.note = payload.observacao.trim();
+    // Note do draft = observação + notas internas (visível só no admin, nunca no checkout)
+    const notaPartes: string[] = [];
+    if (payload.observacao?.trim()) notaPartes.push(payload.observacao.trim());
+    const internas = (payload.notasInternas ?? []).map((n) => String(n).trim()).filter(Boolean);
+    if (internas.length) notaPartes.push('[INTERNO]', ...internas);
+    if (notaPartes.length) input.note = notaPartes.join('\n');
+
+    // Total manual: aplica desconto (ou linha de acréscimo) sobre a soma dos itens
+    const somaItens = itens.reduce((s, i) => s + Number(i.price) * Math.max(1, Number(i.quantity) || 1), 0);
+    const desejado = Number(payload.totalDesejado);
+    if (Number.isFinite(desejado) && Math.abs(desejado - somaItens) >= 0.01) {
+      const diff = +(somaItens - desejado).toFixed(2);
+      if (diff > 0) {
+        input.appliedDiscount = {
+          title: 'Desconto',
+          description: 'Ajuste de valor do pedido',
+          valueType: 'FIXED_AMOUNT',
+          value: diff,
+        };
+      } else {
+        lineItems.push({
+          title: 'Ajuste de valor',
+          quantity: 1,
+          originalUnitPriceWithCurrency: { amount: Math.abs(diff).toFixed(2), currencyCode: 'BRL' },
+          requiresShipping: false,
+          customAttributes: [],
+        });
+      }
+    }
+
 
     const temEndereco = !!(end.endereco || end.cep || end.cidade);
     if (temEndereco) {
