@@ -217,15 +217,41 @@ export type Database = {
         }
         Relationships: []
       }
+      bling_lojas: {
+        Row: {
+          canal_normalizado: string | null
+          created_at: string
+          id: number
+          nome: string | null
+          updated_at: string
+        }
+        Insert: {
+          canal_normalizado?: string | null
+          created_at?: string
+          id: number
+          nome?: string | null
+          updated_at?: string
+        }
+        Update: {
+          canal_normalizado?: string | null
+          created_at?: string
+          id?: number
+          nome?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bling_pedidos: {
         Row: {
           bling_id: number
+          canal: string | null
           contato_bling_id: number | null
           created_at: string
           dados_completos: Json | null
           data: string | null
           id: string
           itens: Json | null
+          loja_id: number | null
           numero: string | null
           situacao: string | null
           total: number | null
@@ -233,12 +259,14 @@ export type Database = {
         }
         Insert: {
           bling_id: number
+          canal?: string | null
           contato_bling_id?: number | null
           created_at?: string
           dados_completos?: Json | null
           data?: string | null
           id?: string
           itens?: Json | null
+          loja_id?: number | null
           numero?: string | null
           situacao?: string | null
           total?: number | null
@@ -246,12 +274,14 @@ export type Database = {
         }
         Update: {
           bling_id?: number
+          canal?: string | null
           contato_bling_id?: number | null
           created_at?: string
           dados_completos?: Json | null
           data?: string | null
           id?: string
           itens?: Json | null
+          loja_id?: number | null
           numero?: string | null
           situacao?: string | null
           total?: number | null
@@ -264,6 +294,7 @@ export type Database = {
           erro: string | null
           finished_at: string | null
           id: string
+          progresso: Json | null
           started_at: string
           status: string
           tipo: string
@@ -273,6 +304,7 @@ export type Database = {
           erro?: string | null
           finished_at?: string | null
           id?: string
+          progresso?: Json | null
           started_at?: string
           status?: string
           tipo: string
@@ -282,10 +314,29 @@ export type Database = {
           erro?: string | null
           finished_at?: string | null
           id?: string
+          progresso?: Json | null
           started_at?: string
           status?: string
           tipo?: string
           total_registros?: number | null
+        }
+        Relationships: []
+      }
+      bling_sync_state: {
+        Row: {
+          chave: string
+          ultimo_sync_em: string | null
+          updated_at: string
+        }
+        Insert: {
+          chave: string
+          ultimo_sync_em?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chave?: string
+          ultimo_sync_em?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -695,6 +746,93 @@ export type Database = {
           nome?: string
           ordem?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      clientes_metricas: {
+        Row: {
+          atualizado_em: string
+          canais: string[]
+          cidade: string | null
+          contato_bling_id: number
+          documento: string | null
+          email: string | null
+          nome: string | null
+          primeiro_pedido_em: string | null
+          produtos: string[]
+          qtd_pedidos: number
+          telefone_whatsapp: string | null
+          ticket_medio: number
+          tipo_pessoa: string | null
+          total_gasto: number
+          uf: string | null
+          ultimo_pedido_em: string | null
+          whatsapp_valido: boolean
+        }
+        Insert: {
+          atualizado_em?: string
+          canais?: string[]
+          cidade?: string | null
+          contato_bling_id: number
+          documento?: string | null
+          email?: string | null
+          nome?: string | null
+          primeiro_pedido_em?: string | null
+          produtos?: string[]
+          qtd_pedidos?: number
+          telefone_whatsapp?: string | null
+          ticket_medio?: number
+          tipo_pessoa?: string | null
+          total_gasto?: number
+          uf?: string | null
+          ultimo_pedido_em?: string | null
+          whatsapp_valido?: boolean
+        }
+        Update: {
+          atualizado_em?: string
+          canais?: string[]
+          cidade?: string | null
+          contato_bling_id?: number
+          documento?: string | null
+          email?: string | null
+          nome?: string | null
+          primeiro_pedido_em?: string | null
+          produtos?: string[]
+          qtd_pedidos?: number
+          telefone_whatsapp?: string | null
+          ticket_medio?: number
+          tipo_pessoa?: string | null
+          total_gasto?: number
+          uf?: string | null
+          ultimo_pedido_em?: string | null
+          whatsapp_valido?: boolean
+        }
+        Relationships: []
+      }
+      clientes_produtos: {
+        Row: {
+          contato_bling_id: number
+          produto_normalizado: string
+          produto_original: string | null
+          qtd_total: number
+          ultima_compra_em: string | null
+          valor_total: number
+        }
+        Insert: {
+          contato_bling_id: number
+          produto_normalizado: string
+          produto_original?: string | null
+          qtd_total?: number
+          ultima_compra_em?: string | null
+          valor_total?: number
+        }
+        Update: {
+          contato_bling_id?: number
+          produto_normalizado?: string
+          produto_original?: string | null
+          qtd_total?: number
+          ultima_compra_em?: string | null
+          valor_total?: number
         }
         Relationships: []
       }
@@ -2333,6 +2471,12 @@ export type Database = {
       calcular_prazo_uteis: { Args: { dias: number }; Returns: string }
       gerar_numero_pedido: { Args: never; Returns: string }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      normalizar_nome_produto: { Args: { nome: string }; Returns: string }
+      normalizar_telefone_wpp: { Args: { tel: string }; Returns: string }
+      recalcular_metricas_clientes: {
+        Args: { p_contato_ids?: number[] }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
