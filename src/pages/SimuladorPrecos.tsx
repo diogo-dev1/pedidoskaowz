@@ -8,18 +8,22 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Calculator, Plus, Minus, Trash2, Copy, MessageCircle, Search, X,
   ChevronDown, ChevronUp, CopyPlus, Send, Loader2, Check, ClipboardCheck, Eraser,
-  Hammer, PackagePlus, Pencil, FilePlus2, ShoppingBag,
+  Hammer, PackagePlus, Pencil, FilePlus2, ShoppingBag, PlusCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import ShopifyDraftModal from '@/components/simulador/ShopifyDraftModal';
+import CatalogoShopifyPicker, { type ProdutoShopify } from '@/components/simulador/CatalogoShopifyPicker';
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
-  novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, espacadorIdx, nomeBainha,
+  novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, espacadorIdx, nomeBainha,
+  nomeCatalogo, calcCatalogo,
   BAINHA_ADICIONAL_PRECO, LASER_PRECO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
+  type CatalogoCfg,
 } from '@/lib/simuladorData';
+
 
 
 
@@ -607,6 +611,126 @@ function CustomDialog({ open, onOpenChange, initial, onSave }: {
 }
 
 
+/* ════════════════ Produto do catálogo Shopify ════════════════ */
+
+function CatalogoRow({ cfg, onChange, onRemove, expanded, onToggle }: {
+  cfg: CatalogoCfg; onChange: (c: CatalogoCfg) => void; onRemove: () => void;
+  expanded: boolean; onToggle: () => void;
+}) {
+  const subtotal = calcCatalogo(cfg);
+  const editado = Math.abs(cfg.preco - cfg.precoOriginal) >= 0.01;
+  return (
+    <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
+      <button type="button" onClick={onToggle}
+        className="w-full flex items-center gap-3 p-3 hover:bg-muted/30 active:bg-muted/50 transition-colors text-left">
+        {cfg.imagem ? (
+          <img src={cfg.imagem} alt={cfg.titulo} loading="lazy" className="h-11 w-11 rounded-xl object-cover bg-muted flex-shrink-0" />
+        ) : (
+          <span className="h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+            <ShoppingBag className="w-4 h-4" />
+          </span>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm truncate">{nomeCatalogo(cfg)}</p>
+          <p className="text-[11px] text-muted-foreground truncate">
+            Produto do site{cfg.quantidade > 1 ? ` · ${cfg.quantidade} un` : ''}
+            {editado && <span className="text-amber-600 font-medium"> · preço ajustado</span>}
+          </p>
+        </div>
+        <span className="text-base font-bold text-primary flex-shrink-0" data-numeric>{BRL(subtotal)}</span>
+        {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 pt-3 border-t space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quantidade</span>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => onChange({ ...cfg, quantidade: Math.max(1, cfg.quantidade - 1) })}
+                disabled={cfg.quantidade <= 1}
+                className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-muted active:scale-95 transition-all disabled:opacity-30">
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="w-7 text-center text-base font-semibold tabular-nums">{cfg.quantidade}</span>
+              <button type="button" onClick={() => onChange({ ...cfg, quantidade: cfg.quantidade + 1 })}
+                className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-muted active:scale-95 transition-all">
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Preço por unidade</span>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                <Input type="number" min={0} step="0.01" value={cfg.preco}
+                  onChange={(e) => onChange({ ...cfg, preco: e.target.value === '' ? 0 : Math.max(0, parseFloat(e.target.value) || 0) })}
+                  className="h-11 pl-9 text-base tabular-nums font-semibold" />
+              </div>
+              {editado && (
+                <Button type="button" variant="outline" size="sm" className="h-11 shrink-0 gap-1.5"
+                  onClick={() => onChange({ ...cfg, preco: cfg.precoOriginal })}>
+                  <Eraser className="w-3.5 h-3.5" /> Site
+                </Button>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Preço do site: {BRL(cfg.precoOriginal)}. O valor digitado aqui é o que vale no pedido.
+            </p>
+          </div>
+
+          <button type="button" onClick={onRemove}
+            className="w-full flex items-center justify-center gap-2 py-2.5 text-xs text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-muted/50">
+            <Trash2 className="w-3.5 h-3.5" /> Remover
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════ Seletor: que tipo de item é esse? ════════════════ */
+
+type TipoItem = 'catalogo' | 'faca' | 'avulso' | 'custom';
+
+function TipoItemDialog({ open, onOpenChange, onPick }: {
+  open: boolean; onOpenChange: (v: boolean) => void; onPick: (t: TipoItem) => void;
+}) {
+  const opcoes: { tipo: TipoItem; icone: React.ReactNode; titulo: string; desc: string; cor: string }[] = [
+    { tipo: 'catalogo', icone: <ShoppingBag className="h-5 w-5" />, titulo: 'Buscar no site', desc: 'Produto que já está à venda no site, com o preço de lá', cor: 'bg-primary text-primary-foreground' },
+    { tipo: 'faca', icone: <Hammer className="h-5 w-5" />, titulo: 'Montar faca do zero', desc: 'Escolher modelo, aço, empunhadura, acabamento e bainha', cor: 'bg-primary text-primary-foreground' },
+    { tipo: 'avulso', icone: <PackagePlus className="h-5 w-5" />, titulo: 'Adicionar acessório', desc: 'Strop, clipe, patch, café e outros itens já com preço', cor: 'bg-accent text-accent-foreground' },
+    { tipo: 'custom', icone: <FilePlus2 className="h-5 w-5" />, titulo: 'Item avulso / outro', desc: 'Qualquer coisa fora da lista: você escreve e define o valor', cor: 'bg-secondary text-secondary-foreground' },
+  ];
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-2xl">
+        <DialogHeader>
+          <DialogTitle>Que tipo de item é esse?</DialogTitle>
+          <DialogDescription>Escolha uma das opções abaixo para adicionar ao pedido.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          {opcoes.map((o) => (
+            <button key={o.tipo} type="button"
+              onClick={() => { onOpenChange(false); onPick(o.tipo); }}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all hover:border-primary/40 hover:bg-muted/40 active:scale-[0.99]">
+              <span className={`flex h-11 w-11 items-center justify-center rounded-xl flex-shrink-0 shadow-sm ${o.cor}`}>
+                {o.icone}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold leading-tight">{o.titulo}</span>
+                <span className="block text-[11px] text-muted-foreground leading-snug">{o.desc}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
 /* ════════════════ Formulário "Shot Fair" (Google Forms) ════════════════ */
 // Registro do pedido vendido. IDs extraídos do próprio formulário.
 const FORM_ID = '1FAIpQLSfMW6dFNHZq9-dPUjK_mB9obx3iiaTTG58dT18t9a8PDd1ooQ';
@@ -895,6 +1019,8 @@ export default function SimuladorPrecos() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
   const [shopifyOpen, setShopifyOpen] = useState(false);
+  const [tipoOpen, setTipoOpen] = useState(false);
+  const [catalogoOpen, setCatalogoOpen] = useState(false);
   const [clienteNome, setClienteNome] = useState('');
   const [totalManual, setTotalManual] = useState<number | null>(null);
   const [editandoTotal, setEditandoTotal] = useState(false);
@@ -907,6 +1033,21 @@ export default function SimuladorPrecos() {
     if (navigator.vibrate) navigator.vibrate(15);
     toast.success('Item adicionado!');
   };
+  const addCatalogo = (p: ProdutoShopify) => {
+    const e = novaEntradaCatalogo({
+      variantId: p.variantId, titulo: p.titulo, variante: p.variante, imagem: p.imagem, preco: p.preco,
+    });
+    setEntries((prev) => [...prev, e]);
+    if (navigator.vibrate) navigator.vibrate(15);
+    toast.success('Produto adicionado!');
+  };
+  const escolherTipo = (t: 'catalogo' | 'faca' | 'avulso' | 'custom') => {
+    if (t === 'catalogo') setCatalogoOpen(true);
+    else if (t === 'faca') addFaca();
+    else if (t === 'avulso') setPickerOpen(true);
+    else setCustomOpen(true);
+  };
+
 
   const duplicateItem = (id: string) => {
     setEntries((p) => {
@@ -931,6 +1072,9 @@ export default function SimuladorPrecos() {
     setEntries((p) => p.map((e) => (e.id === id ? { ...e, avulso: u } : e)));
   const updateCustom = (id: string, u: CustomCfg) =>
     setEntries((p) => p.map((e) => (e.id === id ? { ...e, custom: u } : e)));
+  const updateCatalogo = (id: string, u: CatalogoCfg) =>
+    setEntries((p) => p.map((e) => (e.id === id ? { ...e, catalogo: u } : e)));
+
 
   // Certificado: preenche automaticamente com o nome do cliente (mantém edições manuais)
   const certAutoRef = useRef('');
@@ -947,7 +1091,7 @@ export default function SimuladorPrecos() {
   const totalCalculado = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
 
   const totalGeral = totalManual !== null ? totalManual : totalCalculado;
-  const itensValidos = entries.filter((e) => e.kind === 'avulso' || e.kind === 'custom' || (e.kind === 'faca' && e.faca.modeloIdx !== null)).length;
+  const itensValidos = entries.filter((e) => e.kind !== 'faca' || e.faca.modeloIdx !== null).length;
   const orcamento = useMemo(() => gerarOrcamento(data, entries, totalGeral), [data, entries, totalGeral]);
 
 
@@ -992,41 +1136,20 @@ export default function SimuladorPrecos() {
           placeholder="Nome do cliente (usado no certificado)" className="h-10 text-sm" />
       </div>
 
-      {/* Cards de entrada — mobile first, minimalista */}
+      {/* Um único botão principal — o tipo do item é escolhido no seletor */}
+      <Button type="button" onClick={() => setTipoOpen(true)}
+        className="w-full h-14 rounded-2xl gap-2 text-base font-bold shadow-sm">
+        <PlusCircle className="h-5 w-5" /> Adicionar item
+      </Button>
 
-      <div className="grid grid-cols-3 gap-2">
-        <button type="button" onClick={addFaca}
-          className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-primary/20 bg-primary/5 p-3 text-center transition-all hover:border-primary/40 hover:bg-primary/10 active:scale-[0.97]">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <Hammer className="h-4 w-4" />
-          </span>
-          <span className="text-xs font-bold leading-tight">Montar Faca</span>
-          <span className="text-[10px] text-muted-foreground leading-tight">
-            {entries.some(e => e.kind === 'faca') ? 'Adicionar mais uma' : 'Adicionar uma nova faca'}
-          </span>
-        </button>
-        <button type="button" onClick={() => setCustomOpen(true)}
-          className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-primary/20 bg-primary/5 p-3 text-center transition-all hover:border-primary/40 hover:bg-primary/10 active:scale-[0.97]">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <FilePlus2 className="h-4 w-4" />
-          </span>
-          <span className="text-xs font-bold leading-tight">Itens não cadastrados</span>
-          <span className="text-[10px] text-muted-foreground leading-tight">Descrição + valor livre</span>
-        </button>
-        <button type="button" onClick={() => setPickerOpen(true)}
-          className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-accent/20 bg-accent/5 p-3 text-center transition-all hover:border-accent/40 hover:bg-accent/10 active:scale-[0.97]">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-sm">
-            <PackagePlus className="h-4 w-4" />
-          </span>
-          <span className="text-xs font-bold leading-tight">Item à parte</span>
-          <span className="text-[10px] text-muted-foreground leading-tight">
-            {entries.some(e => e.kind === 'avulso') ? 'Adicionar mais um' : 'Strop, clipe, café..'}
-          </span>
-        </button>
-      </div>
+      {entries.length === 0 && (
+        <p className="text-center text-xs text-muted-foreground px-6">
+          Toque em <strong>Adicionar item</strong> e responda: que tipo de item é esse?
+        </p>
+      )}
 
       {entries.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {entries.map((e, idx) => {
             if (e.kind === 'faca') return (
               <ItemCard key={e.id} data={data} cfg={e.faca} index={idx}
@@ -1044,6 +1167,13 @@ export default function SimuladorPrecos() {
                 onChange={(u) => updateAvulso(e.id, u)}
                 onRemove={() => removeEntry(e.id)} />
             );
+            if (e.kind === 'catalogo') return (
+              <CatalogoRow key={e.id} cfg={e.catalogo}
+                onChange={(u) => updateCatalogo(e.id, u)}
+                onRemove={() => removeEntry(e.id)}
+                expanded={expandedId === e.id}
+                onToggle={() => setExpandedId(expandedId === e.id ? null : e.id)} />
+            );
             return (
               <CustomRow key={e.id} cfg={e.custom}
                 onChange={(u) => updateCustom(e.id, u)}
@@ -1052,6 +1182,7 @@ export default function SimuladorPrecos() {
           })}
         </div>
       )}
+
 
       {/* Footer fixo — acima da bottom nav no mobile */}
       <div className="fixed left-0 right-0 bg-background/95 backdrop-blur-lg border-t z-40 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0">
@@ -1102,7 +1233,12 @@ export default function SimuladorPrecos() {
         </div>
       </div>
 
+      <TipoItemDialog open={tipoOpen} onOpenChange={setTipoOpen} onPick={escolherTipo} />
+
+      <CatalogoShopifyPicker open={catalogoOpen} onOpenChange={setCatalogoOpen} onPick={addCatalogo} />
+
       <AvulsoPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} data={data} onPick={addAvulso} />
+
 
       <CustomDialog open={customOpen} onOpenChange={setCustomOpen}
         onSave={({ descricao, preco, brinde }) => {

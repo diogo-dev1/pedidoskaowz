@@ -13,7 +13,10 @@ interface LineItemIn {
   quantity: number;
   price: number;
   properties?: { name: string; value: string }[];
+  /** Variante real da Shopify (gid://shopify/ProductVariant/...) */
+  variantId?: string;
 }
+
 
 interface Payload {
   itens: LineItemIn[];
@@ -116,7 +119,7 @@ const CUSTOMER_CREATE = `
 const DRAFT_CREATE = `
   mutation($input: DraftOrderInput!) {
     draftOrderCreate(input: $input) {
-      draftOrder { id name invoiceUrl totalPriceSet { shopMoney { amount currencyCode } } }
+      draftOrder { id name invoiceUrl totalPriceSet { shopMoney { amount currencyCode } } lineItems(first: 30) { edges { node { title quantity originalUnitPriceSet { shopMoney { amount } } } } } }
       userErrors { field message }
     }
   }`;
@@ -208,18 +211,33 @@ Deno.serve(async (req) => {
 
     const customerId = await resolveCustomer(cliente, metafields);
 
-    const lineItems = itens.map((i) => ({
-      title: i.title,
-      quantity: Math.max(1, Number(i.quantity) || 1),
-      originalUnitPriceWithCurrency: {
+    const lineItems: Record<string, unknown>[] = itens.map((i) => {
+      const base: Record<string, unknown> = {
+        quantity: Math.max(1, Number(i.quantity) || 1),
+        customAttributes: (i.properties ?? [])
+          .filter((p) => p?.name && p?.value)
+          .map((p) => ({ key: p.name.slice(0, 100), value: String(p.value).slice(0, 500) })),
+      };
+      if (i.variantId) {
+        // Produto real do catálogo: usa a variante (baixa estoque / relatórios por produto).
+        base.variantId = i.variantId;
+        // Preço editado no simulador → sobrescreve o preço da variante.
+        base.priceOverride = {
+          amount: Number(i.price).toFixed(2),
+          currencyCode: 'BRL',
+        };
+        return base;
+      }
+
+      base.title = i.title;
+      base.requiresShipping = true;
+      base.originalUnitPriceWithCurrency = {
         amount: Number(i.price).toFixed(2),
         currencyCode: 'BRL',
-      },
-      requiresShipping: true,
-      customAttributes: (i.properties ?? [])
-        .filter((p) => p?.name && p?.value)
-        .map((p) => ({ key: p.name.slice(0, 100), value: String(p.value).slice(0, 500) })),
-    }));
+      };
+      return base;
+    });
+
 
     // Atributos do pedido (CPF/nascimento também aqui, para visibilidade)
     const customAttributes: { key: string; value: string }[] = [];
@@ -311,6 +329,7 @@ Deno.serve(async (req) => {
       invoiceUrl: draft?.invoiceUrl,
       total: draft?.totalPriceSet?.shopMoney?.amount,
       cliente_vinculado: !!customerId,
+      linhas: (draft?.lineItems?.edges ?? []).map((e: any) => ({ t: e.node.title, q: e.node.quantity, p: e.node.originalUnitPriceSet?.shopMoney?.amount })),
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error: any) {

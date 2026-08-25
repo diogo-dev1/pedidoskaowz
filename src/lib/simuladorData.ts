@@ -88,12 +88,29 @@ export interface CustomCfg {
   brinde?: boolean;
 }
 
+/** Produto real do catálogo Shopify (variante). Baixa estoque no draft order. */
+export interface CatalogoCfg {
+  id: string;
+  variantId: string;      // gid://shopify/ProductVariant/...
+  titulo: string;
+  variante: string;
+  imagem?: string | null;
+  /** Preço cadastrado na Shopify (referência) */
+  precoOriginal: number;
+  /** Preço praticado (editável). É esse que vale. */
+  preco: number;
+  quantidade: number;
+}
 
-/** Uma entrada do pedido: faca configurada, item avulso ou item personalizado. */
+
+/** Uma entrada do pedido: faca configurada, item avulso, item personalizado
+ *  ou produto do catálogo Shopify. */
 export type PedidoEntry =
   | { id: string; kind: 'faca'; faca: ItemCfg }
   | { id: string; kind: 'avulso'; avulso: AvulsoCfg }
-  | { id: string; kind: 'custom'; custom: CustomCfg };
+  | { id: string; kind: 'custom'; custom: CustomCfg }
+  | { id: string; kind: 'catalogo'; catalogo: CatalogoCfg };
+
 
 export const BRL = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
@@ -137,6 +154,26 @@ export function novaEntradaAvulso(adicionalIdx: number, quantidade = 1): PedidoE
 export function novaEntradaCustom(descricao = '', preco = 0, quantidade = 1, brinde = false): PedidoEntry {
   return { id: crypto.randomUUID(), kind: 'custom', custom: { id: crypto.randomUUID(), descricao, preco, quantidade, brinde } };
 }
+
+export function novaEntradaCatalogo(p: {
+  variantId: string; titulo: string; variante?: string; imagem?: string | null; preco: number;
+}): PedidoEntry {
+  return {
+    id: crypto.randomUUID(),
+    kind: 'catalogo',
+    catalogo: {
+      id: crypto.randomUUID(),
+      variantId: p.variantId,
+      titulo: p.titulo,
+      variante: p.variante ?? '',
+      imagem: p.imagem ?? null,
+      precoOriginal: p.preco,
+      preco: p.preco,
+      quantidade: 1,
+    },
+  };
+}
+
 
 
 /** Regra da planilha: M usa P quando não definido; G cai para M→P. */
@@ -256,10 +293,31 @@ export function textoCustom(cfg: CustomCfg, n: number): string[] {
 }
 
 
+/** Nome legível de um produto do catálogo Shopify. */
+export function nomeCatalogo(cfg: CatalogoCfg): string {
+  return cfg.variante ? `${cfg.titulo} — ${cfg.variante}` : cfg.titulo;
+}
+
+/** Valor total de um produto do catálogo Shopify (usa o preço editado). */
+export function calcCatalogo(cfg: CatalogoCfg): number {
+  return Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
+}
+
+/** Bloco de texto de um produto do catálogo Shopify. */
+export function textoCatalogo(cfg: CatalogoCfg, n: number): string[] {
+  const qtd = cfg.quantidade > 1 ? ` x${cfg.quantidade}` : '';
+  return [
+    `Item ${n}:`,
+    `${nomeCatalogo(cfg)}${qtd}`,
+    `Valor: ${BRL(calcCatalogo(cfg))}`,
+  ];
+}
+
 /** Valor total de uma entrada. */
 export function calcEntry(data: SimuladorData, e: PedidoEntry): number {
   if (e.kind === 'faca') return calcItem(data, e.faca);
   if (e.kind === 'avulso') return calcAvulso(data, e.avulso);
+  if (e.kind === 'catalogo') return calcCatalogo(e.catalogo);
   return calcCustom(e.custom);
 }
 
@@ -267,7 +325,9 @@ export function calcEntry(data: SimuladorData, e: PedidoEntry): number {
 export function textoEntry(data: SimuladorData, e: PedidoEntry, n: number): string[] {
   if (e.kind === 'faca') return textoItem(data, e.faca, n);
   if (e.kind === 'avulso') return textoAvulso(data, e.avulso, n);
+  if (e.kind === 'catalogo') return textoCatalogo(e.catalogo, n);
   return textoCustom(e.custom, n);
+
 }
 
 /** Orçamento completo — formato "Pedido: / Item N: / Total:". Mistura facas e avulsos. */
