@@ -293,16 +293,38 @@ export function textoCustom(cfg: CustomCfg, n: number): string[] {
 }
 
 
+/** Nome legível de um produto do catálogo Shopify. */
+export function nomeCatalogo(cfg: CatalogoCfg): string {
+  return cfg.variante ? `${cfg.titulo} — ${cfg.variante}` : cfg.titulo;
+}
+
+/** Valor total de um produto do catálogo Shopify (usa o preço editado). */
+export function calcCatalogo(cfg: CatalogoCfg): number {
+  return Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
+}
+
+/** Bloco de texto de um produto do catálogo Shopify. */
+export function textoCatalogo(cfg: CatalogoCfg, n: number): string[] {
+  const qtd = cfg.quantidade > 1 ? ` x${cfg.quantidade}` : '';
+  return [
+    `Item ${n}:`,
+    `${nomeCatalogo(cfg)}${qtd}`,
+    `Valor: ${BRL(calcCatalogo(cfg))}`,
+  ];
+}
+
 /** Valor total de uma entrada. */
 export function calcEntry(data: SimuladorData, e: PedidoEntry): number {
   if (e.kind === 'faca') return calcItem(data, e.faca);
   if (e.kind === 'avulso') return calcAvulso(data, e.avulso);
+  if (e.kind === 'catalogo') return calcCatalogo(e.catalogo);
   return calcCustom(e.custom);
 }
 
 /** Bloco de texto de uma entrada. */
 export function textoEntry(data: SimuladorData, e: PedidoEntry, n: number): string[] {
   if (e.kind === 'faca') return textoItem(data, e.faca, n);
+
   if (e.kind === 'avulso') return textoAvulso(data, e.avulso, n);
   return textoCustom(e.custom, n);
 }
