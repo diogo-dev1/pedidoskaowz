@@ -119,7 +119,7 @@ const CUSTOMER_CREATE = `
 const DRAFT_CREATE = `
   mutation($input: DraftOrderInput!) {
     draftOrderCreate(input: $input) {
-      draftOrder { id name invoiceUrl totalPriceSet { shopMoney { amount currencyCode } } }
+      draftOrder { id name invoiceUrl totalPriceSet { shopMoney { amount currencyCode } } lineItems(first: 30) { edges { node { title quantity originalUnitPriceSet { shopMoney { amount } } } } } }
       userErrors { field message }
     }
   }`;
@@ -328,6 +328,7 @@ Deno.serve(async (req) => {
       invoiceUrl: draft?.invoiceUrl,
       total: draft?.totalPriceSet?.shopMoney?.amount,
       cliente_vinculado: !!customerId,
+      linhas: (draft?.lineItems?.edges ?? []).map((e: any) => ({ t: e.node.title, q: e.node.quantity, p: e.node.originalUnitPriceSet?.shopMoney?.amount })),
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error: any) {
