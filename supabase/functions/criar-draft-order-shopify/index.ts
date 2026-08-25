@@ -34,7 +34,12 @@ interface Payload {
     complemento?: string;
   };
   observacao?: string;
+  /** Notas internas (ex.: embalagem) — vão só na note do draft, nunca no checkout */
+  notasInternas?: string[];
+  /** Total manual do pedido — aplica desconto/acréscimo sobre a soma dos itens */
+  totalDesejado?: number;
 }
+
 
 function resolveDomain(): string {
   const raw = Deno.env.get('SHOPIFY_STORE_DOMAIN') ?? Deno.env.get('SHOPIFY_SHOP')
