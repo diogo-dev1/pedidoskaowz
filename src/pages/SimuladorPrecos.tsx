@@ -1019,6 +1019,8 @@ export default function SimuladorPrecos() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
   const [shopifyOpen, setShopifyOpen] = useState(false);
+  const [tipoOpen, setTipoOpen] = useState(false);
+  const [catalogoOpen, setCatalogoOpen] = useState(false);
   const [clienteNome, setClienteNome] = useState('');
   const [totalManual, setTotalManual] = useState<number | null>(null);
   const [editandoTotal, setEditandoTotal] = useState(false);
@@ -1031,6 +1033,21 @@ export default function SimuladorPrecos() {
     if (navigator.vibrate) navigator.vibrate(15);
     toast.success('Item adicionado!');
   };
+  const addCatalogo = (p: ProdutoShopify) => {
+    const e = novaEntradaCatalogo({
+      variantId: p.variantId, titulo: p.titulo, variante: p.variante, imagem: p.imagem, preco: p.preco,
+    });
+    setEntries((prev) => [...prev, e]);
+    if (navigator.vibrate) navigator.vibrate(15);
+    toast.success('Produto adicionado!');
+  };
+  const escolherTipo = (t: 'catalogo' | 'faca' | 'avulso' | 'custom') => {
+    if (t === 'catalogo') setCatalogoOpen(true);
+    else if (t === 'faca') addFaca();
+    else if (t === 'avulso') setPickerOpen(true);
+    else setCustomOpen(true);
+  };
+
 
   const duplicateItem = (id: string) => {
     setEntries((p) => {
