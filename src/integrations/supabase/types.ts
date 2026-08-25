@@ -2386,30 +2386,30 @@ export type Database = {
         Row: {
           contatado_em: string | null
           contatado_por: string | null
+          contato_bling_id: number
           created_at: string
           id: string
           observacoes: string | null
-          order_id: string
           status: string
           updated_at: string
         }
         Insert: {
           contatado_em?: string | null
           contatado_por?: string | null
+          contato_bling_id: number
           created_at?: string
           id?: string
           observacoes?: string | null
-          order_id: string
           status?: string
           updated_at?: string
         }
         Update: {
           contatado_em?: string | null
           contatado_por?: string | null
+          contato_bling_id?: number
           created_at?: string
           id?: string
           observacoes?: string | null
-          order_id?: string
           status?: string
           updated_at?: string
         }
@@ -2445,6 +2445,33 @@ export type Database = {
         }
         Relationships: []
       }
+      upsell_segmentos: {
+        Row: {
+          created_at: string
+          filtros: Json
+          id: string
+          nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filtros?: Json
+          id?: string
+          nome: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          filtros?: Json
+          id?: string
+          nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       urban_edc_config: {
         Row: {
           chave: string
@@ -2468,14 +2495,91 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      buscar_clientes_upsell: {
+        Args: {
+          p_busca?: string
+          p_canais?: string[]
+          p_comprou_ha_dias?: number
+          p_gasto_max?: number
+          p_gasto_min?: number
+          p_limite?: number
+          p_min_pedidos?: number
+          p_offset?: number
+          p_ordem?: string
+          p_produtos_excluir?: string[]
+          p_produtos_incluir?: string[]
+          p_sem_comprar_ha_dias?: number
+          p_so_whatsapp?: boolean
+          p_status?: string
+          p_tipo_pessoa?: string
+          p_ufs?: string[]
+        }
+        Returns: {
+          canais: string[]
+          cidade: string
+          contatado_em: string
+          contato_bling_id: number
+          documento: string
+          email: string
+          nome: string
+          observacoes: string
+          primeiro_pedido_em: string
+          produtos: string[]
+          qtd_pedidos: number
+          status: string
+          telefone_whatsapp: string
+          ticket_medio: number
+          tipo_pessoa: string
+          total_gasto: number
+          uf: string
+          ultimo_pedido_em: string
+          whatsapp_valido: boolean
+        }[]
+      }
       calcular_prazo_uteis: { Args: { dias: number }; Returns: string }
       gerar_numero_pedido: { Args: never; Returns: string }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      listar_produtos_upsell: {
+        Args: never
+        Returns: {
+          clientes: number
+          exemplo: string
+          produto: string
+        }[]
+      }
       normalizar_nome_produto: { Args: { nome: string }; Returns: string }
       normalizar_telefone_wpp: { Args: { tel: string }; Returns: string }
       recalcular_metricas_clientes: {
         Args: { p_contato_ids?: number[] }
         Returns: number
+      }
+      resumo_clientes_upsell: {
+        Args: {
+          p_busca?: string
+          p_canais?: string[]
+          p_comprou_ha_dias?: number
+          p_gasto_max?: number
+          p_gasto_min?: number
+          p_min_pedidos?: number
+          p_produtos_excluir?: string[]
+          p_produtos_incluir?: string[]
+          p_sem_comprar_ha_dias?: number
+          p_so_whatsapp?: boolean
+          p_status?: string
+          p_tipo_pessoa?: string
+          p_ufs?: string[]
+        }
+        Returns: {
+          com_whatsapp: number
+          qtd_contatado: number
+          qtd_pendente: number
+          qtd_sem_interesse: number
+          qtd_todos: number
+          qtd_vendeu: number
+          soma_gasto: number
+          ticket_medio: number
+          total_clientes: number
+        }[]
       }
     }
     Enums: {
