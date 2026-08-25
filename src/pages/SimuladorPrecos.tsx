@@ -15,10 +15,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import ShopifyDraftModal from '@/components/simulador/ShopifyDraftModal';
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
-  BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcEntry, gerarOrcamento,
+  BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
   novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, espacadorIdx, nomeBainha,
+  BAINHA_ADICIONAL_PRECO, LASER_PRECO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
 } from '@/lib/simuladorData';
+
 
 
 /* ════════════════ UI: átomos ════════════════ */
@@ -120,13 +122,16 @@ function ModeloSearch({ modelos, onSelect, currentIdx }: { modelos: Modelo[]; on
 
 /* ════════════════ Card de item ════════════════ */
 
-function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded, onToggle, removivel }: {
+function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded, onToggle, removivel, clienteNome }: {
   data: SimuladorData; cfg: ItemCfg; onChange: (c: ItemCfg) => void; onRemove: () => void; onDuplicate: () => void;
-  index: number; expanded: boolean; onToggle: () => void; removivel: boolean;
+  index: number; expanded: boolean; onToggle: () => void; removivel: boolean; clienteNome?: string;
 }) {
   const modelo = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   const c = classeDo(modelo);
+  const calculado = calcItemBase(data, cfg);
+  const manual = cfg.subtotalManual !== null && cfg.subtotalManual !== undefined;
   const total = calcItem(data, cfg);
+
 
   const nomeOpt = (arr: Opcao[], idx: number, sufixo = '') =>
     arr[idx] && !arr[idx].incluso ? arr[idx].nome + sufixo : (sufixo ? arr[idx]?.nome + sufixo : null);
@@ -294,7 +299,9 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                     );
                   })}
                 </div>
-                <p className="text-[10px] text-muted-foreground">Pode escolher as duas bainhas — selecione a cor de cada uma.</p>
+                <p className="text-[10px] text-muted-foreground">
+                  A 1ª bainha já está inclusa no valor. Cada bainha adicional custa {BRL(BAINHA_ADICIONAL_PRECO)}.
+                </p>
                 {(cfg.bainhaIdxs ?? []).map((bi) => (
                   !!data.bainhas[bi]?.cores?.length && (
                     <div key={bi} className="flex flex-wrap gap-1.5 pt-1">
@@ -312,11 +319,69 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                 ))}
               </Secao>
 
+              {/* Personalização à laser — mesma regra do Novo Pedido */}
+              <Secao title="Personalização">
+                <Input value={cfg.textoLaser ?? ''} maxLength={60}
+                  onChange={(e) => onChange({ ...cfg, textoLaser: e.target.value })}
+                  placeholder="Texto da gravação (deixe vazio para sem gravação)" className="h-10 text-sm" />
+                <p className="text-[10px] text-muted-foreground">
+                  Gravação à laser: +{BRL(LASER_PRECO)} quando houver texto.
+                </p>
+              </Secao>
 
-              <div className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/15">
-                <span className="text-sm font-medium">Subtotal</span>
-                <span className="text-lg font-bold text-primary" data-numeric>{BRL(total)}</span>
+              <Secao title="Certificado">
+                <Input value={cfg.certificado ?? ''}
+                  onChange={(e) => onChange({ ...cfg, certificado: e.target.value })}
+                  placeholder={clienteNome || 'Nome que vai no certificado'} className="h-10 text-sm" />
+                <p className="text-[10px] text-muted-foreground">
+                  Preenchido com o nome do cliente — edite para presentes.
+                </p>
+              </Secao>
+
+              <Secao title="Embalagem (interno)">
+                <div className="flex flex-wrap gap-1.5">
+                  {EMBALAGENS.map((emb) => (
+                    <button key={emb} type="button"
+                      onClick={() => onChange({ ...cfg, embalagem: cfg.embalagem === emb ? '' : emb })}
+                      className={`px-3 py-2 rounded-full text-xs font-medium border transition-all
+                        ${cfg.embalagem === emb ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-border bg-background hover:bg-muted active:scale-95'}`}>
+                      {emb}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Uso interno de produção — não aparece para o cliente no checkout.
+                </p>
+              </Secao>
+
+              <div className="p-3 rounded-xl bg-primary/5 border border-primary/15 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Subtotal</span>
+                  <span className="text-lg font-bold text-primary" data-numeric>{BRL(total)}</span>
+                </div>
+                {manual ? (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Input type="number" min={0} step="0.01" value={cfg.subtotalManual ?? 0}
+                        onChange={(e) => onChange({ ...cfg, subtotalManual: e.target.value === '' ? 0 : Math.max(0, parseFloat(e.target.value) || 0) })}
+                        className="h-9 text-sm tabular-nums" />
+                      <Button type="button" variant="outline" size="sm" className="h-9 shrink-0 gap-1.5"
+                        onClick={() => onChange({ ...cfg, subtotalManual: null })}>
+                        <Eraser className="w-3.5 h-3.5" /> Calculado
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-amber-600 font-medium">
+                      Valor ajustado manualmente · calculado: {BRL(calculado)}
+                    </p>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => onChange({ ...cfg, subtotalManual: calculado })}
+                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors">
+                    <Pencil className="w-3 h-3" /> Editar subtotal manualmente
+                  </button>
+                )}
               </div>
+
             </>
           )}
 
@@ -431,7 +496,7 @@ function CustomRow({ cfg, onChange, onRemove }: {
   cfg: CustomCfg; onChange: (c: CustomCfg) => void; onRemove: () => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const subtotal = Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
+  const subtotal = cfg.brinde ? 0 : Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
   return (
     <>
       <div className="rounded-2xl border bg-card overflow-hidden shadow-sm flex items-center gap-3 p-4">
@@ -439,9 +504,15 @@ function CustomRow({ cfg, onChange, onRemove }: {
           <FilePlus2 className="w-4 h-4" />
         </span>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate">{cfg.descricao.trim() || 'Item não cadastrado'}</p>
-          <p className="text-[11px] text-muted-foreground">Item não cadastrado · {BRL(Math.max(0, cfg.preco))}/un</p>
+          <p className="font-semibold text-sm truncate">
+            {cfg.descricao.trim() || 'Item não cadastrado'}
+            {cfg.brinde && <span className="ml-1.5 text-[10px] font-bold text-accent uppercase">Brinde</span>}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            {cfg.brinde ? 'Brinde · R$ 0,00' : `Item não cadastrado · ${BRL(Math.max(0, cfg.preco))}/un`}
+          </p>
         </div>
+
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <button type="button" onClick={() => onChange({ ...cfg, quantidade: Math.max(1, cfg.quantidade - 1) })}
             className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-muted active:scale-95 transition-all disabled:opacity-30"
@@ -462,22 +533,25 @@ function CustomRow({ cfg, onChange, onRemove }: {
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
-      <CustomDialog open={editing} onOpenChange={setEditing} initial={cfg} onSave={(u) => { onChange({ ...cfg, descricao: u.descricao, preco: u.preco }); }} />
+      <CustomDialog open={editing} onOpenChange={setEditing} initial={cfg}
+        onSave={(u) => { onChange({ ...cfg, descricao: u.descricao, preco: u.brinde ? 0 : u.preco, brinde: u.brinde }); }} />
     </>
   );
 }
 
 function CustomDialog({ open, onOpenChange, initial, onSave }: {
   open: boolean; onOpenChange: (v: boolean) => void;
-  initial?: { descricao: string; preco: number };
-  onSave: (v: { descricao: string; preco: number }) => void;
+  initial?: { descricao: string; preco: number; brinde?: boolean };
+  onSave: (v: { descricao: string; preco: number; brinde: boolean }) => void;
 }) {
   const [descricao, setDescricao] = useState(initial?.descricao ?? '');
   const [precoStr, setPrecoStr] = useState((initial?.preco ?? 0).toString().replace('.', ','));
+  const [brinde, setBrinde] = useState(!!initial?.brinde);
   useEffect(() => {
     if (open) {
       setDescricao(initial?.descricao ?? '');
       setPrecoStr((initial?.preco ?? 0) > 0 ? (initial!.preco).toFixed(2).replace('.', ',') : '');
+      setBrinde(!!initial?.brinde);
     }
   }, [open, initial]);
 
@@ -489,7 +563,7 @@ function CustomDialog({ open, onOpenChange, initial, onSave }: {
     const n = parseFloat(str);
     return Number.isFinite(n) ? n : 0;
   })();
-  const podeSalvar = descricao.trim().length > 0 && preco > 0;
+  const podeSalvar = descricao.trim().length > 0 && (brinde || preco > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -506,17 +580,24 @@ function CustomDialog({ open, onOpenChange, initial, onSave }: {
             <Textarea id="cst-desc" value={descricao} onChange={(e) => setDescricao(e.target.value)}
               placeholder="Ex: Faca personalizada com detalhe X, gravação Y..." rows={3} className="text-sm resize-none" />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="cst-preco" className="text-xs">Valor do item</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
-              <Input id="cst-preco" value={precoStr} inputMode="decimal"
-                onChange={(e) => setPrecoStr(e.target.value)}
-                placeholder="0,00" className="h-10 pl-9 tabular-nums font-semibold" />
+          <button type="button" onClick={() => setBrinde((b) => !b)}
+            className={`w-full flex items-center justify-center gap-2 h-10 rounded-xl text-xs font-semibold border transition-all
+              ${brinde ? 'border-accent bg-accent text-accent-foreground' : 'border-dashed border-accent/50 text-accent bg-accent/5 hover:bg-accent/10'}`}>
+            {brinde ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />} Brinde (R$ 0,00)
+          </button>
+          {!brinde && (
+            <div className="space-y-1.5">
+              <Label htmlFor="cst-preco" className="text-xs">Valor do item</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                <Input id="cst-preco" value={precoStr} inputMode="decimal"
+                  onChange={(e) => setPrecoStr(e.target.value)}
+                  placeholder="0,00" className="h-10 pl-9 tabular-nums font-semibold" />
+              </div>
             </div>
-          </div>
+          )}
           <Button className="w-full h-11 rounded-xl" disabled={!podeSalvar}
-            onClick={() => { onSave({ descricao: descricao.trim(), preco }); onOpenChange(false); }}>
+            onClick={() => { onSave({ descricao: descricao.trim(), preco: brinde ? 0 : preco, brinde }); onOpenChange(false); }}>
             Salvar item
           </Button>
         </div>
@@ -524,6 +605,7 @@ function CustomDialog({ open, onOpenChange, initial, onSave }: {
     </Dialog>
   );
 }
+
 
 /* ════════════════ Formulário "Shot Fair" (Google Forms) ════════════════ */
 // Registro do pedido vendido. IDs extraídos do próprio formulário.
@@ -813,6 +895,11 @@ export default function SimuladorPrecos() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
   const [shopifyOpen, setShopifyOpen] = useState(false);
+  const [clienteNome, setClienteNome] = useState('');
+  const [totalManual, setTotalManual] = useState<number | null>(null);
+  const [editandoTotal, setEditandoTotal] = useState(false);
+
+
 
   const addFaca = () => { const e = novaEntradaFaca(); setEntries((p) => [...p, e]); setExpandedId(e.id); };
   const addAvulso = (adicionalIdx: number) => {
@@ -845,9 +932,24 @@ export default function SimuladorPrecos() {
   const updateCustom = (id: string, u: CustomCfg) =>
     setEntries((p) => p.map((e) => (e.id === id ? { ...e, custom: u } : e)));
 
-  const totalGeral = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
+  // Certificado: preenche automaticamente com o nome do cliente (mantém edições manuais)
+  const certAutoRef = useRef('');
+  useEffect(() => {
+    const anterior = certAutoRef.current;
+    certAutoRef.current = clienteNome;
+    setEntries((p) => p.map((e) => (
+      e.kind === 'faca' && (!e.faca.certificado?.trim() || e.faca.certificado === anterior)
+        ? { ...e, faca: { ...e.faca, certificado: clienteNome } }
+        : e
+    )));
+  }, [clienteNome]);
+
+  const totalCalculado = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
+
+  const totalGeral = totalManual !== null ? totalManual : totalCalculado;
   const itensValidos = entries.filter((e) => e.kind === 'avulso' || e.kind === 'custom' || (e.kind === 'faca' && e.faca.modeloIdx !== null)).length;
   const orcamento = useMemo(() => gerarOrcamento(data, entries, totalGeral), [data, entries, totalGeral]);
+
 
   const copiarRapido = async () => {
     try { await navigator.clipboard.writeText(orcamento); toast.success('Orçamento copiado!'); }
@@ -858,9 +960,12 @@ export default function SimuladorPrecos() {
   const limparTudo = () => {
     setEntries([]);
     setExpandedId(null);
+    setTotalManual(null);
+    setEditandoTotal(false);
     if (navigator.vibrate) navigator.vibrate(20);
     toast.success('Limpo! Configurações resetadas.');
   };
+
 
   return (
     <div className="max-w-lg mx-auto py-4 px-1 sm:px-4 space-y-4 pb-44 md:pb-28">
@@ -880,7 +985,15 @@ export default function SimuladorPrecos() {
         )}
       </div>
 
+      {/* Nome do cliente — alimenta o campo Certificado de cada faca */}
+      <div className="space-y-1">
+        <Label htmlFor="sp-cliente" className="text-[11px] text-muted-foreground uppercase tracking-wider">Cliente</Label>
+        <Input id="sp-cliente" value={clienteNome} onChange={(e) => setClienteNome(e.target.value)}
+          placeholder="Nome do cliente (usado no certificado)" className="h-10 text-sm" />
+      </div>
+
       {/* Cards de entrada — mobile first, minimalista */}
+
       <div className="grid grid-cols-3 gap-2">
         <button type="button" onClick={addFaca}
           className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-primary/20 bg-primary/5 p-3 text-center transition-all hover:border-primary/40 hover:bg-primary/10 active:scale-[0.97]">
@@ -917,12 +1030,14 @@ export default function SimuladorPrecos() {
           {entries.map((e, idx) => {
             if (e.kind === 'faca') return (
               <ItemCard key={e.id} data={data} cfg={e.faca} index={idx}
+                clienteNome={clienteNome}
                 onChange={(u) => updateFaca(e.id, u)}
                 onRemove={() => removeEntry(e.id)}
                 onDuplicate={() => duplicateItem(e.id)}
                 removivel
                 expanded={expandedId === e.id}
                 onToggle={() => setExpandedId(expandedId === e.id ? null : e.id)} />
+
             );
             if (e.kind === 'avulso') return (
               <AvulsoRow key={e.id} data={data} cfg={e.avulso}
@@ -940,42 +1055,69 @@ export default function SimuladorPrecos() {
 
       {/* Footer fixo — acima da bottom nav no mobile */}
       <div className="fixed left-0 right-0 bg-background/95 backdrop-blur-lg border-t z-40 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0">
-        <div className="max-w-lg mx-auto flex items-center gap-3 px-4 py-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">
-              {itensValidos} {itensValidos === 1 ? 'item' : 'itens'}
-            </p>
-            <p className="text-xl font-bold text-accent leading-tight" data-numeric>{BRL(totalGeral)}</p>
+        <div className="max-w-lg mx-auto px-4 py-3 space-y-2">
+          {editandoTotal && (
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                <Input type="number" min={0} step="0.01" autoFocus
+                  value={totalManual ?? totalCalculado}
+                  onChange={(ev) => setTotalManual(ev.target.value === '' ? 0 : Math.max(0, parseFloat(ev.target.value) || 0))}
+                  className="h-9 pl-9 text-sm tabular-nums font-semibold" />
+              </div>
+              <Button variant="outline" size="sm" className="h-9 gap-1.5"
+                onClick={() => { setTotalManual(null); setEditandoTotal(false); }}>
+                <Eraser className="h-3.5 w-3.5" /> Calculado
+              </Button>
+              <Button size="sm" className="h-9" onClick={() => setEditandoTotal(false)}>OK</Button>
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">
+                {itensValidos} {itensValidos === 1 ? 'item' : 'itens'}
+                {totalManual !== null && <span className="text-amber-600 font-semibold"> · ajustado</span>}
+              </p>
+              <button type="button" className="flex items-center gap-1.5"
+                onClick={() => { if (totalManual === null) setTotalManual(totalCalculado); setEditandoTotal(true); }}>
+                <span className="text-xl font-bold text-accent leading-tight" data-numeric>{BRL(totalGeral)}</span>
+                <Pencil className="h-3 w-3 text-muted-foreground" />
+              </button>
+              {totalManual !== null && (
+                <p className="text-[10px] text-muted-foreground leading-tight">Calculado: {BRL(totalCalculado)}</p>
+              )}
+            </div>
+            <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl flex-shrink-0" onClick={copiarRapido} title="Copiar orçamento">
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" className="gap-2 h-11 rounded-xl flex-shrink-0 px-3"
+              onClick={() => setShopifyOpen(true)} disabled={itensValidos === 0}>
+              <ShoppingBag className="h-4 w-4" /> Shopify
+            </Button>
+            <Button className="gap-2 h-11 rounded-xl flex-shrink-0 bg-accent hover:bg-accent/90 text-accent-foreground px-3"
+              onClick={() => setModalOpen(true)} disabled={itensValidos === 0}>
+              <ClipboardCheck className="h-4 w-4" /> Formulário
+            </Button>
           </div>
-          <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl flex-shrink-0" onClick={copiarRapido} title="Copiar orçamento">
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" className="gap-2 h-11 rounded-xl flex-shrink-0 px-3"
-            onClick={() => setShopifyOpen(true)} disabled={itensValidos === 0}>
-            <ShoppingBag className="h-4 w-4" /> Shopify
-          </Button>
-          <Button className="gap-2 h-11 rounded-xl flex-shrink-0 bg-accent hover:bg-accent/90 text-accent-foreground px-3"
-            onClick={() => setModalOpen(true)} disabled={itensValidos === 0}>
-            <ClipboardCheck className="h-4 w-4" /> Formulário
-          </Button>
-
         </div>
       </div>
 
       <AvulsoPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} data={data} onPick={addAvulso} />
 
       <CustomDialog open={customOpen} onOpenChange={setCustomOpen}
-        onSave={({ descricao, preco }) => {
-          setEntries((p) => [...p, novaEntradaCustom(descricao, preco, 1)]);
+        onSave={({ descricao, preco, brinde }) => {
+          setEntries((p) => [...p, novaEntradaCustom(descricao, preco, 1, brinde)]);
           if (navigator.vibrate) navigator.vibrate(15);
-          toast.success('Item adicionado!');
+          toast.success(brinde ? 'Brinde adicionado!' : 'Item adicionado!');
         }} />
 
       <OrcamentoModal open={modalOpen} onOpenChange={setModalOpen} texto={orcamento} total={totalGeral}
         vendedorPadrao={profile?.nome_vendedor ?? ''} />
 
       <ShopifyDraftModal open={shopifyOpen} onOpenChange={setShopifyOpen}
-        data={data} entries={entries} total={totalGeral} />
+        data={data} entries={entries} total={totalGeral}
+        nomeInicial={clienteNome} onNomeChange={setClienteNome} />
+
     </div>
   );
 }

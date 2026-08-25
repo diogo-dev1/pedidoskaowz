@@ -29,6 +29,13 @@ export interface SimuladorData {
   adicionais: Adicional[];
 }
 
+/** Preço de cada bainha ADICIONAL (a primeira já vem inclusa no preço base). */
+export const BAINHA_ADICIONAL_PRECO = 195;
+/** Preço da gravação à laser (mesma regra usada em Novo Pedido). */
+export const LASER_PRECO = 30;
+/** Opções de embalagem (campo INTERNO — nunca exposto ao cliente). */
+export const EMBALAGENS = ['Comum', 'Patola Padrão', 'Patola KIT'] as const;
+
 /** Configuração escolhida pelo usuário para UMA faca. Índices apontam para SEED/config. */
 export interface ItemCfg {
   id: string;
@@ -45,7 +52,16 @@ export interface ItemCfg {
   bainhaIdxs: number[];
   /** Cor por bainha escolhida: { [idxBainha]: cor } */
   bainhaCores: Record<number, string | null>;
+  /** Personalização à laser (vazio = sem gravação) */
+  textoLaser?: string;
+  /** Nome que vai no certificado (default: nome do cliente do pedido) */
+  certificado?: string;
+  /** Embalagem — campo interno de produção */
+  embalagem?: string;
+  /** Subtotal sobrescrito manualmente (null = usa o calculado) */
+  subtotalManual?: number | null;
 }
+
 
 /** Índice da opção "Espaçador" na lista de empunhaduras (opcional, não é uma empunhadura). */
 export function espacadorIdx(data: SimuladorData): number {
@@ -68,7 +84,10 @@ export interface CustomCfg {
   descricao: string;
   preco: number;
   quantidade: number;
+  /** Item de cortesia — preço zero, entra como linha R$ 0,00 no draft */
+  brinde?: boolean;
 }
+
 
 /** Uma entrada do pedido: faca configurada, item avulso ou item personalizado. */
 export type PedidoEntry =
@@ -89,8 +108,10 @@ export function newItem(): ItemCfg {
     acoIdx: 0, bruteForge: false, empIdx: 0, empCor: null, dragonScale: false,
     espacador: false, espacadorCor: null,
     acabIdx: 0, bainhaIdxs: [0], bainhaCores: {},
+    textoLaser: '', certificado: '', embalagem: '', subtotalManual: null,
   };
 }
+
 
 /** Nome legível de uma bainha escolhida, com a cor quando houver. */
 export function nomeBainha(data: SimuladorData, cfg: ItemCfg, idx: number): string {
@@ -113,9 +134,10 @@ export function novaEntradaAvulso(adicionalIdx: number, quantidade = 1): PedidoE
   return { id: crypto.randomUUID(), kind: 'avulso', avulso: newAvulso(adicionalIdx, quantidade) };
 }
 
-export function novaEntradaCustom(descricao = '', preco = 0, quantidade = 1): PedidoEntry {
-  return { id: crypto.randomUUID(), kind: 'custom', custom: { id: crypto.randomUUID(), descricao, preco, quantidade } };
+export function novaEntradaCustom(descricao = '', preco = 0, quantidade = 1, brinde = false): PedidoEntry {
+  return { id: crypto.randomUUID(), kind: 'custom', custom: { id: crypto.randomUUID(), descricao, preco, quantidade, brinde } };
 }
+
 
 /** Regra da planilha: M usa P quando não definido; G cai para M→P. */
 export function precoClasse(p: Precos, c: Classe): number {
@@ -128,8 +150,8 @@ export function classeDo(m: Modelo | null): Classe {
   return !m || m.tamanho === '-' ? 'P' : m.tamanho;
 }
 
-/** Valor total de uma faca configurada, usando os dados (SEED ou config do banco). */
-export function calcItem(data: SimuladorData, cfg: ItemCfg): number {
+/** Valor CALCULADO de uma faca (ignora sobrescrita manual de subtotal). */
+export function calcItemBase(data: SimuladorData, cfg: ItemCfg): number {
   const m = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   if (!m) return 0;
   const c = classeDo(m);
@@ -143,13 +165,34 @@ export function calcItem(data: SimuladorData, cfg: ItemCfg): number {
     if (ei >= 0) t += precoClasse(data.empunhaduras[ei].precos, c);
   }
   t += precoClasse(data.acabamentos[cfg.acabIdx]?.precos ?? {}, c);
-  (cfg.bainhaIdxs ?? []).forEach((i) => {
+  const bainhas = cfg.bainhaIdxs ?? [];
+  bainhas.forEach((i) => {
     t += precoClasse(data.bainhas[i]?.precos ?? {}, c);
   });
+  // A primeira bainha já está inclusa no preço base; a partir da segunda, cobra-se.
+  if (bainhas.length > 1) t += (bainhas.length - 1) * BAINHA_ADICIONAL_PRECO;
+  // Personalização à laser (mesma regra do Novo Pedido)
+  if (temLaser(cfg)) t += LASER_PRECO;
   return t;
 }
 
-/** Bloco de texto de uma faca para o orçamento (formato WhatsApp). */
+/** Há gravação à laser configurada? */
+export function temLaser(cfg: ItemCfg): boolean {
+  const t = (cfg.textoLaser ?? '').trim();
+  return !!t && t !== '-';
+}
+
+/** Valor de uma faca — usa o subtotal manual quando definido. */
+export function calcItem(data: SimuladorData, cfg: ItemCfg): number {
+  if (cfg.modeloIdx === null) return 0;
+  if (cfg.subtotalManual !== null && cfg.subtotalManual !== undefined && Number.isFinite(cfg.subtotalManual)) {
+    return Math.max(0, cfg.subtotalManual);
+  }
+  return calcItemBase(data, cfg);
+}
+
+/** Bloco de texto de uma faca para o orçamento (formato WhatsApp).
+ *  Embalagem é campo INTERNO e nunca entra aqui. */
 export function textoItem(data: SimuladorData, cfg: ItemCfg, n: number): string[] {
   const m = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   if (!m) return [];
@@ -167,9 +210,12 @@ export function textoItem(data: SimuladorData, cfg: ItemCfg, n: number): string[
     `Acabamento: ${data.acabamentos[cfg.acabIdx]?.nome ?? '-'}`,
     `Bainha: ${bainhas.length ? bainhas.join(' + ') : '-'}`,
   ];
+  if (temLaser(cfg)) l.push(`Personalização: ${(cfg.textoLaser ?? '').trim()}`);
+  if ((cfg.certificado ?? '').trim()) l.push(`Certificado: ${(cfg.certificado ?? '').trim()}`);
   l.push(`Valor: ${BRL(calcItem(data, cfg))}`);
   return l;
 }
+
 
 
 /** Valor total de um item avulso (produto do catálogo de Adicionais). */
@@ -191,10 +237,12 @@ export function textoAvulso(data: SimuladorData, cfg: AvulsoCfg, n: number): str
   ];
 }
 
-/** Valor total de um item personalizado. */
+/** Valor total de um item personalizado (brinde = zero). */
 export function calcCustom(cfg: CustomCfg): number {
+  if (cfg.brinde) return 0;
   return Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
 }
+
 
 /** Bloco de texto de um item personalizado. */
 export function textoCustom(cfg: CustomCfg, n: number): string[] {
@@ -203,9 +251,10 @@ export function textoCustom(cfg: CustomCfg, n: number): string[] {
   return [
     `Item ${n}:`,
     `${nome}${qtd}`,
-    `Valor: ${BRL(calcCustom(cfg))}`,
+    cfg.brinde ? 'Valor: Brinde (R$ 0,00)' : `Valor: ${BRL(calcCustom(cfg))}`,
   ];
 }
+
 
 /** Valor total de uma entrada. */
 export function calcEntry(data: SimuladorData, e: PedidoEntry): number {

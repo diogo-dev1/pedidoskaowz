@@ -8,7 +8,7 @@ import { Loader2, ShoppingBag, Sparkles, Copy, Send, ExternalLink } from 'lucide
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  BRL, calcEntry, calcItem, nomeBainha, espacadorIdx,
+  BRL, calcEntry, calcItem, nomeBainha, espacadorIdx, temLaser,
   type SimuladorData, type PedidoEntry,
 } from '@/lib/simuladorData';
 
@@ -17,6 +17,21 @@ interface DraftLineItem {
   quantity: number;
   price: number;
   properties: { name: string; value: string }[];
+}
+
+/** Notas internas (embalagem etc.) — nunca viram propriedade visível da linha. */
+export function montarNotasInternas(data: SimuladorData, entries: PedidoEntry[]): string[] {
+  const out: string[] = [];
+  let n = 0;
+  entries.forEach((e) => {
+    if (e.kind !== 'faca') return;
+    const cfg = e.faca;
+    if (cfg.modeloIdx === null) return;
+    n++;
+    const emb = (cfg.embalagem ?? '').trim();
+    if (emb) out.push(`Item ${n} (${data.modelos[cfg.modeloIdx]?.nome ?? ''}) — Embalagem: ${emb}`);
+  });
+  return out;
 }
 
 /** Converte as entradas do simulador em custom line items da Shopify. */
@@ -56,6 +71,9 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
       }
       props.push({ name: 'Acabamento', value: data.acabamentos[cfg.acabIdx]?.nome ?? '' });
       bainhas.forEach((b, i) => props.push({ name: `Bainha ${i + 1}`, value: b }));
+      if (temLaser(cfg)) props.push({ name: 'Personalização', value: (cfg.textoLaser ?? '').trim() });
+      if ((cfg.certificado ?? '').trim()) props.push({ name: 'Certificado', value: (cfg.certificado ?? '').trim() });
+      // Embalagem NÃO entra aqui — é campo interno (vai na nota do pedido).
 
       out.push({
         title: tituloPartes.join(' — '),
@@ -80,29 +98,32 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
 
     const c = e.custom;
     out.push({
-      title: c.descricao.trim() || 'Item personalizado',
+      title: (c.descricao.trim() || 'Item personalizado') + (c.brinde ? ' (Brinde)' : ''),
       quantity: Math.max(1, c.quantidade),
-      price: Math.max(0, c.preco),
-      properties: [],
+      price: c.brinde ? 0 : Math.max(0, c.preco),
+      properties: c.brinde ? [{ name: 'Brinde', value: 'Sim' }] : [],
     });
   });
 
   return out;
 }
 
+
 interface Resultado {
   nome?: string;
   invoiceUrl?: string;
 }
 
-export default function ShopifyDraftModal({ open, onOpenChange, data, entries, total }: {
+export default function ShopifyDraftModal({ open, onOpenChange, data, entries, total, nomeInicial, onNomeChange }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   data: SimuladorData;
   entries: PedidoEntry[];
   total: number;
+  nomeInicial?: string;
+  onNomeChange?: (n: string) => void;
 }) {
-  const [nome, setNome] = useState('');
+  const [nome, setNome] = useState(nomeInicial ?? '');
   const [telefone, setTelefone] = useState('');
   const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
@@ -121,8 +142,14 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
   const [resultado, setResultado] = useState<Resultado | null>(null);
 
   useEffect(() => { if (!open) { setResultado(null); setEnviando(false); } }, [open]);
+  useEffect(() => { if (open && nomeInicial && !nome.trim()) setNome(nomeInicial); }, [open, nomeInicial]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const itens = useMemo(() => montarLineItems(data, entries), [data, entries]);
+  const notasInternas = useMemo(() => montarNotasInternas(data, entries), [data, entries]);
+  const somaItens = useMemo(() => itens.reduce((s, i) => s + i.price * i.quantity, 0), [itens]);
+  const ajuste = +(total - somaItens).toFixed(2);
+
+
 
   const preencherComIA = async () => {
     if (!colado.trim()) { toast.error('Cole a mensagem do cliente primeiro'); return; }
@@ -179,7 +206,10 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
             complemento: complemento.trim() || undefined,
           },
           observacao: observacao.trim() || undefined,
+          notasInternas,
+          totalDesejado: Math.abs(ajuste) >= 0.01 ? total : undefined,
         },
+
       });
       if (error) throw error;
       if (!res?.sucesso) throw new Error(res?.erro ?? 'Falha ao criar o pedido na Shopify');
@@ -270,6 +300,17 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
               <div className="flex items-center justify-between border-t pt-2 text-sm font-bold">
                 <span>Total</span><span className="text-accent tabular-nums">{BRL(total)}</span>
               </div>
+              {Math.abs(ajuste) >= 0.01 && (
+                <p className="text-[10px] text-muted-foreground">
+                  Total ajustado manualmente ({ajuste < 0 ? 'desconto' : 'acréscimo'} de {BRL(Math.abs(ajuste))} sobre {BRL(somaItens)}) — vai aplicado no draft.
+                </p>
+              )}
+              {notasInternas.length > 0 && (
+                <p className="text-[10px] text-muted-foreground">
+                  Notas internas (não aparecem para o cliente): {notasInternas.join(' · ')}
+                </p>
+              )}
+
             </div>
 
             {/* Colar mensagem + IA */}
@@ -287,7 +328,7 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
             <div className="grid grid-cols-1 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="sh-nome" className="text-xs">Nome (opcional)</Label>
-                <Input id="sh-nome" value={nome} onChange={(e) => setNome(e.target.value)} className="h-10" />
+                <Input id="sh-nome" value={nome} onChange={(e) => { setNome(e.target.value); onNomeChange?.(e.target.value); }} className="h-10" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
