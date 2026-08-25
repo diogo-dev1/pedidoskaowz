@@ -36,6 +36,18 @@ export const LASER_PRECO = 30;
 /** Opções de embalagem (campo INTERNO — nunca exposto ao cliente). */
 export const EMBALAGENS = ['Comum', 'Patola Padrão', 'Patola KIT'] as const;
 
+/** Produto da vitrine Shopify que serviu de base para uma faca configurável.
+ *  Somente leitura — editar a faca aqui NUNCA altera o cadastro na Shopify. */
+export interface OrigemCatalogo {
+  variantId: string;        // gid://shopify/ProductVariant/...
+  produtoTitulo: string;
+  varianteTitulo: string;
+  imagem?: string | null;
+  precoOriginal: number;
+  /** Assinatura da configuração no momento em que veio do catálogo */
+  snapshot: string;
+}
+
 /** Configuração escolhida pelo usuário para UMA faca. Índices apontam para SEED/config. */
 export interface ItemCfg {
   id: string;
@@ -60,7 +72,10 @@ export interface ItemCfg {
   embalagem?: string;
   /** Subtotal sobrescrito manualmente (null = usa o calculado) */
   subtotalManual?: number | null;
+  /** Produto da vitrine que originou esta faca (quando veio da busca no site) */
+  origem?: OrigemCatalogo;
 }
+
 
 
 /** Índice da opção "Espaçador" na lista de empunhaduras (opcional, não é uma empunhadura). */
