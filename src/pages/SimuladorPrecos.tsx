@@ -1072,6 +1072,9 @@ export default function SimuladorPrecos() {
     setEntries((p) => p.map((e) => (e.id === id ? { ...e, avulso: u } : e)));
   const updateCustom = (id: string, u: CustomCfg) =>
     setEntries((p) => p.map((e) => (e.id === id ? { ...e, custom: u } : e)));
+  const updateCatalogo = (id: string, u: CatalogoCfg) =>
+    setEntries((p) => p.map((e) => (e.id === id ? { ...e, catalogo: u } : e)));
+
 
   // Certificado: preenche automaticamente com o nome do cliente (mantém edições manuais)
   const certAutoRef = useRef('');
