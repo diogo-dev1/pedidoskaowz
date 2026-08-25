@@ -88,12 +88,29 @@ export interface CustomCfg {
   brinde?: boolean;
 }
 
+/** Produto real do catálogo Shopify (variante). Baixa estoque no draft order. */
+export interface CatalogoCfg {
+  id: string;
+  variantId: string;      // gid://shopify/ProductVariant/...
+  titulo: string;
+  variante: string;
+  imagem?: string | null;
+  /** Preço cadastrado na Shopify (referência) */
+  precoOriginal: number;
+  /** Preço praticado (editável). É esse que vale. */
+  preco: number;
+  quantidade: number;
+}
 
-/** Uma entrada do pedido: faca configurada, item avulso ou item personalizado. */
+
+/** Uma entrada do pedido: faca configurada, item avulso, item personalizado
+ *  ou produto do catálogo Shopify. */
 export type PedidoEntry =
   | { id: string; kind: 'faca'; faca: ItemCfg }
   | { id: string; kind: 'avulso'; avulso: AvulsoCfg }
-  | { id: string; kind: 'custom'; custom: CustomCfg };
+  | { id: string; kind: 'custom'; custom: CustomCfg }
+  | { id: string; kind: 'catalogo'; catalogo: CatalogoCfg };
+
 
 export const BRL = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
