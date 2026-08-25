@@ -17,8 +17,9 @@ import CatalogoShopifyPicker, { type ProdutoShopify } from '@/components/simulad
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
-  novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, espacadorIdx, nomeBainha,
-  nomeCatalogo, calcCatalogo,
+  novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, novaEntradaFacaDeCatalogo,
+  espacadorIdx, nomeBainha, nomeCatalogo, calcCatalogo,
+
   BAINHA_ADICIONAL_PRECO, LASER_PRECO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
   type CatalogoCfg,
