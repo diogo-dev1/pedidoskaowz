@@ -1017,12 +1017,14 @@ export default function SimuladorPrecos() {
           {entries.map((e, idx) => {
             if (e.kind === 'faca') return (
               <ItemCard key={e.id} data={data} cfg={e.faca} index={idx}
+                clienteNome={clienteNome}
                 onChange={(u) => updateFaca(e.id, u)}
                 onRemove={() => removeEntry(e.id)}
                 onDuplicate={() => duplicateItem(e.id)}
                 removivel
                 expanded={expandedId === e.id}
                 onToggle={() => setExpandedId(expandedId === e.id ? null : e.id)} />
+
             );
             if (e.kind === 'avulso') return (
               <AvulsoRow key={e.id} data={data} cfg={e.avulso}
