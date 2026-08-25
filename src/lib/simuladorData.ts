@@ -29,6 +29,13 @@ export interface SimuladorData {
   adicionais: Adicional[];
 }
 
+/** Preço de cada bainha ADICIONAL (a primeira já vem inclusa no preço base). */
+export const BAINHA_ADICIONAL_PRECO = 195;
+/** Preço da gravação à laser (mesma regra usada em Novo Pedido). */
+export const LASER_PRECO = 30;
+/** Opções de embalagem (campo INTERNO — nunca exposto ao cliente). */
+export const EMBALAGENS = ['Comum', 'Patola Padrão', 'Patola KIT'] as const;
+
 /** Configuração escolhida pelo usuário para UMA faca. Índices apontam para SEED/config. */
 export interface ItemCfg {
   id: string;
@@ -45,7 +52,16 @@ export interface ItemCfg {
   bainhaIdxs: number[];
   /** Cor por bainha escolhida: { [idxBainha]: cor } */
   bainhaCores: Record<number, string | null>;
+  /** Personalização à laser (vazio = sem gravação) */
+  textoLaser?: string;
+  /** Nome que vai no certificado (default: nome do cliente do pedido) */
+  certificado?: string;
+  /** Embalagem — campo interno de produção */
+  embalagem?: string;
+  /** Subtotal sobrescrito manualmente (null = usa o calculado) */
+  subtotalManual?: number | null;
 }
+
 
 /** Índice da opção "Espaçador" na lista de empunhaduras (opcional, não é uma empunhadura). */
 export function espacadorIdx(data: SimuladorData): number {
