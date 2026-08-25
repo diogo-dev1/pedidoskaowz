@@ -15,10 +15,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import ShopifyDraftModal from '@/components/simulador/ShopifyDraftModal';
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
-  BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcEntry, gerarOrcamento,
+  BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
   novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, espacadorIdx, nomeBainha,
+  BAINHA_ADICIONAL_PRECO, LASER_PRECO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
 } from '@/lib/simuladorData';
+
 
 
 /* ════════════════ UI: átomos ════════════════ */
