@@ -895,6 +895,11 @@ export default function SimuladorPrecos() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
   const [shopifyOpen, setShopifyOpen] = useState(false);
+  const [clienteNome, setClienteNome] = useState('');
+  const [totalManual, setTotalManual] = useState<number | null>(null);
+  const [editandoTotal, setEditandoTotal] = useState(false);
+
+
 
   const addFaca = () => { const e = novaEntradaFaca(); setEntries((p) => [...p, e]); setExpandedId(e.id); };
   const addAvulso = (adicionalIdx: number) => {
