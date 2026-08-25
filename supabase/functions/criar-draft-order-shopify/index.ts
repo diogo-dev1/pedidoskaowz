@@ -1,5 +1,5 @@
 // Cria um Draft Order na Shopify a partir do Simulador de Preços.
-// Usa Admin API GraphQL com as secrets SHOPIFY_ADMIN_TOKEN e SHOPIFY_STORE_DOMAIN.
+// Autentica via client_credentials (SHOPIFY_CLIENT_ID/SECRET) contra SHOPIFY_STORE_DOMAIN.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,62 +42,49 @@ function resolveDomain(): string {
   return raw.replace(/^https?:\/\//, '').replace(/\/$/, '');
 }
 
-// Tenta os tokens disponíveis em ordem e usa o primeiro que autenticar.
-let cachedToken: string | null = null;
-let tokenExpiresAt = 0;
-
-async function getOAuthToken(domain: string): Promise<string | null> {
+// App do novo Dev Dashboard: sempre obtém token via client_credentials.
+async function getAccessToken(domain: string): Promise<string> {
   const clientId = Deno.env.get('SHOPIFY_CLIENT_ID');
   const clientSecret = Deno.env.get('SHOPIFY_CLIENT_SECRET');
-  if (!clientId || !clientSecret) return null;
-  if (cachedToken && Date.now() < tokenExpiresAt) return cachedToken;
+  if (!clientId || !clientSecret) {
+    throw new Error('Shopify não configurado (SHOPIFY_CLIENT_ID/SHOPIFY_CLIENT_SECRET ausentes)');
+  }
   const res = await fetch(`https://${domain}/admin/oauth/access_token`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret }),
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({
+      grant_type: 'client_credentials',
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
   });
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (!data?.access_token) return null;
-  cachedToken = data.access_token as string;
-  tokenExpiresAt = Date.now() + Math.max(0, (data.expires_in ?? 86400) - 60) * 1000;
-  return cachedToken;
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`Falha ao obter token client_credentials (HTTP ${res.status}): ${text.slice(0, 300)}`);
+  }
+  const data = JSON.parse(text);
+  console.log('[shopify] client_credentials scope:', data?.scope ?? '(sem campo scope)');
+  if (!data?.access_token) throw new Error('Resposta de token sem access_token');
+  return data.access_token as string;
 }
 
 async function shopify(query: string, variables: Record<string, unknown>) {
   const domain = resolveDomain();
   if (!domain) throw new Error('Shopify não configurado (domínio ausente)');
 
-  const candidates: string[] = [];
-  for (const name of ['SHOPIFY_ACCESS_TOKEN', 'SHOPIFY_ADMIN_TOKEN']) {
-    const v = Deno.env.get(name);
-    if (v && !candidates.includes(v)) candidates.push(v);
-  }
-  const oauth = await getOAuthToken(domain);
-  if (oauth && !candidates.includes(oauth)) candidates.push(oauth);
-  if (!candidates.length) throw new Error('Shopify não configurado (nenhum token disponível)');
-
-  let lastError = '';
-  for (const token of candidates) {
-    const res = await fetch(`https://${domain}/admin/api/${API_VERSION}/graphql.json`, {
-      method: 'POST',
-      headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables }),
-    });
-    const text = await res.text();
-    if (res.status === 401) {
-      cachedToken = null;
-      tokenExpiresAt = 0;
-      lastError = `Shopify HTTP 401: ${text.slice(0, 300)}`;
-      continue; // token inválido → tenta o próximo
-    }
-    if (!res.ok) throw new Error(`Shopify HTTP ${res.status}: ${text.slice(0, 500)}`);
-    const json = JSON.parse(text);
-    if (json.errors?.length) throw new Error(json.errors.map((e: any) => e.message).join(' | '));
-    return json.data;
-  }
-  throw new Error(lastError || 'Falha de autenticação na Shopify');
+  const token = await getAccessToken(domain);
+  const res = await fetch(`https://${domain}/admin/api/${API_VERSION}/graphql.json`, {
+    method: 'POST',
+    headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, variables }),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Shopify HTTP ${res.status}: ${text.slice(0, 500)}`);
+  const json = JSON.parse(text);
+  if (json.errors?.length) throw new Error(json.errors.map((e: any) => e.message).join(' | '));
+  return json.data;
 }
+
 
 
 
@@ -174,38 +161,25 @@ Deno.serve(async (req) => {
     const payload: Payload & { diagnostico?: boolean } = await req.json();
 
     if (payload.diagnostico) {
-      const domains = [
-        Deno.env.get('SHOPIFY_STORE_DOMAIN'),
-        Deno.env.get('SHOPIFY_SHOP'),
-        Deno.env.get('SHOPIFY_STORE_URL'),
-      ].filter(Boolean).map((d) => d!.replace(/^https?:\/\//, '').replace(/\/$/, ''));
-      const uniqueDomains = [...new Set(domains)];
-      const out: Record<string, unknown> = { domains: uniqueDomains };
-      const toks: [string, string | null][] = [
-        ['SHOPIFY_ACCESS_TOKEN', Deno.env.get('SHOPIFY_ACCESS_TOKEN') ?? null],
-        ['SHOPIFY_ADMIN_TOKEN', Deno.env.get('SHOPIFY_ADMIN_TOKEN') ?? null],
-      ];
-      for (const dom of uniqueDomains) {
-        for (const [nome, tok] of toks) {
-          const chave = `${dom} :: ${nome}`;
-          if (!tok) { out[chave] = 'ausente'; continue; }
-          try {
-            const r = await fetch(`https://${dom}/admin/api/${API_VERSION}/oauth/access_scopes.json`, {
-              headers: { 'X-Shopify-Access-Token': tok },
-            });
-            const t = await r.text();
-            out[chave] = r.ok
-              ? (JSON.parse(t).access_scopes ?? []).map((s: any) => s.handle)
-              : `HTTP ${r.status}: ${t.slice(0, 100)}`;
-          } catch (e) {
-            out[chave] = `erro: ${(e as Error).message}`;
-          }
-        }
+      const dom = resolveDomain();
+      const out: Record<string, unknown> = { domain: dom };
+      try {
+        const token = await getAccessToken(dom);
+        const r = await fetch(`https://${dom}/admin/api/${API_VERSION}/oauth/access_scopes.json`, {
+          headers: { 'X-Shopify-Access-Token': token },
+        });
+        const t = await r.text();
+        out.escopos = r.ok
+          ? (JSON.parse(t).access_scopes ?? []).map((s: any) => s.handle)
+          : `HTTP ${r.status}: ${t.slice(0, 200)}`;
+      } catch (e) {
+        out.erro = (e as Error).message;
       }
       return new Response(JSON.stringify(out, null, 2), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
 
 
     const itens = (payload.itens ?? []).filter((i) => i?.title && Number(i.price) >= 0);
