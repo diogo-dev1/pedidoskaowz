@@ -8,7 +8,7 @@ import { Loader2, ShoppingBag, Sparkles, Copy, Send, ExternalLink } from 'lucide
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  BRL, calcEntry, calcItem, nomeBainha, espacadorIdx,
+  BRL, calcEntry, calcItem, nomeBainha, espacadorIdx, temLaser,
   type SimuladorData, type PedidoEntry,
 } from '@/lib/simuladorData';
 
@@ -17,6 +17,21 @@ interface DraftLineItem {
   quantity: number;
   price: number;
   properties: { name: string; value: string }[];
+}
+
+/** Notas internas (embalagem etc.) — nunca viram propriedade visível da linha. */
+export function montarNotasInternas(data: SimuladorData, entries: PedidoEntry[]): string[] {
+  const out: string[] = [];
+  let n = 0;
+  entries.forEach((e) => {
+    if (e.kind !== 'faca') return;
+    const cfg = e.faca;
+    if (cfg.modeloIdx === null) return;
+    n++;
+    const emb = (cfg.embalagem ?? '').trim();
+    if (emb) out.push(`Item ${n} (${data.modelos[cfg.modeloIdx]?.nome ?? ''}) — Embalagem: ${emb}`);
+  });
+  return out;
 }
 
 /** Converte as entradas do simulador em custom line items da Shopify. */
@@ -56,6 +71,9 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
       }
       props.push({ name: 'Acabamento', value: data.acabamentos[cfg.acabIdx]?.nome ?? '' });
       bainhas.forEach((b, i) => props.push({ name: `Bainha ${i + 1}`, value: b }));
+      if (temLaser(cfg)) props.push({ name: 'Personalização', value: (cfg.textoLaser ?? '').trim() });
+      if ((cfg.certificado ?? '').trim()) props.push({ name: 'Certificado', value: (cfg.certificado ?? '').trim() });
+      // Embalagem NÃO entra aqui — é campo interno (vai na nota do pedido).
 
       out.push({
         title: tituloPartes.join(' — '),
@@ -80,15 +98,16 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
 
     const c = e.custom;
     out.push({
-      title: c.descricao.trim() || 'Item personalizado',
+      title: (c.descricao.trim() || 'Item personalizado') + (c.brinde ? ' (Brinde)' : ''),
       quantity: Math.max(1, c.quantidade),
-      price: Math.max(0, c.preco),
-      properties: [],
+      price: c.brinde ? 0 : Math.max(0, c.preco),
+      properties: c.brinde ? [{ name: 'Brinde', value: 'Sim' }] : [],
     });
   });
 
   return out;
 }
+
 
 interface Resultado {
   nome?: string;
