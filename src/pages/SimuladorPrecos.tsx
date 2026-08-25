@@ -171,10 +171,20 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
 
       {expanded && (
         <div className="px-4 pb-4 space-y-5 border-t pt-4">
+          {cfg.origem && (
+            <div className="flex items-center gap-2 rounded-lg border border-dashed bg-muted/30 px-2.5 py-1.5">
+              <ShoppingBag className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+              <span className="text-[10px] text-muted-foreground truncate">
+                Base do site: {cfg.origem.produtoTitulo}{cfg.origem.varianteTitulo ? ` — ${cfg.origem.varianteTitulo}` : ''}
+              </span>
+            </div>
+          )}
+
           <Secao title="Modelo">
             <ModeloSearch modelos={data.modelos} currentIdx={cfg.modeloIdx}
-              onSelect={(i) => onChange({ ...newItem(), id: cfg.id, modeloIdx: i })} />
+              onSelect={(i) => onChange({ ...newItem(), id: cfg.id, modeloIdx: i, certificado: cfg.certificado, origem: cfg.origem })} />
           </Secao>
+
 
           {modelo && (
             <>
