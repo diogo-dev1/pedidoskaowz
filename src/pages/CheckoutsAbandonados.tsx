@@ -14,6 +14,7 @@ import {
   Settings2, Copy, Plus, Trash2, ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { normalizarTelefone } from '@/lib/telefone';
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 interface CheckoutItem { titulo: string; variante: string | null; quantidade: number; preco: string }
