@@ -237,10 +237,12 @@ export function textoAvulso(data: SimuladorData, cfg: AvulsoCfg, n: number): str
   ];
 }
 
-/** Valor total de um item personalizado. */
+/** Valor total de um item personalizado (brinde = zero). */
 export function calcCustom(cfg: CustomCfg): number {
+  if (cfg.brinde) return 0;
   return Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
 }
+
 
 /** Bloco de texto de um item personalizado. */
 export function textoCustom(cfg: CustomCfg, n: number): string[] {
