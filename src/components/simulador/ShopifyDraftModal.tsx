@@ -78,6 +78,21 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
       if ((cfg.certificado ?? '').trim()) props.push({ name: 'Certificado', value: (cfg.certificado ?? '').trim() });
       // Embalagem NÃO entra aqui — é campo interno (vai na nota do pedido).
 
+      // Veio da vitrine e não foi alterada → usa a variante real (baixa estoque)
+      if (cfg.origem && catalogoIntacto(cfg)) {
+        out.push({
+          title: cfg.origem.varianteTitulo
+            ? `${cfg.origem.produtoTitulo} — ${cfg.origem.varianteTitulo}`
+            : cfg.origem.produtoTitulo,
+          quantity: 1,
+          price: calcItem(data, cfg),
+          properties: [],
+          variantId: cfg.origem.variantId,
+        });
+        return;
+      }
+      if (cfg.origem) props.push({ name: 'Base', value: cfg.origem.produtoTitulo });
+
       out.push({
         title: tituloPartes.join(' — '),
         quantity: 1,
@@ -86,6 +101,7 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
       });
       return;
     }
+
 
     if (e.kind === 'avulso') {
       const a = data.adicionais[e.avulso.adicionalIdx];
