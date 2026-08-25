@@ -189,6 +189,104 @@ export function novaEntradaCatalogo(p: {
   };
 }
 
+/* ═══════ Produto da vitrine → faca configurável (somente leitura) ═══════ */
+
+const norm = (s: string) =>
+  (s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+/** Melhor correspondência por nome dentro de um texto livre (nome mais longo vence). */
+function acharPorNome<T extends { nome: string }>(lista: T[], texto: string): number {
+  const t = ` ${norm(texto)} `;
+  let melhor = -1;
+  let tam = 0;
+  lista.forEach((o, i) => {
+    const n = norm(o.nome);
+    if (!n) return;
+    if (t.includes(` ${n} `) || t.includes(n)) {
+      if (n.length > tam) { melhor = i; tam = n.length; }
+    }
+  });
+  return melhor;
+}
+
+/** Assinatura das opções de uma faca — usada para saber se ela ainda é o produto do site. */
+export function assinaturaCfg(cfg: ItemCfg): string {
+  return JSON.stringify({
+    modeloIdx: cfg.modeloIdx,
+    acoIdx: cfg.acoIdx,
+    bruteForge: cfg.bruteForge,
+    empIdx: cfg.empIdx,
+    empCor: cfg.empCor,
+    dragonScale: cfg.dragonScale,
+    espacador: cfg.espacador,
+    espacadorCor: cfg.espacadorCor,
+    acabIdx: cfg.acabIdx,
+    bainhaIdxs: [...(cfg.bainhaIdxs ?? [])].sort(),
+    bainhaCores: cfg.bainhaCores ?? {},
+    textoLaser: (cfg.textoLaser ?? '').trim(),
+  });
+}
+
+/** A faca continua idêntica ao produto do site (opções e preço)? */
+export function catalogoIntacto(cfg: ItemCfg): boolean {
+  if (!cfg.origem) return false;
+  if (assinaturaCfg(cfg) !== cfg.origem.snapshot) return false;
+  const preco = cfg.subtotalManual;
+  return preco !== null && preco !== undefined && Math.abs(preco - cfg.origem.precoOriginal) < 0.01;
+}
+
+/** Cria uma faca configurável pré-preenchida a partir de um produto/variante da vitrine. */
+export function facaDeProdutoShopify(data: SimuladorData, p: {
+  variantId: string; titulo: string; variante?: string; imagem?: string | null; preco: number;
+}): ItemCfg {
+  const texto = [p.titulo, p.variante ?? ''].join(' ');
+  const cfg = newItem();
+
+  const mi = acharPorNome(data.modelos, texto);
+  if (mi >= 0) cfg.modeloIdx = mi;
+
+  const ai = acharPorNome(data.acos, texto);
+  if (ai >= 0) cfg.acoIdx = ai;
+  if (/brute\s*forge/i.test(texto)) cfg.bruteForge = true;
+
+  const espIdx = espacadorIdx(data);
+  const empLista = data.empunhaduras.map((e, i) => ({ e, i })).filter(({ i }) => i !== espIdx);
+  const ei = acharPorNome(empLista.map(({ e }) => e), texto);
+  if (ei >= 0) cfg.empIdx = empLista[ei].i;
+  if (/dragon\s*scale/i.test(texto)) cfg.dragonScale = true;
+  const cores = data.empunhaduras[cfg.empIdx]?.cores ?? [];
+  const cor = cores.find((c) => norm(texto).includes(norm(c)));
+  if (cor) cfg.empCor = cor;
+
+  const aci = acharPorNome(data.acabamentos, texto);
+  if (aci >= 0) cfg.acabIdx = aci;
+
+  const bi = acharPorNome(data.bainhas, texto);
+  if (bi >= 0) cfg.bainhaIdxs = [bi];
+  const bCores = data.bainhas[cfg.bainhaIdxs[0]]?.cores ?? [];
+  const bCor = bCores.find((c) => norm(texto).includes(norm(c)));
+  if (bCor) cfg.bainhaCores = { [cfg.bainhaIdxs[0]]: bCor };
+
+  // Preço do site entra como subtotal manual pré-preenchido (editável / reversível)
+  cfg.subtotalManual = p.preco;
+
+  cfg.origem = {
+    variantId: p.variantId,
+    produtoTitulo: p.titulo,
+    varianteTitulo: p.variante ?? '',
+    imagem: p.imagem ?? null,
+    precoOriginal: p.preco,
+    snapshot: assinaturaCfg(cfg),
+  };
+  return cfg;
+}
+
+/** Entrada de pedido do tipo faca, pré-preenchida a partir da vitrine. */
+export function novaEntradaFacaDeCatalogo(data: SimuladorData, p: {
+  variantId: string; titulo: string; variante?: string; imagem?: string | null; preco: number;
+}): PedidoEntry {
+  return { id: crypto.randomUUID(), kind: 'faca', faca: facaDeProdutoShopify(data, p) };
+}
 
 
 /** Regra da planilha: M usa P quando não definido; G cai para M→P. */
