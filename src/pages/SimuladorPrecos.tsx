@@ -533,22 +533,25 @@ function CustomRow({ cfg, onChange, onRemove }: {
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
-      <CustomDialog open={editing} onOpenChange={setEditing} initial={cfg} onSave={(u) => { onChange({ ...cfg, descricao: u.descricao, preco: u.preco }); }} />
+      <CustomDialog open={editing} onOpenChange={setEditing} initial={cfg}
+        onSave={(u) => { onChange({ ...cfg, descricao: u.descricao, preco: u.brinde ? 0 : u.preco, brinde: u.brinde }); }} />
     </>
   );
 }
 
 function CustomDialog({ open, onOpenChange, initial, onSave }: {
   open: boolean; onOpenChange: (v: boolean) => void;
-  initial?: { descricao: string; preco: number };
-  onSave: (v: { descricao: string; preco: number }) => void;
+  initial?: { descricao: string; preco: number; brinde?: boolean };
+  onSave: (v: { descricao: string; preco: number; brinde: boolean }) => void;
 }) {
   const [descricao, setDescricao] = useState(initial?.descricao ?? '');
   const [precoStr, setPrecoStr] = useState((initial?.preco ?? 0).toString().replace('.', ','));
+  const [brinde, setBrinde] = useState(!!initial?.brinde);
   useEffect(() => {
     if (open) {
       setDescricao(initial?.descricao ?? '');
       setPrecoStr((initial?.preco ?? 0) > 0 ? (initial!.preco).toFixed(2).replace('.', ',') : '');
+      setBrinde(!!initial?.brinde);
     }
   }, [open, initial]);
 
@@ -560,7 +563,7 @@ function CustomDialog({ open, onOpenChange, initial, onSave }: {
     const n = parseFloat(str);
     return Number.isFinite(n) ? n : 0;
   })();
-  const podeSalvar = descricao.trim().length > 0 && preco > 0;
+  const podeSalvar = descricao.trim().length > 0 && (brinde || preco > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -577,17 +580,24 @@ function CustomDialog({ open, onOpenChange, initial, onSave }: {
             <Textarea id="cst-desc" value={descricao} onChange={(e) => setDescricao(e.target.value)}
               placeholder="Ex: Faca personalizada com detalhe X, gravação Y..." rows={3} className="text-sm resize-none" />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="cst-preco" className="text-xs">Valor do item</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
-              <Input id="cst-preco" value={precoStr} inputMode="decimal"
-                onChange={(e) => setPrecoStr(e.target.value)}
-                placeholder="0,00" className="h-10 pl-9 tabular-nums font-semibold" />
+          <button type="button" onClick={() => setBrinde((b) => !b)}
+            className={`w-full flex items-center justify-center gap-2 h-10 rounded-xl text-xs font-semibold border transition-all
+              ${brinde ? 'border-accent bg-accent text-accent-foreground' : 'border-dashed border-accent/50 text-accent bg-accent/5 hover:bg-accent/10'}`}>
+            {brinde ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />} Brinde (R$ 0,00)
+          </button>
+          {!brinde && (
+            <div className="space-y-1.5">
+              <Label htmlFor="cst-preco" className="text-xs">Valor do item</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                <Input id="cst-preco" value={precoStr} inputMode="decimal"
+                  onChange={(e) => setPrecoStr(e.target.value)}
+                  placeholder="0,00" className="h-10 pl-9 tabular-nums font-semibold" />
+              </div>
             </div>
-          </div>
+          )}
           <Button className="w-full h-11 rounded-xl" disabled={!podeSalvar}
-            onClick={() => { onSave({ descricao: descricao.trim(), preco }); onOpenChange(false); }}>
+            onClick={() => { onSave({ descricao: descricao.trim(), preco: brinde ? 0 : preco, brinde }); onOpenChange(false); }}>
             Salvar item
           </Button>
         </div>
@@ -595,6 +605,7 @@ function CustomDialog({ open, onOpenChange, initial, onSave }: {
     </Dialog>
   );
 }
+
 
 /* ════════════════ Formulário "Shot Fair" (Google Forms) ════════════════ */
 // Registro do pedido vendido. IDs extraídos do próprio formulário.
