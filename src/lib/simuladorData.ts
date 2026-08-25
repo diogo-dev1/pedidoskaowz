@@ -249,9 +249,10 @@ export function textoCustom(cfg: CustomCfg, n: number): string[] {
   return [
     `Item ${n}:`,
     `${nome}${qtd}`,
-    `Valor: ${BRL(calcCustom(cfg))}`,
+    cfg.brinde ? 'Valor: Brinde (R$ 0,00)' : `Valor: ${BRL(calcCustom(cfg))}`,
   ];
 }
+
 
 /** Valor total de uma entrada. */
 export function calcEntry(data: SimuladorData, e: PedidoEntry): number {
