@@ -114,14 +114,16 @@ interface Resultado {
   invoiceUrl?: string;
 }
 
-export default function ShopifyDraftModal({ open, onOpenChange, data, entries, total }: {
+export default function ShopifyDraftModal({ open, onOpenChange, data, entries, total, nomeInicial, onNomeChange }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   data: SimuladorData;
   entries: PedidoEntry[];
   total: number;
+  nomeInicial?: string;
+  onNomeChange?: (n: string) => void;
 }) {
-  const [nome, setNome] = useState('');
+  const [nome, setNome] = useState(nomeInicial ?? '');
   const [telefone, setTelefone] = useState('');
   const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
@@ -140,8 +142,14 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
   const [resultado, setResultado] = useState<Resultado | null>(null);
 
   useEffect(() => { if (!open) { setResultado(null); setEnviando(false); } }, [open]);
+  useEffect(() => { if (open && nomeInicial && !nome.trim()) setNome(nomeInicial); }, [open, nomeInicial]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const itens = useMemo(() => montarLineItems(data, entries), [data, entries]);
+  const notasInternas = useMemo(() => montarNotasInternas(data, entries), [data, entries]);
+  const somaItens = useMemo(() => itens.reduce((s, i) => s + i.price * i.quantity, 0), [itens]);
+  const ajuste = +(total - somaItens).toFixed(2);
+
+
 
   const preencherComIA = async () => {
     if (!colado.trim()) { toast.error('Cole a mensagem do cliente primeiro'); return; }
