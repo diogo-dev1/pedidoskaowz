@@ -1233,7 +1233,12 @@ export default function SimuladorPrecos() {
         </div>
       </div>
 
+      <TipoItemDialog open={tipoOpen} onOpenChange={setTipoOpen} onPick={escolherTipo} />
+
+      <CatalogoShopifyPicker open={catalogoOpen} onOpenChange={setCatalogoOpen} onPick={addCatalogo} />
+
       <AvulsoPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} data={data} onPick={addAvulso} />
+
 
       <CustomDialog open={customOpen} onOpenChange={setCustomOpen}
         onSave={({ descricao, preco, brinde }) => {
