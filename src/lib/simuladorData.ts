@@ -84,7 +84,10 @@ export interface CustomCfg {
   descricao: string;
   preco: number;
   quantidade: number;
+  /** Item de cortesia — preço zero, entra como linha R$ 0,00 no draft */
+  brinde?: boolean;
 }
+
 
 /** Uma entrada do pedido: faca configurada, item avulso ou item personalizado. */
 export type PedidoEntry =
