@@ -13,7 +13,10 @@ interface LineItemIn {
   quantity: number;
   price: number;
   properties?: { name: string; value: string }[];
+  /** Variante real da Shopify (gid://shopify/ProductVariant/...) */
+  variantId?: string;
 }
+
 
 interface Payload {
   itens: LineItemIn[];
