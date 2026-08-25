@@ -1044,13 +1044,15 @@ export default function SimuladorPrecos() {
     toast.success('Item adicionado!');
   };
   const addCatalogo = (p: ProdutoShopify) => {
-    const e = novaEntradaCatalogo({
+    const e = novaEntradaFacaDeCatalogo(data, {
       variantId: p.variantId, titulo: p.titulo, variante: p.variante, imagem: p.imagem, preco: p.preco,
     });
     setEntries((prev) => [...prev, e]);
+    setExpandedId(e.id);
     if (navigator.vibrate) navigator.vibrate(15);
-    toast.success('Produto adicionado!');
+    toast.success('Produto adicionado — ajuste as opções se precisar');
   };
+
   const escolherTipo = (t: 'catalogo' | 'faca' | 'avulso' | 'custom') => {
     if (t === 'catalogo') setCatalogoOpen(true);
     else if (t === 'faca') addFaca();
