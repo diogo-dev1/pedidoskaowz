@@ -108,8 +108,10 @@ export function newItem(): ItemCfg {
     acoIdx: 0, bruteForge: false, empIdx: 0, empCor: null, dragonScale: false,
     espacador: false, espacadorCor: null,
     acabIdx: 0, bainhaIdxs: [0], bainhaCores: {},
+    textoLaser: '', certificado: '', embalagem: '', subtotalManual: null,
   };
 }
+
 
 /** Nome legível de uma bainha escolhida, com a cor quando houver. */
 export function nomeBainha(data: SimuladorData, cfg: ItemCfg, idx: number): string {
