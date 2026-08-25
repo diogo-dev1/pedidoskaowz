@@ -305,9 +305,12 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
                   Total ajustado manualmente ({ajuste < 0 ? 'desconto' : 'acréscimo'} de {BRL(Math.abs(ajuste))} sobre {BRL(somaItens)}) — vai aplicado no draft.
                 </p>
               )}
-              <div className="hidden">
+              {notasInternas.length > 0 && (
+                <p className="text-[10px] text-muted-foreground">
+                  Notas internas (não aparecem para o cliente): {notasInternas.join(' · ')}
+                </p>
+              )}
 
-              </div>
             </div>
 
             {/* Colar mensagem + IA */}
