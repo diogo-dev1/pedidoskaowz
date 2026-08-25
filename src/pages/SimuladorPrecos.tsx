@@ -120,13 +120,16 @@ function ModeloSearch({ modelos, onSelect, currentIdx }: { modelos: Modelo[]; on
 
 /* ════════════════ Card de item ════════════════ */
 
-function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded, onToggle, removivel }: {
+function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded, onToggle, removivel, clienteNome }: {
   data: SimuladorData; cfg: ItemCfg; onChange: (c: ItemCfg) => void; onRemove: () => void; onDuplicate: () => void;
-  index: number; expanded: boolean; onToggle: () => void; removivel: boolean;
+  index: number; expanded: boolean; onToggle: () => void; removivel: boolean; clienteNome?: string;
 }) {
   const modelo = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   const c = classeDo(modelo);
+  const calculado = calcItemBase(data, cfg);
+  const manual = cfg.subtotalManual !== null && cfg.subtotalManual !== undefined;
   const total = calcItem(data, cfg);
+
 
   const nomeOpt = (arr: Opcao[], idx: number, sufixo = '') =>
     arr[idx] && !arr[idx].incluso ? arr[idx].nome + sufixo : (sufixo ? arr[idx]?.nome + sufixo : null);
