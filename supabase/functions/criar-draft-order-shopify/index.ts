@@ -211,18 +211,32 @@ Deno.serve(async (req) => {
 
     const customerId = await resolveCustomer(cliente, metafields);
 
-    const lineItems = itens.map((i) => ({
-      title: i.title,
-      quantity: Math.max(1, Number(i.quantity) || 1),
-      originalUnitPriceWithCurrency: {
+    const lineItems: Record<string, unknown>[] = itens.map((i) => {
+      const base: Record<string, unknown> = {
+        quantity: Math.max(1, Number(i.quantity) || 1),
+        customAttributes: (i.properties ?? [])
+          .filter((p) => p?.name && p?.value)
+          .map((p) => ({ key: p.name.slice(0, 100), value: String(p.value).slice(0, 500) })),
+      };
+      if (i.variantId) {
+        // Produto real do catálogo: usa a variante (baixa estoque / relatórios por produto).
+        base.variantId = i.variantId;
+        // Preço editado no simulador → sobrescreve o preço da variante.
+        base.originalUnitPriceWithCurrency = {
+          amount: Number(i.price).toFixed(2),
+          currencyCode: 'BRL',
+        };
+        return base;
+      }
+      base.title = i.title;
+      base.requiresShipping = true;
+      base.originalUnitPriceWithCurrency = {
         amount: Number(i.price).toFixed(2),
         currencyCode: 'BRL',
-      },
-      requiresShipping: true,
-      customAttributes: (i.properties ?? [])
-        .filter((p) => p?.name && p?.value)
-        .map((p) => ({ key: p.name.slice(0, 100), value: String(p.value).slice(0, 500) })),
-    }));
+      };
+      return base;
+    });
+
 
     // Atributos do pedido (CPF/nascimento também aqui, para visibilidade)
     const customAttributes: { key: string; value: string }[] = [];
