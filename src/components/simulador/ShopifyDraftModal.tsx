@@ -156,6 +156,7 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
   const [parsing, setParsing] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<Resultado | null>(null);
+  const [dadosExpandidos, setDadosExpandidos] = useState(false);
 
   useEffect(() => { if (!open) { setResultado(null); setEnviando(false); } }, [open]);
   useEffect(() => { if (open && nomeInicial && !nome.trim()) setNome(nomeInicial); }, [open, nomeInicial]); // eslint-disable-line react-hooks/exhaustive-deps
