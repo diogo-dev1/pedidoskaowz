@@ -222,12 +222,13 @@ Deno.serve(async (req) => {
         // Produto real do catálogo: usa a variante (baixa estoque / relatórios por produto).
         base.variantId = i.variantId;
         // Preço editado no simulador → sobrescreve o preço da variante.
-        base.originalUnitPriceWithCurrency = {
+        base.priceOverride = {
           amount: Number(i.price).toFixed(2),
           currencyCode: 'BRL',
         };
         return base;
       }
+
       base.title = i.title;
       base.requiresShipping = true;
       base.originalUnitPriceWithCurrency = {
