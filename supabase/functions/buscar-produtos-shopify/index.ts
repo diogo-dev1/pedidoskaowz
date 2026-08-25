@@ -62,7 +62,6 @@ const PRODUCTS_QUERY = `
           id
           title
           status
-          publishedOnCurrentPublication
           featuredImage { url }
           variants(first: 25) {
             edges {
@@ -99,7 +98,6 @@ Deno.serve(async (req) => {
     for (const edge of data?.products?.edges ?? []) {
       const p = edge.node;
       if (p.status !== 'ACTIVE') continue;
-      if (p.publishedOnCurrentPublication === false) continue;
       for (const ve of p.variants?.edges ?? []) {
         const v = ve.node;
         produtos.push({
