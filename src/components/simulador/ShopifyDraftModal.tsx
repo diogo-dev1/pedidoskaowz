@@ -59,11 +59,11 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
       const props: { name: string; value: string }[] = [
         { name: 'Modelo', value: m.nome },
         { name: 'Aço', value: aco },
-        { name: 'Brute Forge', value: cfg.bruteForge ? 'Sim' : 'Não' },
         { name: 'Empunhadura', value: data.empunhaduras[cfg.empIdx]?.nome ?? '' },
       ];
+      if (cfg.bruteForge) props.push({ name: 'Brute Forge', value: 'Sim' });
       if (cfg.empCor) props.push({ name: 'Cor da empunhadura', value: cfg.empCor });
-      props.push({ name: 'Dragon Scale', value: cfg.dragonScale ? 'Sim' : 'Não' });
+      if (cfg.dragonScale) props.push({ name: 'Dragon Scale', value: 'Sim' });
       if (cfg.espacador) {
         const ei = espacadorIdx(data);
         props.push({
