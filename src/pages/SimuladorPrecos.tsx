@@ -932,9 +932,11 @@ export default function SimuladorPrecos() {
   const updateCustom = (id: string, u: CustomCfg) =>
     setEntries((p) => p.map((e) => (e.id === id ? { ...e, custom: u } : e)));
 
-  const totalGeral = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
+  const totalCalculado = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
+  const totalGeral = totalManual !== null ? totalManual : totalCalculado;
   const itensValidos = entries.filter((e) => e.kind === 'avulso' || e.kind === 'custom' || (e.kind === 'faca' && e.faca.modeloIdx !== null)).length;
   const orcamento = useMemo(() => gerarOrcamento(data, entries, totalGeral), [data, entries, totalGeral]);
+
 
   const copiarRapido = async () => {
     try { await navigator.clipboard.writeText(orcamento); toast.success('Orçamento copiado!'); }
