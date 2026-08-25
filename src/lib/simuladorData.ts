@@ -150,8 +150,8 @@ export function classeDo(m: Modelo | null): Classe {
   return !m || m.tamanho === '-' ? 'P' : m.tamanho;
 }
 
-/** Valor total de uma faca configurada, usando os dados (SEED ou config do banco). */
-export function calcItem(data: SimuladorData, cfg: ItemCfg): number {
+/** Valor CALCULADO de uma faca (ignora sobrescrita manual de subtotal). */
+export function calcItemBase(data: SimuladorData, cfg: ItemCfg): number {
   const m = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   if (!m) return 0;
   const c = classeDo(m);
@@ -165,13 +165,34 @@ export function calcItem(data: SimuladorData, cfg: ItemCfg): number {
     if (ei >= 0) t += precoClasse(data.empunhaduras[ei].precos, c);
   }
   t += precoClasse(data.acabamentos[cfg.acabIdx]?.precos ?? {}, c);
-  (cfg.bainhaIdxs ?? []).forEach((i) => {
+  const bainhas = cfg.bainhaIdxs ?? [];
+  bainhas.forEach((i) => {
     t += precoClasse(data.bainhas[i]?.precos ?? {}, c);
   });
+  // A primeira bainha já está inclusa no preço base; a partir da segunda, cobra-se.
+  if (bainhas.length > 1) t += (bainhas.length - 1) * BAINHA_ADICIONAL_PRECO;
+  // Personalização à laser (mesma regra do Novo Pedido)
+  if (temLaser(cfg)) t += LASER_PRECO;
   return t;
 }
 
-/** Bloco de texto de uma faca para o orçamento (formato WhatsApp). */
+/** Há gravação à laser configurada? */
+export function temLaser(cfg: ItemCfg): boolean {
+  const t = (cfg.textoLaser ?? '').trim();
+  return !!t && t !== '-';
+}
+
+/** Valor de uma faca — usa o subtotal manual quando definido. */
+export function calcItem(data: SimuladorData, cfg: ItemCfg): number {
+  if (cfg.modeloIdx === null) return 0;
+  if (cfg.subtotalManual !== null && cfg.subtotalManual !== undefined && Number.isFinite(cfg.subtotalManual)) {
+    return Math.max(0, cfg.subtotalManual);
+  }
+  return calcItemBase(data, cfg);
+}
+
+/** Bloco de texto de uma faca para o orçamento (formato WhatsApp).
+ *  Embalagem é campo INTERNO e nunca entra aqui. */
 export function textoItem(data: SimuladorData, cfg: ItemCfg, n: number): string[] {
   const m = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   if (!m) return [];
@@ -189,9 +210,12 @@ export function textoItem(data: SimuladorData, cfg: ItemCfg, n: number): string[
     `Acabamento: ${data.acabamentos[cfg.acabIdx]?.nome ?? '-'}`,
     `Bainha: ${bainhas.length ? bainhas.join(' + ') : '-'}`,
   ];
+  if (temLaser(cfg)) l.push(`Personalização: ${(cfg.textoLaser ?? '').trim()}`);
+  if ((cfg.certificado ?? '').trim()) l.push(`Certificado: ${(cfg.certificado ?? '').trim()}`);
   l.push(`Valor: ${BRL(calcItem(data, cfg))}`);
   return l;
 }
+
 
 
 /** Valor total de um item avulso (produto do catálogo de Adicionais). */
