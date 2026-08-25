@@ -1042,42 +1042,69 @@ export default function SimuladorPrecos() {
 
       {/* Footer fixo — acima da bottom nav no mobile */}
       <div className="fixed left-0 right-0 bg-background/95 backdrop-blur-lg border-t z-40 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0">
-        <div className="max-w-lg mx-auto flex items-center gap-3 px-4 py-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">
-              {itensValidos} {itensValidos === 1 ? 'item' : 'itens'}
-            </p>
-            <p className="text-xl font-bold text-accent leading-tight" data-numeric>{BRL(totalGeral)}</p>
+        <div className="max-w-lg mx-auto px-4 py-3 space-y-2">
+          {editandoTotal && (
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                <Input type="number" min={0} step="0.01" autoFocus
+                  value={totalManual ?? totalCalculado}
+                  onChange={(ev) => setTotalManual(ev.target.value === '' ? 0 : Math.max(0, parseFloat(ev.target.value) || 0))}
+                  className="h-9 pl-9 text-sm tabular-nums font-semibold" />
+              </div>
+              <Button variant="outline" size="sm" className="h-9 gap-1.5"
+                onClick={() => { setTotalManual(null); setEditandoTotal(false); }}>
+                <Eraser className="h-3.5 w-3.5" /> Calculado
+              </Button>
+              <Button size="sm" className="h-9" onClick={() => setEditandoTotal(false)}>OK</Button>
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">
+                {itensValidos} {itensValidos === 1 ? 'item' : 'itens'}
+                {totalManual !== null && <span className="text-amber-600 font-semibold"> · ajustado</span>}
+              </p>
+              <button type="button" className="flex items-center gap-1.5"
+                onClick={() => { if (totalManual === null) setTotalManual(totalCalculado); setEditandoTotal(true); }}>
+                <span className="text-xl font-bold text-accent leading-tight" data-numeric>{BRL(totalGeral)}</span>
+                <Pencil className="h-3 w-3 text-muted-foreground" />
+              </button>
+              {totalManual !== null && (
+                <p className="text-[10px] text-muted-foreground leading-tight">Calculado: {BRL(totalCalculado)}</p>
+              )}
+            </div>
+            <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl flex-shrink-0" onClick={copiarRapido} title="Copiar orçamento">
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" className="gap-2 h-11 rounded-xl flex-shrink-0 px-3"
+              onClick={() => setShopifyOpen(true)} disabled={itensValidos === 0}>
+              <ShoppingBag className="h-4 w-4" /> Shopify
+            </Button>
+            <Button className="gap-2 h-11 rounded-xl flex-shrink-0 bg-accent hover:bg-accent/90 text-accent-foreground px-3"
+              onClick={() => setModalOpen(true)} disabled={itensValidos === 0}>
+              <ClipboardCheck className="h-4 w-4" /> Formulário
+            </Button>
           </div>
-          <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl flex-shrink-0" onClick={copiarRapido} title="Copiar orçamento">
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" className="gap-2 h-11 rounded-xl flex-shrink-0 px-3"
-            onClick={() => setShopifyOpen(true)} disabled={itensValidos === 0}>
-            <ShoppingBag className="h-4 w-4" /> Shopify
-          </Button>
-          <Button className="gap-2 h-11 rounded-xl flex-shrink-0 bg-accent hover:bg-accent/90 text-accent-foreground px-3"
-            onClick={() => setModalOpen(true)} disabled={itensValidos === 0}>
-            <ClipboardCheck className="h-4 w-4" /> Formulário
-          </Button>
-
         </div>
       </div>
 
       <AvulsoPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} data={data} onPick={addAvulso} />
 
       <CustomDialog open={customOpen} onOpenChange={setCustomOpen}
-        onSave={({ descricao, preco }) => {
-          setEntries((p) => [...p, novaEntradaCustom(descricao, preco, 1)]);
+        onSave={({ descricao, preco, brinde }) => {
+          setEntries((p) => [...p, novaEntradaCustom(descricao, preco, 1, brinde)]);
           if (navigator.vibrate) navigator.vibrate(15);
-          toast.success('Item adicionado!');
+          toast.success(brinde ? 'Brinde adicionado!' : 'Item adicionado!');
         }} />
 
       <OrcamentoModal open={modalOpen} onOpenChange={setModalOpen} texto={orcamento} total={totalGeral}
         vendedorPadrao={profile?.nome_vendedor ?? ''} />
 
       <ShopifyDraftModal open={shopifyOpen} onOpenChange={setShopifyOpen}
-        data={data} entries={entries} total={totalGeral} />
+        data={data} entries={entries} total={totalGeral}
+        nomeInicial={clienteNome} onNomeChange={setClienteNome} />
+
     </div>
   );
 }
