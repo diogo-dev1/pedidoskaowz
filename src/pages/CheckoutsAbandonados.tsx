@@ -14,6 +14,7 @@ import {
   Settings2, Copy, Plus, Trash2, ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { normalizarTelefone } from '@/lib/telefone';
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 interface CheckoutItem { titulo: string; variante: string | null; quantidade: number; preco: string }
@@ -42,13 +43,8 @@ const horasAtras = (iso: string) => {
   return `há ${Math.floor(h / 24)}d`;
 };
 
-function normalizarTelefone(tel: string | null): string | null {
-  if (!tel) return null;
-  let d = tel.replace(/\D/g, '');
-  if (d.startsWith('00')) d = d.slice(2);
-  if (!d.startsWith('55') && (d.length === 10 || d.length === 11)) d = '55' + d;
-  return d.length >= 12 ? d : null;
-}
+// normalizarTelefone vive em src/lib/telefone.ts (compartilhado com as métricas de clientes)
+
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
   pendente: { label: 'Pendente', className: 'bg-amber-500/15 text-amber-600 border-amber-500/30' },
