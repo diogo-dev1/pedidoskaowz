@@ -206,7 +206,10 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
             complemento: complemento.trim() || undefined,
           },
           observacao: observacao.trim() || undefined,
+          notasInternas,
+          totalDesejado: Math.abs(ajuste) >= 0.01 ? total : undefined,
         },
+
       });
       if (error) throw error;
       if (!res?.sucesso) throw new Error(res?.erro ?? 'Falha ao criar o pedido na Shopify');
