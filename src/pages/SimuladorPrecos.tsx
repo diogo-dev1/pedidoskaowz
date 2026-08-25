@@ -8,18 +8,22 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Calculator, Plus, Minus, Trash2, Copy, MessageCircle, Search, X,
   ChevronDown, ChevronUp, CopyPlus, Send, Loader2, Check, ClipboardCheck, Eraser,
-  Hammer, PackagePlus, Pencil, FilePlus2, ShoppingBag,
+  Hammer, PackagePlus, Pencil, FilePlus2, ShoppingBag, PlusCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import ShopifyDraftModal from '@/components/simulador/ShopifyDraftModal';
+import CatalogoShopifyPicker, { type ProdutoShopify } from '@/components/simulador/CatalogoShopifyPicker';
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
-  novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, espacadorIdx, nomeBainha,
+  novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, espacadorIdx, nomeBainha,
+  nomeCatalogo, calcCatalogo,
   BAINHA_ADICIONAL_PRECO, LASER_PRECO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
+  type CatalogoCfg,
 } from '@/lib/simuladorData';
+
 
 
 
