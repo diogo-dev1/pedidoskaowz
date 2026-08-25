@@ -99,6 +99,18 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
       return;
     }
 
+    if (e.kind === 'catalogo') {
+      const c = e.catalogo;
+      out.push({
+        title: nomeCatalogo(c),
+        quantity: Math.max(1, c.quantidade),
+        price: Math.max(0, c.preco),
+        properties: [],
+        variantId: c.variantId,
+      });
+      return;
+    }
+
     const c = e.custom;
     out.push({
       title: (c.descricao.trim() || 'Item personalizado') + (c.brinde ? ' (Brinde)' : ''),
@@ -107,6 +119,7 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
       properties: c.brinde ? [{ name: 'Brinde', value: 'Sim' }] : [],
     });
   });
+
 
   return out;
 }
