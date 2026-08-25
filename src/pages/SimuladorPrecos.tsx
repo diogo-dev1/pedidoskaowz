@@ -496,7 +496,7 @@ function CustomRow({ cfg, onChange, onRemove }: {
   cfg: CustomCfg; onChange: (c: CustomCfg) => void; onRemove: () => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const subtotal = Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
+  const subtotal = cfg.brinde ? 0 : Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
   return (
     <>
       <div className="rounded-2xl border bg-card overflow-hidden shadow-sm flex items-center gap-3 p-4">
@@ -504,9 +504,15 @@ function CustomRow({ cfg, onChange, onRemove }: {
           <FilePlus2 className="w-4 h-4" />
         </span>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate">{cfg.descricao.trim() || 'Item não cadastrado'}</p>
-          <p className="text-[11px] text-muted-foreground">Item não cadastrado · {BRL(Math.max(0, cfg.preco))}/un</p>
+          <p className="font-semibold text-sm truncate">
+            {cfg.descricao.trim() || 'Item não cadastrado'}
+            {cfg.brinde && <span className="ml-1.5 text-[10px] font-bold text-accent uppercase">Brinde</span>}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            {cfg.brinde ? 'Brinde · R$ 0,00' : `Item não cadastrado · ${BRL(Math.max(0, cfg.preco))}/un`}
+          </p>
         </div>
+
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <button type="button" onClick={() => onChange({ ...cfg, quantidade: Math.max(1, cfg.quantidade - 1) })}
             className="w-7 h-7 rounded-full border flex items-center justify-center hover:bg-muted active:scale-95 transition-all disabled:opacity-30"
