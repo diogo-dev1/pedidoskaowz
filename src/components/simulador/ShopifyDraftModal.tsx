@@ -300,6 +300,14 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
               <div className="flex items-center justify-between border-t pt-2 text-sm font-bold">
                 <span>Total</span><span className="text-accent tabular-nums">{BRL(total)}</span>
               </div>
+              {Math.abs(ajuste) >= 0.01 && (
+                <p className="text-[10px] text-muted-foreground">
+                  Total ajustado manualmente ({ajuste < 0 ? 'desconto' : 'acréscimo'} de {BRL(Math.abs(ajuste))} sobre {BRL(somaItens)}) — vai aplicado no draft.
+                </p>
+              )}
+              <div className="hidden">
+
+              </div>
             </div>
 
             {/* Colar mensagem + IA */}
