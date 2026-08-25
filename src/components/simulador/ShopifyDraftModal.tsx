@@ -8,7 +8,7 @@ import { Loader2, ShoppingBag, Sparkles, Copy, Send, ExternalLink } from 'lucide
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  BRL, calcEntry, calcItem, nomeBainha, espacadorIdx, temLaser,
+  BRL, calcEntry, calcItem, nomeBainha, espacadorIdx, temLaser, nomeCatalogo,
   type SimuladorData, type PedidoEntry,
 } from '@/lib/simuladorData';
 
@@ -17,7 +17,10 @@ interface DraftLineItem {
   quantity: number;
   price: number;
   properties: { name: string; value: string }[];
+  /** Quando presente, a linha usa a variante real da Shopify (baixa estoque) */
+  variantId?: string;
 }
+
 
 /** Notas internas (embalagem etc.) — nunca viram propriedade visível da linha. */
 export function montarNotasInternas(data: SimuladorData, entries: PedidoEntry[]): string[] {
