@@ -155,6 +155,26 @@ export function novaEntradaCustom(descricao = '', preco = 0, quantidade = 1, bri
   return { id: crypto.randomUUID(), kind: 'custom', custom: { id: crypto.randomUUID(), descricao, preco, quantidade, brinde } };
 }
 
+export function novaEntradaCatalogo(p: {
+  variantId: string; titulo: string; variante?: string; imagem?: string | null; preco: number;
+}): PedidoEntry {
+  return {
+    id: crypto.randomUUID(),
+    kind: 'catalogo',
+    catalogo: {
+      id: crypto.randomUUID(),
+      variantId: p.variantId,
+      titulo: p.titulo,
+      variante: p.variante ?? '',
+      imagem: p.imagem ?? null,
+      precoOriginal: p.preco,
+      preco: p.preco,
+      quantidade: 1,
+    },
+  };
+}
+
+
 
 /** Regra da planilha: M usa P quando não definido; G cai para M→P. */
 export function precoClasse(p: Precos, c: Classe): number {
