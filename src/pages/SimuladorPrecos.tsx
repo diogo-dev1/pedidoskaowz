@@ -1091,7 +1091,7 @@ export default function SimuladorPrecos() {
   const totalCalculado = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
 
   const totalGeral = totalManual !== null ? totalManual : totalCalculado;
-  const itensValidos = entries.filter((e) => e.kind === 'avulso' || e.kind === 'custom' || (e.kind === 'faca' && e.faca.modeloIdx !== null)).length;
+  const itensValidos = entries.filter((e) => e.kind !== 'faca' || e.faca.modeloIdx !== null).length;
   const orcamento = useMemo(() => gerarOrcamento(data, entries, totalGeral), [data, entries, totalGeral]);
 
 
