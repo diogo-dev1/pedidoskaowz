@@ -328,7 +328,7 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
             <div className="grid grid-cols-1 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="sh-nome" className="text-xs">Nome (opcional)</Label>
-                <Input id="sh-nome" value={nome} onChange={(e) => setNome(e.target.value)} className="h-10" />
+                <Input id="sh-nome" value={nome} onChange={(e) => { setNome(e.target.value); onNomeChange?.(e.target.value); }} className="h-10" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
