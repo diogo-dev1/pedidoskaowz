@@ -8,9 +8,10 @@ import { Loader2, ShoppingBag, Sparkles, Copy, Send, ExternalLink } from 'lucide
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  BRL, calcEntry, calcItem, nomeBainha, espacadorIdx, temLaser, nomeCatalogo,
+  BRL, calcEntry, calcItem, nomeBainha, espacadorIdx, temLaser, nomeCatalogo, catalogoIntacto,
   type SimuladorData, type PedidoEntry,
 } from '@/lib/simuladorData';
+
 
 interface DraftLineItem {
   title: string;
