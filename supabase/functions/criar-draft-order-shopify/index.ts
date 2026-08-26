@@ -275,6 +275,8 @@ Deno.serve(async (req) => {
       lineItems,
       customAttributes,
       tags: ['Kaowz-Simulador'],
+      // Pedido isento de tributos: remove a linha de "Tributos" do checkout/e-mail
+      taxExempt: true,
       useCustomerDefaultAddress: !!customerId,
     };
     if (customerId) {
