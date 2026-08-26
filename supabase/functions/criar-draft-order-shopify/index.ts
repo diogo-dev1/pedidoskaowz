@@ -292,6 +292,9 @@ Deno.serve(async (req) => {
     const notaPartes: string[] = [];
     if (payload.observacao?.trim()) notaPartes.push(payload.observacao.trim());
     const internas = (payload.notasInternas ?? []).map((n) => String(n).trim()).filter(Boolean);
+    if (titulosCompletos.length) {
+      internas.push('Descrições completas de itens (título truncado na linha):', ...titulosCompletos);
+    }
     if (internas.length) notaPartes.push('[INTERNO]', ...internas);
     if (notaPartes.length) input.note = notaPartes.join('\n');
 
