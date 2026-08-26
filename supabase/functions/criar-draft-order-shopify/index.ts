@@ -103,6 +103,18 @@ function normalizaTelefone(t?: string): string | undefined {
   return d.startsWith('55') ? `+${d}` : `+55${d}`;
 }
 
+// Trunca de forma limpa (sem cortar palavra no meio quando possível).
+function truncaLimpo(s: string, max: number): string {
+  if (s.length <= max) return s;
+  const corte = s.slice(0, max);
+  const ultimoEspaco = corte.lastIndexOf(' ');
+  // Só volta até o espaço se não perdermos muito do texto
+  return (ultimoEspaco > max - 30 ? corte.slice(0, ultimoEspaco) : corte).trimEnd();
+}
+
+const MAX_TITULO_LINHA = 100;   // limite defensivo p/ merchandise title (erro 400)
+const MAX_VALOR_PROP = 255;     // limite seguro p/ valor de customAttribute de linha
+
 const CUSTOMERS_QUERY = `
   query($q: String!) {
     customers(first: 1, query: $q) { edges { node { id } } }
