@@ -223,12 +223,15 @@ Deno.serve(async (req) => {
 
     const customerId = await resolveCustomer(cliente, metafields);
 
+    // Títulos longos que precisaram ser truncados vão integralmente na note interna
+    const titulosCompletos: string[] = [];
+
     const lineItems: Record<string, unknown>[] = itens.map((i) => {
       const base: Record<string, unknown> = {
         quantity: Math.max(1, Number(i.quantity) || 1),
         customAttributes: (i.properties ?? [])
           .filter((p) => p?.name && p?.value)
-          .map((p) => ({ key: p.name.slice(0, 100), value: String(p.value).slice(0, 500) })),
+          .map((p) => ({ key: String(p.name).slice(0, 100), value: truncaLimpo(String(p.value), MAX_VALOR_PROP) })),
       };
       if (i.variantId) {
         // Produto real do catálogo: usa a variante (baixa estoque / relatórios por produto).
@@ -241,7 +244,18 @@ Deno.serve(async (req) => {
         return base;
       }
 
-      base.title = i.title;
+      // Título defensivo: Shopify rejeita (400 "merchandise title") títulos muito longos
+      const tituloCompleto = String(i.title);
+      const tituloSeguro = truncaLimpo(tituloCompleto, MAX_TITULO_LINHA);
+      if (tituloSeguro !== tituloCompleto) {
+        // Nenhuma informação perdida: texto integral vai como propriedade da linha e na note interna
+        (base.customAttributes as { key: string; value: string }[]).unshift({
+          key: 'Descrição completa',
+          value: truncaLimpo(tituloCompleto, MAX_VALOR_PROP),
+        });
+        titulosCompletos.push(tituloCompleto);
+      }
+      base.title = tituloSeguro;
       base.requiresShipping = true;
       base.originalUnitPriceWithCurrency = {
         amount: Number(i.price).toFixed(2),
