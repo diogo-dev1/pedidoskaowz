@@ -103,6 +103,18 @@ function normalizaTelefone(t?: string): string | undefined {
   return d.startsWith('55') ? `+${d}` : `+55${d}`;
 }
 
+// Trunca de forma limpa (sem cortar palavra no meio quando possível).
+function truncaLimpo(s: string, max: number): string {
+  if (s.length <= max) return s;
+  const corte = s.slice(0, max);
+  const ultimoEspaco = corte.lastIndexOf(' ');
+  // Só volta até o espaço se não perdermos muito do texto
+  return (ultimoEspaco > max - 30 ? corte.slice(0, ultimoEspaco) : corte).trimEnd();
+}
+
+const MAX_TITULO_LINHA = 100;   // limite defensivo p/ merchandise title (erro 400)
+const MAX_VALOR_PROP = 255;     // limite seguro p/ valor de customAttribute de linha
+
 const CUSTOMERS_QUERY = `
   query($q: String!) {
     customers(first: 1, query: $q) { edges { node { id } } }
@@ -211,12 +223,15 @@ Deno.serve(async (req) => {
 
     const customerId = await resolveCustomer(cliente, metafields);
 
+    // Títulos longos que precisaram ser truncados vão integralmente na note interna
+    const titulosCompletos: string[] = [];
+
     const lineItems: Record<string, unknown>[] = itens.map((i) => {
       const base: Record<string, unknown> = {
         quantity: Math.max(1, Number(i.quantity) || 1),
         customAttributes: (i.properties ?? [])
           .filter((p) => p?.name && p?.value)
-          .map((p) => ({ key: p.name.slice(0, 100), value: String(p.value).slice(0, 500) })),
+          .map((p) => ({ key: String(p.name).slice(0, 100), value: truncaLimpo(String(p.value), MAX_VALOR_PROP) })),
       };
       if (i.variantId) {
         // Produto real do catálogo: usa a variante (baixa estoque / relatórios por produto).
@@ -229,7 +244,18 @@ Deno.serve(async (req) => {
         return base;
       }
 
-      base.title = i.title;
+      // Título defensivo: Shopify rejeita (400 "merchandise title") títulos muito longos
+      const tituloCompleto = String(i.title);
+      const tituloSeguro = truncaLimpo(tituloCompleto, MAX_TITULO_LINHA);
+      if (tituloSeguro !== tituloCompleto) {
+        // Nenhuma informação perdida: texto integral vai como propriedade da linha e na note interna
+        (base.customAttributes as { key: string; value: string }[]).unshift({
+          key: 'Descrição completa',
+          value: truncaLimpo(tituloCompleto, MAX_VALOR_PROP),
+        });
+        titulosCompletos.push(tituloCompleto);
+      }
+      base.title = tituloSeguro;
       base.requiresShipping = true;
       base.originalUnitPriceWithCurrency = {
         amount: Number(i.price).toFixed(2),
@@ -249,6 +275,8 @@ Deno.serve(async (req) => {
       lineItems,
       customAttributes,
       tags: ['Kaowz-Simulador'],
+      // Pedido isento de tributos: remove a linha de "Tributos" do checkout/e-mail
+      taxExempt: true,
       useCustomerDefaultAddress: !!customerId,
     };
     if (customerId) {
@@ -264,6 +292,9 @@ Deno.serve(async (req) => {
     const notaPartes: string[] = [];
     if (payload.observacao?.trim()) notaPartes.push(payload.observacao.trim());
     const internas = (payload.notasInternas ?? []).map((n) => String(n).trim()).filter(Boolean);
+    if (titulosCompletos.length) {
+      internas.push('Descrições completas de itens (título truncado na linha):', ...titulosCompletos);
+    }
     if (internas.length) notaPartes.push('[INTERNO]', ...internas);
     if (notaPartes.length) input.note = notaPartes.join('\n');
 
