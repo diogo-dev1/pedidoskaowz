@@ -157,12 +157,12 @@ export default function Home() {
       </div>
 
       {/* ── Resumo diário: apenas meta ─────────────────────────── */}
-      <div className="rounded-xl border bg-card p-4 sm:p-5">
+      <div className="rounded-xl bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white p-4 sm:p-5 shadow-sm">
         <div className="flex items-center justify-between mb-3 gap-2">
-          <h2 className="font-semibold">Meta diária</h2>
+          <h2 className="font-semibold text-white/95">Meta diária</h2>
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            className="flex items-center gap-1.5 text-xs text-white/80 hover:text-white transition-colors shrink-0"
           >
             {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
             Hoje às {horaAtualizacao}
@@ -170,26 +170,26 @@ export default function Home() {
         </div>
 
         {vendasErro && (
-          <div className="flex items-center gap-2 p-3 mb-3 rounded-lg bg-destructive/10 text-destructive text-xs">
+          <div className="flex items-center gap-2 p-3 mb-3 rounded-lg bg-white/15 text-white text-xs">
             <AlertCircle className="h-4 w-4 flex-shrink-0" />
             <span>Não foi possível carregar as vendas da planilha. Toque em atualizar para tentar de novo.</span>
           </div>
         )}
 
         {vendasLoading ? (
-          <div className="flex items-center justify-center py-8 text-muted-foreground gap-2 text-sm">
+          <div className="flex items-center justify-center py-8 text-white/80 gap-2 text-sm">
             <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
           </div>
         ) : (
           <>
-            <p className="text-3xl font-bold text-accent" data-numeric>{brl(hoje.valor)}</p>
-            <p className="text-xs text-muted-foreground mb-3">
+            <p className="text-3xl font-bold text-white" data-numeric>{brl(hoje.valor)}</p>
+            <p className="text-xs text-white/85 mb-3">
               de {brl(META_DIARIA)} · {hoje.total} {hoje.total === 1 ? 'venda' : 'vendas'} hoje
             </p>
-            <div className="h-2 rounded-full bg-muted overflow-hidden">
-              <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${metaPct}%` }} />
+            <div className="h-2 rounded-full bg-white/25 overflow-hidden">
+              <div className="h-full rounded-full bg-white transition-all" style={{ width: `${metaPct}%` }} />
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1.5">
+            <p className="text-[11px] text-white/80 mt-1.5">
               {metaPct >= 100 ? 'Meta batida! 🎉' : `Faltam ${brl(META_DIARIA - hoje.valor)} (${metaPct}%)`}
             </p>
           </>
