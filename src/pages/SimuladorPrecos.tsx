@@ -18,7 +18,7 @@ import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
   novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, novaEntradaFacaDeCatalogo,
-  espacadorIdx, nomeBainha, nomeCatalogo, calcCatalogo,
+  espacadorIdx, nomeBainha, nomeCatalogo, calcCatalogo, ehFacaDoCatalogo,
 
   BAINHA_ADICIONAL_PRECO, LASER_PRECO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
