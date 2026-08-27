@@ -185,12 +185,21 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
           )}
 
           <Secao title="Modelo">
-            <ModeloSearch modelos={data.modelos} currentIdx={cfg.modeloIdx}
-              onSelect={(i) => onChange({ ...newItem(), id: cfg.id, modeloIdx: i, certificado: cfg.certificado, origem: cfg.origem })} />
+            {bloqueado ? (
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/20 bg-primary/5">
+                {modelo && <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${TAM_DOT[modelo.tamanho]}`} />}
+                <span className="flex-1 text-sm font-semibold truncate">{modelo?.nome ?? '—'}</span>
+                <span className="text-sm font-bold text-primary flex-shrink-0">{BRL(total)}</span>
+              </div>
+            ) : (
+              <ModeloSearch modelos={data.modelos} currentIdx={cfg.modeloIdx}
+                onSelect={(i) => onChange({ ...newItem(), id: cfg.id, modeloIdx: i, certificado: cfg.certificado, origem: cfg.origem })} />
+            )}
           </Secao>
 
 
           {modelo && (
+
             <>
               {/* Aço — Brute Forge é opcional do aço */}
               <Secao title="Aço">
