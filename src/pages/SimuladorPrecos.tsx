@@ -1249,12 +1249,12 @@ export default function SimuladorPrecos() {
 
       {/* Footer fixo — resumo clean estilo checkout, responsivo */}
       <div className="fixed left-0 right-0 bg-background/95 backdrop-blur-xl border-t z-40 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0">
-        <div className="max-w-lg md:max-w-2xl mx-auto px-3 py-2.5 md:py-3">
+        <div className="max-w-lg md:max-w-2xl mx-auto px-3 pt-2.5 pb-3 md:py-3">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
             {/* Resumo do pedido */}
-            <div className="flex-1 space-y-2 md:space-y-1.5">
+            <div className="flex-1 space-y-1.5">
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Resumo do pedido</p>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal ({itensValidos} {itensValidos === 1 ? 'item' : 'itens'})</span>
                   <span className="font-medium tabular-nums" data-numeric>{BRL(totalCalculado)}</span>
@@ -1266,8 +1266,8 @@ export default function SimuladorPrecos() {
                   </div>
                 )}
                 <div className="flex items-center justify-between pt-1 border-t">
-                  <span className="font-semibold text-base">Total</span>
-                  <span className="text-xl font-bold text-brand tabular-nums leading-none" data-numeric>{BRL(totalGeral)}</span>
+                  <span className="font-semibold">Total</span>
+                  <span className="text-lg md:text-xl font-bold text-brand tabular-nums leading-none" data-numeric>{BRL(totalGeral)}</span>
                 </div>
               </div>
             </div>
