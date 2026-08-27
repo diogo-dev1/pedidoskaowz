@@ -1137,14 +1137,19 @@ export default function SimuladorPrecos() {
 
   const totalCalculado = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
 
-  const totalGeral = totalManual !== null ? totalManual : totalCalculado;
+  const descontoAplicado = Math.min(Math.max(0, desconto), totalCalculado);
+  const totalGeral = Math.max(0, totalCalculado - descontoAplicado);
   const itensValidos = entries.filter((e) => e.kind !== 'faca' || e.faca.modeloIdx !== null).length;
 
   /** Pendências que impedem fechar o pedido — só facas montadas do zero exigem modelo. */
   const pendencias = useMemo(() => (
-    entries.flatMap((e, i) => (
-      e.kind === 'faca' && e.faca.modeloIdx === null ? [`Item ${i + 1}: escolha o modelo da faca`] : []
-    ))
+    entries.flatMap((e, i) => {
+      if (e.kind !== 'faca') return [];
+      const p: string[] = [];
+      if (e.faca.modeloIdx === null) p.push(`Item ${i + 1}: escolha o modelo da faca`);
+      if (!personalizacaoDefinida(e.faca)) p.push(`Item ${i + 1}: marque uma opção de personalização`);
+      return p;
+    })
   ), [entries]);
 
   /** Valida antes de abrir os modais de fechamento. Nunca deixa o botão apagado sem explicação. */
