@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { NavLink } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,9 +7,11 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Calculator, ShoppingBag, FilePlus2, ArrowRight, User, Bookmark,
-  ChevronRight, RefreshCw, Factory, Loader2, AlertCircle, TrendingUp, ShoppingCart,
-  Layers,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  Calculator, ShoppingBag, Truck, MessageSquare, TrendingUp, Repeat,
+  ShoppingCart, RefreshCw, Loader2, AlertCircle,
 } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -31,60 +32,33 @@ function chaveDia(d: Date): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
 
-// ── Botões quadrados de acesso rápido ──────────────────
-const BANNERS = [
-  {
-    titulo: 'Novo Pedido',
-    url: '/novo-pedido',
-    icon: FilePlus2,
-    classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white',
-  },
-  {
-    titulo: 'Catálogo',
-    url: '/catalogo',
-    icon: ShoppingBag,
-    classe: 'bg-gradient-to-br from-accent via-accent to-orange-600 text-accent-foreground',
-  },
-  {
-    titulo: 'Simulador',
-    url: '/simulador-precos',
-    icon: Calculator,
-    classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white',
-  },
-  {
-    titulo: 'Push Dagger',
-    url: '/push-dagger-kaowz',
-    icon: Layers,
-    classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white ring-1 ring-accent/40',
-  },
+type Card = {
+  titulo: string;
+  icon: typeof Calculator;
+  url?: string;
+  acao?: 'sync';
+  adminOnly?: boolean;
+};
+
+// Grade principal de acesso rápido (8 cartões)
+const CARDS: Card[] = [
+  { titulo: 'Simulador', icon: Calculator, url: '/simulador-precos' },
+  { titulo: 'Catálogo', icon: ShoppingBag, url: '/catalogo' },
+  { titulo: 'Frete', icon: Truck, url: '/calcular-frete' },
+  { titulo: 'Mensagens', icon: MessageSquare, url: '/mensagens' },
+  { titulo: 'Vendas', icon: TrendingUp, url: '/relatorio-vendas' },
+  { titulo: 'Upsell', icon: Repeat, url: '/upsell-clientes' },
+  { titulo: 'Checkouts', icon: ShoppingCart, url: '/checkouts-abandonados' },
+  { titulo: 'Sincronizar', icon: RefreshCw, acao: 'sync', adminOnly: true },
 ];
-
-
-const ATALHOS = [
-  { titulo: 'Pedidos de venda', url: '/pedidos' },
-  { titulo: 'Pedidos a Lançar', url: '/triagem' },
-  { titulo: 'Produção', url: '/producao' },
-  { titulo: 'Expedição', url: '/expedicao' },
-  { titulo: 'Clientes', url: '/clientes' },
-  { titulo: 'Relatório de Vendas', url: '/relatorio-vendas' },
-];
-
-function DotRow({ cor, valor, label }: { cor: string; valor: number; label: string }) {
-  return (
-    <div className="flex items-center gap-2.5 py-1">
-      <span className={`h-2 w-2 rounded-full shrink-0 ${cor}`} />
-      <span className="text-sm font-semibold tabular-nums w-8">{valor}</span>
-      <span className="text-sm text-muted-foreground">{label}</span>
-    </div>
-  );
-}
 
 export default function Home() {
-  const { profile, user } = useAuth();
+  const { profile } = useAuth();
   const [periodo, setPeriodo] = useState<7 | 30 | 90>(7);
 
-  const isAdmin = profile?.cargo === 'admin' || profile?.cargo === 'vendedor';
+  const isAdmin = profile?.cargo === 'admin';
   const hojeISO = new Date().toISOString().split('T')[0];
+  const [syncOpen, setSyncOpen] = useState(false);
   const [syncFrom, setSyncFrom] = useState(hojeISO);
   const [syncTo, setSyncTo] = useState(hojeISO);
   const [syncing, setSyncing] = useState(false);
@@ -120,48 +94,6 @@ export default function Home() {
     isFetching,
   } = useSales();
 
-  // Contagens gerais de status (pedidos do sistema)
-  const { data: statusGeral } = useQuery({
-    queryKey: ['home-status-geral'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select('status, bloqueado_expedicao');
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: 60_000,
-  });
-
-  // Lote aberto mais recente
-  const { data: loteAberto } = useQuery({
-    queryKey: ['home-lote-aberto'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('lotes')
-        .select('numero_lote, total_pedidos, capacidade_max')
-        .eq('status', 'aberto')
-        .order('numero_lote', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data;
-    },
-    staleTime: 60_000,
-  });
-
-  // Situação da expedição
-  const { data: expedicoes } = useQuery({
-    queryKey: ['home-expedicao'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('expedicao')
-        .select('status, data_postagem, data_entrega');
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: 60_000,
-  });
-
   // Vendas de hoje — direto da planilha (data no formato DD/MM/YYYY)
   const hoje = useMemo(() => {
     const chave = hojeBR();
@@ -171,24 +103,6 @@ export default function Home() {
       valor: doDia.reduce((sum, s) => sum + s.value, 0),
     };
   }, [sales]);
-
-  const situacao = useMemo(() => {
-    const rows = statusGeral ?? [];
-    return {
-      novos: rows.filter((r: any) => r.status === 'aguardando_triagem').length,
-      emProducao: rows.filter((r: any) => ['aprovado', 'em_producao'].includes(r.status)).length,
-      bloqueados: rows.filter((r: any) => r.bloqueado_expedicao).length,
-    };
-  }, [statusGeral]);
-
-  const expedicaoResumo = useMemo(() => {
-    const rows = expedicoes ?? [];
-    return {
-      aguardando: rows.filter((r: any) => r.status === 'aguardando').length,
-      postadas: rows.filter((r: any) => r.data_postagem && !r.data_entrega).length,
-      entregues: rows.filter((r: any) => r.data_entrega || r.status === 'entregue').length,
-    };
-  }, [expedicoes]);
 
   // Gráfico: soma da planilha por dia, nos últimos N dias
   const dadosGrafico = useMemo(() => {
@@ -213,256 +127,138 @@ export default function Home() {
     ? new Date(lastUpdated).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     : '—';
 
+  const cardsVisiveis = CARDS.filter((c) => !c.adminOnly || isAdmin);
+  const classeCard =
+    'group rounded-xl aspect-square flex flex-col items-center justify-center gap-2 border bg-card shadow-sm hover:shadow-md hover:border-accent/50 hover:scale-[1.02] active:scale-[0.98] transition-all';
+
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[290px_1fr] items-start">
-      {/* ── Coluna esquerda: perfil + atalhos ─────────────────── */}
-      <div className="space-y-4 order-2 lg:order-1">
-        {/* Perfil */}
-        <div className="rounded-xl border bg-card p-4">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
-              <User className="h-6 w-6 text-accent" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-semibold truncate">{profile?.nome_vendedor ?? 'Kaowz'}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-              <p className="text-[10px] uppercase tracking-wider text-accent font-semibold mt-0.5">
-                {profile?.cargo}
-              </p>
-            </div>
-          </div>
+    <div className="space-y-4">
+      {/* ── Grade de acesso rápido ─────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        {cardsVisiveis.map((c) =>
+          c.url ? (
+            <NavLink key={c.titulo} to={c.url} className={classeCard}>
+              <c.icon className="h-7 w-7 sm:h-8 sm:w-8 text-accent group-hover:scale-110 transition-transform" />
+              <p className="font-semibold text-xs sm:text-sm text-center px-1 leading-tight">{c.titulo}</p>
+            </NavLink>
+          ) : (
+            <button key={c.titulo} type="button" onClick={() => setSyncOpen(true)} className={classeCard}>
+              <c.icon className="h-7 w-7 sm:h-8 sm:w-8 text-accent group-hover:scale-110 transition-transform" />
+              <p className="font-semibold text-xs sm:text-sm text-center px-1 leading-tight">{c.titulo}</p>
+            </button>
+          ),
+        )}
+      </div>
+
+      {/* ── Resumo diário: apenas meta ─────────────────────────── */}
+      <div className="rounded-xl border bg-card p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-3 gap-2">
+          <h2 className="font-semibold">Meta diária</h2>
+          <button
+            onClick={() => refetch()}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          >
+            {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+            Hoje às {horaAtualizacao}
+          </button>
         </div>
 
-        {/* Lote em aberto (aviso estilo Bling) */}
-        {loteAberto && (
-          <NavLink
-            to="/producao"
-            className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/10 p-4 hover:bg-accent/15 transition-colors"
-          >
-            <div className="h-9 w-9 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-              <Factory className="h-4.5 w-4.5 text-accent" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">Lote {loteAberto.numero_lote} aberto</p>
-              <p className="text-xs text-muted-foreground">
-                {loteAberto.total_pedidos ?? 0}/{loteAberto.capacidade_max ?? 45} pedidos · ver produção
-              </p>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-          </NavLink>
-        )}
-
-        {/* Sync Vendas Site — admin only */}
-        {isAdmin && (
-          <div className="rounded-xl border bg-card p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4 text-accent" />
-              <h2 className="text-sm font-semibold">Vendas Site</h2>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wide w-6 shrink-0">De</span>
-                <Input
-                  type="date"
-                  value={syncFrom}
-                  onChange={(e) => setSyncFrom(e.target.value)}
-                  className="h-8 text-xs px-2 flex-1 min-w-0"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wide w-6 shrink-0">Até</span>
-                <Input
-                  type="date"
-                  value={syncTo}
-                  onChange={(e) => setSyncTo(e.target.value)}
-                  className="h-8 text-xs px-2 flex-1 min-w-0"
-                />
-              </div>
-            </div>
-            <Button
-              onClick={handleSyncShopify}
-              disabled={syncing}
-              size="sm"
-              className="w-full gap-2"
-            >
-              {syncing
-                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                : <RefreshCw className="h-3.5 w-3.5" />}
-              {syncing ? 'Sincronizando...' : 'Sincronizar pedidos'}
-            </Button>
-            {syncMsg && (
-              <p className="text-xs text-center text-muted-foreground leading-snug">{syncMsg}</p>
-            )}
+        {vendasErro && (
+          <div className="flex items-center gap-2 p-3 mb-3 rounded-lg bg-destructive/10 text-destructive text-xs">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <span>Não foi possível carregar as vendas da planilha. Toque em atualizar para tentar de novo.</span>
           </div>
         )}
 
-        {/* Atalhos favoritos */}
-        <div className="rounded-xl border bg-card overflow-hidden">
-          <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-            <Bookmark className="h-4 w-4 text-accent" />
-            <h2 className="text-sm font-semibold">Atalhos favoritos</h2>
+        {vendasLoading ? (
+          <div className="flex items-center justify-center py-8 text-muted-foreground gap-2 text-sm">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
           </div>
-          <div className="pb-2">
-            {ATALHOS.map((a) => (
-              <NavLink
-                key={a.url}
-                to={a.url}
-                className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+        ) : (
+          <>
+            <p className="text-3xl font-bold text-accent" data-numeric>{brl(hoje.valor)}</p>
+            <p className="text-xs text-muted-foreground mb-3">
+              de {brl(META_DIARIA)} · {hoje.total} {hoje.total === 1 ? 'venda' : 'vendas'} hoje
+            </p>
+            <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${metaPct}%` }} />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              {metaPct >= 100 ? 'Meta batida! 🎉' : `Faltam ${brl(META_DIARIA - hoje.valor)} (${metaPct}%)`}
+            </p>
+          </>
+        )}
+      </div>
+
+      {/* ── Gráfico de vendas por dia — planilha ───────────────── */}
+      <div className="rounded-xl border bg-card p-4 sm:p-5">
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+          <h2 className="font-semibold">Vendas por dia</h2>
+          <div className="flex rounded-lg border overflow-hidden">
+            {([7, 30, 90] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriodo(p)}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  periodo === p ? 'bg-accent text-accent-foreground' : 'bg-card text-muted-foreground hover:bg-muted'
+                }`}
               >
-                <span className="flex items-center gap-2.5">
-                  <Bookmark className="h-3.5 w-3.5 text-muted-foreground/50" />
-                  {a.titulo}
-                </span>
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-              </NavLink>
+                {p === 90 ? '3M' : `${p}D`}
+              </button>
             ))}
           </div>
         </div>
-      </div>
-
-      {/* ── Coluna principal ──────────────────────────────────── */}
-      <div className="space-y-4 order-1 lg:order-2 min-w-0">
-        {/* Botões quadrados de acesso rápido */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-          {BANNERS.map((b) => (
-            <NavLink
-              key={b.url}
-              to={b.url}
-              className={`group relative rounded-xl aspect-square flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden ${b.classe}`}
-            >
-              <b.icon className="h-7 w-7 sm:h-9 sm:w-9 opacity-90 group-hover:scale-110 transition-transform" />
-              <p className="font-bold text-xs sm:text-sm text-center px-1 leading-tight">{b.titulo}</p>
-            </NavLink>
-          ))}
-        </div>
-
-
-
-        {/* Resumo diário — alimentado pela planilha de Relatório de Vendas */}
-        <div className="rounded-xl border bg-card p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 min-w-0">
-              <h2 className="font-semibold">Resumo diário</h2>
-              <NavLink
-                to="/relatorio-vendas"
-                className="hidden sm:flex items-center gap-1 text-[11px] text-accent hover:underline"
-              >
-                <TrendingUp className="h-3 w-3" />
-                ver relatório completo
-              </NavLink>
-            </div>
-            <button
-              onClick={() => refetch()}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
-            >
-              {isFetching
-                ? <Loader2 className="h-3 w-3 animate-spin" />
-                : <RefreshCw className="h-3 w-3" />}
-              Hoje às {horaAtualizacao}
-            </button>
-          </div>
-
-          {vendasErro && (
-            <div className="flex items-center gap-2 p-3 mb-4 rounded-lg bg-destructive/10 text-destructive text-xs">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              <span>Não foi possível carregar as vendas da planilha. Toque em atualizar para tentar de novo.</span>
-            </div>
-          )}
-
-          {vendasLoading ? (
-            <div className="flex items-center justify-center py-10 text-muted-foreground gap-2 text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" /> Carregando resumo...
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {/* Vendas de hoje (planilha) */}
-              <div className="rounded-lg border bg-muted/30 p-4">
-                <p className="text-sm font-semibold mb-2">Pedidos de venda</p>
-                <DotRow cor="bg-accent" valor={hoje.total} label="Vendas hoje" />
-                <DotRow cor="bg-emerald-500" valor={situacao.novos} label="Aguardando triagem" />
-                <DotRow cor="bg-blue-500" valor={situacao.emProducao} label="Em produção" />
-                <DotRow cor="bg-red-500" valor={situacao.bloqueados} label="Bloqueados" />
-              </div>
-
-              {/* Meta diária (planilha) */}
-              <div className="rounded-lg border bg-muted/30 p-4 flex flex-col">
-                <p className="text-sm font-semibold mb-2">Meta diária</p>
-                <p className="text-2xl font-bold text-accent" data-numeric>{brl(hoje.valor)}</p>
-                <p className="text-xs text-muted-foreground mb-3">de {brl(META_DIARIA)}</p>
-                <div className="h-2 rounded-full bg-muted overflow-hidden mt-auto">
-                  <div
-                    className="h-full rounded-full bg-accent transition-all"
-                    style={{ width: `${metaPct}%` }}
-                  />
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1.5">
-                  {metaPct >= 100
-                    ? 'Meta batida! 🎉'
-                    : `Faltam ${brl(META_DIARIA - hoje.valor)} (${metaPct}%)`}
-                </p>
-              </div>
-
-              {/* Expedição (sistema) */}
-              <div className="rounded-lg border bg-muted/30 p-4">
-                <p className="text-sm font-semibold mb-2">Expedição</p>
-                <DotRow cor="bg-amber-500" valor={expedicaoResumo.aguardando} label="Aguardando" />
-                <DotRow cor="bg-blue-500" valor={expedicaoResumo.postadas} label="Postadas" />
-                <DotRow cor="bg-emerald-500" valor={expedicaoResumo.entregues} label="Entregues" />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Gráfico de vendas por dia — planilha */}
-        <div className="rounded-xl border bg-card p-4 sm:p-5">
-          <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
-            <h2 className="font-semibold">Vendas por dia</h2>
-            <div className="flex rounded-lg border overflow-hidden">
-              {([7, 30, 90] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriodo(p)}
-                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                    periodo === p
-                      ? 'bg-accent text-accent-foreground'
-                      : 'bg-card text-muted-foreground hover:bg-muted'
-                  }`}
-                >
-                  {p === 90 ? '3M' : `${p}D`}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dadosGrafico} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(0 0% 90%)" />
-                <XAxis
-                  dataKey="dia"
-                  tick={{ fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval={periodo === 7 ? 0 : 'preserveStartEnd'}
-                />
-                <YAxis
-                  tick={{ fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={70}
-                  tickFormatter={(v: number) =>
-                    v >= 1000 ? `R$ ${(v / 1000).toFixed(0)}k` : `R$ ${v}`
-                  }
-                />
-                <Tooltip
-                  formatter={(v: number) => [brl(Number(v)), 'Vendas']}
-                  contentStyle={{ borderRadius: 8, fontSize: 12 }}
-                />
-                <Bar dataKey="valor" fill="hsl(28 90% 55%)" radius={[4, 4, 0, 0]} maxBarSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        <div className="h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={dadosGrafico} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(0 0% 90%)" />
+              <XAxis
+                dataKey="dia"
+                tick={{ fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                interval={periodo === 7 ? 0 : 'preserveStartEnd'}
+              />
+              <YAxis
+                tick={{ fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                width={70}
+                tickFormatter={(v: number) => (v >= 1000 ? `R$ ${(v / 1000).toFixed(0)}k` : `R$ ${v}`)}
+              />
+              <Tooltip formatter={(v: number) => [brl(Number(v)), 'Vendas']} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+              <Bar dataKey="valor" fill="hsl(28 90% 55%)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
+
+      {/* ── Modal: sincronizar pedidos do site ─────────────────── */}
+      <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Sincronizar pedidos do site</DialogTitle>
+            <DialogDescription>
+              Importa os pedidos da loja no período escolhido para o relatório de vendas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide w-8 shrink-0">De</span>
+              <Input type="date" value={syncFrom} onChange={(e) => setSyncFrom(e.target.value)} className="h-9 text-sm flex-1 min-w-0" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide w-8 shrink-0">Até</span>
+              <Input type="date" value={syncTo} onChange={(e) => setSyncTo(e.target.value)} className="h-9 text-sm flex-1 min-w-0" />
+            </div>
+          </div>
+          <Button onClick={handleSyncShopify} disabled={syncing} className="w-full gap-2">
+            {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {syncing ? 'Sincronizando...' : 'Sincronizar pedidos'}
+          </Button>
+          {syncMsg && <p className="text-xs text-center text-muted-foreground leading-snug">{syncMsg}</p>}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
