@@ -1291,7 +1291,7 @@ export default function SimuladorPrecos() {
           {/* Linha 4: ações empilhadas, dedo-friendly */}
           <div className="grid grid-cols-1 gap-2.5">
             <Button
-              className="w-full h-13 rounded-xl gap-2 text-base font-semibold"
+              className="w-full h-14 rounded-xl gap-2 text-base font-semibold"
               onClick={() => podeFechar(() => setShopifyOpen(true))}>
               <ShoppingBag className="h-5 w-5" /> Lançar no Shopify
             </Button>
