@@ -88,8 +88,12 @@ export interface ItemCfg {
   bainhaIdxs: number[];
   /** Cor por bainha escolhida: { [idxBainha]: cor } */
   bainhaCores: Record<number, string | null>;
-  /** Personalização à laser (vazio = sem gravação) */
+  /** Personalização à laser (vazio = sem gravação) — texto composto, derivado de `gravacoes` */
   textoLaser?: string;
+  /** Marcado "Sem gravação" */
+  semGravacao?: boolean;
+  /** Locais de gravação marcados → texto a gravar em cada local */
+  gravacoes?: Record<string, string>;
   /** Nome que vai no certificado (default: nome do cliente do pedido) */
   certificado?: string;
   /** Embalagem — campo interno de produção */
