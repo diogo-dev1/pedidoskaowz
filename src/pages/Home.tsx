@@ -38,18 +38,20 @@ type Card = {
   url?: string;
   acao?: 'sync';
   adminOnly?: boolean;
+  /** Gradiente colorido do cartão (estilo Bling, cores Kaowz) */
+  classe: string;
 };
 
-// Grade principal de acesso rápido (8 cartões)
+// Grade principal de acesso rápido (8 cartões) — coloridos
 const CARDS: Card[] = [
-  { titulo: 'Simulador', icon: Calculator, url: '/simulador-precos' },
-  { titulo: 'Catálogo', icon: ShoppingBag, url: '/catalogo' },
-  { titulo: 'Frete', icon: Truck, url: '/calcular-frete' },
-  { titulo: 'Mensagens', icon: MessageSquare, url: '/mensagens' },
-  { titulo: 'Vendas', icon: TrendingUp, url: '/relatorio-vendas' },
-  { titulo: 'Upsell', icon: Repeat, url: '/upsell-clientes' },
-  { titulo: 'Checkouts', icon: ShoppingCart, url: '/checkouts-abandonados' },
-  { titulo: 'Sincronizar', icon: RefreshCw, acao: 'sync', adminOnly: true },
+  { titulo: 'Simulador', icon: Calculator, url: '/simulador-precos', classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white border-zinc-700' },
+  { titulo: 'Catálogo', icon: ShoppingBag, url: '/catalogo', classe: 'bg-gradient-to-br from-accent via-accent to-orange-600 text-accent-foreground border-accent/60' },
+  { titulo: 'Frete', icon: Truck, url: '/calcular-frete', classe: 'bg-gradient-to-br from-sky-600 via-sky-700 to-sky-800 text-white border-sky-500/60' },
+  { titulo: 'Mensagens', icon: MessageSquare, url: '/mensagens', classe: 'bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-800 text-white border-emerald-500/60' },
+  { titulo: 'Vendas', icon: TrendingUp, url: '/relatorio-vendas', classe: 'bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 text-white border-amber-400/60' },
+  { titulo: 'Upsell', icon: Repeat, url: '/upsell-clientes', classe: 'bg-gradient-to-br from-violet-600 via-violet-700 to-violet-800 text-white border-violet-500/60' },
+  { titulo: 'Checkouts', icon: ShoppingCart, url: '/checkouts-abandonados', classe: 'bg-gradient-to-br from-rose-600 via-rose-700 to-rose-800 text-white border-rose-500/60' },
+  { titulo: 'Sincronizar', icon: RefreshCw, acao: 'sync', adminOnly: true, classe: 'bg-gradient-to-br from-zinc-800 via-zinc-700 to-zinc-800 text-white border-zinc-600' },
 ];
 
 export default function Home() {
