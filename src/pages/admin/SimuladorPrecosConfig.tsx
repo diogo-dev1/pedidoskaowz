@@ -237,6 +237,12 @@ export default function SimuladorPrecosConfig() {
           <p className="text-[11px] text-muted-foreground px-1">
             Valor base = Aço Inox + Empunhadura Grafite inclusos. Tamanho define o preço das customizações.
           </p>
+          <div className="flex items-center justify-between gap-2 px-1">
+            <span className="text-[11px] text-muted-foreground">{draft.modelos.length} modelos</span>
+            <Button size="sm" className="gap-1.5 h-8" onClick={abrirNovoModelo}>
+              <Plus className="w-3.5 h-3.5" /> Adicionar modelo
+            </Button>
+          </div>
           {modelosFiltrados.map(({ m, i }) => (
             <div key={i} className="flex items-center gap-2 rounded-lg border bg-card p-2.5">
               <Input value={m.nome} onChange={(e) => updateModelo(i, { ...m, nome: e.target.value })}
@@ -247,9 +253,15 @@ export default function SimuladorPrecosConfig() {
                   {(['P', 'M', 'G', '-'] as const).map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <PrecoInput value={m.preco} onChange={(n) => updateModelo(i, { ...m, preco: n })} className="w-28 shrink-0" />
+              <PrecoInput value={m.preco} onChange={(n) => updateModelo(i, { ...m, preco: n })} className="w-24 shrink-0" />
+              <Button type="button" size="icon" variant="ghost"
+                className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                onClick={() => setExcluir({ idx: i, nome: m.nome })}>
+                <Trash2 className="w-4 h-4" />
+              </Button>
             </div>
           ))}
+
         </TabsContent>
 
         {/* ── Customizações ── */}
