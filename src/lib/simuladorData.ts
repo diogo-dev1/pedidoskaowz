@@ -564,6 +564,7 @@ export const SEED: SimuladorData = {
     { nome: 'Inox', precos: { P: 0, M: 0, G: 0 }, incluso: true },
     { nome: 'Sandvik 14C28N', precos: { P: 165, M: 195, G: 350 } },
     { nome: '52100', precos: { P: 165, M: 175, G: 195 } },
+    { nome: '5160', precos: { P: 0, M: 0, G: 0 } },
   ],
   bruteForge: { P: 125, M: 215, G: 300 },
   empunhaduras: [
