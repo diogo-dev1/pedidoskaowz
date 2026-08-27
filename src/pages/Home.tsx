@@ -42,16 +42,16 @@ type Card = {
   classe: string;
 };
 
-// Grade principal de acesso rápido (8 cartões) — mesmas cores dos 4 cards originais
+// Grade principal de acesso rápido (8 cartões) — todos laranja Kaowz
 const CARDS: Card[] = [
-  { titulo: 'Simulador', icon: Calculator, url: '/simulador-precos', classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white' },
-  { titulo: 'Catálogo', icon: ShoppingBag, url: '/catalogo', classe: 'bg-gradient-to-br from-accent via-accent to-orange-600 text-accent-foreground' },
-  { titulo: 'Frete', icon: Truck, url: '/calcular-frete', classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white' },
-  { titulo: 'Mensagens', icon: MessageSquare, url: '/mensagens', classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white' },
-  { titulo: 'Vendas', icon: TrendingUp, url: '/relatorio-vendas', classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white' },
-  { titulo: 'Upsell', icon: Repeat, url: '/upsell-clientes', classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white' },
-  { titulo: 'Checkouts', icon: ShoppingCart, url: '/checkouts-abandonados', classe: 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white' },
-  { titulo: 'Sincronizar', icon: RefreshCw, acao: 'sync', adminOnly: true, classe: 'bg-gradient-to-br from-zinc-800 via-zinc-700 to-zinc-800 text-white' },
+  { titulo: 'Simulador', icon: Calculator, url: '/simulador-precos', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
+  { titulo: 'Catálogo', icon: ShoppingBag, url: '/catalogo', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
+  { titulo: 'Frete', icon: Truck, url: '/calcular-frete', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
+  { titulo: 'Mensagens', icon: MessageSquare, url: '/mensagens', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
+  { titulo: 'Vendas', icon: TrendingUp, url: '/relatorio-vendas', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
+  { titulo: 'Upsell', icon: Repeat, url: '/upsell-clientes', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
+  { titulo: 'Checkouts', icon: ShoppingCart, url: '/checkouts-abandonados', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
+  { titulo: 'Sincronizar', icon: RefreshCw, acao: 'sync', adminOnly: true, classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
 ];
 
 export default function Home() {

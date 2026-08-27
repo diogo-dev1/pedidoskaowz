@@ -20,9 +20,9 @@ interface NavItem {
 // 4 destinos de polegar + botão "Mais" — o fluxo diário inteiro a um toque
 const mainTabs: NavItem[] = [
   { title: 'Início', url: '/', icon: LayoutDashboard },
-  { title: 'Novo', url: '/novo-pedido', icon: Calculator },
-  { title: 'Pedidos', url: '/pedidos', icon: ShoppingBag },
-  { title: 'Produção', url: '/producao', icon: Factory },
+  { title: 'Simulador', url: '/simulador-precos', icon: Calculator },
+  { title: 'Catálogo', url: '/catalogo', icon: ShoppingBag },
+  { title: 'Carrinho', url: '/checkouts-abandonados', icon: ShoppingCart },
 ];
 
 const moreItems: { label: string; items: NavItem[] }[] = [

@@ -15,9 +15,9 @@ interface NavGroup { label: string; items: NavItem[] }
 
 const MAIN: NavItem[] = [
   { title: 'Início', url: '/', icon: LayoutDashboard },
-  { title: 'Novo Pedido', url: '/novo-pedido', icon: Calculator },
-  { title: 'Pedidos', url: '/pedidos', icon: ShoppingBag },
-  { title: 'Produção', url: '/producao', icon: Factory },
+  { title: 'Simulador', url: '/simulador-precos', icon: Calculator },
+  { title: 'Catálogo', url: '/catalogo', icon: ShoppingBag },
+  { title: 'Carrinho Abandonado', url: '/checkouts-abandonados', icon: ShoppingCart },
 ];
 
 const GRUPOS: NavGroup[] = [
