@@ -14,8 +14,12 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
-  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette, Weight,
+  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette, Weight, Trash2,
 } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 
 // Clona profundo (dados são simples: objetos/arrays/números/strings)
@@ -149,6 +153,8 @@ export default function SimuladorPrecosConfig() {
   const [draft, setDraft] = useState<SimuladorData | null>(null);
   const [saving, setSaving] = useState(false);
   const [busca, setBusca] = useState('');
+  const [novoModelo, setNovoModelo] = useState<Modelo | null>(null);
+  const [excluir, setExcluir] = useState<{ idx: number; nome: string } | null>(null);
 
   // Sincroniza o rascunho quando a config carrega (sem sobrescrever edições em andamento)
   useEffect(() => { if (!draft && !isLoading) setDraft(clone(configData)); }, [configData, isLoading, draft]);
@@ -186,6 +192,28 @@ export default function SimuladorPrecosConfig() {
     }
   };
 
+  const abrirNovoModelo = () => setNovoModelo({ nome: '', tamanho: 'P', preco: 0 });
+
+  const confirmarNovoModelo = () => {
+    if (!novoModelo || !draft) return;
+    const nome = novoModelo.nome.trim();
+    if (!nome) { toast.error('Informe o nome do modelo.'); return; }
+    if (!Number.isFinite(novoModelo.preco) || novoModelo.preco < 0) { toast.error('O preço não pode ser negativo.'); return; }
+    if (draft.modelos.some((m) => m.nome.trim().toLowerCase() === nome.toLowerCase())) {
+      toast.error(`Já existe um modelo chamado "${nome}".`); return;
+    }
+    set({ modelos: [...draft.modelos, { ...novoModelo, nome }] });
+    setNovoModelo(null);
+    toast.success('Modelo adicionado. Clique em Salvar valores para aplicar.');
+  };
+
+  const confirmarExclusao = () => {
+    if (!excluir || !draft) return;
+    set({ modelos: draft.modelos.filter((_, i) => i !== excluir.idx) });
+    setExcluir(null);
+    toast.success('Modelo removido. Clique em Salvar valores para aplicar.');
+  };
+
   const restaurarPadrao = () => {
     // Restaura os preços da planilha, mas preserva os pesos já cadastrados.
     setDraft((d) => ({ ...clone(SEED), pesos: d?.pesos ?? clone(SEED).pesos }));
@@ -215,7 +243,7 @@ export default function SimuladorPrecosConfig() {
           <p className="text-xs text-muted-foreground">Edite os preços por tamanho. Vale para todos os vendedores.</p>
         </div>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={restaurarPadrao}>
-          <RotateCcw className="h-3.5 w-3.5" /> Planilha
+          <RotateCcw className="h-3.5 w-3.5" /> Restaurar padrão do código
         </Button>
       </div>
 
@@ -301,6 +329,18 @@ export default function SimuladorPrecosConfig() {
                 className="w-28 shrink-0" />
             </div>
           ))}
+        </TabsContent>
+
+          <div className="pt-3">
+            <PrecosTamanho
+              label="Bainha adicional (2ª em diante)"
+              precos={draft.bainhaAdicional}
+              onChange={(p) => set({ bainhaAdicional: p })}
+            />
+            <p className="text-[10px] text-muted-foreground px-1 pt-1">
+              A 1ª bainha da faca é inclusa. Da segunda em diante cobra-se este valor, conforme o tamanho da faca.
+            </p>
+          </div>
         </TabsContent>
 
         {/* ── Pesos padrão (gramas) para cotação de frete ── */}
