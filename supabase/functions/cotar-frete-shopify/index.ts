@@ -95,16 +95,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    const semPeso: string[] = [];
     const lineItems = itens.map((i) => {
       const quantity = Math.max(1, Number(i.quantity) || 1);
       if (i.variantId) return { variantId: i.variantId, quantity };
+      const titulo = truncaLimpo(String(i.title ?? 'Item personalizado'), 100);
+      const grams = Math.max(0, Math.round(Number(i.grams) || 0));
+      if (!grams) semPeso.push(titulo);
       return {
-        title: truncaLimpo(String(i.title ?? 'Item personalizado'), 100),
+        title: titulo,
         quantity,
         requiresShipping: true,
+        ...(grams ? { weight: { unit: 'GRAMS', value: grams } } : {}),
         originalUnitPriceWithCurrency: { amount: (Number(i.price) || 0).toFixed(2), currencyCode: 'BRL' },
       };
     });
+
+    if (semPeso.length) {
+      return new Response(JSON.stringify({
+        sucesso: false,
+        semPeso,
+        erro: `Sem peso cadastrado para: ${semPeso.join(', ')}. Cadastre o peso em Configurações do Simulador → Pesos.`,
+      }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
 
     // Apps de frete (carrier service) exigem endereço completo — completamos pelo ViaCEP.
     const via = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
