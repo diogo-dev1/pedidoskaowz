@@ -156,8 +156,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* ── Resumo diário: apenas meta ─────────────────────────── */}
-      <div className="rounded-xl bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white p-4 sm:p-5 shadow-sm">
+      {/* ── Resumo diário: apenas meta (cores originais de ontem) ─ */}
+      <div className="rounded-xl bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 text-white p-4 sm:p-5 shadow-sm">
         <div className="flex items-center justify-between mb-3 gap-2">
           <h2 className="font-semibold text-white/95">Meta diária</h2>
           <button
