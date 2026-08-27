@@ -43,6 +43,11 @@ interface Payload {
   totalDesejado?: number;
 }
 
+/** Valor mínimo do pedido (BRL) para aplicar frete grátis no draft order. */
+const FRETE_GRATIS_MINIMO = 1000;
+
+
+
 
 function resolveDomain(): string {
   const raw = Deno.env.get('SHOPIFY_STORE_DOMAIN') ?? Deno.env.get('SHOPIFY_SHOP')
