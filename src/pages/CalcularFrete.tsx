@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Truck, Loader2, AlertCircle, Package as PackageIcon, Plus, Trash2, Info, ShoppingBag } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import CatalogoShopifyPicker, { type ProdutoShopify } from '@/components/simulador/CatalogoShopifyPicker';
-import { BRL } from '@/lib/simuladorData';
+import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
+import { BRL, pesoDoTipo, TIPOS_PESO_BASE, type TipoPeso } from '@/lib/simuladorData';
 
 interface OpcaoFrete {
   handle: string;
@@ -23,6 +27,8 @@ interface ItemCotacao {
   preco: number;
   quantidade: number;
   imagem?: string | null;
+  /** Só para item avulso: de onde vem o peso padrão */
+  tipoPeso?: TipoPeso;
 }
 
 const maskCep = (v: string) => {
@@ -31,6 +37,7 @@ const maskCep = (v: string) => {
 };
 
 const novoId = () => Math.random().toString(36).slice(2);
+
 
 export default function CalcularFrete() {
   const { toast } = useToast();
