@@ -1148,12 +1148,9 @@ export default function SimuladorPrecos() {
         )}
       </div>
 
-      {/* Nome do cliente — alimenta o campo Certificado de cada faca */}
-      <div className="space-y-1">
-        <Label htmlFor="sp-cliente" className="text-[11px] text-muted-foreground uppercase tracking-wider">Cliente</Label>
-        <Input id="sp-cliente" value={clienteNome} onChange={(e) => setClienteNome(e.target.value)}
-          placeholder="Nome do cliente (usado no certificado)" className="h-10 text-sm" />
-      </div>
+      {/* Dados do cliente são preenchidos na conclusão do pedido (modal do Shopify) */}
+
+
 
       {/* Um único botão principal — o tipo do item é escolhido no seletor */}
       <Button type="button" onClick={() => setTipoOpen(true)}
