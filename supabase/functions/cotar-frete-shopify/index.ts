@@ -103,17 +103,30 @@ Deno.serve(async (req) => {
       };
     });
 
+    // Apps de frete (carrier service) exigem endereço completo — completamos pelo ViaCEP.
+    const via = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      .then((r) => r.json()).catch(() => null);
+    if (via?.erro) {
+      return new Response(JSON.stringify({ sucesso: false, erro: 'CEP não encontrado.' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const input: Record<string, unknown> = {
       lineItems,
       taxExempt: true,
       shippingAddress: {
         firstName: 'Cotação',
         lastName: 'Frete',
-        address1: '-',
+        address1: via?.logradouro || 'Rua',
+        address2: via?.bairro || undefined,
+        city: via?.localidade || undefined,
+        provinceCode: via?.uf || undefined,
         zip: `${cep.slice(0, 5)}-${cep.slice(5)}`,
         countryCode: 'BR',
       },
     };
+
 
     // draftOrderCalculate: não cria rascunho algum na loja, então não há o que apagar.
     let rates: any[] = [];
