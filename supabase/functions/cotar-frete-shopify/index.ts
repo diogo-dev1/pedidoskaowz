@@ -15,7 +15,10 @@ interface ItemIn {
   title?: string;
   price?: number;
   quantity?: number;
+  /** Peso unitário em gramas — só para item customizado (produto real usa o peso da loja) */
+  grams?: number;
 }
+
 
 function resolveDomain(): string {
   const raw = Deno.env.get('SHOPIFY_STORE_DOMAIN') ?? Deno.env.get('SHOPIFY_SHOP')
