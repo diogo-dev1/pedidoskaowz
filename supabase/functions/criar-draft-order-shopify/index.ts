@@ -341,7 +341,14 @@ Deno.serve(async (req) => {
       };
       input.useCustomerDefaultAddress = false;
     }
-    // Frete: não enviamos shippingLine → a Shopify aplica as regras de envio da loja no checkout.
+    // Frete grátis acima do valor de corte: envia shippingLine zerada para o
+    // cliente não conseguir escolher uma opção paga no checkout.
+    const totalPedido = Number.isFinite(desejado) ? desejado : somaItens;
+    if (totalPedido >= FRETE_GRATIS_MINIMO) {
+      input.shippingLine = { title: 'Frete grátis', price: '0.00' };
+    }
+    // Abaixo do corte: não enviamos shippingLine → a Shopify aplica as regras de envio da loja.
+
 
     const data = await shopify(DRAFT_CREATE, { input });
     const errs = data?.draftOrderCreate?.userErrors ?? [];
