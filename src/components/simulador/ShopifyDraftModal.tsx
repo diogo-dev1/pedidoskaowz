@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Loader2, ShoppingBag, Sparkles, Copy, Send, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
@@ -174,8 +175,19 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [dadosExpandidos, setDadosExpandidos] = useState(false);
+  const [freteGratis, setFreteGratis] = useState(total >= 1000);
+  const [touchedFrete, setTouchedFrete] = useState(false);
 
   useEffect(() => { if (!open) { setResultado(null); setEnviando(false); } }, [open]);
+  useEffect(() => {
+    if (open) {
+      setTouchedFrete(false);
+      setFreteGratis(total >= 1000);
+    }
+  }, [open]);
+  useEffect(() => {
+    if (!touchedFrete) setFreteGratis(total >= 1000);
+  }, [total, touchedFrete]);
   useEffect(() => { if (open && nomeInicial && !nome.trim()) setNome(nomeInicial); }, [open, nomeInicial]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const itens = useMemo(() => montarLineItems(data, entries), [data, entries]);
@@ -242,6 +254,7 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
           observacao: observacao.trim() || undefined,
           notasInternas,
           totalDesejado: Math.abs(ajuste) >= 0.01 ? total : undefined,
+          freteGratis,
         },
 
       });
@@ -436,6 +449,22 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
             <div className="space-y-1.5">
               <Label htmlFor="sh-obs" className="text-xs">Observação do pedido</Label>
               <Textarea id="sh-obs" value={observacao} onChange={(e) => setObservacao(e.target.value)} rows={2} className="text-sm resize-none" />
+            </div>
+
+            <div className="flex items-start justify-between gap-3 rounded-xl border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="sh-frete" className="text-sm font-medium">Frete grátis</Label>
+                <p className="text-[10px] text-muted-foreground">
+                  {total >= 1000
+                    ? 'Aplicado automaticamente acima de R$ 1.000'
+                    : 'Aplica frete grátis independente do valor do pedido'}
+                </p>
+              </div>
+              <Switch
+                id="sh-frete"
+                checked={freteGratis}
+                onCheckedChange={(v) => { setFreteGratis(v); setTouchedFrete(true); }}
+              />
             </div>
 
             <Button className="w-full h-11 rounded-xl gap-2" onClick={enviar} disabled={enviando || !itens.length}>
