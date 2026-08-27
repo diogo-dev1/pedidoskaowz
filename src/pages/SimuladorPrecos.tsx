@@ -15,11 +15,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import ShopifyDraftModal from '@/components/simulador/ShopifyDraftModal';
 import CatalogoShopifyPicker, { type ProdutoShopify } from '@/components/simulador/CatalogoShopifyPicker';
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
   novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, novaEntradaFacaDeCatalogo,
   espacadorIdx, nomeBainha, nomeCatalogo, calcCatalogo, ehFacaDoCatalogo,
-
+  LOCAIS_GRAVACAO, composeLaser, personalizacaoDefinida,
   precoBainhaAdicional, LASER_PRECO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
   type CatalogoCfg,
