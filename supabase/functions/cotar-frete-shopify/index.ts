@@ -75,7 +75,7 @@ const truncaLimpo = (s: string, max: number) => (s.length <= max ? s : s.slice(0
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
-  let draftId: string | undefined;
+
   try {
     const body = await req.json().catch(() => ({}));
     const cep = String(body?.cep ?? '').replace(/\D/g, '');
