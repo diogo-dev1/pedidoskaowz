@@ -186,32 +186,62 @@ export default function CalcularFrete() {
             <p className="text-sm text-muted-foreground">Nenhum item adicionado ainda.</p>
           )}
 
-          {itens.map((i) => (
-            <div key={i.id} className="flex items-center gap-3 rounded-xl border p-2.5">
-              {i.imagem ? (
-                <img src={i.imagem} alt={i.titulo} loading="lazy" className="h-12 w-12 rounded-lg object-cover bg-muted shrink-0" />
-              ) : (
-                <span className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                  <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{i.titulo}</p>
-                <p className="text-xs text-muted-foreground tabular-nums">{BRL(i.preco)}</p>
+          {itens.map((i) => {
+            const gramas = gramasDe(i);
+            return (
+            <div key={i.id} className="rounded-xl border p-2.5 space-y-2">
+              <div className="flex items-center gap-3">
+                {i.imagem ? (
+                  <img src={i.imagem} alt={i.titulo} loading="lazy" className="h-12 w-12 rounded-lg object-cover bg-muted shrink-0" />
+                ) : (
+                  <span className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                  </span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{i.titulo}</p>
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    {BRL(i.preco)}
+                    {i.variantId
+                      ? ' · peso da loja'
+                      : gramas ? ` · ${gramas} g` : ''}
+                  </p>
+                </div>
+                <Input
+                  type="number"
+                  min={1}
+                  value={i.quantidade}
+                  onChange={(e) => setQtd(i.id, parseInt(e.target.value, 10))}
+                  className="h-9 w-16 text-center"
+                  aria-label={`Quantidade de ${i.titulo}`}
+                />
+                <Button variant="ghost" size="icon" onClick={() => remover(i.id)} aria-label="Remover item">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
               </div>
-              <Input
-                type="number"
-                min={1}
-                value={i.quantidade}
-                onChange={(e) => setQtd(i.id, parseInt(e.target.value, 10))}
-                className="h-9 w-16 text-center"
-                aria-label={`Quantidade de ${i.titulo}`}
-              />
-              <Button variant="ghost" size="icon" onClick={() => remover(i.id)} aria-label="Remover item">
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+
+              {/* Item avulso: escolhe de qual peso padrão ele herda */}
+              {!i.variantId && (
+                <div className="flex items-center gap-2">
+                  <Select value={i.tipoPeso ?? 'generico'} onValueChange={(v) => setTipoPeso(i.id, v as TipoPeso)}>
+                    <SelectTrigger className="h-9 text-xs flex-1">
+                      <SelectValue placeholder="Peso padrão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tiposPeso.map((t) => (
+                        <SelectItem key={t.valor} value={t.valor} className="text-xs">{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!gramas && (
+                    <span className="text-[11px] text-destructive shrink-0">Peso não cadastrado</span>
+                  )}
+                </div>
+              )}
             </div>
-          ))}
+            );
+          })}
+
 
           <Button variant="outline" className="w-full h-11" onClick={() => setPickerOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Buscar produto no catálogo
