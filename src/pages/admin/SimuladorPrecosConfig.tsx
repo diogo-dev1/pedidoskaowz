@@ -329,9 +329,9 @@ export default function SimuladorPrecosConfig() {
                 className="w-28 shrink-0" />
             </div>
           ))}
-        </TabsContent>
 
           <div className="pt-3">
+
             <PrecosTamanho
               label="Bainha adicional (2ª em diante)"
               precos={draft.bainhaAdicional}
