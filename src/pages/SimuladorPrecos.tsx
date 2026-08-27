@@ -20,7 +20,7 @@ import {
   novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, novaEntradaFacaDeCatalogo,
   espacadorIdx, nomeBainha, nomeCatalogo, calcCatalogo, ehFacaDoCatalogo,
 
-  BAINHA_ADICIONAL_PRECO, LASER_PRECO, EMBALAGENS,
+  precoBainhaAdicional, LASER_PRECO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
   type CatalogoCfg,
 } from '@/lib/simuladorData';
@@ -315,7 +315,7 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                   })}
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  A 1ª bainha já está inclusa no valor. Cada bainha adicional custa {BRL(BAINHA_ADICIONAL_PRECO)}.
+                  A 1ª bainha já está inclusa no valor. Cada bainha adicional custa {BRL(precoBainhaAdicional(data, c))}.
                 </p>
                 {(cfg.bainhaIdxs ?? []).map((bi) => (
                   !!data.bainhas[bi]?.cores?.length && (
