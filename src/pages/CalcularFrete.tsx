@@ -225,8 +225,8 @@ export default function CalcularFrete() {
 
       {resultados && resultados.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {resultados.map((s) => (
-            <Card key={s.handle}>
+          {resultados.map((s, idx) => (
+            <Card key={s.handle || idx}>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <PackageIcon className="h-5 w-5 text-accent" />
