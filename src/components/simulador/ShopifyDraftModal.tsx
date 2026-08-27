@@ -24,17 +24,66 @@ interface DraftLineItem {
 }
 
 
-/** Notas internas (embalagem etc.) — nunca viram propriedade visível da linha. */
+/** Notas internas (configuração completa de cada item) — nunca viram propriedade visível da linha. */
 export function montarNotasInternas(data: SimuladorData, entries: PedidoEntry[]): string[] {
   const out: string[] = [];
   let n = 0;
   entries.forEach((e) => {
-    if (e.kind !== 'faca') return;
-    const cfg = e.faca;
-    if (cfg.modeloIdx === null) return;
     n++;
-    const emb = (cfg.embalagem ?? '').trim();
-    if (emb) out.push(`Item ${n} (${data.modelos[cfg.modeloIdx]?.nome ?? ''}) — Embalagem: ${emb}`);
+
+    if (e.kind === 'faca') {
+      const cfg = e.faca;
+      const m = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
+      const titulo = cfg.origem?.produtoTitulo ?? m?.nome ?? '';
+      if (!titulo) return;
+
+      const linhas: string[] = [`Item ${n} — ${titulo}`];
+      if (cfg.origem) linhas.push(`  Base: ${cfg.origem.produtoTitulo}`);
+      if (m) linhas.push(`  Modelo: ${m.nome}`);
+
+      const aco = data.acos[cfg.acoIdx]?.nome ?? '';
+      if (aco) linhas.push(`  Aço: ${aco}`);
+      if (cfg.bruteForge) linhas.push(`  Brute Forge: Sim`);
+
+      const emp = data.empunhaduras[cfg.empIdx]?.nome ?? '';
+      if (emp) linhas.push(`  Empunhadura: ${emp}${cfg.empCor ? ` (${cfg.empCor})` : ''}`);
+      if (cfg.dragonScale) linhas.push(`  Dragon Scale: Sim`);
+      linhas.push(`  Espaçador: ${cfg.espacador ? `Sim${cfg.espacadorCor ? ` (${cfg.espacadorCor})` : ''}` : 'Não'}`);
+
+      const acab = data.acabamentos[cfg.acabIdx]?.nome ?? '';
+      if (acab) linhas.push(`  Acabamento: ${acab}`);
+
+      const bainhas = (cfg.bainhaIdxs ?? []).map((i) => nomeBainha(data, cfg, i)).filter(Boolean);
+      if (bainhas.length) linhas.push(`  Bainhas: ${bainhas.join(', ')}`);
+
+      const laser = (cfg.textoLaser ?? '').trim();
+      linhas.push(`  Personalização: ${temLaser(cfg) ? `Sim — ${laser}` : 'Não'}`);
+
+      const cert = (cfg.certificado ?? '').trim();
+      linhas.push(`  Certificado: ${cert || 'Não'}`);
+
+      const emb = (cfg.embalagem ?? '').trim();
+      if (emb) linhas.push(`  Embalagem: ${emb}`);
+
+      out.push(linhas.join('\n'));
+      return;
+    }
+
+    if (e.kind === 'avulso') {
+      const a = data.adicionais[e.avulso.adicionalIdx];
+      if (!a) return;
+      out.push(`Item ${n} — ${a.nome}${e.avulso.quantidade > 1 ? ` ×${e.avulso.quantidade}` : ''}`);
+      return;
+    }
+
+    if (e.kind === 'catalogo') {
+      const c = e.catalogo;
+      out.push(`Item ${n} — ${nomeCatalogo(c)}${c.quantidade > 1 ? ` ×${c.quantidade}` : ''}`);
+      return;
+    }
+
+    const c = e.custom;
+    out.push(`Item ${n} — ${(c.descricao.trim() || 'Item personalizado')}${c.brinde ? ' (Brinde)' : ''}${c.quantidade > 1 ? ` ×${c.quantidade}` : ''}`);
   });
   return out;
 }
