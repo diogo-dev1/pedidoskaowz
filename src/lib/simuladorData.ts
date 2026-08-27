@@ -235,7 +235,15 @@ export function catalogoIntacto(cfg: ItemCfg): boolean {
   return preco !== null && preco !== undefined && Math.abs(preco - cfg.origem.precoOriginal) < 0.01;
 }
 
+/** O produto da vitrine corresponde a um MODELO DE FACA conhecido?
+ *  Se não, ele é um produto comum (café, boné, cinto, clipe...) e entra
+ *  no pedido como linha simples, sem campos de configuração de faca. */
+export function ehFacaDoCatalogo(data: SimuladorData, p: { titulo: string; variante?: string }): boolean {
+  return acharPorNome(data.modelos, [p.titulo, p.variante ?? ''].join(' ')) >= 0;
+}
+
 /** Cria uma faca configurável pré-preenchida a partir de um produto/variante da vitrine. */
+
 export function facaDeProdutoShopify(data: SimuladorData, p: {
   variantId: string; titulo: string; variante?: string; imagem?: string | null; preco: number;
 }): ItemCfg {
