@@ -15,11 +15,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import ShopifyDraftModal from '@/components/simulador/ShopifyDraftModal';
 import CatalogoShopifyPicker, { type ProdutoShopify } from '@/components/simulador/CatalogoShopifyPicker';
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
   novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, novaEntradaFacaDeCatalogo,
   espacadorIdx, nomeBainha, nomeCatalogo, calcCatalogo, ehFacaDoCatalogo,
-
+  LOCAIS_GRAVACAO, composeLaser, personalizacaoDefinida,
   precoBainhaAdicional, LASER_PRECO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
   type CatalogoCfg,
@@ -334,15 +335,58 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                 ))}
               </Secao>
 
-              {/* Personalização à laser — mesma regra do Novo Pedido */}
-              <Secao title="Personalização">
-                <Input value={cfg.textoLaser ?? ''} maxLength={60}
-                  onChange={(e) => onChange({ ...cfg, textoLaser: e.target.value })}
-                  placeholder="Texto da gravação (deixe vazio para sem gravação)" className="h-10 text-sm" />
+              {/* Personalização à laser — seleção obrigatória por checkbox */}
+              <Secao title="Personalização *">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2.5 rounded-lg border p-2.5 cursor-pointer">
+                    <Checkbox checked={!!cfg.semGravacao}
+                      onCheckedChange={(v) => onChange({
+                        ...cfg, semGravacao: v === true,
+                        gravacoes: v === true ? {} : (cfg.gravacoes ?? {}),
+                        textoLaser: v === true ? '' : composeLaser(cfg.gravacoes),
+                      })} />
+                    <span className="text-sm font-medium">Sem gravação</span>
+                  </label>
+
+                  {LOCAIS_GRAVACAO.map((local) => {
+                    const marcado = cfg.gravacoes?.[local] !== undefined;
+                    const toggle = (v: boolean) => {
+                      const g = { ...(cfg.gravacoes ?? {}) };
+                      if (v) g[local] = g[local] ?? ''; else delete g[local];
+                      onChange({ ...cfg, semGravacao: false, gravacoes: g, textoLaser: composeLaser(g) });
+                    };
+                    const setTexto = (t: string) => {
+                      const g = { ...(cfg.gravacoes ?? {}), [local]: t };
+                      onChange({ ...cfg, gravacoes: g, textoLaser: composeLaser(g) });
+                    };
+                    return (
+                      <div key={local} className="rounded-lg border p-2.5 space-y-2">
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                          <Checkbox checked={marcado} onCheckedChange={(v) => toggle(v === true)} />
+                          <span className="text-sm font-medium">{local}</span>
+                        </label>
+                        {marcado && (
+                          <Input value={cfg.gravacoes?.[local] ?? ''} maxLength={120}
+                            onChange={(e) => setTexto(e.target.value)}
+                            placeholder={local === 'Logo'
+                              ? 'Descreva a logo (formato, elementos, referência)'
+                              : `O que gravar em ${local.toLowerCase()}`}
+                            className="h-10 text-sm" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {!personalizacaoDefinida(cfg) && (
+                  <p className="text-[11px] text-destructive font-medium">
+                    Marque ao menos uma opção de personalização.
+                  </p>
+                )}
                 <p className="text-[10px] text-muted-foreground">
-                  Gravação à laser: +{BRL(LASER_PRECO)} quando houver texto.
+                  Gravação à laser: +{BRL(LASER_PRECO)} quando houver gravação.
                 </p>
               </Secao>
+
 
               <Secao title="Certificado">
                 <Input value={cfg.certificado ?? ''}
@@ -1034,8 +1078,7 @@ export default function SimuladorPrecos() {
   const [tipoOpen, setTipoOpen] = useState(false);
   const [catalogoOpen, setCatalogoOpen] = useState(false);
   const [clienteNome, setClienteNome] = useState('');
-  const [totalManual, setTotalManual] = useState<number | null>(null);
-  const [editandoTotal, setEditandoTotal] = useState(false);
+  const [desconto, setDesconto] = useState(0);
 
 
 
@@ -1094,14 +1137,19 @@ export default function SimuladorPrecos() {
 
   const totalCalculado = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
 
-  const totalGeral = totalManual !== null ? totalManual : totalCalculado;
+  const descontoAplicado = Math.min(Math.max(0, desconto), totalCalculado);
+  const totalGeral = Math.max(0, totalCalculado - descontoAplicado);
   const itensValidos = entries.filter((e) => e.kind !== 'faca' || e.faca.modeloIdx !== null).length;
 
   /** Pendências que impedem fechar o pedido — só facas montadas do zero exigem modelo. */
   const pendencias = useMemo(() => (
-    entries.flatMap((e, i) => (
-      e.kind === 'faca' && e.faca.modeloIdx === null ? [`Item ${i + 1}: escolha o modelo da faca`] : []
-    ))
+    entries.flatMap((e, i) => {
+      if (e.kind !== 'faca') return [];
+      const p: string[] = [];
+      if (e.faca.modeloIdx === null) p.push(`Item ${i + 1}: escolha o modelo da faca`);
+      if (!personalizacaoDefinida(e.faca)) p.push(`Item ${i + 1}: marque uma opção de personalização`);
+      return p;
+    })
   ), [entries]);
 
   /** Valida antes de abrir os modais de fechamento. Nunca deixa o botão apagado sem explicação. */
@@ -1124,8 +1172,7 @@ export default function SimuladorPrecos() {
   const limparTudo = () => {
     setEntries([]);
     setExpandedId(null);
-    setTotalManual(null);
-    setEditandoTotal(false);
+    setDesconto(0);
     if (navigator.vibrate) navigator.vibrate(20);
     toast.success('Limpo! Configurações resetadas.');
   };
@@ -1203,47 +1250,36 @@ export default function SimuladorPrecos() {
       {/* Footer fixo — acima da bottom nav no mobile */}
       <div className="fixed left-0 right-0 bg-background/95 backdrop-blur-lg border-t z-40 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0">
         <div className="max-w-lg mx-auto px-4 py-3 space-y-2">
-          {editandoTotal && (
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
-                <Input type="number" min={0} step="0.01" autoFocus
-                  value={totalManual ?? totalCalculado}
-                  onChange={(ev) => setTotalManual(ev.target.value === '' ? 0 : Math.max(0, parseFloat(ev.target.value) || 0))}
-                  className="h-9 pl-9 text-sm tabular-nums font-semibold" />
-              </div>
-              <Button variant="outline" size="sm" className="h-9 gap-1.5"
-                onClick={() => { setTotalManual(null); setEditandoTotal(false); }}>
-                <Eraser className="h-3.5 w-3.5" /> Calculado
-              </Button>
-              <Button size="sm" className="h-9" onClick={() => setEditandoTotal(false)}>OK</Button>
-            </div>
-          )}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">
-                {itensValidos} {itensValidos === 1 ? 'item' : 'itens'}
-                {totalManual !== null && <span className="text-amber-600 font-semibold"> · ajustado</span>}
-              </p>
-              <button type="button" className="flex items-center gap-1.5"
-                onClick={() => { if (totalManual === null) setTotalManual(totalCalculado); setEditandoTotal(true); }}>
-                <span className="text-xl font-bold text-accent leading-tight" data-numeric>{BRL(totalGeral)}</span>
-                <Pencil className="h-3 w-3 text-muted-foreground" />
-              </button>
-              {totalManual !== null && (
-                <p className="text-[10px] text-muted-foreground leading-tight">Calculado: {BRL(totalCalculado)}</p>
-              )}
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">Itens</p>
+              <span className="text-sm font-semibold tabular-nums" data-numeric>{BRL(totalCalculado)}</span>
             </div>
+            <div className="w-28">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">Desconto</p>
+              <div className="relative">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">R$</span>
+                <Input type="number" min={0} step="0.01" value={desconto || ''}
+                  onChange={(ev) => setDesconto(ev.target.value === '' ? 0 : Math.max(0, parseFloat(ev.target.value) || 0))}
+                  placeholder="0,00" className="h-9 pl-7 text-sm tabular-nums" />
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">Total final</p>
+              <span className="text-xl font-bold text-accent leading-tight" data-numeric>{BRL(totalGeral)}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <p className="flex-1 text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">
+              {itensValidos} {itensValidos === 1 ? 'item' : 'itens'}
+              {descontoAplicado > 0 && <span className="text-amber-600 font-semibold"> · desconto {BRL(descontoAplicado)}</span>}
+            </p>
             <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl flex-shrink-0" onClick={copiarRapido} title="Copiar orçamento">
               <Copy className="h-4 w-4" />
             </Button>
-            <Button variant="outline" className="gap-2 h-11 rounded-xl flex-shrink-0 px-3"
+            <Button className="gap-2 h-11 rounded-xl flex-shrink-0 px-4"
               onClick={() => podeFechar(() => setShopifyOpen(true))}>
               <ShoppingBag className="h-4 w-4" /> Shopify
-            </Button>
-            <Button className="gap-2 h-11 rounded-xl flex-shrink-0 bg-accent hover:bg-accent/90 text-accent-foreground px-3"
-              onClick={() => podeFechar(() => setModalOpen(true))}>
-              <ClipboardCheck className="h-4 w-4" /> Formulário
             </Button>
           </div>
           {pendencias.length > 0 && (
