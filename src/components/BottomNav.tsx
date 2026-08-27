@@ -6,7 +6,8 @@ import {
   CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User, Globe, Truck,
   ClipboardList, Boxes, Download, ShoppingCart, Briefcase, Send,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { ABRIR_MENU_EVENTO } from '@/components/TopNav';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -110,11 +111,18 @@ export function BottomNav() {
     return moreItems[0]?.label;
   }, [location.pathname, isAdmin]);
 
+  // Abre o menu quando o botão do cabeçalho dispara o evento global
+  useEffect(() => {
+    const abrir = () => setMoreOpen(true);
+    window.addEventListener(ABRIR_MENU_EVENTO, abrir);
+    return () => window.removeEventListener(ABRIR_MENU_EVENTO, abrir);
+  }, []);
+
   return (
     <>
       {/* Side panel */}
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="right" className="w-[290px] p-0 overflow-y-auto">
+        <SheetContent side="left" className="w-[290px] p-0 overflow-y-auto">
           <SheetHeader className="px-4 py-3 border-b border-border">
             {profile && (
               <div className="flex items-center gap-2">
@@ -148,7 +156,7 @@ export function BottomNav() {
                             cn(
                               'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
                               isActive
-                                ? 'bg-accent text-accent-foreground font-medium'
+                                ? 'bg-brand/10 text-brand font-medium'
                                 : 'text-foreground hover:bg-secondary'
                             )
                           }
@@ -178,7 +186,7 @@ export function BottomNav() {
                             cn(
                               'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
                               isActive
-                                ? 'bg-accent text-accent-foreground font-medium'
+                                ? 'bg-brand/10 text-brand font-medium'
                                 : 'text-foreground hover:bg-secondary'
                             )
                           }
