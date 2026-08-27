@@ -106,8 +106,6 @@ Deno.serve(async (req) => {
     const input: Record<string, unknown> = {
       lineItems,
       taxExempt: true,
-      tags: ['Kaowz-Cotacao-Frete'],
-      note: '[INTERNO] Rascunho temporário apenas para cotação de frete.',
       shippingAddress: {
         firstName: 'Cotação',
         lastName: 'Frete',
@@ -117,24 +115,21 @@ Deno.serve(async (req) => {
       },
     };
 
-    const criado = await shopify(DRAFT_CREATE, { input });
-    const errs = criado?.draftOrderCreate?.userErrors ?? [];
-    if (errs.length) {
-      return new Response(JSON.stringify({
-        sucesso: false,
-        erro: errs.map((e: any) => `${(e.field ?? []).join('.')}: ${e.message}`).join(' | '),
-      }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const draft = criado?.draftOrderCreate?.draftOrder;
-    draftId = draft?.id;
-    let rates: any[] = draft?.availableShippingRates ?? [];
-
-    // O app de frete responde de forma assíncrona: tenta novamente algumas vezes.
-    for (let tentativa = 0; tentativa < 4 && rates.length === 0 && draftId; tentativa++) {
+    // draftOrderCalculate: não cria rascunho algum na loja, então não há o que apagar.
+    let rates: any[] = [];
+    for (let tentativa = 0; tentativa < 3; tentativa++) {
+      const calc = await shopify(DRAFT_CALCULATE, { input });
+      const errs = calc?.draftOrderCalculate?.userErrors ?? [];
+      if (errs.length) {
+        return new Response(JSON.stringify({
+          sucesso: false,
+          erro: errs.map((e: any) => `${(e.field ?? []).join('.')}: ${e.message}`).join(' | '),
+        }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      rates = calc?.draftOrderCalculate?.calculatedDraftOrder?.availableShippingRates ?? [];
+      if (rates.length) break;
+      // O app de frete pode demorar a responder na primeira chamada.
       await new Promise((r) => setTimeout(r, 1200));
-      const q = await shopify(DRAFT_RATES, { id: draftId });
-      rates = q?.draftOrder?.availableShippingRates ?? [];
     }
 
     const opcoes = rates.map((r: any) => ({
@@ -159,11 +154,6 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ sucesso: false, erro: error?.message ?? 'Erro desconhecido' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } finally {
-    // O rascunho é só para cotação — sempre apagar para não poluir a loja.
-    if (draftId) {
-      try { await shopify(DRAFT_DELETE, { input: { id: draftId } }); }
-      catch (e) { console.error('falha ao apagar draft temporário:', e); }
-    }
   }
+
 });
