@@ -187,9 +187,11 @@ export default function SimuladorPrecosConfig() {
   };
 
   const restaurarPadrao = () => {
-    setDraft(clone(SEED));
+    // Restaura os preços da planilha, mas preserva os pesos já cadastrados.
+    setDraft((d) => ({ ...clone(SEED), pesos: d?.pesos ?? clone(SEED).pesos }));
     toast.info('Valores da planilha restaurados no formulário. Clique em Salvar para aplicar.');
   };
+
 
   if (isLoading || !draft) {
     return (
