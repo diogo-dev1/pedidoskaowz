@@ -62,7 +62,9 @@ const GRUPOS: NavGroup[] = [
       { title: 'Mensagens', url: '/mensagens', icon: MessageSquare },
       { title: 'Mídia', url: '/midia', icon: Image },
     ],
+  },
   {
+
     label: 'Configuradores',
     items: [
       { title: 'Push Dagger Kaowz', url: '/push-dagger-kaowz', icon: Layers },
