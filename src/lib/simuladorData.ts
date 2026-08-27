@@ -40,17 +40,25 @@ export interface SimuladorData {
   acabamentos: Opcao[]; // primeiro item (Acetinado) é o incluso
   bainhas: Opcao[];     // primeiro item (Preta) é o incluso
   adicionais: Adicional[];
+  /** Preço da bainha ADICIONAL (2ª em diante), por tamanho */
+  bainhaAdicional: Precos;
   /** Pesos padrão para cotação de frete (gramas) */
   pesos: PesosConfig;
 }
 
 
-/** Preço de cada bainha ADICIONAL (a primeira já vem inclusa no preço base). */
-export const BAINHA_ADICIONAL_PRECO = 195;
+/** Fallback do preço da bainha adicional, caso a config não traga valores. */
+export const BAINHA_ADICIONAL_PADRAO: Precos = { P: 195, M: 220, G: 250 };
+
+/** Preço de cada bainha ADICIONAL (a primeira já vem inclusa) para uma classe. */
+export function precoBainhaAdicional(data: SimuladorData, c: Classe = 'P'): number {
+  return precoClasse(data.bainhaAdicional ?? BAINHA_ADICIONAL_PADRAO, c);
+}
 /** Preço da gravação à laser (mesma regra usada em Novo Pedido). */
 export const LASER_PRECO = 30;
 /** Opções de embalagem (campo INTERNO — nunca exposto ao cliente). */
 export const EMBALAGENS = ['Comum', 'Patola Padrão', 'Patola KIT'] as const;
+
 
 /** Produto da vitrine Shopify que serviu de base para uma faca configurável.
  *  Somente leitura — editar a faca aqui NUNCA altera o cadastro na Shopify. */
