@@ -42,17 +42,20 @@ type Card = {
   classe: string;
 };
 
-// Grade principal de acesso rápido (8 cartões) — todos laranja Kaowz
+// Grade principal de acesso rápido (8 cartões) — laranja médio uniforme
+const CARD_CLASSE = 'bg-brand text-brand-foreground hover:bg-brand-hover';
+
 const CARDS: Card[] = [
-  { titulo: 'Simulador', icon: Calculator, url: '/simulador-precos', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
-  { titulo: 'Catálogo', icon: ShoppingBag, url: '/catalogo', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
-  { titulo: 'Frete', icon: Truck, url: '/calcular-frete', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
-  { titulo: 'Mensagens', icon: MessageSquare, url: '/mensagens', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
-  { titulo: 'Vendas', icon: TrendingUp, url: '/relatorio-vendas', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
-  { titulo: 'Upsell', icon: Repeat, url: '/upsell-clientes', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
-  { titulo: 'Checkouts', icon: ShoppingCart, url: '/checkouts-abandonados', classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
-  { titulo: 'Sincronizar', icon: RefreshCw, acao: 'sync', adminOnly: true, classe: 'bg-gradient-to-br from-accent via-orange-500 to-orange-600 text-white' },
+  { titulo: 'Simulador', icon: Calculator, url: '/simulador-precos', classe: CARD_CLASSE },
+  { titulo: 'Catálogo', icon: ShoppingBag, url: '/catalogo', classe: CARD_CLASSE },
+  { titulo: 'Frete', icon: Truck, url: '/calcular-frete', classe: CARD_CLASSE },
+  { titulo: 'Mensagens', icon: MessageSquare, url: '/mensagens', classe: CARD_CLASSE },
+  { titulo: 'Vendas', icon: TrendingUp, url: '/relatorio-vendas', classe: CARD_CLASSE },
+  { titulo: 'Upsell', icon: Repeat, url: '/upsell-clientes', classe: CARD_CLASSE },
+  { titulo: 'Checkouts', icon: ShoppingCart, url: '/checkouts-abandonados', classe: CARD_CLASSE },
+  { titulo: 'Sincronizar', icon: RefreshCw, acao: 'sync', adminOnly: true, classe: CARD_CLASSE },
 ];
+
 
 export default function Home() {
   const { profile } = useAuth();
@@ -131,7 +134,8 @@ export default function Home() {
 
   const cardsVisiveis = CARDS.filter((c) => !c.adminOnly || isAdmin);
   const classeCard =
-    'group rounded-xl aspect-square flex flex-col items-center justify-center gap-2 shadow-md hover:shadow-lg hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] transition-all';
+    'group rounded-xl aspect-square flex flex-col items-center justify-center gap-2 p-3 shadow-sm active:scale-[0.98] transition-colors duration-200';
+
 
   return (
     <div className="space-y-4">

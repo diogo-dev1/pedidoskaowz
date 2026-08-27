@@ -113,7 +113,7 @@ export function AppSidebar() {
               cn(
                 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
                 isActive
-                  ? 'bg-accent text-accent-foreground font-medium'
+                  ? 'bg-brand/10 text-brand font-medium'
                   : 'text-foreground hover:bg-secondary'
               )
             }
@@ -141,7 +141,7 @@ export function AppSidebar() {
                         cn(
                           'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
                           isActive
-                            ? 'bg-accent text-accent-foreground font-medium'
+                            ? 'bg-brand/10 text-brand font-medium'
                             : 'text-foreground hover:bg-secondary'
                         )
                       }
@@ -170,7 +170,7 @@ export function AppSidebar() {
                         cn(
                           'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
                           isActive
-                            ? 'bg-accent text-accent-foreground font-medium'
+                            ? 'bg-brand/10 text-brand font-medium'
                             : 'text-foreground hover:bg-secondary'
                         )
                       }
