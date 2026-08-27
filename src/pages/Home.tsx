@@ -131,7 +131,7 @@ export default function Home() {
 
   const cardsVisiveis = CARDS.filter((c) => !c.adminOnly || isAdmin);
   const classeCard =
-    'group rounded-xl aspect-square flex flex-col items-center justify-center gap-2 border bg-card shadow-sm hover:shadow-md hover:border-accent/50 hover:scale-[1.02] active:scale-[0.98] transition-all';
+    'group rounded-xl aspect-square flex flex-col items-center justify-center gap-2 border shadow-md hover:shadow-lg hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] transition-all';
 
   return (
     <div className="space-y-4">
@@ -139,13 +139,13 @@ export default function Home() {
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
         {cardsVisiveis.map((c) =>
           c.url ? (
-            <NavLink key={c.titulo} to={c.url} className={classeCard}>
-              <c.icon className="h-7 w-7 sm:h-8 sm:w-8 text-accent group-hover:scale-110 transition-transform" />
+            <NavLink key={c.titulo} to={c.url} className={`${classeCard} ${c.classe}`}>
+              <c.icon className="h-7 w-7 sm:h-8 sm:w-8 group-hover:scale-110 transition-transform" />
               <p className="font-semibold text-xs sm:text-sm text-center px-1 leading-tight">{c.titulo}</p>
             </NavLink>
           ) : (
-            <button key={c.titulo} type="button" onClick={() => setSyncOpen(true)} className={classeCard}>
-              <c.icon className="h-7 w-7 sm:h-8 sm:w-8 text-accent group-hover:scale-110 transition-transform" />
+            <button key={c.titulo} type="button" onClick={() => setSyncOpen(true)} className={`${classeCard} ${c.classe}`}>
+              <c.icon className="h-7 w-7 sm:h-8 sm:w-8 group-hover:scale-110 transition-transform" />
               <p className="font-semibold text-xs sm:text-sm text-center px-1 leading-tight">{c.titulo}</p>
             </button>
           ),
