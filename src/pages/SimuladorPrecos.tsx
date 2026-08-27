@@ -1078,8 +1078,7 @@ export default function SimuladorPrecos() {
   const [tipoOpen, setTipoOpen] = useState(false);
   const [catalogoOpen, setCatalogoOpen] = useState(false);
   const [clienteNome, setClienteNome] = useState('');
-  const [totalManual, setTotalManual] = useState<number | null>(null);
-  const [editandoTotal, setEditandoTotal] = useState(false);
+  const [desconto, setDesconto] = useState(0);
 
 
 
