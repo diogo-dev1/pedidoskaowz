@@ -154,6 +154,9 @@ export default function SimuladorPrecosConfig() {
   useEffect(() => { if (!draft && !isLoading) setDraft(clone(configData)); }, [configData, isLoading, draft]);
 
   const set = (patch: Partial<SimuladorData>) => setDraft((d) => (d ? { ...d, ...patch } : d));
+  const setPesos = (patch: Partial<PesosConfig>) =>
+    setDraft((d) => (d ? { ...d, pesos: { ...d.pesos, ...patch } } : d));
+
 
   const modelosFiltrados = useMemo(() => {
     if (!draft) return [];
