@@ -1247,47 +1247,73 @@ export default function SimuladorPrecos() {
       )}
 
 
-      {/* Footer fixo — acima da bottom nav no mobile */}
-      <div className="fixed left-0 right-0 bg-background/95 backdrop-blur-lg border-t z-40 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0">
-        <div className="max-w-lg mx-auto px-4 py-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">Itens</p>
-              <span className="text-sm font-semibold tabular-nums" data-numeric>{BRL(totalCalculado)}</span>
+      {/* Footer fixo — resumo empilhado, mobile-first */}
+      <div className="fixed left-0 right-0 bg-background/95 backdrop-blur-xl border-t z-40 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0">
+        <div className="max-w-lg mx-auto px-4 py-3.5 space-y-3">
+          {/* Linha 1: subtotal + quantidade */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Subtotal ({itensValidos} {itensValidos === 1 ? 'item' : 'itens'})</p>
+              <p className="text-base font-semibold tabular-nums" data-numeric>{BRL(totalCalculado)}</p>
             </div>
-            <div className="w-28">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">Desconto</p>
-              <div className="relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">R$</span>
-                <Input type="number" min={0} step="0.01" value={desconto || ''}
-                  onChange={(ev) => setDesconto(ev.target.value === '' ? 0 : Math.max(0, parseFloat(ev.target.value) || 0))}
-                  placeholder="0,00" className="h-9 pl-7 text-sm tabular-nums" />
+            {descontoAplicado > 0 && (
+              <div className="text-right">
+                <p className="text-[11px] font-medium text-amber-600 uppercase tracking-wider">Desconto</p>
+                <p className="text-base font-semibold tabular-nums text-amber-600" data-numeric>-{BRL(descontoAplicado)}</p>
               </div>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">Total final</p>
-              <span className="text-xl font-bold text-accent leading-tight" data-numeric>{BRL(totalGeral)}</span>
-            </div>
+            )}
           </div>
-          <div className="flex items-center gap-3">
-            <p className="flex-1 text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">
-              {itensValidos} {itensValidos === 1 ? 'item' : 'itens'}
-              {descontoAplicado > 0 && <span className="text-amber-600 font-semibold"> · desconto {BRL(descontoAplicado)}</span>}
-            </p>
-            <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl flex-shrink-0" onClick={copiarRapido} title="Copiar orçamento">
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button className="gap-2 h-11 rounded-xl flex-shrink-0 px-4"
-              onClick={() => podeFechar(() => setShopifyOpen(true))}>
-              <ShoppingBag className="h-4 w-4" /> Shopify
-            </Button>
-          </div>
-          {pendencias.length > 0 && (
-            <p className="text-[11px] text-destructive leading-tight">
-              Falta preencher: {pendencias.join(' · ')}
-            </p>
-          )}
 
+          {/* Linha 2: campo de desconto — ocupa largura total para digitação confortável */}
+          <div className="rounded-xl border bg-muted/30 p-3 space-y-1.5">
+            <Label htmlFor="desconto-input" className="text-xs font-medium text-muted-foreground">Aplicar desconto</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">R$</span>
+              <Input
+                id="desconto-input"
+                type="number"
+                min={0}
+                step="0.01"
+                value={desconto || ''}
+                onChange={(ev) => setDesconto(ev.target.value === '' ? 0 : Math.max(0, parseFloat(ev.target.value) || 0))}
+                placeholder="0,00"
+                className="h-12 pl-9 text-base font-semibold tabular-nums"
+              />
+            </div>
+          </div>
+
+          {/* Linha 3: total final em destaque */}
+          <div className="flex items-center justify-between rounded-xl bg-accent/10 border border-accent/20 px-4 py-3">
+            <span className="text-sm font-semibold text-accent-foreground/80">Total final</span>
+            <span className="text-2xl font-bold text-accent tabular-nums leading-none" data-numeric>{BRL(totalGeral)}</span>
+          </div>
+
+          {/* Linha 4: ações empilhadas, dedo-friendly */}
+          <div className="grid grid-cols-1 gap-2.5">
+            <Button
+              className="w-full h-13 rounded-xl gap-2 text-base font-semibold"
+              onClick={() => podeFechar(() => setShopifyOpen(true))}>
+              <ShoppingBag className="h-5 w-5" /> Lançar no Shopify
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-12 rounded-xl gap-2 text-sm font-medium"
+              onClick={copiarRapido}>
+              <Copy className="h-4 w-4" /> Copiar orçamento
+            </Button>
+          </div>
+
+          {/* Pendências */}
+          {pendencias.length > 0 && (
+            <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
+              <p className="text-[11px] font-semibold text-destructive mb-0.5">Falta preencher:</p>
+              <ul className="space-y-0.5">
+                {pendencias.map((p, i) => (
+                  <li key={i} className="text-[11px] text-destructive/90 leading-tight">• {p}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 
