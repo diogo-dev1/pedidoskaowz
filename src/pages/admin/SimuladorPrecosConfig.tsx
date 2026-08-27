@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSimuladorConfig, SIMULADOR_CONFIG_CHAVE } from '@/hooks/useSimuladorConfig';
 import {
-  SEED, BRL, type SimuladorData, type Modelo, type Opcao, type Precos, type Classe,
+  SEED, BRL, type SimuladorData, type Modelo, type Opcao, type Precos, type Classe, type PesosConfig,
 } from '@/lib/simuladorData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,8 +14,9 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
-  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette,
+  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette, Weight,
 } from 'lucide-react';
+
 
 // Clona profundo (dados são simples: objetos/arrays/números/strings)
 const clone = (d: SimuladorData): SimuladorData => JSON.parse(JSON.stringify(d));
