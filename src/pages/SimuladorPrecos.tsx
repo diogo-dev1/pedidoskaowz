@@ -18,7 +18,7 @@ import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
   novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, novaEntradaFacaDeCatalogo,
-  espacadorIdx, nomeBainha, nomeCatalogo, calcCatalogo,
+  espacadorIdx, nomeBainha, nomeCatalogo, calcCatalogo, ehFacaDoCatalogo,
 
   BAINHA_ADICIONAL_PRECO, LASER_PRECO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
@@ -127,9 +127,9 @@ function ModeloSearch({ modelos, onSelect, currentIdx }: { modelos: Modelo[]; on
 
 /* ════════════════ Card de item ════════════════ */
 
-function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded, onToggle, removivel, clienteNome }: {
+function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded, onToggle, removivel }: {
   data: SimuladorData; cfg: ItemCfg; onChange: (c: ItemCfg) => void; onRemove: () => void; onDuplicate: () => void;
-  index: number; expanded: boolean; onToggle: () => void; removivel: boolean; clienteNome?: string;
+  index: number; expanded: boolean; onToggle: () => void; removivel: boolean;
 }) {
   const modelo = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   const c = classeDo(modelo);
@@ -347,11 +347,12 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
               <Secao title="Certificado">
                 <Input value={cfg.certificado ?? ''}
                   onChange={(e) => onChange({ ...cfg, certificado: e.target.value })}
-                  placeholder={clienteNome || 'Nome que vai no certificado'} className="h-10 text-sm" />
+                  placeholder="Nome que vai no certificado" className="h-10 text-sm" />
                 <p className="text-[10px] text-muted-foreground">
-                  Preenchido com o nome do cliente — edite para presentes.
+                  Opcional — digite o nome que deve sair gravado no certificado.
                 </p>
               </Secao>
+
 
               <Secao title="Embalagem (interno)">
                 <div className="flex flex-wrap gap-1.5">
@@ -1045,14 +1046,17 @@ export default function SimuladorPrecos() {
     toast.success('Item adicionado!');
   };
   const addCatalogo = (p: ProdutoShopify) => {
-    const e = novaEntradaFacaDeCatalogo(data, {
+    const dadosProduto = {
       variantId: p.variantId, titulo: p.titulo, variante: p.variante, imagem: p.imagem, preco: p.preco,
-    });
+    };
+    const eFaca = ehFacaDoCatalogo(data, { titulo: p.titulo, variante: p.variante });
+    const e = eFaca ? novaEntradaFacaDeCatalogo(data, dadosProduto) : novaEntradaCatalogo(dadosProduto);
     setEntries((prev) => [...prev, e]);
     setExpandedId(e.id);
     if (navigator.vibrate) navigator.vibrate(15);
-    toast.success('Produto adicionado — ajuste as opções se precisar');
+    toast.success(eFaca ? 'Faca adicionada — ajuste as opções se precisar' : 'Produto adicionado ao pedido');
   };
+
 
   const escolherTipo = (t: 'catalogo' | 'faca' | 'avulso' | 'custom') => {
     if (t === 'catalogo') setCatalogoOpen(true);
@@ -1088,24 +1092,27 @@ export default function SimuladorPrecos() {
   const updateCatalogo = (id: string, u: CatalogoCfg) =>
     setEntries((p) => p.map((e) => (e.id === id ? { ...e, catalogo: u } : e)));
 
-
-  // Certificado: preenche automaticamente com o nome do cliente (mantém edições manuais)
-  const certAutoRef = useRef('');
-  useEffect(() => {
-    const anterior = certAutoRef.current;
-    certAutoRef.current = clienteNome;
-    setEntries((p) => p.map((e) => (
-      e.kind === 'faca' && (!e.faca.certificado?.trim() || e.faca.certificado === anterior)
-        ? { ...e, faca: { ...e.faca, certificado: clienteNome } }
-        : e
-    )));
-  }, [clienteNome]);
-
   const totalCalculado = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
 
   const totalGeral = totalManual !== null ? totalManual : totalCalculado;
   const itensValidos = entries.filter((e) => e.kind !== 'faca' || e.faca.modeloIdx !== null).length;
+
+  /** Pendências que impedem fechar o pedido — só facas montadas do zero exigem modelo. */
+  const pendencias = useMemo(() => (
+    entries.flatMap((e, i) => (
+      e.kind === 'faca' && e.faca.modeloIdx === null ? [`Item ${i + 1}: escolha o modelo da faca`] : []
+    ))
+  ), [entries]);
+
+  /** Valida antes de abrir os modais de fechamento. Nunca deixa o botão apagado sem explicação. */
+  const podeFechar = (acao: () => void) => {
+    if (entries.length === 0) { toast.error('Adicione ao menos um item ao pedido'); return; }
+    if (pendencias.length) { toast.error(pendencias[0]); return; }
+    acao();
+  };
+
   const orcamento = useMemo(() => gerarOrcamento(data, entries, totalGeral), [data, entries, totalGeral]);
+
 
 
   const copiarRapido = async () => {
@@ -1142,12 +1149,9 @@ export default function SimuladorPrecos() {
         )}
       </div>
 
-      {/* Nome do cliente — alimenta o campo Certificado de cada faca */}
-      <div className="space-y-1">
-        <Label htmlFor="sp-cliente" className="text-[11px] text-muted-foreground uppercase tracking-wider">Cliente</Label>
-        <Input id="sp-cliente" value={clienteNome} onChange={(e) => setClienteNome(e.target.value)}
-          placeholder="Nome do cliente (usado no certificado)" className="h-10 text-sm" />
-      </div>
+      {/* Dados do cliente são preenchidos na conclusão do pedido (modal do Shopify) */}
+
+
 
       {/* Um único botão principal — o tipo do item é escolhido no seletor */}
       <Button type="button" onClick={() => setTipoOpen(true)}
@@ -1166,7 +1170,6 @@ export default function SimuladorPrecos() {
           {entries.map((e, idx) => {
             if (e.kind === 'faca') return (
               <ItemCard key={e.id} data={data} cfg={e.faca} index={idx}
-                clienteNome={clienteNome}
                 onChange={(u) => updateFaca(e.id, u)}
                 onRemove={() => removeEntry(e.id)}
                 onDuplicate={() => duplicateItem(e.id)}
@@ -1235,14 +1238,20 @@ export default function SimuladorPrecos() {
               <Copy className="h-4 w-4" />
             </Button>
             <Button variant="outline" className="gap-2 h-11 rounded-xl flex-shrink-0 px-3"
-              onClick={() => setShopifyOpen(true)} disabled={itensValidos === 0}>
+              onClick={() => podeFechar(() => setShopifyOpen(true))}>
               <ShoppingBag className="h-4 w-4" /> Shopify
             </Button>
             <Button className="gap-2 h-11 rounded-xl flex-shrink-0 bg-accent hover:bg-accent/90 text-accent-foreground px-3"
-              onClick={() => setModalOpen(true)} disabled={itensValidos === 0}>
+              onClick={() => podeFechar(() => setModalOpen(true))}>
               <ClipboardCheck className="h-4 w-4" /> Formulário
             </Button>
           </div>
+          {pendencias.length > 0 && (
+            <p className="text-[11px] text-destructive leading-tight">
+              Falta preencher: {pendencias.join(' · ')}
+            </p>
+          )}
+
         </div>
       </div>
 
