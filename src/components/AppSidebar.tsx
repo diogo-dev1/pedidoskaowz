@@ -1,11 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Calculator, Users, TrendingUp, LayoutDashboard,
   ShoppingBag, MessageSquare, BookOpen, Image, DollarSign, Factory,
   CheckSquare, Store, Layers, Package, Settings, Info, Link2, Globe, Truck,
   ClipboardList, Boxes, Download, ShoppingCart, Briefcase, Send, Eye, LogOut, Compass, Sliders, Wand2,
+  Menu, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -123,6 +124,7 @@ export function AppSidebar() {
   const { profile, signOut } = useAuth();
   const { pathname } = useLocation();
   const isAdmin = profile?.cargo === 'admin' || profile?.cargo === 'vendedor';
+  const [open, setOpen] = useState(false);
 
   const defaultOpen = useMemo(() => {
     for (const g of GRUPOS) {
@@ -133,99 +135,144 @@ export function AppSidebar() {
   }, [pathname, isAdmin]);
 
   return (
-    <aside className="hidden md:flex flex-col w-[240px] shrink-0 border-r border-border bg-card sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
-      <div className="p-2 space-y-0.5">
-        {MAIN.map((item) => (
-          <NavLink
-            key={item.url}
-            to={item.url}
-            end={item.url === '/'}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
-                isActive
-                  ? 'bg-brand/10 text-brand font-medium'
-                  : 'text-foreground hover:bg-secondary'
-              )
-            }
+    <>
+      <aside
+        className={cn(
+          'hidden md:flex flex-col shrink-0 border-r border-border bg-card sticky top-14 h-[calc(100vh-3.5rem)] transition-all duration-200 z-30',
+          open ? 'w-[240px] absolute left-0 shadow-2xl overflow-y-auto' : 'w-16 overflow-hidden'
+        )}
+      >
+        <div className="p-2 flex flex-col h-full">
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            className="flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors mb-2"
+            aria-label={open ? 'Fechar menu' : 'Abrir menu'}
           >
-            <item.icon className="h-4 w-4 shrink-0" />
-            <span>{item.title}</span>
-          </NavLink>
-        ))}
-      </div>
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
 
-      <div className="px-2 pb-3 flex-1">
-        <Accordion type="single" collapsible defaultValue={defaultOpen} className="w-full">
-          {GRUPOS.map((group) => (
-            <AccordionItem key={group.label} value={group.label} className="border-none">
-              <AccordionTrigger className="px-2 py-2 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground hover:no-underline hover:text-foreground">
-                {group.label}
-              </AccordionTrigger>
-              <AccordionContent className="pb-2">
-                <div className="space-y-0.5">
-                  {group.items.map((item) => (
-                    <NavLink
-                      key={item.url}
-                      to={item.url}
-                      className={({ isActive }) =>
-                        cn(
-                          'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
-                          isActive
-                            ? 'bg-brand/10 text-brand font-medium'
-                            : 'text-foreground hover:bg-secondary'
-                        )
-                      }
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{item.title}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-
-          {isAdmin && (
-            <AccordionItem value="Administração" className="border-none">
-              <AccordionTrigger className="px-2 py-2 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground hover:no-underline hover:text-foreground">
-                Administração
-              </AccordionTrigger>
-              <AccordionContent className="pb-2">
-                <div className="space-y-0.5">
-                  {ADMIN.map((item) => (
-                    <NavLink
-                      key={item.url}
-                      to={item.url}
-                      className={({ isActive }) =>
-                        cn(
-                          'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
-                          isActive
-                            ? 'bg-brand/10 text-brand font-medium'
-                            : 'text-foreground hover:bg-secondary'
-                        )
-                      }
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{item.title}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+          {!open && (
+            <div className="flex-1 space-y-1">
+              {MAIN.map((item) => (
+                <NavLink
+                  key={item.url}
+                  to={item.url}
+                  end={item.url === '/'}
+                  title={item.title}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center justify-center rounded-md h-9 w-9 mx-auto transition-colors',
+                      isActive
+                        ? 'bg-brand/10 text-brand'
+                        : 'text-foreground hover:bg-secondary'
+                    )
+                  }
+                >
+                  <item.icon className="h-5 w-5 shrink-0" />
+                </NavLink>
+              ))}
+            </div>
           )}
-        </Accordion>
-      </div>
 
-      <div className="p-2 border-t border-border">
-        <button
-          onClick={signOut}
-          className="w-full flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-        >
-          <LogOut className="h-4 w-4" />
-          <span>Sair</span>
-        </button>
-      </div>
-    </aside>
+          {open && (
+            <>
+              <div className="p-2 space-y-0.5">
+                {MAIN.map((item) => (
+                  <NavLink
+                    key={item.url}
+                    to={item.url}
+                    end={item.url === '/'}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
+                        isActive
+                          ? 'bg-brand/10 text-brand font-medium'
+                          : 'text-foreground hover:bg-secondary'
+                      )
+                    }
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    <span>{item.title}</span>
+                  </NavLink>
+                ))}
+              </div>
+
+              <div className="px-2 pb-3 flex-1 overflow-y-auto">
+                <Accordion type="single" collapsible defaultValue={defaultOpen} className="w-full">
+                  {GRUPOS.map((group) => (
+                    <AccordionItem key={group.label} value={group.label} className="border-none">
+                      <AccordionTrigger className="px-2 py-2 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground hover:no-underline hover:text-foreground">
+                        {group.label}
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-2">
+                        <div className="space-y-0.5">
+                          {group.items.map((item) => (
+                            <NavLink
+                              key={item.url}
+                              to={item.url}
+                              className={({ isActive }) =>
+                                cn(
+                                  'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
+                                  isActive
+                                    ? 'bg-brand/10 text-brand font-medium'
+                                    : 'text-foreground hover:bg-secondary'
+                                )
+                              }
+                            >
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              <span className="truncate">{item.title}</span>
+                            </NavLink>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+
+                  {isAdmin && (
+                    <AccordionItem value="Administração" className="border-none">
+                      <AccordionTrigger className="px-2 py-2 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground hover:no-underline hover:text-foreground">
+                        Administração
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-2">
+                        <div className="space-y-0.5">
+                          {ADMIN.map((item) => (
+                            <NavLink
+                              key={item.url}
+                              to={item.url}
+                              className={({ isActive }) =>
+                                cn(
+                                  'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
+                                  isActive
+                                    ? 'bg-brand/10 text-brand font-medium'
+                                    : 'text-foreground hover:bg-secondary'
+                                )
+                              }
+                            >
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              <span className="truncate">{item.title}</span>
+                            </NavLink>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                </Accordion>
+              </div>
+
+              <div className="p-2 border-t border-border">
+                <button
+                  onClick={signOut}
+                  className="w-full flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sair</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </aside>
+    </>
   );
 }

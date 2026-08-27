@@ -1139,7 +1139,6 @@ export default function SimuladorPrecos() {
 
   const descontoAplicado = Math.min(Math.max(0, desconto), totalCalculado);
   const totalGeral = Math.max(0, totalCalculado - descontoAplicado);
-  const itensValidos = entries.filter((e) => e.kind !== 'faca' || e.faca.modeloIdx !== null).length;
 
   /** Pendências que impedem fechar o pedido — só facas montadas do zero exigem modelo. */
   const pendencias = useMemo(() => (
@@ -1179,7 +1178,7 @@ export default function SimuladorPrecos() {
 
 
   return (
-    <div className="max-w-lg mx-auto py-4 px-1 sm:px-4 space-y-4 pb-44 md:pb-28">
+    <div className="max-w-lg mx-auto py-4 px-1 sm:px-4 space-y-4">
       <div className="flex items-center gap-3 mb-1">
         <Calculator className="h-5 w-5 text-primary" />
         <div>
@@ -1247,48 +1246,38 @@ export default function SimuladorPrecos() {
       )}
 
 
-      {/* Footer fixo — acima da bottom nav no mobile */}
-      <div className="fixed left-0 right-0 bg-background/95 backdrop-blur-lg border-t z-40 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0">
-        <div className="max-w-lg mx-auto px-4 py-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">Itens</p>
-              <span className="text-sm font-semibold tabular-nums" data-numeric>{BRL(totalCalculado)}</span>
-            </div>
-            <div className="w-28">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">Desconto</p>
-              <div className="relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">R$</span>
-                <Input type="number" min={0} step="0.01" value={desconto || ''}
-                  onChange={(ev) => setDesconto(ev.target.value === '' ? 0 : Math.max(0, parseFloat(ev.target.value) || 0))}
-                  placeholder="0,00" className="h-9 pl-7 text-sm tabular-nums" />
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">Total final</p>
-              <span className="text-xl font-bold text-accent leading-tight" data-numeric>{BRL(totalGeral)}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <p className="flex-1 text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">
-              {itensValidos} {itensValidos === 1 ? 'item' : 'itens'}
-              {descontoAplicado > 0 && <span className="text-amber-600 font-semibold"> · desconto {BRL(descontoAplicado)}</span>}
-            </p>
-            <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl flex-shrink-0" onClick={copiarRapido} title="Copiar orçamento">
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button className="gap-2 h-11 rounded-xl flex-shrink-0 px-4"
-              onClick={() => podeFechar(() => setShopifyOpen(true))}>
-              <ShoppingBag className="h-4 w-4" /> Shopify
-            </Button>
-          </div>
-          {pendencias.length > 0 && (
-            <p className="text-[11px] text-destructive leading-tight">
-              Falta preencher: {pendencias.join(' · ')}
-            </p>
-          )}
-
+      {/* Footer no final da página */}
+      <div className="mt-6 border-t bg-card rounded-2xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Itens</span>
+          <span className="text-base font-semibold tabular-nums" data-numeric>{BRL(totalCalculado)}</span>
         </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Desconto</span>
+          <div className="relative w-36">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">R$</span>
+            <Input type="number" min={0} step="0.01" value={desconto || ''}
+              onChange={(ev) => setDesconto(ev.target.value === '' ? 0 : Math.max(0, parseFloat(ev.target.value) || 0))}
+              placeholder="0,00" className="h-9 pl-6 text-sm tabular-nums" />
+          </div>
+        </div>
+        <div className="flex items-center justify-between border-t pt-3">
+          <span className="text-sm font-semibold">Total final do pedido</span>
+          <span className="text-xl font-bold text-accent leading-tight" data-numeric>{BRL(totalGeral)}</span>
+        </div>
+        <div className="flex items-center gap-3 pt-1">
+          <Button variant="outline" className="flex-1 h-11 rounded-xl gap-2" onClick={copiarRapido}>
+            <Copy className="h-4 w-4" /> Copiar
+          </Button>
+          <Button className="flex-1 h-11 rounded-xl gap-2" onClick={() => podeFechar(() => setShopifyOpen(true))}>
+            <ShoppingBag className="h-4 w-4" /> Shopify
+          </Button>
+        </div>
+        {pendencias.length > 0 && (
+          <p className="text-[11px] text-destructive leading-tight">
+            Falta preencher: {pendencias.join(' · ')}
+          </p>
+        )}
       </div>
 
       <TipoItemDialog open={tipoOpen} onOpenChange={setTipoOpen} onPick={escolherTipo} />
