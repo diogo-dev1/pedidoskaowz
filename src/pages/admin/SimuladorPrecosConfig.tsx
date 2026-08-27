@@ -398,6 +398,64 @@ export default function SimuladorPrecosConfig() {
         </TabsContent>
       </Tabs>
 
+      {/* Novo modelo */}
+      <Dialog open={!!novoModelo} onOpenChange={(o) => !o && setNovoModelo(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adicionar modelo</DialogTitle>
+            <DialogDescription>O modelo entra na lista e é salvo junto com os demais valores.</DialogDescription>
+          </DialogHeader>
+          {novoModelo && (
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Nome</Label>
+                <Input value={novoModelo.nome} autoFocus
+                  onChange={(e) => setNovoModelo({ ...novoModelo, nome: e.target.value })}
+                  placeholder="Ex: Edc Tanto" />
+              </div>
+              <div className="flex items-end gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Tamanho</Label>
+                  <Select value={novoModelo.tamanho}
+                    onValueChange={(v) => setNovoModelo({ ...novoModelo, tamanho: v as Modelo['tamanho'] })}>
+                    <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(['P', 'M', 'G', '-'] as const).map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5 flex-1">
+                  <Label className="text-xs">Preço base</Label>
+                  <PrecoInput value={novoModelo.preco} onChange={(n) => setNovoModelo({ ...novoModelo, preco: n })} />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setNovoModelo(null)}>Cancelar</Button>
+            <Button onClick={confirmarNovoModelo}>Adicionar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Excluir modelo */}
+      <Dialog open={!!excluir} onOpenChange={(o) => !o && setExcluir(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir modelo</DialogTitle>
+            <DialogDescription>
+              Remover o modelo "{excluir?.nome}" da lista? A remoção só é aplicada ao salvar.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setExcluir(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmarExclusao}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+
 
       {/* Barra de salvar fixa */}
       <div className="fixed left-0 right-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 bg-background/95 backdrop-blur-lg border-t z-40">
