@@ -402,8 +402,8 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
                 </p>
               )}
               {notasInternas.length > 0 && (
-                <p className="text-[10px] text-muted-foreground">
-                  Notas internas (não aparecem para o cliente): {notasInternas.join(' · ')}
+                <p className="text-[10px] text-muted-foreground whitespace-pre-line">
+                  Notas internas (não aparecem para o cliente):{'\n'}{notasInternas.join('\n')}
                 </p>
               )}
 
