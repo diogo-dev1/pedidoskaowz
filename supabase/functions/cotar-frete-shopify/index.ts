@@ -57,29 +57,18 @@ async function shopify(query: string, variables: Record<string, unknown>) {
   return json.data;
 }
 
-const DRAFT_CREATE = `
+// Calcula o rascunho SEM persistir nada na loja — retorna as mesmas taxas
+// de entrega que o checkout ofereceria (app de frete da loja).
+const DRAFT_CALCULATE = `
   mutation($input: DraftOrderInput!) {
-    draftOrderCreate(input: $input) {
-      draftOrder {
-        id
+    draftOrderCalculate(input: $input) {
+      calculatedDraftOrder {
         availableShippingRates { handle title price { amount currencyCode } }
       }
       userErrors { field message }
     }
   }`;
 
-const DRAFT_RATES = `
-  query($id: ID!) {
-    draftOrder(id: $id) {
-      id
-      availableShippingRates { handle title price { amount currencyCode } }
-    }
-  }`;
-
-const DRAFT_DELETE = `
-  mutation($input: DraftOrderDeleteInput!) {
-    draftOrderDelete(input: $input) { deletedId userErrors { field message } }
-  }`;
 
 const truncaLimpo = (s: string, max: number) => (s.length <= max ? s : s.slice(0, max).trimEnd());
 
