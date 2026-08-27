@@ -1247,75 +1247,86 @@ export default function SimuladorPrecos() {
       )}
 
 
-      {/* Footer fixo — resumo clean estilo checkout, responsivo */}
-      <div className="fixed left-0 right-0 bg-background/95 backdrop-blur-xl border-t z-40 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0">
-        <div className="max-w-lg md:max-w-2xl mx-auto px-3 pt-2.5 pb-3 md:py-3">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-            {/* Resumo do pedido */}
-            <div className="flex-1 space-y-1.5">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Resumo do pedido</p>
-              <div className="space-y-0.5">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal ({itensValidos} {itensValidos === 1 ? 'item' : 'itens'})</span>
+      {/* Espaçador para o conteúdo não ficar escondido atrás do footer fixo */}
+      <div className="h-12 md:h-16 shrink-0" aria-hidden="true" />
+
+      {/* Footer fixo — resumo compacto dentro da área do simulador */}
+      <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 left-0 right-0 z-40 pointer-events-none">
+        <div className="w-full max-w-6xl mx-auto px-3 sm:px-6 pointer-events-auto">
+          <div className="bg-background/95 backdrop-blur-xl border rounded-2xl shadow-sm px-3 py-2 md:py-2.5">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+              {/* Resumo do pedido */}
+              <div className="flex-1 min-w-0 space-y-0.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Resumo do pedido</span>
+                  <span className="text-[10px] text-muted-foreground">{itensValidos} {itensValidos === 1 ? 'item' : 'itens'}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium tabular-nums" data-numeric>{BRL(totalCalculado)}</span>
                 </div>
                 {descontoAplicado > 0 && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-amber-600">Desconto</span>
-                    <span className="font-medium tabular-nums text-amber-600" data-numeric>-{BRL(descontoAplicado)}</span>
+                  <div className="flex items-center justify-between gap-2 text-[10px] text-amber-600">
+                    <span>Desconto</span>
+                    <span className="font-medium tabular-nums" data-numeric>-{BRL(descontoAplicado)}</span>
                   </div>
                 )}
-                <div className="flex items-center justify-between pt-1 border-t">
-                  <span className="font-semibold">Total</span>
-                  <span className="text-lg md:text-xl font-bold text-brand tabular-nums leading-none" data-numeric>{BRL(totalGeral)}</span>
+                <div className="flex items-center justify-between gap-2 pt-0.5 border-t">
+                  <span className="text-xs font-bold">Total</span>
+                  <span className="text-base font-bold text-brand tabular-nums leading-none" data-numeric>{BRL(totalGeral)}</span>
+                </div>
+              </div>
+
+              {/* Desconto + ações */}
+              <div className="flex-1 md:max-w-xs flex flex-col md:flex-row gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-muted-foreground">R$</span>
+                  <Input
+                    id="desconto-input"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={desconto || ''}
+                    onChange={(ev) => setDesconto(ev.target.value === '' ? 0 : Math.max(0, parseFloat(ev.target.value) || 0))}
+                    placeholder="Desc."
+                    className="h-8 pl-7 text-xs font-semibold tabular-nums rounded-lg"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 h-8 rounded-xl gap-1.5 text-xs font-semibold bg-brand hover:bg-brand/90 text-white"
+                    onClick={() => podeFechar(() => setShopifyOpen(true))}>
+                    <ShoppingBag className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Lançar no Shopify</span>
+                    <span className="sm:hidden">Shopify</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-8 px-3 rounded-xl gap-1.5 text-[10px] font-medium"
+                    onClick={copiarRapido}>
+                    <Copy className="h-3 w-3" />
+                    <span className="hidden sm:inline">Copiar orçamento</span>
+                    <span className="sm:hidden">Copiar</span>
+                  </Button>
                 </div>
               </div>
             </div>
 
-            {/* Desconto + ações */}
-            <div className="flex-1 md:max-w-xs space-y-2">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">R$</span>
-                <Input
-                  id="desconto-input"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={desconto || ''}
-                  onChange={(ev) => setDesconto(ev.target.value === '' ? 0 : Math.max(0, parseFloat(ev.target.value) || 0))}
-                  placeholder="Desconto"
-                  className="h-10 pl-8 text-sm font-semibold tabular-nums rounded-xl"
-                />
+            {/* Pendências */}
+            {pendencias.length > 0 && (
+              <div className="mt-2 rounded-md bg-destructive/10 border border-destructive/20 px-2.5 py-1.5">
+                <p className="text-[10px] font-semibold text-destructive mb-0.5">Falta preencher:</p>
+                <ul className="space-y-0">
+                  {pendencias.map((p, i) => (
+                    <li key={i} className="text-[10px] text-destructive/90 leading-tight">• {p}</li>
+                  ))}
+                </ul>
               </div>
-              <div className="grid grid-cols-1 gap-2">
-                <Button
-                  className="w-full h-11 rounded-2xl gap-2 text-sm font-semibold bg-brand hover:bg-brand/90 text-white"
-                  onClick={() => podeFechar(() => setShopifyOpen(true))}>
-                  <ShoppingBag className="h-4 w-4" /> Lançar no Shopify
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full h-9 rounded-2xl gap-2 text-xs font-medium"
-                  onClick={copiarRapido}>
-                  <Copy className="h-3.5 w-3.5" /> Copiar orçamento
-                </Button>
-              </div>
-            </div>
+            )}
           </div>
-
-          {/* Pendências */}
-          {pendencias.length > 0 && (
-            <div className="mt-2.5 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
-              <p className="text-[11px] font-semibold text-destructive mb-0.5">Falta preencher:</p>
-              <ul className="space-y-0.5">
-                {pendencias.map((p, i) => (
-                  <li key={i} className="text-[11px] text-destructive/90 leading-tight">• {p}</li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </div>
+
 
       <TipoItemDialog open={tipoOpen} onOpenChange={setTipoOpen} onPick={escolherTipo} />
 
