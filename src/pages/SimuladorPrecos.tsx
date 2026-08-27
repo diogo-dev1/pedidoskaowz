@@ -1091,24 +1091,27 @@ export default function SimuladorPrecos() {
   const updateCatalogo = (id: string, u: CatalogoCfg) =>
     setEntries((p) => p.map((e) => (e.id === id ? { ...e, catalogo: u } : e)));
 
-
-  // Certificado: preenche automaticamente com o nome do cliente (mantém edições manuais)
-  const certAutoRef = useRef('');
-  useEffect(() => {
-    const anterior = certAutoRef.current;
-    certAutoRef.current = clienteNome;
-    setEntries((p) => p.map((e) => (
-      e.kind === 'faca' && (!e.faca.certificado?.trim() || e.faca.certificado === anterior)
-        ? { ...e, faca: { ...e.faca, certificado: clienteNome } }
-        : e
-    )));
-  }, [clienteNome]);
-
   const totalCalculado = useMemo(() => entries.reduce((s, e) => s + calcEntry(data, e), 0), [entries, data]);
 
   const totalGeral = totalManual !== null ? totalManual : totalCalculado;
   const itensValidos = entries.filter((e) => e.kind !== 'faca' || e.faca.modeloIdx !== null).length;
+
+  /** Pendências que impedem fechar o pedido — só facas montadas do zero exigem modelo. */
+  const pendencias = useMemo(() => (
+    entries.flatMap((e, i) => (
+      e.kind === 'faca' && e.faca.modeloIdx === null ? [`Item ${i + 1}: escolha o modelo da faca`] : []
+    ))
+  ), [entries]);
+
+  /** Valida antes de abrir os modais de fechamento. Nunca deixa o botão apagado sem explicação. */
+  const podeFechar = (acao: () => void) => {
+    if (entries.length === 0) { toast.error('Adicione ao menos um item ao pedido'); return; }
+    if (pendencias.length) { toast.error(pendencias[0]); return; }
+    acao();
+  };
+
   const orcamento = useMemo(() => gerarOrcamento(data, entries, totalGeral), [data, entries, totalGeral]);
+
 
 
   const copiarRapido = async () => {
