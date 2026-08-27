@@ -1,22 +1,28 @@
 import { useState } from 'react';
-import { Truck, Loader2, AlertCircle, Package as PackageIcon } from 'lucide-react';
+import { Truck, Loader2, AlertCircle, Package as PackageIcon, Plus, Trash2, Info, ShoppingBag } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import CatalogoShopifyPicker, { type ProdutoShopify } from '@/components/simulador/CatalogoShopifyPicker';
+import { BRL } from '@/lib/simuladorData';
 
-interface Servico {
-  codigo: string;
+interface OpcaoFrete {
+  handle: string;
   nome: string;
-  valor: string;
-  prazoEntrega: string;
-  msgErro: string;
-  erro: string;
+  valor: number;
+  moeda: string;
+}
+
+interface ItemCotacao {
+  id: string;
+  titulo: string;
+  variantId?: string;
+  preco: number;
+  quantidade: number;
+  imagem?: string | null;
 }
 
 const maskCep = (v: string) => {
@@ -24,204 +30,219 @@ const maskCep = (v: string) => {
   return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
 };
 
+const novoId = () => Math.random().toString(36).slice(2);
+
 export default function CalcularFrete() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [resultados, setResultados] = useState<Servico[] | null>(null);
+  const [resultados, setResultados] = useState<OpcaoFrete[] | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
 
-  const [form, setForm] = useState({
-    cepOrigem: '',
-    cepDestino: '',
-    peso: '1',
-    comprimento: '20',
-    largura: '15',
-    altura: '10',
-    formato: '1',
-    valorDeclarado: '',
-    avisoRecebimento: 'N',
-  });
+  const [cep, setCep] = useState('');
+  const [itens, setItens] = useState<ItemCotacao[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [avulsoTitulo, setAvulsoTitulo] = useState('');
+  const [avulsoPreco, setAvulsoPreco] = useState('');
 
-  const upd = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }));
+  const addCatalogo = (p: ProdutoShopify) => {
+    setItens((prev) => [...prev, {
+      id: novoId(),
+      titulo: [p.titulo, p.variante].filter(Boolean).join(' — '),
+      variantId: p.variantId,
+      preco: p.preco,
+      quantidade: 1,
+      imagem: p.imagem,
+    }]);
+  };
+
+  const addAvulso = () => {
+    const titulo = avulsoTitulo.trim();
+    const preco = Number(String(avulsoPreco).replace(',', '.'));
+    if (!titulo) {
+      toast({ title: 'Informe a descrição do item avulso', variant: 'destructive' });
+      return;
+    }
+    setItens((prev) => [...prev, { id: novoId(), titulo, preco: isNaN(preco) ? 0 : preco, quantidade: 1 }]);
+    setAvulsoTitulo('');
+    setAvulsoPreco('');
+  };
+
+  const setQtd = (id: string, q: number) =>
+    setItens((prev) => prev.map((i) => (i.id === id ? { ...i, quantidade: Math.max(1, q || 1) } : i)));
+
+  const remover = (id: string) => setItens((prev) => prev.filter((i) => i.id !== id));
 
   const handleCalcular = async () => {
-    if (form.cepOrigem.replace(/\D/g, '').length !== 8 || form.cepDestino.replace(/\D/g, '').length !== 8) {
-      toast({ title: 'CEPs inválidos', description: 'Informe CEPs com 8 dígitos.', variant: 'destructive' });
+    if (cep.replace(/\D/g, '').length !== 8) {
+      toast({ title: 'CEP inválido', description: 'Informe o CEP de destino com 8 dígitos.', variant: 'destructive' });
+      return;
+    }
+    if (itens.length === 0) {
+      toast({ title: 'Nenhum item', description: 'Adicione ao menos um produto ao pedido.', variant: 'destructive' });
       return;
     }
     setLoading(true);
     setResultados(null);
+    setErro(null);
     try {
-      const { data, error } = await supabase.functions.invoke('calcular-frete', {
+      const { data, error } = await supabase.functions.invoke('cotar-frete-shopify', {
         body: {
-          cepOrigem: form.cepOrigem,
-          cepDestino: form.cepDestino,
-          peso: form.peso,
-          comprimento: form.comprimento,
-          largura: form.largura,
-          altura: form.altura,
-          formato: form.formato,
-          valorDeclarado: form.valorDeclarado || '0',
-          avisoRecebimento: form.avisoRecebimento,
+          cep,
+          itens: itens.map((i) => ({
+            variantId: i.variantId,
+            title: i.titulo,
+            price: i.preco,
+            quantity: i.quantidade,
+          })),
         },
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setResultados(data?.servicos || []);
+      if (error && !data) throw error;
+      if (data?.sucesso === false) throw new Error(data?.erro ?? 'Falha na cotação');
+      setResultados(data?.opcoes ?? []);
     } catch (e) {
-      toast({
-        title: 'Erro ao calcular frete',
-        description: e instanceof Error ? e.message : 'Falha desconhecida.',
-        variant: 'destructive',
-      });
+      const msg = e instanceof Error ? e.message : 'Falha desconhecida.';
+      setErro(msg);
+      toast({ title: 'Erro ao calcular frete', description: msg, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
 
-  const formatBRL = (v: string) => {
-    const n = parseFloat(v.replace(',', '.'));
-    if (isNaN(n) || n === 0) return '—';
-    return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
-
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-6 space-y-6 pb-24">
+    <div className="container mx-auto max-w-3xl px-4 py-6 space-y-5 pb-24">
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-accent/20 flex items-center justify-center">
+        <div className="h-10 w-10 rounded-lg bg-accent/20 flex items-center justify-center shrink-0">
           <Truck className="h-5 w-5 text-accent" />
         </div>
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">Calcular Frete</h1>
-          <p className="text-sm text-muted-foreground">Cotação SEDEX e PAC via Correios</p>
+          <p className="text-sm text-muted-foreground">Cotação real do checkout (via Shopify)</p>
         </div>
       </div>
 
+      <div className="flex items-start gap-2 rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+        <Info className="h-4 w-4 mt-0.5 shrink-0 text-accent" />
+        <span>O valor exibido aqui é exatamente o mesmo que o cliente verá no checkout da loja.</span>
+      </div>
+
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Dados do envio</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Destino</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="cepOrigem">CEP de origem</Label>
-              <Input
-                id="cepOrigem"
-                placeholder="00000-000"
-                value={form.cepOrigem}
-                onChange={(e) => upd('cepOrigem', maskCep(e.target.value))}
-                inputMode="numeric"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="cepDestino">CEP de destino</Label>
-              <Input
-                id="cepDestino"
-                placeholder="00000-000"
-                value={form.cepDestino}
-                onChange={(e) => upd('cepDestino', maskCep(e.target.value))}
-                inputMode="numeric"
-              />
-            </div>
+        <CardContent>
+          <div className="space-y-1.5">
+            <Label htmlFor="cepDestino">CEP de destino</Label>
+            <Input
+              id="cepDestino"
+              placeholder="00000-000"
+              value={cep}
+              onChange={(e) => setCep(maskCep(e.target.value))}
+              inputMode="numeric"
+              className="h-11 text-base"
+            />
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="peso">Peso (kg)</Label>
-              <Input id="peso" type="number" step="0.1" min="0" value={form.peso} onChange={(e) => upd('peso', e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="comprimento">Comprimento (cm)</Label>
-              <Input id="comprimento" type="number" min="0" value={form.comprimento} onChange={(e) => upd('comprimento', e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="largura">Largura (cm)</Label>
-              <Input id="largura" type="number" min="0" value={form.largura} onChange={(e) => upd('largura', e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="altura">Altura (cm)</Label>
-              <Input id="altura" type="number" min="0" value={form.altura} onChange={(e) => upd('altura', e.target.value)} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <Label>Formato do pacote</Label>
-              <Select value={form.formato} onValueChange={(v) => upd('formato', v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Caixa / Pacote</SelectItem>
-                  <SelectItem value="2">Rolo / Prisma</SelectItem>
-                  <SelectItem value="3">Envelope</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="valorDeclarado">Valor declarado (R$, opcional)</Label>
-              <Input
-                id="valorDeclarado"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0,00"
-                value={form.valorDeclarado}
-                onChange={(e) => upd('valorDeclarado', e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Aviso de recebimento</Label>
-              <Select value={form.avisoRecebimento} onValueChange={(v) => upd('avisoRecebimento', v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="N">Não</SelectItem>
-                  <SelectItem value="S">Sim</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <Button onClick={handleCalcular} disabled={loading} className="w-full md:w-auto">
-            {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Calculando...</> : <><Truck className="h-4 w-4 mr-2" /> Calcular Frete</>}
-          </Button>
         </CardContent>
       </Card>
 
-      {resultados && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {resultados.map((s) => {
-            const hasError = (s.erro && s.erro !== '0') || !!s.msgErro;
-            return (
-              <Card key={s.codigo} className={hasError ? 'border-destructive/40' : ''}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <PackageIcon className="h-5 w-5 text-accent" />
-                    {s.nome}
-                    <span className="text-xs font-normal text-muted-foreground ml-auto">#{s.codigo}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {hasError ? (
-                    <div className="flex items-start gap-2 text-sm text-destructive">
-                      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                      <span>{s.msgErro || `Erro ${s.erro}`}</span>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Preço</p>
-                        <p className="text-2xl font-semibold text-foreground">{formatBRL(s.valor)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Prazo de entrega</p>
-                        <p className="text-base font-medium">{s.prazoEntrega} dia{s.prazoEntrega === '1' ? '' : 's'} útil{s.prazoEntrega === '1' ? '' : 'eis'}</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Itens do pedido</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {itens.length === 0 && (
+            <p className="text-sm text-muted-foreground">Nenhum item adicionado ainda.</p>
+          )}
+
+          {itens.map((i) => (
+            <div key={i.id} className="flex items-center gap-3 rounded-xl border p-2.5">
+              {i.imagem ? (
+                <img src={i.imagem} alt={i.titulo} loading="lazy" className="h-12 w-12 rounded-lg object-cover bg-muted shrink-0" />
+              ) : (
+                <span className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                  <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                </span>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{i.titulo}</p>
+                <p className="text-xs text-muted-foreground tabular-nums">{BRL(i.preco)}</p>
+              </div>
+              <Input
+                type="number"
+                min={1}
+                value={i.quantidade}
+                onChange={(e) => setQtd(i.id, parseInt(e.target.value, 10))}
+                className="h-9 w-16 text-center"
+                aria-label={`Quantidade de ${i.titulo}`}
+              />
+              <Button variant="ghost" size="icon" onClick={() => remover(i.id)} aria-label="Remover item">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          ))}
+
+          <Button variant="outline" className="w-full h-11" onClick={() => setPickerOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Buscar produto no catálogo
+          </Button>
+
+          <div className="rounded-xl border border-dashed p-3 space-y-2">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Item avulso (fora do catálogo)</Label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                placeholder="Descrição (ex.: Faca customizada)"
+                value={avulsoTitulo}
+                onChange={(e) => setAvulsoTitulo(e.target.value)}
+                className="h-10 flex-1"
+              />
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Valor (R$)"
+                value={avulsoPreco}
+                onChange={(e) => setAvulsoPreco(e.target.value)}
+                className="h-10 sm:w-36"
+              />
+              <Button variant="secondary" className="h-10" onClick={addAvulso}>
+                <Plus className="h-4 w-4 mr-1" /> Adicionar
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Button onClick={handleCalcular} disabled={loading} className="w-full h-12 text-base">
+        {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Calculando...</> : <><Truck className="h-4 w-4 mr-2" /> Calcular Frete</>}
+      </Button>
+
+      {erro && (
+        <Card className="border-destructive/40">
+          <CardContent className="pt-6 flex items-start gap-2 text-sm text-destructive">
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>{erro}</span>
+          </CardContent>
+        </Card>
+      )}
+
+      {resultados && resultados.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {resultados.map((s) => (
+            <Card key={s.handle}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <PackageIcon className="h-5 w-5 text-accent" />
+                  <span className="truncate">{s.nome}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Preço</p>
+                <p className="text-2xl font-semibold text-foreground tabular-nums">{BRL(s.valor)}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
+
+      <CatalogoShopifyPicker open={pickerOpen} onOpenChange={setPickerOpen} onPick={addCatalogo} />
     </div>
   );
 }
