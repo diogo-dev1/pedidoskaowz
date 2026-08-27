@@ -125,6 +125,22 @@ function PrecosTamanho({ label, precos, onChange }: { label: string; precos: Pre
   );
 }
 
+/** Input de peso em gramas (0 = não definido). */
+function PesoInput({ value, onChange, className = '' }: { value: number; onChange: (n: number) => void; className?: string }) {
+  return (
+    <div className={`relative ${className}`}>
+      <Input
+        type="number" inputMode="numeric" min={0} step="1"
+        value={Number.isFinite(value) ? value : 0}
+        onChange={(e) => onChange(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0))}
+        className="h-9 pr-7 text-sm tabular-nums"
+      />
+      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">g</span>
+    </div>
+  );
+}
+
+
 export default function SimuladorPrecosConfig() {
   const { data: configData, isLoading } = useSimuladorConfig();
   const { user } = useAuth();
