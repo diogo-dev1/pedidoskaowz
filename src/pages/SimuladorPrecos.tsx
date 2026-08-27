@@ -127,9 +127,9 @@ function ModeloSearch({ modelos, onSelect, currentIdx }: { modelos: Modelo[]; on
 
 /* ════════════════ Card de item ════════════════ */
 
-function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded, onToggle, removivel, clienteNome }: {
+function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded, onToggle, removivel }: {
   data: SimuladorData; cfg: ItemCfg; onChange: (c: ItemCfg) => void; onRemove: () => void; onDuplicate: () => void;
-  index: number; expanded: boolean; onToggle: () => void; removivel: boolean; clienteNome?: string;
+  index: number; expanded: boolean; onToggle: () => void; removivel: boolean;
 }) {
   const modelo = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
   const c = classeDo(modelo);
