@@ -1172,8 +1172,7 @@ export default function SimuladorPrecos() {
   const limparTudo = () => {
     setEntries([]);
     setExpandedId(null);
-    setTotalManual(null);
-    setEditandoTotal(false);
+    setDesconto(0);
     if (navigator.vibrate) navigator.vibrate(20);
     toast.success('Limpo! Configurações resetadas.');
   };
