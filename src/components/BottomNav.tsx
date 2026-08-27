@@ -4,7 +4,7 @@ import {
   Calculator, Users, TrendingUp, MoreHorizontal, LayoutDashboard,
   ShoppingBag, MessageSquare, BookOpen, Image, DollarSign, Factory,
   CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User, Globe, Truck,
-  ClipboardList, Boxes, Download, ShoppingCart, Briefcase, Send,
+  ClipboardList, Boxes, Download, ShoppingCart, Briefcase, Send, Compass, Sliders, Wand2, Eye,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ABRIR_MENU_EVENTO } from '@/components/TopNav';
