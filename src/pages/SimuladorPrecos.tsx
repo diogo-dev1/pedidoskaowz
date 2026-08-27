@@ -1247,65 +1247,65 @@ export default function SimuladorPrecos() {
       )}
 
 
-      {/* Footer fixo — resumo empilhado, mobile-first */}
+      {/* Footer fixo — resumo clean estilo checkout, responsivo */}
       <div className="fixed left-0 right-0 bg-background/95 backdrop-blur-xl border-t z-40 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0">
-        <div className="max-w-lg mx-auto px-4 py-3.5 space-y-3">
-          {/* Linha 1: subtotal + quantidade */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Subtotal ({itensValidos} {itensValidos === 1 ? 'item' : 'itens'})</p>
-              <p className="text-base font-semibold tabular-nums" data-numeric>{BRL(totalCalculado)}</p>
-            </div>
-            {descontoAplicado > 0 && (
-              <div className="text-right">
-                <p className="text-[11px] font-medium text-amber-600 uppercase tracking-wider">Desconto</p>
-                <p className="text-base font-semibold tabular-nums text-amber-600" data-numeric>-{BRL(descontoAplicado)}</p>
+        <div className="max-w-lg md:max-w-2xl mx-auto px-3 py-2.5 md:py-3">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+            {/* Resumo do pedido */}
+            <div className="flex-1 space-y-2 md:space-y-1.5">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Resumo do pedido</p>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal ({itensValidos} {itensValidos === 1 ? 'item' : 'itens'})</span>
+                  <span className="font-medium tabular-nums" data-numeric>{BRL(totalCalculado)}</span>
+                </div>
+                {descontoAplicado > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-amber-600">Desconto</span>
+                    <span className="font-medium tabular-nums text-amber-600" data-numeric>-{BRL(descontoAplicado)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-1 border-t">
+                  <span className="font-semibold text-base">Total</span>
+                  <span className="text-xl font-bold text-brand tabular-nums leading-none" data-numeric>{BRL(totalGeral)}</span>
+                </div>
               </div>
-            )}
-          </div>
-
-          {/* Linha 2: campo de desconto — ocupa largura total para digitação confortável */}
-          <div className="rounded-xl border bg-muted/30 p-3 space-y-1.5">
-            <Label htmlFor="desconto-input" className="text-xs font-medium text-muted-foreground">Aplicar desconto</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">R$</span>
-              <Input
-                id="desconto-input"
-                type="number"
-                min={0}
-                step="0.01"
-                value={desconto || ''}
-                onChange={(ev) => setDesconto(ev.target.value === '' ? 0 : Math.max(0, parseFloat(ev.target.value) || 0))}
-                placeholder="0,00"
-                className="h-12 pl-9 text-base font-semibold tabular-nums"
-              />
             </div>
-          </div>
 
-          {/* Linha 3: total final em destaque */}
-          <div className="flex items-center justify-between rounded-xl bg-accent/10 border border-accent/20 px-4 py-3">
-            <span className="text-sm font-semibold text-accent-foreground/80">Total final</span>
-            <span className="text-2xl font-bold text-accent tabular-nums leading-none" data-numeric>{BRL(totalGeral)}</span>
-          </div>
-
-          {/* Linha 4: ações empilhadas, dedo-friendly */}
-          <div className="grid grid-cols-1 gap-2.5">
-            <Button
-              className="w-full h-14 rounded-xl gap-2 text-base font-semibold"
-              onClick={() => podeFechar(() => setShopifyOpen(true))}>
-              <ShoppingBag className="h-5 w-5" /> Lançar no Shopify
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full h-12 rounded-xl gap-2 text-sm font-medium"
-              onClick={copiarRapido}>
-              <Copy className="h-4 w-4" /> Copiar orçamento
-            </Button>
+            {/* Desconto + ações */}
+            <div className="flex-1 md:max-w-xs space-y-2">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">R$</span>
+                <Input
+                  id="desconto-input"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={desconto || ''}
+                  onChange={(ev) => setDesconto(ev.target.value === '' ? 0 : Math.max(0, parseFloat(ev.target.value) || 0))}
+                  placeholder="Desconto"
+                  className="h-10 pl-8 text-sm font-semibold tabular-nums rounded-xl"
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                <Button
+                  className="w-full h-11 rounded-2xl gap-2 text-sm font-semibold bg-brand hover:bg-brand/90 text-white"
+                  onClick={() => podeFechar(() => setShopifyOpen(true))}>
+                  <ShoppingBag className="h-4 w-4" /> Lançar no Shopify
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full h-9 rounded-2xl gap-2 text-xs font-medium"
+                  onClick={copiarRapido}>
+                  <Copy className="h-3.5 w-3.5" /> Copiar orçamento
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* Pendências */}
           {pendencias.length > 0 && (
-            <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
+            <div className="mt-2.5 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
               <p className="text-[11px] font-semibold text-destructive mb-0.5">Falta preencher:</p>
               <ul className="space-y-0.5">
                 {pendencias.map((p, i) => (
