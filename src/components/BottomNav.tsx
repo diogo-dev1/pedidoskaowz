@@ -67,7 +67,37 @@ const moreItems: { label: string; items: NavItem[] }[] = [
       { title: 'Mídia', url: '/midia', icon: Image },
     ],
   },
+  {
+    label: 'Configuradores',
+    items: [
+      { title: 'Push Dagger Kaowz', url: '/push-dagger-kaowz', icon: Layers },
+      { title: 'Config. Push Dagger (adm)', url: '/admin/push-dagger-kaowz', icon: Settings },
+      { title: 'Push Dagger Configurador', url: '/push-dagger-configurador', icon: Sliders },
+      { title: 'Monte seu Kit', url: '/monte-seu-kit', icon: Layers },
+      { title: 'Config. Monte seu Kit (adm)', url: '/admin/monte-seu-kit', icon: Settings },
+      { title: 'Kit Urban EDC', url: '/kit-urban-edc', icon: Layers },
+      { title: 'Config. Kit Urban EDC (adm)', url: '/admin/kit-urban-edc', icon: Settings },
+      { title: 'Cases Patola', url: '/cases-patola', icon: Briefcase },
+      { title: 'Config. Cases Patola (adm)', url: '/admin/cases-patola', icon: Settings },
+      { title: 'Customizar Lâmina', url: '/customizar-lamina', icon: Wand2 },
+      { title: 'Preview da Lâmina', url: '/preview', icon: Eye },
+      { title: 'Config. Preview (adm)', url: '/admin/preview', icon: Settings },
+      { title: 'Descubra (Quiz)', url: '/descubra', icon: Compass },
+      { title: 'Config. Descubra (adm)', url: '/admin/descubra', icon: Settings },
+      { title: 'Vitrine', url: '/vitrine', icon: Store },
+      { title: 'Montar Arsenal', url: '/montar', icon: Sliders },
+      { title: 'Showroom', url: '/showroom', icon: Eye },
+      { title: 'Lâminas 360° (adm)', url: '/admin/knives', icon: Settings },
+      { title: 'Config. Catálogo (adm)', url: '/admin/catalogo', icon: Settings },
+      { title: 'Config. Cat. Revendedor (adm)', url: '/admin/catalogo-revendedor', icon: Settings },
+      { title: 'Config. Cat. Internacional (adm)', url: '/admin/catalogo-internacional', icon: Settings },
+      { title: 'Config. Cat. Púb. Int. (adm)', url: '/admin/catalogo-publico-internacional', icon: Settings },
+      { title: 'Config. Parcelamento (adm)', url: '/admin/parcelamento', icon: DollarSign },
+      { title: 'Valores do Simulador (adm)', url: '/admin/simulador-precos', icon: Calculator },
+    ],
+  },
 ];
+
 
 const adminMoreItems: NavItem[] = [
   { title: 'Cases Patola', url: '/admin/cases-patola', icon: Briefcase },
