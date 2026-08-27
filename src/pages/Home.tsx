@@ -134,7 +134,8 @@ export default function Home() {
 
   const cardsVisiveis = CARDS.filter((c) => !c.adminOnly || isAdmin);
   const classeCard =
-    'group rounded-xl aspect-square flex flex-col items-center justify-center gap-2 shadow-md hover:shadow-lg hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] transition-all';
+    'group rounded-xl aspect-square flex flex-col items-center justify-center gap-2 p-3 shadow-sm active:scale-[0.98] transition-colors duration-200';
+
 
   return (
     <div className="space-y-4">
