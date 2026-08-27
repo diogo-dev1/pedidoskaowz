@@ -175,8 +175,19 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [dadosExpandidos, setDadosExpandidos] = useState(false);
+  const [freteGratis, setFreteGratis] = useState(total >= 1000);
+  const [touchedFrete, setTouchedFrete] = useState(false);
 
   useEffect(() => { if (!open) { setResultado(null); setEnviando(false); } }, [open]);
+  useEffect(() => {
+    if (open) {
+      setTouchedFrete(false);
+      setFreteGratis(total >= 1000);
+    }
+  }, [open]);
+  useEffect(() => {
+    if (!touchedFrete) setFreteGratis(total >= 1000);
+  }, [total, touchedFrete]);
   useEffect(() => { if (open && nomeInicial && !nome.trim()) setNome(nomeInicial); }, [open, nomeInicial]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const itens = useMemo(() => montarLineItems(data, entries), [data, entries]);
