@@ -18,6 +18,19 @@ export interface Modelo { nome: string; tamanho: Tamanho; preco: number }
 export interface Opcao { nome: string; precos: Precos; incluso?: boolean; cores?: string[] }
 export interface Adicional { nome: string; preco: number }
 
+/** Pesos padrão (em GRAMAS) usados na cotação de frete de itens customizados,
+ *  que não existem cadastrados na loja Shopify. 0 = ainda não definido. */
+export interface PesosConfig {
+  /** Peso da faca por classe de tamanho (P/M/G) */
+  faca: Precos;
+  /** Peso de uma bainha */
+  bainha: number;
+  /** Peso por acessório, indexado pelo nome do adicional */
+  adicionais: Record<string, number>;
+  /** Fallback para item avulso/não cadastrado */
+  generico: number;
+}
+
 export interface SimuladorData {
   modelos: Modelo[];
   acos: Opcao[];        // primeiro item (Inox) é o incluso
@@ -27,7 +40,10 @@ export interface SimuladorData {
   acabamentos: Opcao[]; // primeiro item (Acetinado) é o incluso
   bainhas: Opcao[];     // primeiro item (Preta) é o incluso
   adicionais: Adicional[];
+  /** Pesos padrão para cotação de frete (gramas) */
+  pesos: PesosConfig;
 }
+
 
 /** Preço de cada bainha ADICIONAL (a primeira já vem inclusa no preço base). */
 export const BAINHA_ADICIONAL_PRECO = 195;
