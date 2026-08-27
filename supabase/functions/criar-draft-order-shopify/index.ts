@@ -41,6 +41,8 @@ interface Payload {
   notasInternas?: string[];
   /** Total manual do pedido — aplica desconto/acréscimo sobre a soma dos itens */
   totalDesejado?: number;
+  /** Força frete grátis no draft order, independente do valor. Quando omitido, usa a regra automática. */
+  freteGratis?: boolean;
 }
 
 /** Valor mínimo do pedido (BRL) para aplicar frete grátis no draft order. */
