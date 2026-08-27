@@ -190,22 +190,38 @@ export default function Home() {
 
   const cardsVisiveis = CARDS.filter((c) => !c.adminOnly || isAdmin);
   const classeCard =
-    'group rounded-xl aspect-square flex flex-col items-center justify-center gap-2 border shadow-md hover:shadow-lg hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] transition-all';
+    'group relative overflow-hidden rounded-xl border shadow-md hover:shadow-lg hover:brightness-110 hover:scale-[1.01] active:scale-[0.99] transition-all';
 
   return (
     <div className="space-y-4">
-      {/* ── Grade de acesso rápido ─────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+      {/* ── Grade de acesso rápido (padrão banner) ─────────────── */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {cardsVisiveis.map((c) =>
           c.url ? (
             <NavLink key={c.titulo} to={c.url} className={`${classeCard} ${c.classe}`}>
-              <c.icon className="h-7 w-7 sm:h-8 sm:w-8 group-hover:scale-110 transition-transform" />
-              <p className="font-semibold text-xs sm:text-sm text-center px-1 leading-tight">{c.titulo}</p>
+              <div className="flex items-center gap-3 p-3 sm:p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
+                  <c.icon className="h-5 w-5 sm:h-6 sm:w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm sm:text-base leading-tight">{c.titulo}</p>
+                  <p className="text-[11px] sm:text-xs opacity-80 truncate">{c.descricao}</p>
+                </div>
+                <ArrowRight className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${c.setaClasse} opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all`} />
+              </div>
             </NavLink>
           ) : (
             <button key={c.titulo} type="button" onClick={() => setSyncOpen(true)} className={`${classeCard} ${c.classe}`}>
-              <c.icon className="h-7 w-7 sm:h-8 sm:w-8 group-hover:scale-110 transition-transform" />
-              <p className="font-semibold text-xs sm:text-sm text-center px-1 leading-tight">{c.titulo}</p>
+              <div className="flex items-center gap-3 p-3 sm:p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
+                  <c.icon className="h-5 w-5 sm:h-6 sm:w-6" />
+                </div>
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="font-semibold text-sm sm:text-base leading-tight">{c.titulo}</p>
+                  <p className="text-[11px] sm:text-xs opacity-80 truncate">{c.descricao}</p>
+                </div>
+                <ArrowRight className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${c.setaClasse} opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all`} />
+              </div>
             </button>
           ),
         )}
