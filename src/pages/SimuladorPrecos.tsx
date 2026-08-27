@@ -1237,14 +1237,20 @@ export default function SimuladorPrecos() {
               <Copy className="h-4 w-4" />
             </Button>
             <Button variant="outline" className="gap-2 h-11 rounded-xl flex-shrink-0 px-3"
-              onClick={() => setShopifyOpen(true)} disabled={itensValidos === 0}>
+              onClick={() => podeFechar(() => setShopifyOpen(true))}>
               <ShoppingBag className="h-4 w-4" /> Shopify
             </Button>
             <Button className="gap-2 h-11 rounded-xl flex-shrink-0 bg-accent hover:bg-accent/90 text-accent-foreground px-3"
-              onClick={() => setModalOpen(true)} disabled={itensValidos === 0}>
+              onClick={() => podeFechar(() => setModalOpen(true))}>
               <ClipboardCheck className="h-4 w-4" /> Formulário
             </Button>
           </div>
+          {pendencias.length > 0 && (
+            <p className="text-[11px] text-destructive leading-tight">
+              Falta preencher: {pendencias.join(' · ')}
+            </p>
+          )}
+
         </div>
       </div>
 
