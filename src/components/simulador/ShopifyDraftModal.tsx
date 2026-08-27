@@ -254,6 +254,7 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
           observacao: observacao.trim() || undefined,
           notasInternas,
           totalDesejado: Math.abs(ajuste) >= 0.01 ? total : undefined,
+          freteGratis,
         },
 
       });
