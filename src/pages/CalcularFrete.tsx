@@ -41,6 +41,7 @@ const novoId = () => Math.random().toString(36).slice(2);
 
 export default function CalcularFrete() {
   const { toast } = useToast();
+  const { data: config } = useSimuladorConfig();
   const [loading, setLoading] = useState(false);
   const [resultados, setResultados] = useState<OpcaoFrete[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -50,6 +51,15 @@ export default function CalcularFrete() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [avulsoTitulo, setAvulsoTitulo] = useState('');
   const [avulsoPreco, setAvulsoPreco] = useState('');
+
+  /** Tipos de peso disponíveis: os fixos + um por acessório cadastrado. */
+  const tiposPeso = useMemo(() => [
+    ...TIPOS_PESO_BASE,
+    ...config.adicionais.map((a) => ({ valor: `adicional:${a.nome}` as TipoPeso, label: a.nome })),
+  ], [config.adicionais]);
+
+  const gramasDe = (i: ItemCotacao) =>
+    i.variantId ? null : pesoDoTipo(config.pesos, i.tipoPeso ?? 'generico');
 
   const addCatalogo = (p: ProdutoShopify) => {
     setItens((prev) => [...prev, {
@@ -69,13 +79,18 @@ export default function CalcularFrete() {
       toast({ title: 'Informe a descrição do item avulso', variant: 'destructive' });
       return;
     }
-    setItens((prev) => [...prev, { id: novoId(), titulo, preco: isNaN(preco) ? 0 : preco, quantidade: 1 }]);
+    setItens((prev) => [...prev, {
+      id: novoId(), titulo, preco: isNaN(preco) ? 0 : preco, quantidade: 1, tipoPeso: 'generico',
+    }]);
     setAvulsoTitulo('');
     setAvulsoPreco('');
   };
 
   const setQtd = (id: string, q: number) =>
     setItens((prev) => prev.map((i) => (i.id === id ? { ...i, quantidade: Math.max(1, q || 1) } : i)));
+
+  const setTipoPeso = (id: string, t: TipoPeso) =>
+    setItens((prev) => prev.map((i) => (i.id === id ? { ...i, tipoPeso: t } : i)));
 
   const remover = (id: string) => setItens((prev) => prev.filter((i) => i.id !== id));
 
@@ -86,6 +101,15 @@ export default function CalcularFrete() {
     }
     if (itens.length === 0) {
       toast({ title: 'Nenhum item', description: 'Adicione ao menos um produto ao pedido.', variant: 'destructive' });
+      return;
+    }
+    const faltandoPeso = itens.filter((i) => !i.variantId && !gramasDe(i));
+    if (faltandoPeso.length) {
+      toast({
+        title: 'Peso não cadastrado',
+        description: `Cadastre o peso em Configurações do Simulador → Pesos para: ${faltandoPeso.map((i) => i.titulo).join(', ')}.`,
+        variant: 'destructive',
+      });
       return;
     }
     setLoading(true);
@@ -100,6 +124,7 @@ export default function CalcularFrete() {
             title: i.titulo,
             price: i.preco,
             quantity: i.quantidade,
+            grams: gramasDe(i) ?? undefined,
           })),
         },
       });
@@ -114,6 +139,7 @@ export default function CalcularFrete() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-6 space-y-5 pb-24">
