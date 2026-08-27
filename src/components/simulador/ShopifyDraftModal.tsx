@@ -451,6 +451,22 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
               <Textarea id="sh-obs" value={observacao} onChange={(e) => setObservacao(e.target.value)} rows={2} className="text-sm resize-none" />
             </div>
 
+            <div className="flex items-start justify-between gap-3 rounded-xl border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="sh-frete" className="text-sm font-medium">Frete grátis</Label>
+                <p className="text-[10px] text-muted-foreground">
+                  {total >= 1000
+                    ? 'Aplicado automaticamente acima de R$ 1.000'
+                    : 'Aplica frete grátis independente do valor do pedido'}
+                </p>
+              </div>
+              <Switch
+                id="sh-frete"
+                checked={freteGratis}
+                onCheckedChange={(v) => { setFreteGratis(v); setTouchedFrete(true); }}
+              />
+            </div>
+
             <Button className="w-full h-11 rounded-xl gap-2" onClick={enviar} disabled={enviando || !itens.length}>
               {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}
               Criar pedido na Shopify
