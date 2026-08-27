@@ -168,12 +168,25 @@ export function newItem(): ItemCfg {
     acoIdx: 0, bruteForge: false, empIdx: 0, empCor: null, dragonScale: false,
     espacador: false, espacadorCor: null,
     acabIdx: 0, bainhaIdxs: [0], bainhaCores: {},
-    textoLaser: '', certificado: '', embalagem: '', subtotalManual: null,
+    textoLaser: '', semGravacao: false, gravacoes: {}, certificado: '', embalagem: '', subtotalManual: null,
   };
 }
 
+/** Locais de gravação disponíveis. */
+export const LOCAIS_GRAVACAO = ['Dorso Superior', 'Dorso Inferior', 'Lateral', 'Logo'] as const;
 
-/** Nome legível de uma bainha escolhida, com a cor quando houver. */
+/** Texto composto a partir dos locais marcados. */
+export function composeLaser(gravacoes: Record<string, string> | undefined): string {
+  return Object.entries(gravacoes ?? {})
+    .map(([local, txt]) => `${local}: ${(txt || '').trim() || '-'}`)
+    .join(' | ');
+}
+
+/** A personalização foi definida (sem gravação ou ao menos um local marcado)? */
+export function personalizacaoDefinida(cfg: ItemCfg): boolean {
+  return !!cfg.semGravacao || Object.keys(cfg.gravacoes ?? {}).length > 0 || !!(cfg.textoLaser ?? '').trim();
+}
+
 export function nomeBainha(data: SimuladorData, cfg: ItemCfg, idx: number): string {
   const b = data.bainhas[idx];
   if (!b) return '';
