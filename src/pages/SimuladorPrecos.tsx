@@ -201,152 +201,157 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
           {modelo && (
 
             <>
-              {/* Aço — Brute Forge é opcional do aço */}
-              <Secao title="Aço">
-                <div className="flex flex-wrap gap-1.5">
-                  {data.acos.map((a, i) => (
-                    <Chip key={i} label={a.nome} price={precoClasse(a.precos, c)}
-                      selected={cfg.acoIdx === i} onClick={() => {
-                        const novoAcoIdx = cfg.acoIdx === i ? 0 : i;
-                        const novoAcoNome = data.acos[novoAcoIdx]?.nome ?? '';
-                        let novoAcabIdx = cfg.acabIdx;
-                        if (/52100/.test(novoAcoNome)) {
-                          const bsw = data.acabamentos.findIndex((x) => /black stone washed/i.test(x.nome));
-                          if (bsw >= 0) novoAcabIdx = bsw;
-                        } else if (/52100/.test(data.acos[cfg.acoIdx]?.nome ?? '')) {
-                          // saindo do 52100 — volta pro incluso
-                          novoAcabIdx = 0;
-                        }
-                        onChange({ ...cfg, acoIdx: novoAcoIdx, acabIdx: novoAcabIdx });
-                      }} />
-                  ))}
-                  <ToggleChip label="Brute Forge" price={precoClasse(data.bruteForge, c)} on={cfg.bruteForge}
-                    onClick={() => onChange({ ...cfg, bruteForge: !cfg.bruteForge })} />
-                </div>
-              </Secao>
-
-              {/* Empunhadura — Dragon Scale e Espaçador são opcionais que somam à empunhadura */}
-              {(() => {
-                const espIdx = espacadorIdx(data);
-                const esp = espIdx >= 0 ? data.empunhaduras[espIdx] : null;
-                const empSelIdx = cfg.empIdx === espIdx ? 0 : cfg.empIdx;
-                return (
-                  <Secao title="Empunhadura">
+              {!bloqueado && (
+                <>
+                  {/* Aço — Brute Forge é opcional do aço */}
+                  <Secao title="Aço">
                     <div className="flex flex-wrap gap-1.5">
-                      {data.empunhaduras.map((e, i) => (
-                        i === espIdx ? null : (
-                          <Chip key={i} label={e.nome} price={precoClasse(e.precos, c)}
-                            selected={empSelIdx === i}
-                            onClick={() => onChange({ ...cfg, empIdx: empSelIdx === i ? 0 : i, empCor: null })} />
-                        )
-                      ))}
-                      <ToggleChip label="Dragon Scale" price={precoClasse(data.dragonScale, c)} on={cfg.dragonScale}
-                        onClick={() => onChange({ ...cfg, dragonScale: !cfg.dragonScale })} />
-                      {esp && (
-                        <ToggleChip label="Espaçador" price={precoClasse(esp.precos, c)} on={cfg.espacador}
-                          onClick={() => onChange({ ...cfg, espacador: !cfg.espacador, espacadorCor: cfg.espacador ? null : cfg.espacadorCor })} />
-                      )}
-                    </div>
-                    {/* Cor da empunhadura — só aparece quando a opção selecionada tem cores cadastradas */}
-                    {!!data.empunhaduras[empSelIdx]?.cores?.length && (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        <span className="w-full text-[10px] text-muted-foreground">Cor da {data.empunhaduras[empSelIdx].nome}:</span>
-                        {data.empunhaduras[empSelIdx]!.cores!.map((cor) => (
-                          <button key={cor} type="button"
-                            onClick={() => onChange({ ...cfg, empCor: cfg.empCor === cor ? null : cor })}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all
-                              ${cfg.empCor === cor ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-border bg-background hover:bg-muted active:scale-95'}`}>
-                            {cor}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {/* Cor do espaçador */}
-                    {cfg.espacador && !!esp?.cores?.length && (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        <span className="w-full text-[10px] text-muted-foreground">Cor do Espaçador:</span>
-                        {esp!.cores!.map((cor) => (
-                          <button key={cor} type="button"
-                            onClick={() => onChange({ ...cfg, espacadorCor: cfg.espacadorCor === cor ? null : cor })}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all
-                              ${cfg.espacadorCor === cor ? 'border-accent bg-accent text-accent-foreground shadow-sm' : 'border-border bg-background hover:bg-muted active:scale-95'}`}>
-                            {cor}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </Secao>
-                );
-              })()}
-
-
-              {(() => {
-                const acoNome = data.acos[cfg.acoIdx]?.nome ?? '';
-                const is52100 = /52100/.test(acoNome);
-                const bswIdx = data.acabamentos.findIndex((x) => /black stone washed/i.test(x.nome));
-                const allowed = is52100
-                  ? data.acabamentos
-                      .map((a, i) => ({ a, i }))
-                      .filter(({ a }) => /black stone washed|tactical/i.test(a.nome))
-                  : data.acabamentos.map((a, i) => ({ a, i }));
-                // Se 52100 estiver selecionado mas o acabIdx atual não estiver entre os permitidos,
-                // força Black Stone Washed automaticamente.
-                const acabIdxValido = allowed.some(({ i }) => i === cfg.acabIdx);
-                if (is52100 && !acabIdxValido && bswIdx >= 0) {
-                  queueMicrotask(() => onChange({ ...cfg, acabIdx: bswIdx }));
-                }
-                return (
-                  <Secao title="Acabamento">
-                    <div className="flex flex-wrap gap-1.5">
-                      {allowed.map(({ a, i }) => (
+                      {data.acos.map((a, i) => (
                         <Chip key={i} label={a.nome} price={precoClasse(a.precos, c)}
-                          selected={cfg.acabIdx === i} onClick={() => onChange({ ...cfg, acabIdx: cfg.acabIdx === i ? (is52100 ? i : 0) : i })} />
+                          selected={cfg.acoIdx === i} onClick={() => {
+                            const novoAcoIdx = cfg.acoIdx === i ? 0 : i;
+                            const novoAcoNome = data.acos[novoAcoIdx]?.nome ?? '';
+                            let novoAcabIdx = cfg.acabIdx;
+                            if (/52100/.test(novoAcoNome)) {
+                              const bsw = data.acabamentos.findIndex((x) => /black stone washed/i.test(x.nome));
+                              if (bsw >= 0) novoAcabIdx = bsw;
+                            } else if (/52100/.test(data.acos[cfg.acoIdx]?.nome ?? '')) {
+                              // saindo do 52100 — volta pro incluso
+                              novoAcabIdx = 0;
+                            }
+                            onChange({ ...cfg, acoIdx: novoAcoIdx, acabIdx: novoAcabIdx });
+                          }} />
                       ))}
+                      <ToggleChip label="Brute Forge" price={precoClasse(data.bruteForge, c)} on={cfg.bruteForge}
+                        onClick={() => onChange({ ...cfg, bruteForge: !cfg.bruteForge })} />
                     </div>
-                    {is52100 && (
-                      <p className="text-[10px] text-muted-foreground pt-1">Aço 52100: acabamento padrão Black Stone Washed, único variante disponível Tactical.</p>
-                    )}
                   </Secao>
-                );
-              })()}
 
-              <Secao title="Bainha">
-                <div className="flex flex-wrap gap-1.5">
-                  {data.bainhas.map((b, i) => {
-                    const sel = (cfg.bainhaIdxs ?? []).includes(i);
+                  {/* Empunhadura — Dragon Scale e Espaçador são opcionais que somam à empunhadura */}
+                  {(() => {
+                    const espIdx = espacadorIdx(data);
+                    const esp = espIdx >= 0 ? data.empunhaduras[espIdx] : null;
+                    const empSelIdx = cfg.empIdx === espIdx ? 0 : cfg.empIdx;
                     return (
-                      <Chip key={i} label={b.nome} price={precoClasse(b.precos, c)} selected={sel}
-                        onClick={() => {
-                          const atuais = cfg.bainhaIdxs ?? [];
-                          const novas = sel ? atuais.filter((x) => x !== i) : [...atuais, i];
-                          const cores = { ...(cfg.bainhaCores ?? {}) };
-                          if (sel) delete cores[i];
-                          onChange({ ...cfg, bainhaIdxs: novas, bainhaCores: cores });
-                        }} />
+                      <Secao title="Empunhadura">
+                        <div className="flex flex-wrap gap-1.5">
+                          {data.empunhaduras.map((e, i) => (
+                            i === espIdx ? null : (
+                              <Chip key={i} label={e.nome} price={precoClasse(e.precos, c)}
+                                selected={empSelIdx === i}
+                                onClick={() => onChange({ ...cfg, empIdx: empSelIdx === i ? 0 : i, empCor: null })} />
+                            )
+                          ))}
+                          <ToggleChip label="Dragon Scale" price={precoClasse(data.dragonScale, c)} on={cfg.dragonScale}
+                            onClick={() => onChange({ ...cfg, dragonScale: !cfg.dragonScale })} />
+                          {esp && (
+                            <ToggleChip label="Espaçador" price={precoClasse(esp.precos, c)} on={cfg.espacador}
+                              onClick={() => onChange({ ...cfg, espacador: !cfg.espacador, espacadorCor: cfg.espacador ? null : cfg.espacadorCor })} />
+                          )}
+                        </div>
+                        {/* Cor da empunhadura — só aparece quando a opção selecionada tem cores cadastradas */}
+                        {!!data.empunhaduras[empSelIdx]?.cores?.length && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            <span className="w-full text-[10px] text-muted-foreground">Cor da {data.empunhaduras[empSelIdx].nome}:</span>
+                            {data.empunhaduras[empSelIdx]!.cores!.map((cor) => (
+                              <button key={cor} type="button"
+                                onClick={() => onChange({ ...cfg, empCor: cfg.empCor === cor ? null : cor })}
+                                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all
+                                  ${cfg.empCor === cor ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-border bg-background hover:bg-muted active:scale-95'}`}>
+                                {cor}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {/* Cor do espaçador */}
+                        {cfg.espacador && !!esp?.cores?.length && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            <span className="w-full text-[10px] text-muted-foreground">Cor do Espaçador:</span>
+                            {esp!.cores!.map((cor) => (
+                              <button key={cor} type="button"
+                                onClick={() => onChange({ ...cfg, espacadorCor: cfg.espacadorCor === cor ? null : cor })}
+                                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all
+                                  ${cfg.espacadorCor === cor ? 'border-accent bg-accent text-accent-foreground shadow-sm' : 'border-border bg-background hover:bg-muted active:scale-95'}`}>
+                                {cor}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </Secao>
                     );
-                  })}
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  A 1ª bainha já está inclusa no valor. Cada bainha adicional custa {BRL(precoBainhaAdicional(data, c))}.
-                </p>
-                {(cfg.bainhaIdxs ?? []).map((bi) => (
-                  !!data.bainhas[bi]?.cores?.length && (
-                    <div key={bi} className="flex flex-wrap gap-1.5 pt-1">
-                      <span className="w-full text-[10px] text-muted-foreground">Cor da bainha {data.bainhas[bi].nome}:</span>
-                      {data.bainhas[bi]!.cores!.map((cor) => (
-                        <button key={cor} type="button"
-                          onClick={() => onChange({ ...cfg, bainhaCores: { ...(cfg.bainhaCores ?? {}), [bi]: (cfg.bainhaCores ?? {})[bi] === cor ? null : cor } })}
-                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all
-                            ${(cfg.bainhaCores ?? {})[bi] === cor ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-border bg-background hover:bg-muted active:scale-95'}`}>
-                          {cor}
-                        </button>
-                      ))}
+                  })()}
+
+
+                  {(() => {
+                    const acoNome = data.acos[cfg.acoIdx]?.nome ?? '';
+                    const is52100 = /52100/.test(acoNome);
+                    const bswIdx = data.acabamentos.findIndex((x) => /black stone washed/i.test(x.nome));
+                    const allowed = is52100
+                      ? data.acabamentos
+                          .map((a, i) => ({ a, i }))
+                          .filter(({ a }) => /black stone washed|tactical/i.test(a.nome))
+                      : data.acabamentos.map((a, i) => ({ a, i }));
+                    // Se 52100 estiver selecionado mas o acabIdx atual não estiver entre os permitidos,
+                    // força Black Stone Washed automaticamente.
+                    const acabIdxValido = allowed.some(({ i }) => i === cfg.acabIdx);
+                    if (is52100 && !acabIdxValido && bswIdx >= 0) {
+                      queueMicrotask(() => onChange({ ...cfg, acabIdx: bswIdx }));
+                    }
+                    return (
+                      <Secao title="Acabamento">
+                        <div className="flex flex-wrap gap-1.5">
+                          {allowed.map(({ a, i }) => (
+                            <Chip key={i} label={a.nome} price={precoClasse(a.precos, c)}
+                              selected={cfg.acabIdx === i} onClick={() => onChange({ ...cfg, acabIdx: cfg.acabIdx === i ? (is52100 ? i : 0) : i })} />
+                          ))}
+                        </div>
+                        {is52100 && (
+                          <p className="text-[10px] text-muted-foreground pt-1">Aço 52100: acabamento padrão Black Stone Washed, único variante disponível Tactical.</p>
+                        )}
+                      </Secao>
+                    );
+                  })()}
+
+                  <Secao title="Bainha">
+                    <div className="flex flex-wrap gap-1.5">
+                      {data.bainhas.map((b, i) => {
+                        const sel = (cfg.bainhaIdxs ?? []).includes(i);
+                        return (
+                          <Chip key={i} label={b.nome} price={precoClasse(b.precos, c)} selected={sel}
+                            onClick={() => {
+                              const atuais = cfg.bainhaIdxs ?? [];
+                              const novas = sel ? atuais.filter((x) => x !== i) : [...atuais, i];
+                              const cores = { ...(cfg.bainhaCores ?? {}) };
+                              if (sel) delete cores[i];
+                              onChange({ ...cfg, bainhaIdxs: novas, bainhaCores: cores });
+                            }} />
+                        );
+                      })}
                     </div>
-                  )
-                ))}
-              </Secao>
+                    <p className="text-[10px] text-muted-foreground">
+                      A 1ª bainha já está inclusa no valor. Cada bainha adicional custa {BRL(precoBainhaAdicional(data, c))}.
+                    </p>
+                    {(cfg.bainhaIdxs ?? []).map((bi) => (
+                      !!data.bainhas[bi]?.cores?.length && (
+                        <div key={bi} className="flex flex-wrap gap-1.5 pt-1">
+                          <span className="w-full text-[10px] text-muted-foreground">Cor da bainha {data.bainhas[bi].nome}:</span>
+                          {data.bainhas[bi]!.cores!.map((cor) => (
+                            <button key={cor} type="button"
+                              onClick={() => onChange({ ...cfg, bainhaCores: { ...(cfg.bainhaCores ?? {}), [bi]: (cfg.bainhaCores ?? {})[bi] === cor ? null : cor } })}
+                              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all
+                                ${(cfg.bainhaCores ?? {})[bi] === cor ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-border bg-background hover:bg-muted active:scale-95'}`}>
+                              {cor}
+                            </button>
+                          ))}
+                        </div>
+                      )
+                    ))}
+                  </Secao>
+                </>
+              )}
 
               {/* Personalização à laser — seleção obrigatória por checkbox */}
+
               <Secao title="Personalização *">
                 <div className="space-y-2">
                   <label className="flex items-center gap-2.5 rounded-lg border p-2.5 cursor-pointer">
