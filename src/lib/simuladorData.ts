@@ -578,11 +578,23 @@ export const SEED: SimuladorData = {
     { nome: 'Camisa Kaowz', preco: 170 },
     { nome: 'Moletom', preco: 240 },
   ],
+
+  // Pesos ainda não medidos — o admin preenche em /admin/simulador-precos (aba Pesos).
+  pesos: { faca: { P: 0, M: 0, G: 0 }, bainha: 0, adicionais: {}, generico: 0 },
+};
+
+/** Pesos vazios (nada definido) — base do merge. */
+export const PESOS_VAZIO: PesosConfig = {
+  faca: { P: 0, M: 0, G: 0 },
+  bainha: 0,
+  adicionais: {},
+  generico: 0,
 };
 
 /** Garante que uma config vinda do banco tenha todos os campos (merge com SEED). */
 export function normalizarData(raw: unknown): SimuladorData {
   const d = (raw ?? {}) as Partial<SimuladorData>;
+  const p = (d.pesos ?? {}) as Partial<PesosConfig>;
   return {
     modelos: Array.isArray(d.modelos) && d.modelos.length ? d.modelos : SEED.modelos,
     acos: Array.isArray(d.acos) && d.acos.length ? d.acos : SEED.acos,
@@ -592,5 +604,41 @@ export function normalizarData(raw: unknown): SimuladorData {
     acabamentos: Array.isArray(d.acabamentos) && d.acabamentos.length ? d.acabamentos : SEED.acabamentos,
     bainhas: Array.isArray(d.bainhas) && d.bainhas.length ? d.bainhas : SEED.bainhas,
     adicionais: Array.isArray(d.adicionais) && d.adicionais.length ? d.adicionais : SEED.adicionais,
+    pesos: {
+      faca: { P: p.faca?.P ?? 0, M: p.faca?.M ?? 0, G: p.faca?.G ?? 0 },
+      bainha: p.bainha ?? 0,
+      adicionais: p.adicionais ?? {},
+      generico: p.generico ?? 0,
+    },
   };
 }
+
+/* ════════════════ Pesos para cotação de frete ════════════════ */
+
+/** Tipo de item customizado usado na cotação de frete. */
+export type TipoPeso = 'faca_P' | 'faca_M' | 'faca_G' | 'bainha' | 'generico' | `adicional:${string}`;
+
+export const TIPOS_PESO_BASE: { valor: TipoPeso; label: string }[] = [
+  { valor: 'faca_P', label: 'Faca pequena (P)' },
+  { valor: 'faca_M', label: 'Faca média (M)' },
+  { valor: 'faca_G', label: 'Faca grande (G)' },
+  { valor: 'bainha', label: 'Bainha' },
+  { valor: 'generico', label: 'Item avulso (peso genérico)' },
+];
+
+/** Peso em gramas de um tipo. Retorna 0 quando não cadastrado. */
+export function pesoDoTipo(pesos: PesosConfig, tipo: TipoPeso): number {
+  if (tipo.startsWith('adicional:')) return pesos.adicionais[tipo.slice(10)] ?? 0;
+  if (tipo === 'bainha') return pesos.bainha || 0;
+  if (tipo === 'generico') return pesos.generico || 0;
+  const c = tipo.slice(5) as Classe;
+  return pesos.faca[c] ?? 0;
+}
+
+/** Peso de uma faca configurada = faca da classe + bainhas escolhidas. */
+export function pesoFaca(data: SimuladorData, cfg: ItemCfg): number {
+  const m = cfg.modeloIdx != null ? data.modelos[cfg.modeloIdx] : null;
+  const base = data.pesos.faca[classeDo(m)] ?? 0;
+  return base + (cfg.bainhaIdxs?.length ?? 0) * (data.pesos.bainha || 0);
+}
+
