@@ -347,11 +347,12 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
               <Secao title="Certificado">
                 <Input value={cfg.certificado ?? ''}
                   onChange={(e) => onChange({ ...cfg, certificado: e.target.value })}
-                  placeholder={clienteNome || 'Nome que vai no certificado'} className="h-10 text-sm" />
+                  placeholder="Nome que vai no certificado" className="h-10 text-sm" />
                 <p className="text-[10px] text-muted-foreground">
-                  Preenchido com o nome do cliente — edite para presentes.
+                  Opcional — digite o nome que deve sair gravado no certificado.
                 </p>
               </Secao>
+
 
               <Secao title="Embalagem (interno)">
                 <div className="flex flex-wrap gap-1.5">
