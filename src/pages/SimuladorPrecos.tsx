@@ -137,6 +137,8 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
   const calculado = calcItemBase(data, cfg);
   const manual = cfg.subtotalManual !== null && cfg.subtotalManual !== undefined;
   const total = calcItem(data, cfg);
+  const bloqueado = !!cfg.origem; // itens vindos do site não permitem trocar aço/empunhadura/bainha
+
 
 
   const nomeOpt = (arr: Opcao[], idx: number, sufixo = '') =>
