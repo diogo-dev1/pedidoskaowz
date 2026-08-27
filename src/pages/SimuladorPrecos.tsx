@@ -1139,7 +1139,6 @@ export default function SimuladorPrecos() {
 
   const descontoAplicado = Math.min(Math.max(0, desconto), totalCalculado);
   const totalGeral = Math.max(0, totalCalculado - descontoAplicado);
-  const itensCount = entries.filter((e) => e.kind !== 'faca' || e.faca.modeloIdx !== null).length;
 
   /** Pendências que impedem fechar o pedido — só facas montadas do zero exigem modelo. */
   const pendencias = useMemo(() => (
