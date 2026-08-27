@@ -14,8 +14,12 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
-  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette, Weight,
+  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette, Weight, Trash2,
 } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 
 // Clona profundo (dados são simples: objetos/arrays/números/strings)
@@ -149,6 +153,8 @@ export default function SimuladorPrecosConfig() {
   const [draft, setDraft] = useState<SimuladorData | null>(null);
   const [saving, setSaving] = useState(false);
   const [busca, setBusca] = useState('');
+  const [novoModelo, setNovoModelo] = useState<Modelo | null>(null);
+  const [excluir, setExcluir] = useState<{ idx: number; nome: string } | null>(null);
 
   // Sincroniza o rascunho quando a config carrega (sem sobrescrever edições em andamento)
   useEffect(() => { if (!draft && !isLoading) setDraft(clone(configData)); }, [configData, isLoading, draft]);
@@ -186,6 +192,28 @@ export default function SimuladorPrecosConfig() {
     }
   };
 
+  const abrirNovoModelo = () => setNovoModelo({ nome: '', tamanho: 'P', preco: 0 });
+
+  const confirmarNovoModelo = () => {
+    if (!novoModelo || !draft) return;
+    const nome = novoModelo.nome.trim();
+    if (!nome) { toast.error('Informe o nome do modelo.'); return; }
+    if (!Number.isFinite(novoModelo.preco) || novoModelo.preco < 0) { toast.error('O preço não pode ser negativo.'); return; }
+    if (draft.modelos.some((m) => m.nome.trim().toLowerCase() === nome.toLowerCase())) {
+      toast.error(`Já existe um modelo chamado "${nome}".`); return;
+    }
+    set({ modelos: [...draft.modelos, { ...novoModelo, nome }] });
+    setNovoModelo(null);
+    toast.success('Modelo adicionado. Clique em Salvar valores para aplicar.');
+  };
+
+  const confirmarExclusao = () => {
+    if (!excluir || !draft) return;
+    set({ modelos: draft.modelos.filter((_, i) => i !== excluir.idx) });
+    setExcluir(null);
+    toast.success('Modelo removido. Clique em Salvar valores para aplicar.');
+  };
+
   const restaurarPadrao = () => {
     // Restaura os preços da planilha, mas preserva os pesos já cadastrados.
     setDraft((d) => ({ ...clone(SEED), pesos: d?.pesos ?? clone(SEED).pesos }));
@@ -215,7 +243,7 @@ export default function SimuladorPrecosConfig() {
           <p className="text-xs text-muted-foreground">Edite os preços por tamanho. Vale para todos os vendedores.</p>
         </div>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={restaurarPadrao}>
-          <RotateCcw className="h-3.5 w-3.5" /> Planilha
+          <RotateCcw className="h-3.5 w-3.5" /> Restaurar padrão do código
         </Button>
       </div>
 
@@ -237,6 +265,12 @@ export default function SimuladorPrecosConfig() {
           <p className="text-[11px] text-muted-foreground px-1">
             Valor base = Aço Inox + Empunhadura Grafite inclusos. Tamanho define o preço das customizações.
           </p>
+          <div className="flex items-center justify-between gap-2 px-1">
+            <span className="text-[11px] text-muted-foreground">{draft.modelos.length} modelos</span>
+            <Button size="sm" className="gap-1.5 h-8" onClick={abrirNovoModelo}>
+              <Plus className="w-3.5 h-3.5" /> Adicionar modelo
+            </Button>
+          </div>
           {modelosFiltrados.map(({ m, i }) => (
             <div key={i} className="flex items-center gap-2 rounded-lg border bg-card p-2.5">
               <Input value={m.nome} onChange={(e) => updateModelo(i, { ...m, nome: e.target.value })}
@@ -247,9 +281,15 @@ export default function SimuladorPrecosConfig() {
                   {(['P', 'M', 'G', '-'] as const).map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <PrecoInput value={m.preco} onChange={(n) => updateModelo(i, { ...m, preco: n })} className="w-28 shrink-0" />
+              <PrecoInput value={m.preco} onChange={(n) => updateModelo(i, { ...m, preco: n })} className="w-24 shrink-0" />
+              <Button type="button" size="icon" variant="ghost"
+                className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                onClick={() => setExcluir({ idx: i, nome: m.nome })}>
+                <Trash2 className="w-4 h-4" />
+              </Button>
             </div>
           ))}
+
         </TabsContent>
 
         {/* ── Customizações ── */}
@@ -289,6 +329,18 @@ export default function SimuladorPrecosConfig() {
                 className="w-28 shrink-0" />
             </div>
           ))}
+
+          <div className="pt-3">
+
+            <PrecosTamanho
+              label="Bainha adicional (2ª em diante)"
+              precos={draft.bainhaAdicional}
+              onChange={(p) => set({ bainhaAdicional: p })}
+            />
+            <p className="text-[10px] text-muted-foreground px-1 pt-1">
+              A 1ª bainha da faca é inclusa. Da segunda em diante cobra-se este valor, conforme o tamanho da faca.
+            </p>
+          </div>
         </TabsContent>
 
         {/* ── Pesos padrão (gramas) para cotação de frete ── */}
@@ -345,6 +397,64 @@ export default function SimuladorPrecosConfig() {
           </section>
         </TabsContent>
       </Tabs>
+
+      {/* Novo modelo */}
+      <Dialog open={!!novoModelo} onOpenChange={(o) => !o && setNovoModelo(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adicionar modelo</DialogTitle>
+            <DialogDescription>O modelo entra na lista e é salvo junto com os demais valores.</DialogDescription>
+          </DialogHeader>
+          {novoModelo && (
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Nome</Label>
+                <Input value={novoModelo.nome} autoFocus
+                  onChange={(e) => setNovoModelo({ ...novoModelo, nome: e.target.value })}
+                  placeholder="Ex: Edc Tanto" />
+              </div>
+              <div className="flex items-end gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Tamanho</Label>
+                  <Select value={novoModelo.tamanho}
+                    onValueChange={(v) => setNovoModelo({ ...novoModelo, tamanho: v as Modelo['tamanho'] })}>
+                    <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(['P', 'M', 'G', '-'] as const).map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5 flex-1">
+                  <Label className="text-xs">Preço base</Label>
+                  <PrecoInput value={novoModelo.preco} onChange={(n) => setNovoModelo({ ...novoModelo, preco: n })} />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setNovoModelo(null)}>Cancelar</Button>
+            <Button onClick={confirmarNovoModelo}>Adicionar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Excluir modelo */}
+      <Dialog open={!!excluir} onOpenChange={(o) => !o && setExcluir(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir modelo</DialogTitle>
+            <DialogDescription>
+              Remover o modelo "{excluir?.nome}" da lista? A remoção só é aplicada ao salvar.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setExcluir(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmarExclusao}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
 
       {/* Barra de salvar fixa */}

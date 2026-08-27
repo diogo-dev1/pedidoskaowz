@@ -40,17 +40,25 @@ export interface SimuladorData {
   acabamentos: Opcao[]; // primeiro item (Acetinado) é o incluso
   bainhas: Opcao[];     // primeiro item (Preta) é o incluso
   adicionais: Adicional[];
+  /** Preço da bainha ADICIONAL (2ª em diante), por tamanho */
+  bainhaAdicional: Precos;
   /** Pesos padrão para cotação de frete (gramas) */
   pesos: PesosConfig;
 }
 
 
-/** Preço de cada bainha ADICIONAL (a primeira já vem inclusa no preço base). */
-export const BAINHA_ADICIONAL_PRECO = 195;
+/** Fallback do preço da bainha adicional, caso a config não traga valores. */
+export const BAINHA_ADICIONAL_PADRAO: Precos = { P: 195, M: 220, G: 250 };
+
+/** Preço de cada bainha ADICIONAL (a primeira já vem inclusa) para uma classe. */
+export function precoBainhaAdicional(data: SimuladorData, c: Classe = 'P'): number {
+  return precoClasse(data.bainhaAdicional ?? BAINHA_ADICIONAL_PADRAO, c);
+}
 /** Preço da gravação à laser (mesma regra usada em Novo Pedido). */
 export const LASER_PRECO = 30;
 /** Opções de embalagem (campo INTERNO — nunca exposto ao cliente). */
 export const EMBALAGENS = ['Comum', 'Patola Padrão', 'Patola KIT'] as const;
+
 
 /** Produto da vitrine Shopify que serviu de base para uma faca configurável.
  *  Somente leitura — editar a faca aqui NUNCA altera o cadastro na Shopify. */
@@ -344,7 +352,7 @@ export function calcItemBase(data: SimuladorData, cfg: ItemCfg): number {
     t += precoClasse(data.bainhas[i]?.precos ?? {}, c);
   });
   // A primeira bainha já está inclusa no preço base; a partir da segunda, cobra-se.
-  if (bainhas.length > 1) t += (bainhas.length - 1) * BAINHA_ADICIONAL_PRECO;
+  if (bainhas.length > 1) t += (bainhas.length - 1) * precoBainhaAdicional(data, c);
   // Personalização à laser (mesma regra do Novo Pedido)
   if (temLaser(cfg)) t += LASER_PRECO;
   return t;
@@ -540,7 +548,7 @@ export const SEED: SimuladorData = {
     { nome: 'Sandvik 14C28N', precos: { P: 165, M: 195, G: 350 } },
     { nome: '52100', precos: { P: 165, M: 175, G: 195 } },
   ],
-  bruteForge: { P: 125, M: 125, G: 300 },
+  bruteForge: { P: 125, M: 215, G: 300 },
   empunhaduras: [
     { nome: 'Grafite', precos: { P: 0, M: 0, G: 0 }, incluso: true, cores: ['Preto', 'Cinza'] },
     { nome: 'G10', precos: { P: 115, M: 145 } },
@@ -560,7 +568,7 @@ export const SEED: SimuladorData = {
   ],
 
   adicionais: [
-    { nome: 'Strop', preco: 95 },
+    { nome: 'Strop', preco: 75 },
     { nome: 'Café Médio ou Escuro', preco: 45 },
     { nome: 'Clipe Extra', preco: 25 },
     { nome: 'Clipe Lateral', preco: 75 },
@@ -578,6 +586,8 @@ export const SEED: SimuladorData = {
     { nome: 'Camisa Kaowz', preco: 170 },
     { nome: 'Moletom', preco: 240 },
   ],
+
+  bainhaAdicional: { P: 195, M: 220, G: 250 },
 
   // Pesos ainda não medidos — o admin preenche em /admin/simulador-precos (aba Pesos).
   pesos: { faca: { P: 0, M: 0, G: 0 }, bainha: 0, adicionais: {}, generico: 0 },
@@ -604,6 +614,11 @@ export function normalizarData(raw: unknown): SimuladorData {
     acabamentos: Array.isArray(d.acabamentos) && d.acabamentos.length ? d.acabamentos : SEED.acabamentos,
     bainhas: Array.isArray(d.bainhas) && d.bainhas.length ? d.bainhas : SEED.bainhas,
     adicionais: Array.isArray(d.adicionais) && d.adicionais.length ? d.adicionais : SEED.adicionais,
+    bainhaAdicional: {
+      P: d.bainhaAdicional?.P ?? BAINHA_ADICIONAL_PADRAO.P,
+      M: d.bainhaAdicional?.M ?? BAINHA_ADICIONAL_PADRAO.M,
+      G: d.bainhaAdicional?.G ?? BAINHA_ADICIONAL_PADRAO.G,
+    },
     pesos: {
       faca: { P: p.faca?.P ?? 0, M: p.faca?.M ?? 0, G: p.faca?.G ?? 0 },
       bainha: p.bainha ?? 0,
