@@ -335,15 +335,58 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                 ))}
               </Secao>
 
-              {/* Personalização à laser — mesma regra do Novo Pedido */}
-              <Secao title="Personalização">
-                <Input value={cfg.textoLaser ?? ''} maxLength={60}
-                  onChange={(e) => onChange({ ...cfg, textoLaser: e.target.value })}
-                  placeholder="Texto da gravação (deixe vazio para sem gravação)" className="h-10 text-sm" />
+              {/* Personalização à laser — seleção obrigatória por checkbox */}
+              <Secao title="Personalização *">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2.5 rounded-lg border p-2.5 cursor-pointer">
+                    <Checkbox checked={!!cfg.semGravacao}
+                      onCheckedChange={(v) => onChange({
+                        ...cfg, semGravacao: v === true,
+                        gravacoes: v === true ? {} : (cfg.gravacoes ?? {}),
+                        textoLaser: v === true ? '' : composeLaser(cfg.gravacoes),
+                      })} />
+                    <span className="text-sm font-medium">Sem gravação</span>
+                  </label>
+
+                  {LOCAIS_GRAVACAO.map((local) => {
+                    const marcado = cfg.gravacoes?.[local] !== undefined;
+                    const toggle = (v: boolean) => {
+                      const g = { ...(cfg.gravacoes ?? {}) };
+                      if (v) g[local] = g[local] ?? ''; else delete g[local];
+                      onChange({ ...cfg, semGravacao: false, gravacoes: g, textoLaser: composeLaser(g) });
+                    };
+                    const setTexto = (t: string) => {
+                      const g = { ...(cfg.gravacoes ?? {}), [local]: t };
+                      onChange({ ...cfg, gravacoes: g, textoLaser: composeLaser(g) });
+                    };
+                    return (
+                      <div key={local} className="rounded-lg border p-2.5 space-y-2">
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                          <Checkbox checked={marcado} onCheckedChange={(v) => toggle(v === true)} />
+                          <span className="text-sm font-medium">{local}</span>
+                        </label>
+                        {marcado && (
+                          <Input value={cfg.gravacoes?.[local] ?? ''} maxLength={120}
+                            onChange={(e) => setTexto(e.target.value)}
+                            placeholder={local === 'Logo'
+                              ? 'Descreva a logo (formato, elementos, referência)'
+                              : `O que gravar em ${local.toLowerCase()}`}
+                            className="h-10 text-sm" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {!personalizacaoDefinida(cfg) && (
+                  <p className="text-[11px] text-destructive font-medium">
+                    Marque ao menos uma opção de personalização.
+                  </p>
+                )}
                 <p className="text-[10px] text-muted-foreground">
-                  Gravação à laser: +{BRL(LASER_PRECO)} quando houver texto.
+                  Gravação à laser: +{BRL(LASER_PRECO)} quando houver gravação.
                 </p>
               </Secao>
+
 
               <Secao title="Certificado">
                 <Input value={cfg.certificado ?? ''}
