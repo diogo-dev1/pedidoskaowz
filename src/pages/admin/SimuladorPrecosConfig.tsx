@@ -285,7 +285,62 @@ export default function SimuladorPrecosConfig() {
             </div>
           ))}
         </TabsContent>
+
+        {/* ── Pesos padrão (gramas) para cotação de frete ── */}
+        <TabsContent value="pesos" className="mt-4 space-y-5">
+          <p className="text-[11px] text-muted-foreground px-1 leading-snug">
+            Pesos em gramas usados para cotar frete de itens que não existem cadastrados na loja
+            (faca sob medida, acessório avulso). Produtos reais do catálogo continuam usando o peso da loja.
+            Deixe 0 para "não definido" — a cotação avisa quando faltar peso.
+          </p>
+
+          <section className="space-y-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Faca por tamanho</h2>
+            <div className="rounded-lg border bg-card p-3 grid grid-cols-3 gap-2">
+              {CLASSES.map((c) => (
+                <div key={c} className="space-y-0.5">
+                  <span className="text-[10px] font-semibold text-muted-foreground pl-1">
+                    {c === 'P' ? 'Pequena (P)' : c === 'M' ? 'Média (M)' : 'Grande (G)'}
+                  </span>
+                  <PesoInput
+                    value={draft.pesos.faca[c] ?? 0}
+                    onChange={(n) => setPesos({ faca: { ...draft.pesos.faca, [c]: n } })}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Bainha e fallback</h2>
+            <div className="rounded-lg border bg-card p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm flex-1">Bainha (cada)</span>
+                <PesoInput value={draft.pesos.bainha} onChange={(n) => setPesos({ bainha: n })} className="w-28 shrink-0" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm flex-1">Peso genérico (item avulso)</span>
+                <PesoInput value={draft.pesos.generico} onChange={(n) => setPesos({ generico: n })} className="w-28 shrink-0" />
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Acessórios</h2>
+            {draft.adicionais.map((a) => (
+              <div key={a.nome} className="flex items-center gap-2 rounded-lg border bg-card p-2.5">
+                <span className="text-sm flex-1 min-w-0 truncate">{a.nome}</span>
+                <PesoInput
+                  value={draft.pesos.adicionais[a.nome] ?? 0}
+                  onChange={(n) => setPesos({ adicionais: { ...draft.pesos.adicionais, [a.nome]: n } })}
+                  className="w-28 shrink-0"
+                />
+              </div>
+            ))}
+          </section>
+        </TabsContent>
       </Tabs>
+
 
       {/* Barra de salvar fixa */}
       <div className="fixed left-0 right-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 bg-background/95 backdrop-blur-lg border-t z-40">
