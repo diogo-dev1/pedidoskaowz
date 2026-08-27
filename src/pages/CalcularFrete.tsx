@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Truck, Loader2, AlertCircle, Package as PackageIcon, Plus, Trash2, Info, ShoppingBag } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import CatalogoShopifyPicker, { type ProdutoShopify } from '@/components/simulador/CatalogoShopifyPicker';
-import { BRL } from '@/lib/simuladorData';
+import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
+import { BRL, pesoDoTipo, TIPOS_PESO_BASE, type TipoPeso } from '@/lib/simuladorData';
 
 interface OpcaoFrete {
   handle: string;
@@ -23,6 +27,8 @@ interface ItemCotacao {
   preco: number;
   quantidade: number;
   imagem?: string | null;
+  /** Só para item avulso: de onde vem o peso padrão */
+  tipoPeso?: TipoPeso;
 }
 
 const maskCep = (v: string) => {
@@ -32,8 +38,10 @@ const maskCep = (v: string) => {
 
 const novoId = () => Math.random().toString(36).slice(2);
 
+
 export default function CalcularFrete() {
   const { toast } = useToast();
+  const { data: config } = useSimuladorConfig();
   const [loading, setLoading] = useState(false);
   const [resultados, setResultados] = useState<OpcaoFrete[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -43,6 +51,15 @@ export default function CalcularFrete() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [avulsoTitulo, setAvulsoTitulo] = useState('');
   const [avulsoPreco, setAvulsoPreco] = useState('');
+
+  /** Tipos de peso disponíveis: os fixos + um por acessório cadastrado. */
+  const tiposPeso = useMemo(() => [
+    ...TIPOS_PESO_BASE,
+    ...config.adicionais.map((a) => ({ valor: `adicional:${a.nome}` as TipoPeso, label: a.nome })),
+  ], [config.adicionais]);
+
+  const gramasDe = (i: ItemCotacao) =>
+    i.variantId ? null : pesoDoTipo(config.pesos, i.tipoPeso ?? 'generico');
 
   const addCatalogo = (p: ProdutoShopify) => {
     setItens((prev) => [...prev, {
@@ -62,13 +79,18 @@ export default function CalcularFrete() {
       toast({ title: 'Informe a descrição do item avulso', variant: 'destructive' });
       return;
     }
-    setItens((prev) => [...prev, { id: novoId(), titulo, preco: isNaN(preco) ? 0 : preco, quantidade: 1 }]);
+    setItens((prev) => [...prev, {
+      id: novoId(), titulo, preco: isNaN(preco) ? 0 : preco, quantidade: 1, tipoPeso: 'generico',
+    }]);
     setAvulsoTitulo('');
     setAvulsoPreco('');
   };
 
   const setQtd = (id: string, q: number) =>
     setItens((prev) => prev.map((i) => (i.id === id ? { ...i, quantidade: Math.max(1, q || 1) } : i)));
+
+  const setTipoPeso = (id: string, t: TipoPeso) =>
+    setItens((prev) => prev.map((i) => (i.id === id ? { ...i, tipoPeso: t } : i)));
 
   const remover = (id: string) => setItens((prev) => prev.filter((i) => i.id !== id));
 
@@ -79,6 +101,15 @@ export default function CalcularFrete() {
     }
     if (itens.length === 0) {
       toast({ title: 'Nenhum item', description: 'Adicione ao menos um produto ao pedido.', variant: 'destructive' });
+      return;
+    }
+    const faltandoPeso = itens.filter((i) => !i.variantId && !gramasDe(i));
+    if (faltandoPeso.length) {
+      toast({
+        title: 'Peso não cadastrado',
+        description: `Cadastre o peso em Configurações do Simulador → Pesos para: ${faltandoPeso.map((i) => i.titulo).join(', ')}.`,
+        variant: 'destructive',
+      });
       return;
     }
     setLoading(true);
@@ -93,6 +124,7 @@ export default function CalcularFrete() {
             title: i.titulo,
             price: i.preco,
             quantity: i.quantidade,
+            grams: gramasDe(i) ?? undefined,
           })),
         },
       });
@@ -107,6 +139,7 @@ export default function CalcularFrete() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-6 space-y-5 pb-24">
@@ -153,32 +186,62 @@ export default function CalcularFrete() {
             <p className="text-sm text-muted-foreground">Nenhum item adicionado ainda.</p>
           )}
 
-          {itens.map((i) => (
-            <div key={i.id} className="flex items-center gap-3 rounded-xl border p-2.5">
-              {i.imagem ? (
-                <img src={i.imagem} alt={i.titulo} loading="lazy" className="h-12 w-12 rounded-lg object-cover bg-muted shrink-0" />
-              ) : (
-                <span className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                  <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{i.titulo}</p>
-                <p className="text-xs text-muted-foreground tabular-nums">{BRL(i.preco)}</p>
+          {itens.map((i) => {
+            const gramas = gramasDe(i);
+            return (
+            <div key={i.id} className="rounded-xl border p-2.5 space-y-2">
+              <div className="flex items-center gap-3">
+                {i.imagem ? (
+                  <img src={i.imagem} alt={i.titulo} loading="lazy" className="h-12 w-12 rounded-lg object-cover bg-muted shrink-0" />
+                ) : (
+                  <span className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                  </span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{i.titulo}</p>
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    {BRL(i.preco)}
+                    {i.variantId
+                      ? ' · peso da loja'
+                      : gramas ? ` · ${gramas} g` : ''}
+                  </p>
+                </div>
+                <Input
+                  type="number"
+                  min={1}
+                  value={i.quantidade}
+                  onChange={(e) => setQtd(i.id, parseInt(e.target.value, 10))}
+                  className="h-9 w-16 text-center"
+                  aria-label={`Quantidade de ${i.titulo}`}
+                />
+                <Button variant="ghost" size="icon" onClick={() => remover(i.id)} aria-label="Remover item">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
               </div>
-              <Input
-                type="number"
-                min={1}
-                value={i.quantidade}
-                onChange={(e) => setQtd(i.id, parseInt(e.target.value, 10))}
-                className="h-9 w-16 text-center"
-                aria-label={`Quantidade de ${i.titulo}`}
-              />
-              <Button variant="ghost" size="icon" onClick={() => remover(i.id)} aria-label="Remover item">
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+
+              {/* Item avulso: escolhe de qual peso padrão ele herda */}
+              {!i.variantId && (
+                <div className="flex items-center gap-2">
+                  <Select value={i.tipoPeso ?? 'generico'} onValueChange={(v) => setTipoPeso(i.id, v as TipoPeso)}>
+                    <SelectTrigger className="h-9 text-xs flex-1">
+                      <SelectValue placeholder="Peso padrão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tiposPeso.map((t) => (
+                        <SelectItem key={t.valor} value={t.valor} className="text-xs">{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!gramas && (
+                    <span className="text-[11px] text-destructive shrink-0">Peso não cadastrado</span>
+                  )}
+                </div>
+              )}
             </div>
-          ))}
+            );
+          })}
+
 
           <Button variant="outline" className="w-full h-11" onClick={() => setPickerOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Buscar produto no catálogo

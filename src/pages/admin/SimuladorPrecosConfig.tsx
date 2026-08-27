@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSimuladorConfig, SIMULADOR_CONFIG_CHAVE } from '@/hooks/useSimuladorConfig';
 import {
-  SEED, BRL, type SimuladorData, type Modelo, type Opcao, type Precos, type Classe,
+  SEED, BRL, type SimuladorData, type Modelo, type Opcao, type Precos, type Classe, type PesosConfig,
 } from '@/lib/simuladorData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,8 +14,9 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
-  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette,
+  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette, Weight,
 } from 'lucide-react';
+
 
 // Clona profundo (dados são simples: objetos/arrays/números/strings)
 const clone = (d: SimuladorData): SimuladorData => JSON.parse(JSON.stringify(d));
@@ -124,6 +125,22 @@ function PrecosTamanho({ label, precos, onChange }: { label: string; precos: Pre
   );
 }
 
+/** Input de peso em gramas (0 = não definido). */
+function PesoInput({ value, onChange, className = '' }: { value: number; onChange: (n: number) => void; className?: string }) {
+  return (
+    <div className={`relative ${className}`}>
+      <Input
+        type="number" inputMode="numeric" min={0} step="1"
+        value={Number.isFinite(value) ? value : 0}
+        onChange={(e) => onChange(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0))}
+        className="h-9 pr-7 text-sm tabular-nums"
+      />
+      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">g</span>
+    </div>
+  );
+}
+
+
 export default function SimuladorPrecosConfig() {
   const { data: configData, isLoading } = useSimuladorConfig();
   const { user } = useAuth();
@@ -137,6 +154,9 @@ export default function SimuladorPrecosConfig() {
   useEffect(() => { if (!draft && !isLoading) setDraft(clone(configData)); }, [configData, isLoading, draft]);
 
   const set = (patch: Partial<SimuladorData>) => setDraft((d) => (d ? { ...d, ...patch } : d));
+  const setPesos = (patch: Partial<PesosConfig>) =>
+    setDraft((d) => (d ? { ...d, pesos: { ...d.pesos, ...patch } } : d));
+
 
   const modelosFiltrados = useMemo(() => {
     if (!draft) return [];
@@ -167,9 +187,11 @@ export default function SimuladorPrecosConfig() {
   };
 
   const restaurarPadrao = () => {
-    setDraft(clone(SEED));
+    // Restaura os preços da planilha, mas preserva os pesos já cadastrados.
+    setDraft((d) => ({ ...clone(SEED), pesos: d?.pesos ?? clone(SEED).pesos }));
     toast.info('Valores da planilha restaurados no formulário. Clique em Salvar para aplicar.');
   };
+
 
   if (isLoading || !draft) {
     return (
@@ -198,11 +220,13 @@ export default function SimuladorPrecosConfig() {
       </div>
 
       <Tabs defaultValue="modelos" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="modelos" className="gap-1.5 text-xs sm:text-sm"><Package className="w-3.5 h-3.5" /> Modelos</TabsTrigger>
-          <TabsTrigger value="customizacoes" className="gap-1.5 text-xs sm:text-sm"><Wrench className="w-3.5 h-3.5" /> Customizações</TabsTrigger>
-          <TabsTrigger value="adicionais" className="gap-1.5 text-xs sm:text-sm"><Sparkles className="w-3.5 h-3.5" /> Adicionais</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="modelos" className="gap-1 text-[11px] sm:text-sm"><Package className="w-3.5 h-3.5" /> Modelos</TabsTrigger>
+          <TabsTrigger value="customizacoes" className="gap-1 text-[11px] sm:text-sm"><Wrench className="w-3.5 h-3.5" /> Custom.</TabsTrigger>
+          <TabsTrigger value="adicionais" className="gap-1 text-[11px] sm:text-sm"><Sparkles className="w-3.5 h-3.5" /> Adicionais</TabsTrigger>
+          <TabsTrigger value="pesos" className="gap-1 text-[11px] sm:text-sm"><Weight className="w-3.5 h-3.5" /> Pesos</TabsTrigger>
         </TabsList>
+
 
         {/* ── Modelos base ── */}
         <TabsContent value="modelos" className="mt-4 space-y-2">
@@ -266,7 +290,62 @@ export default function SimuladorPrecosConfig() {
             </div>
           ))}
         </TabsContent>
+
+        {/* ── Pesos padrão (gramas) para cotação de frete ── */}
+        <TabsContent value="pesos" className="mt-4 space-y-5">
+          <p className="text-[11px] text-muted-foreground px-1 leading-snug">
+            Pesos em gramas usados para cotar frete de itens que não existem cadastrados na loja
+            (faca sob medida, acessório avulso). Produtos reais do catálogo continuam usando o peso da loja.
+            Deixe 0 para "não definido" — a cotação avisa quando faltar peso.
+          </p>
+
+          <section className="space-y-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Faca por tamanho</h2>
+            <div className="rounded-lg border bg-card p-3 grid grid-cols-3 gap-2">
+              {CLASSES.map((c) => (
+                <div key={c} className="space-y-0.5">
+                  <span className="text-[10px] font-semibold text-muted-foreground pl-1">
+                    {c === 'P' ? 'Pequena (P)' : c === 'M' ? 'Média (M)' : 'Grande (G)'}
+                  </span>
+                  <PesoInput
+                    value={draft.pesos.faca[c] ?? 0}
+                    onChange={(n) => setPesos({ faca: { ...draft.pesos.faca, [c]: n } })}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Bainha e fallback</h2>
+            <div className="rounded-lg border bg-card p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm flex-1">Bainha (cada)</span>
+                <PesoInput value={draft.pesos.bainha} onChange={(n) => setPesos({ bainha: n })} className="w-28 shrink-0" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm flex-1">Peso genérico (item avulso)</span>
+                <PesoInput value={draft.pesos.generico} onChange={(n) => setPesos({ generico: n })} className="w-28 shrink-0" />
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Acessórios</h2>
+            {draft.adicionais.map((a) => (
+              <div key={a.nome} className="flex items-center gap-2 rounded-lg border bg-card p-2.5">
+                <span className="text-sm flex-1 min-w-0 truncate">{a.nome}</span>
+                <PesoInput
+                  value={draft.pesos.adicionais[a.nome] ?? 0}
+                  onChange={(n) => setPesos({ adicionais: { ...draft.pesos.adicionais, [a.nome]: n } })}
+                  className="w-28 shrink-0"
+                />
+              </div>
+            ))}
+          </section>
+        </TabsContent>
       </Tabs>
+
 
       {/* Barra de salvar fixa */}
       <div className="fixed left-0 right-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 bg-background/95 backdrop-blur-lg border-t z-40">
