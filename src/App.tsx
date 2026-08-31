@@ -474,6 +474,16 @@ const App = () => (
               }
             />
             <Route
+              path="/pedidos-planilha"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PedidosPlanilha />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/inventory"
               element={
                 <ProtectedRoute>
