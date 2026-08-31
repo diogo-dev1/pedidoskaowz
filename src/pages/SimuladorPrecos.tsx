@@ -20,7 +20,7 @@ import {
   BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
   novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, novaEntradaFacaDeCatalogo,
   espacadorIdx, nomeBainha, nomeCatalogo, calcCatalogo, ehFacaDoCatalogo,
-  LOCAIS_GRAVACAO, composeLaser, personalizacaoDefinida,
+  LOCAIS_GRAVACAO, LOCAIS_BLOQUEADOS_POR_LOGO, acoEhInox, acabamentoSoCarbono, composeLaser, personalizacaoDefinida,
   precoBainhaAdicional, LASER_PRECO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
   type CatalogoCfg,
@@ -219,6 +219,11 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                               // saindo do 52100 — volta pro incluso
                               novoAcabIdx = 0;
                             }
+                            // Black Stone Washed só existe em aço High Carbon
+                            if (acoEhInox(data.acos[novoAcoIdx]) && acabamentoSoCarbono(data.acabamentos[novoAcabIdx])) {
+                              novoAcabIdx = 0;
+                              toast.info('Black Stone Washed só está disponível para aço High Carbon — acabamento alterado para Acetinado.');
+                            }
                             onChange({ ...cfg, acoIdx: novoAcoIdx, acabIdx: novoAcabIdx });
                           }} />
                       ))}
@@ -286,16 +291,23 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                     const acoNome = data.acos[cfg.acoIdx]?.nome ?? '';
                     const is52100 = /52100/.test(acoNome);
                     const bswIdx = data.acabamentos.findIndex((x) => /black stone washed/i.test(x.nome));
-                    const allowed = is52100
+                    const inox = acoEhInox(data.acos[cfg.acoIdx]);
+                    const allowed = (is52100
                       ? data.acabamentos
                           .map((a, i) => ({ a, i }))
                           .filter(({ a }) => /black stone washed|tactical/i.test(a.nome))
-                      : data.acabamentos.map((a, i) => ({ a, i }));
+                      : data.acabamentos.map((a, i) => ({ a, i }))
+                    ).filter(({ a }) => !(inox && acabamentoSoCarbono(a)));
                     // Se 52100 estiver selecionado mas o acabIdx atual não estiver entre os permitidos,
                     // força Black Stone Washed automaticamente.
                     const acabIdxValido = allowed.some(({ i }) => i === cfg.acabIdx);
                     if (is52100 && !acabIdxValido && bswIdx >= 0) {
                       queueMicrotask(() => onChange({ ...cfg, acabIdx: bswIdx }));
+                    } else if (inox && acabamentoSoCarbono(data.acabamentos[cfg.acabIdx])) {
+                      queueMicrotask(() => {
+                        onChange({ ...cfg, acabIdx: 0 });
+                        toast.info('Black Stone Washed só está disponível para aço High Carbon — acabamento alterado para Acetinado.');
+                      });
                     }
                     return (
                       <Secao title="Acabamento">
@@ -366,9 +378,16 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
 
                   {LOCAIS_GRAVACAO.map((local) => {
                     const marcado = cfg.gravacoes?.[local] !== undefined;
+                    const logoMarcada = cfg.gravacoes?.['Logo'] !== undefined;
+                    const bloqueadoPorLogo = logoMarcada && (LOCAIS_BLOQUEADOS_POR_LOGO as readonly string[]).includes(local);
                     const toggle = (v: boolean) => {
                       const g = { ...(cfg.gravacoes ?? {}) };
                       if (v) g[local] = g[local] ?? ''; else delete g[local];
+                      if (local === 'Logo' && v) {
+                        const tinhaDorso = LOCAIS_BLOQUEADOS_POR_LOGO.some((l) => g[l] !== undefined);
+                        LOCAIS_BLOQUEADOS_POR_LOGO.forEach((l) => { delete g[l]; });
+                        if (tinhaDorso) toast.info('A logo só pode ser gravada na lateral.');
+                      }
                       onChange({ ...cfg, semGravacao: false, gravacoes: g, textoLaser: composeLaser(g) });
                     };
                     const setTexto = (t: string) => {
@@ -376,10 +395,11 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                       onChange({ ...cfg, gravacoes: g, textoLaser: composeLaser(g) });
                     };
                     return (
-                      <div key={local} className="rounded-lg border p-2.5 space-y-2">
-                        <label className="flex items-center gap-2.5 cursor-pointer">
-                          <Checkbox checked={marcado} onCheckedChange={(v) => toggle(v === true)} />
+                      <div key={local} className={`rounded-lg border p-2.5 space-y-2 ${bloqueadoPorLogo ? 'opacity-50' : ''}`}>
+                        <label className={`flex items-center gap-2.5 ${bloqueadoPorLogo ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                          <Checkbox checked={marcado} disabled={bloqueadoPorLogo} onCheckedChange={(v) => toggle(v === true)} />
                           <span className="text-sm font-medium">{local}</span>
+                          {bloqueadoPorLogo && <span className="text-[10px] text-muted-foreground">logo só na lateral</span>}
                         </label>
                         {marcado && (
                           <Input value={cfg.gravacoes?.[local] ?? ''} maxLength={120}
