@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   Calculator, ShoppingBag, Truck, MessageSquare, TrendingUp, Repeat,
-  ShoppingCart, RefreshCw, Loader2, AlertCircle,
+  ShoppingCart, RefreshCw, Loader2, AlertCircle, ClipboardList,
 } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
