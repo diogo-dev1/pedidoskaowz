@@ -15,7 +15,26 @@ export interface Precos { P?: number; M?: number; G?: number }
 export interface Modelo { nome: string; tamanho: Tamanho; preco: number }
 // cores: lista de nomes de cor cadastráveis no admin. Se vazia/ausente, a
 // opção não abre seletor de cor (comportamento atual, sem cor).
-export interface Opcao { nome: string; precos: Precos; incluso?: boolean; cores?: string[] }
+export interface Opcao {
+  nome: string;
+  precos: Precos;
+  incluso?: boolean;
+  cores?: string[];
+  /** Só para aços: categoria do material. Acabamentos exclusivos de carbono
+   *  (Black Stone Washed) não aparecem quando o aço é inox.
+   *  Ausente = tratado como 'carbono' (não restringe nada). */
+  tipo?: 'inox' | 'carbono';
+}
+
+/** O aço é inox? (ausência de tipo = carbono, não restringe) */
+export function acoEhInox(op?: Opcao | null): boolean {
+  return op?.tipo === 'inox';
+}
+
+/** O acabamento é exclusivo de aço carbono? */
+export function acabamentoSoCarbono(op?: Opcao | null): boolean {
+  return /black stone washed/i.test(op?.nome ?? '');
+}
 export interface Adicional { nome: string; preco: number }
 
 /** Pesos padrão (em GRAMAS) usados na cotação de frete de itens customizados,
@@ -174,6 +193,9 @@ export function newItem(): ItemCfg {
 
 /** Locais de gravação disponíveis. */
 export const LOCAIS_GRAVACAO = ['Dorso Superior', 'Dorso Inferior', 'Lateral', 'Logo'] as const;
+
+/** A logo só pode ser gravada na lateral — dorsos ficam indisponíveis com Logo marcada. */
+export const LOCAIS_BLOQUEADOS_POR_LOGO = ['Dorso Superior', 'Dorso Inferior'] as const;
 
 /** Texto composto a partir dos locais marcados. */
 export function composeLaser(gravacoes: Record<string, string> | undefined): string {
@@ -561,10 +583,10 @@ export const SEED: SimuladorData = {
     { nome: 'Chaira 10"', tamanho: '-', preco: 350 },
   ],
   acos: [
-    { nome: 'Inox', precos: { P: 0, M: 0, G: 0 }, incluso: true },
-    { nome: 'Sandvik 14C28N', precos: { P: 165, M: 195, G: 350 } },
-    { nome: '52100', precos: { P: 165, M: 175, G: 195 } },
-    { nome: '5160', precos: { P: 0, M: 0, G: 0 } },
+    { nome: 'Inox', precos: { P: 0, M: 0, G: 0 }, incluso: true, tipo: 'inox' },
+    { nome: 'Sandvik 14C28N', precos: { P: 165, M: 195, G: 350 }, tipo: 'inox' },
+    { nome: '52100', precos: { P: 165, M: 175, G: 195 }, tipo: 'carbono' },
+    { nome: '5160', precos: { P: 0, M: 0, G: 0 }, tipo: 'carbono' },
   ],
   bruteForge: { P: 125, M: 215, G: 300 },
   empunhaduras: [
@@ -625,7 +647,12 @@ export function normalizarData(raw: unknown): SimuladorData {
   const p = (d.pesos ?? {}) as Partial<PesosConfig>;
   return {
     modelos: Array.isArray(d.modelos) && d.modelos.length ? d.modelos : SEED.modelos,
-    acos: Array.isArray(d.acos) && d.acos.length ? d.acos : SEED.acos,
+    acos: (Array.isArray(d.acos) && d.acos.length ? d.acos : SEED.acos).map((a) => ({
+      ...a,
+      tipo: a.tipo === 'inox' || a.tipo === 'carbono'
+        ? a.tipo
+        : (SEED.acos.find((s) => s.nome.trim().toLowerCase() === a.nome.trim().toLowerCase())?.tipo ?? 'carbono'),
+    })),
     bruteForge: d.bruteForge ?? SEED.bruteForge,
     empunhaduras: Array.isArray(d.empunhaduras) && d.empunhaduras.length ? d.empunhaduras : SEED.empunhaduras,
     dragonScale: d.dragonScale ?? SEED.dragonScale,
