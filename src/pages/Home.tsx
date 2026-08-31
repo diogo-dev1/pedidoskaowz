@@ -53,6 +53,7 @@ const CARDS: Card[] = [
   { titulo: 'Vendas', icon: TrendingUp, url: '/relatorio-vendas', classe: CARD_CLASSE },
   { titulo: 'Upsell', icon: Repeat, url: '/upsell-clientes', classe: CARD_CLASSE },
   { titulo: 'Checkouts', icon: ShoppingCart, url: '/checkouts-abandonados', classe: CARD_CLASSE },
+  { titulo: 'Pedidos Planilha', icon: ClipboardList, url: '/pedidos-planilha', classe: CARD_CLASSE },
   { titulo: 'Sincronizar', icon: RefreshCw, acao: 'sync', adminOnly: true, classe: CARD_CLASSE },
 ];
 
