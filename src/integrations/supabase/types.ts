@@ -2116,6 +2116,33 @@ export type Database = {
           },
         ]
       }
+      pedidos_lancados_planilha: {
+        Row: {
+          created_at: string
+          id: string
+          marcado_por: string | null
+          shopify_order_id: string
+          shopify_order_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          marcado_por?: string | null
+          shopify_order_id: string
+          shopify_order_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          marcado_por?: string | null
+          shopify_order_id?: string
+          shopify_order_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       preview_config: {
         Row: {
           created_at: string
