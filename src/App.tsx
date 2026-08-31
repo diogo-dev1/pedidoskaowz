@@ -57,6 +57,7 @@ import EstoqueFeira from "./pages/EstoqueFeira";
 
 import CheckoutsAbandonados from "./pages/CheckoutsAbandonados";
 import UpsellClientes from "./pages/UpsellClientes";
+import PedidosPlanilha from "./pages/PedidosPlanilha";
 import ShopifyOrders from "./pages/ShopifyOrders";
 import Triagem from "./pages/Triagem";
 import Pedidos from "./pages/Pedidos";
@@ -468,6 +469,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <UpsellClientes />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pedidos-planilha"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PedidosPlanilha />
                   </Layout>
                 </ProtectedRoute>
               }

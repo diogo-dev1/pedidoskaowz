@@ -89,14 +89,28 @@ function CoresEditor({ cores, onChange }: { cores: string[]; onChange: (c: strin
 }
 
 /** Editor de uma opção com preços por tamanho (P/M/G). `comCores` habilita o cadastro de cores. */
-function OpcaoPrecos({ op, onChange, comCores = false }: { op: Opcao; onChange: (o: Opcao) => void; comCores?: boolean }) {
+function OpcaoPrecos({ op, onChange, comCores = false, comTipoAco = false }: { op: Opcao; onChange: (o: Opcao) => void; comCores?: boolean; comTipoAco?: boolean }) {
   return (
     <div className="rounded-lg border bg-card p-3 space-y-2">
       <div className="flex items-center gap-2">
         <Input value={op.nome} onChange={(e) => onChange({ ...op, nome: e.target.value })}
           className="h-9 text-sm font-medium flex-1" />
+        {comTipoAco && (
+          <Select value={op.tipo ?? 'carbono'} onValueChange={(v) => onChange({ ...op, tipo: v as Opcao['tipo'] })}>
+            <SelectTrigger className="h-9 w-32 shrink-0"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="inox">Inox</SelectItem>
+              <SelectItem value="carbono">High Carbon</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
         {op.incluso && <span className="text-[10px] font-semibold text-emerald-600 uppercase shrink-0">incluso</span>}
       </div>
+      {comTipoAco && (
+        <p className="text-[10px] text-muted-foreground">
+          Acabamentos exclusivos de carbono (Black Stone Washed) não aparecem no Simulador para aços inox.
+        </p>
+      )}
       <div className="grid grid-cols-3 gap-2">
         {CLASSES.map((c) => (
           <div key={c} className="space-y-0.5">
@@ -296,7 +310,7 @@ export default function SimuladorPrecosConfig() {
         <TabsContent value="customizacoes" className="mt-4 space-y-5">
           <section className="space-y-2">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Aço</h2>
-            {draft.acos.map((o, i) => <OpcaoPrecos key={i} op={o} onChange={(x) => updateOpcao('acos', i, x)} />)}
+            {draft.acos.map((o, i) => <OpcaoPrecos key={i} op={o} comTipoAco onChange={(x) => updateOpcao('acos', i, x)} />)}
             <PrecosTamanho label="Brute Forge (opcional do aço)" precos={draft.bruteForge} onChange={(p) => set({ bruteForge: p })} />
           </section>
 
