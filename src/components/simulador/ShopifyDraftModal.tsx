@@ -552,7 +552,7 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
               />
             </div>
 
-            <Button className="w-full h-11 rounded-xl gap-2" onClick={enviar} disabled={enviando || !itens.length}>
+            <Button className="w-full h-11 rounded-xl gap-2" onClick={enviar} disabled={enviando || !itens.length || !vendedor.trim()}>
               {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}
               Criar pedido na Shopify
             </Button>
