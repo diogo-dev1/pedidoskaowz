@@ -462,8 +462,9 @@ Deno.serve(async (req) => {
               const row = [
                 dataBR,                                                             // B - Data
                 valorOuTraco(nomeCliente),                                          // C - Nome
-                'Site',                                                             // D - Canal
-                vendedorDoPedido(order.tags),                                       // E - Vendedor (tag vendedor: / "Site")
+                vendedorDoPedido(order.tags),                                       // D - Vendedor (tag vendedor: / "Site")
+                'Site',                                                             // E - Canal
+
 
                 (parseFloat(order.total_price) || 0).toFixed(2).replace('.', ','), // F - Valor (R$)
                 mapPaymentGateway(order.payment_gateway_names),                     // G - Forma de Pag.

@@ -6,7 +6,9 @@ const corsHeaders = {
 };
 
 const SPREADSHEET_ID = '1gSgwf7vOAHAk7fzA87_9Bo-darg1dSYyAf9lNk2p8pg';
-const SHEET_NAME = 'Vendas';
+// Aba real do Relatório de Vendas. A coluna A é vazia (espaçador) — os dados vão de B a K.
+const SHEET_NAME = 'Vendas Diário';
+
 
 interface SaleData {
   date: string;
@@ -101,7 +103,7 @@ async function getAccessToken(serviceAccount: { client_email: string; private_ke
 }
 
 async function appendToSheet(accessToken: string, values: string[][]): Promise<void> {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A:L:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(`${SHEET_NAME}!B:K`)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
   const response = await fetch(url, {
     method: 'POST',
@@ -159,22 +161,21 @@ serve(async (req) => {
     // Get access token
     const accessToken = await getAccessToken(serviceAccount);
 
-    // Format values for the spreadsheet
-    // Column order: Data, Nome, Tipo (empty), Canal, Vendedor, Valor, Forma Pagamento, Status, ID (empty), Item, Observação, Cupom
+    // Ordem real das colunas da aba (B..K):
+    // B Data | C Nome | D Vendedor | E Canal | F Valor (R$) | G Forma de Pag. | H Status | I Item | J OBS | K Cupom
     const rowValues = [
       formatDateBR(saleData.date),
       saleData.name,
-      '', // Tipo column (empty for now)
-      saleData.channel,
       saleData.seller,
+      saleData.channel,
       formatValueBR(saleData.value),
       saleData.paymentMethod,
       saleData.status || 'Confirmado',
-      '', // ID column (empty)
       saleData.item,
       saleData.observation || '',
       saleData.coupon || '',
     ];
+
 
     // Append to sheet
     await appendToSheet(accessToken, [rowValues]);

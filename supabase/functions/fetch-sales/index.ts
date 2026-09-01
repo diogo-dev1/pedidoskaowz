@@ -138,13 +138,13 @@ function parseCSV(csv: string): Sale[] {
     }
 
     // Get date and validate it
-    const dateValue = values[columnMap['date'] ?? 0] || '';
+    const dateValue = values[columnMap['date'] ?? 1] || '';
 
     // Skip rows with invalid dates (like "Valor Recebido", "Meta Diária", etc.)
     if (!isValidDate(dateValue)) continue;
 
     // Only skip if there's no name at all (likely empty row that passed date check somehow)
-    const nameValue = values[columnMap['name'] ?? 1] || '';
+    const nameValue = values[columnMap['name'] ?? 2] || '';
     if (!nameValue.trim()) continue;
 
     // Parse value - handle Brazilian currency format (1.234,56 or 1234,56)
@@ -152,13 +152,13 @@ function parseCSV(csv: string): Sale[] {
     const value = parseLocalizedNumber(values[valueIndex] || '0');
 
     // Get all field values using column mapping
-    const channel = values[columnMap['channel'] ?? 3] || '';
-    const seller = values[columnMap['seller'] ?? 4] || '';
+    const channel = values[columnMap['channel'] ?? 4] || '';
+    const seller = values[columnMap['seller'] ?? 3] || '';
     const paymentMethod = values[columnMap['paymentMethod'] ?? 6] || '';
     const status = values[columnMap['status'] ?? 7] || '';
-    const item = values[columnMap['item'] ?? 9] || '';
-    const observation = values[columnMap['observation'] ?? 10] || '';
-    const coupon = values[columnMap['coupon'] ?? 11] || '';
+    const item = values[columnMap['item'] ?? 8] || '';
+    const observation = values[columnMap['observation'] ?? 9] || '';
+    const coupon = values[columnMap['coupon'] ?? 10] || '';
     const grupoPedidos = values[columnMap['grupoPedidos'] ?? 12] || '';
     const bling = values[columnMap['bling'] ?? 13] || '';
     const controle = values[columnMap['controle'] ?? 14] || '';
