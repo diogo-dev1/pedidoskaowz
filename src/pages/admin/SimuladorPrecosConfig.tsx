@@ -231,10 +231,26 @@ export default function SimuladorPrecosConfig() {
   };
 
   const restaurarPadrao = () => {
-    // Restaura os preços da planilha, mas preserva os pesos já cadastrados.
-    setDraft((d) => ({ ...clone(SEED), pesos: d?.pesos ?? clone(SEED).pesos }));
+    // Restaura os preços da planilha, mas preserva pesos e vendedores já cadastrados.
+    setDraft((d) => ({ ...clone(SEED), pesos: d?.pesos ?? clone(SEED).pesos, vendedores: d?.vendedores ?? [] }));
     toast.info('Valores da planilha restaurados no formulário. Clique em Salvar para aplicar.');
   };
+
+  /* ── Vendedores ── */
+  const setVendedores = (vendedores: Vendedor[]) => set({ vendedores });
+  const [novoVendedor, setNovoVendedor] = useState('');
+
+  const adicionarVendedor = () => {
+    if (!draft) return;
+    const nome = novoVendedor.trim();
+    if (!nome) { toast.error('Informe o nome do vendedor.'); return; }
+    if ((draft.vendedores ?? []).some((v) => v.nome.trim().toLowerCase() === nome.toLowerCase())) {
+      toast.error(`"${nome}" já está cadastrado.`); return;
+    }
+    setVendedores([...(draft.vendedores ?? []), { nome, ativo: true }]);
+    setNovoVendedor('');
+  };
+
 
 
   if (isLoading || !draft) {
