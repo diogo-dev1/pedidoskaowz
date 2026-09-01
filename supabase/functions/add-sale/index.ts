@@ -161,22 +161,21 @@ serve(async (req) => {
     // Get access token
     const accessToken = await getAccessToken(serviceAccount);
 
-    // Format values for the spreadsheet
-    // Column order: Data, Nome, Tipo (empty), Canal, Vendedor, Valor, Forma Pagamento, Status, ID (empty), Item, Observação, Cupom
+    // Ordem real das colunas da aba (B..K):
+    // B Data | C Nome | D Vendedor | E Canal | F Valor (R$) | G Forma de Pag. | H Status | I Item | J OBS | K Cupom
     const rowValues = [
       formatDateBR(saleData.date),
       saleData.name,
-      '', // Tipo column (empty for now)
-      saleData.channel,
       saleData.seller,
+      saleData.channel,
       formatValueBR(saleData.value),
       saleData.paymentMethod,
       saleData.status || 'Confirmado',
-      '', // ID column (empty)
       saleData.item,
       saleData.observation || '',
       saleData.coupon || '',
     ];
+
 
     // Append to sheet
     await appendToSheet(accessToken, [rowValues]);
