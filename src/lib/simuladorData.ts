@@ -50,6 +50,12 @@ export interface PesosConfig {
   generico: number;
 }
 
+/** Vendedor cadastrado no painel. Inativo some da seleção mas continua no cadastro. */
+export interface Vendedor {
+  nome: string;
+  ativo: boolean;
+}
+
 export interface SimuladorData {
   modelos: Modelo[];
   acos: Opcao[];        // primeiro item (Inox) é o incluso
@@ -63,7 +69,10 @@ export interface SimuladorData {
   bainhaAdicional: Precos;
   /** Pesos padrão para cotação de frete (gramas) */
   pesos: PesosConfig;
+  /** Equipe de vendas — cadastrada pelo admin */
+  vendedores: Vendedor[];
 }
+
 
 
 /** Fallback do preço da bainha adicional, caso a config não traga valores. */
@@ -631,7 +640,11 @@ export const SEED: SimuladorData = {
 
   // Pesos ainda não medidos — o admin preenche em /admin/simulador-precos (aba Pesos).
   pesos: { faca: { P: 0, M: 0, G: 0 }, bainha: 0, adicionais: {}, generico: 0 },
+
+  // Equipe de vendas — cadastrada pelo admin na aba "Vendedores".
+  vendedores: [],
 };
+
 
 /** Pesos vazios (nada definido) — base do merge. */
 export const PESOS_VAZIO: PesosConfig = {
@@ -670,8 +683,14 @@ export function normalizarData(raw: unknown): SimuladorData {
       adicionais: p.adicionais ?? {},
       generico: p.generico ?? 0,
     },
+    vendedores: Array.isArray(d.vendedores)
+      ? d.vendedores
+          .filter((v) => v && typeof v.nome === 'string' && v.nome.trim())
+          .map((v) => ({ nome: v.nome.trim(), ativo: v.ativo !== false }))
+      : [],
   };
 }
+
 
 /* ════════════════ Pesos para cotação de frete ════════════════ */
 

@@ -60,6 +60,14 @@ function mapPaymentGateway(gateways: string[]): string {
   return gateways.join(', ') || '-';
 }
 
+/** Lê a tag `vendedor:Nome` do pedido. Sem tag (venda direta pelo site) → "Site". */
+function vendedorDoPedido(tags?: string): string {
+  const lista = (tags || '').split(',').map((t) => t.trim());
+  const tag = lista.find((t) => t.toLowerCase().startsWith('vendedor:'));
+  const nome = tag ? tag.slice('vendedor:'.length).trim() : '';
+  return nome || 'Site';
+}
+
 interface ShopifyOrder {
   id: number;
   name: string;
@@ -67,6 +75,8 @@ interface ShopifyOrder {
   total_price: string;
   financial_status: string;
   payment_gateway_names: string[];
+  tags?: string;
+
   customer?: {
     first_name?: string;
     last_name?: string;
@@ -453,7 +463,8 @@ Deno.serve(async (req) => {
                 dataBR,                                                             // B - Data
                 valorOuTraco(nomeCliente),                                          // C - Nome
                 'Site',                                                             // D - Canal
-                'Site',                                                             // E - Vendedor
+                vendedorDoPedido(order.tags),                                       // E - Vendedor (tag vendedor: / "Site")
+
                 (parseFloat(order.total_price) || 0).toFixed(2).replace('.', ','), // F - Valor (R$)
                 mapPaymentGateway(order.payment_gateway_names),                     // G - Forma de Pag.
                 order.financial_status === 'paid' ? 'Pago' : 'Pendente',           // H - Status

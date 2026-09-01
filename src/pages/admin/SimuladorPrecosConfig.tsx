@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSimuladorConfig, SIMULADOR_CONFIG_CHAVE } from '@/hooks/useSimuladorConfig';
 import {
-  SEED, BRL, type SimuladorData, type Modelo, type Opcao, type Precos, type Classe, type PesosConfig,
+  SEED, BRL, type SimuladorData, type Modelo, type Opcao, type Precos, type Classe, type PesosConfig, type Vendedor,
 } from '@/lib/simuladorData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,14 +12,16 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import {
-  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette, Weight, Trash2,
+  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette, Weight, Trash2, Users,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+
 
 
 // Clona profundo (dados são simples: objetos/arrays/números/strings)
@@ -229,10 +231,26 @@ export default function SimuladorPrecosConfig() {
   };
 
   const restaurarPadrao = () => {
-    // Restaura os preços da planilha, mas preserva os pesos já cadastrados.
-    setDraft((d) => ({ ...clone(SEED), pesos: d?.pesos ?? clone(SEED).pesos }));
+    // Restaura os preços da planilha, mas preserva pesos e vendedores já cadastrados.
+    setDraft((d) => ({ ...clone(SEED), pesos: d?.pesos ?? clone(SEED).pesos, vendedores: d?.vendedores ?? [] }));
     toast.info('Valores da planilha restaurados no formulário. Clique em Salvar para aplicar.');
   };
+
+  /* ── Vendedores ── */
+  const setVendedores = (vendedores: Vendedor[]) => set({ vendedores });
+  const [novoVendedor, setNovoVendedor] = useState('');
+
+  const adicionarVendedor = () => {
+    if (!draft) return;
+    const nome = novoVendedor.trim();
+    if (!nome) { toast.error('Informe o nome do vendedor.'); return; }
+    if ((draft.vendedores ?? []).some((v) => v.nome.trim().toLowerCase() === nome.toLowerCase())) {
+      toast.error(`"${nome}" já está cadastrado.`); return;
+    }
+    setVendedores([...(draft.vendedores ?? []), { nome, ativo: true }]);
+    setNovoVendedor('');
+  };
+
 
 
   if (isLoading || !draft) {
@@ -262,12 +280,14 @@ export default function SimuladorPrecosConfig() {
       </div>
 
       <Tabs defaultValue="modelos" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="modelos" className="gap-1 text-[11px] sm:text-sm"><Package className="w-3.5 h-3.5" /> Modelos</TabsTrigger>
           <TabsTrigger value="customizacoes" className="gap-1 text-[11px] sm:text-sm"><Wrench className="w-3.5 h-3.5" /> Custom.</TabsTrigger>
           <TabsTrigger value="adicionais" className="gap-1 text-[11px] sm:text-sm"><Sparkles className="w-3.5 h-3.5" /> Adicionais</TabsTrigger>
           <TabsTrigger value="pesos" className="gap-1 text-[11px] sm:text-sm"><Weight className="w-3.5 h-3.5" /> Pesos</TabsTrigger>
+          <TabsTrigger value="vendedores" className="gap-1 text-[11px] sm:text-sm"><Users className="w-3.5 h-3.5" /> Vendedores</TabsTrigger>
         </TabsList>
+
 
 
         {/* ── Modelos base ── */}
@@ -410,6 +430,60 @@ export default function SimuladorPrecosConfig() {
             ))}
           </section>
         </TabsContent>
+
+        {/* ── Vendedores ── */}
+        <TabsContent value="vendedores" className="mt-4 space-y-3">
+          <p className="text-[11px] text-muted-foreground px-1 leading-snug">
+            Equipe que aparece na seleção ao lançar o pedido no Shopify. Desative um vendedor
+            para tirá-lo da lista sem apagar o histórico de quem já vendeu.
+          </p>
+
+          <div className="flex items-center gap-2">
+            <Input
+              value={novoVendedor}
+              onChange={(e) => setNovoVendedor(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); adicionarVendedor(); } }}
+              placeholder="Nome do vendedor"
+              className="h-10 flex-1"
+            />
+            <Button className="h-10 gap-1.5 shrink-0" onClick={adicionarVendedor}>
+              <Plus className="w-4 h-4" /> Adicionar
+            </Button>
+          </div>
+
+          {(draft.vendedores ?? []).length === 0 ? (
+            <div className="rounded-lg border border-dashed p-6 text-center text-xs text-muted-foreground">
+              Nenhum vendedor cadastrado ainda.
+            </div>
+          ) : (
+            (draft.vendedores ?? []).map((v, i) => (
+              <div key={i} className="flex items-center gap-2 rounded-lg border bg-card p-2.5">
+                <Input
+                  value={v.nome}
+                  onChange={(e) => setVendedores(draft.vendedores.map((x, j) => (j === i ? { ...x, nome: e.target.value } : x)))}
+                  className="h-9 text-sm font-medium flex-1 min-w-0"
+                />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Switch
+                    checked={v.ativo}
+                    onCheckedChange={(c) => setVendedores(draft.vendedores.map((x, j) => (j === i ? { ...x, ativo: c } : x)))}
+                  />
+                  <span className={`text-[10px] font-semibold uppercase w-12 ${v.ativo ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                    {v.ativo ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+                <Button
+                  type="button" size="icon" variant="ghost"
+                  className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => setVendedores(draft.vendedores.filter((_, j) => j !== i))}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))
+          )}
+        </TabsContent>
+
       </Tabs>
 
       {/* Novo modelo */}

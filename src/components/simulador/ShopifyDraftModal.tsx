@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Loader2, ShoppingBag, Sparkles, Copy, Send, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
@@ -226,18 +228,27 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
   const [dadosExpandidos, setDadosExpandidos] = useState(false);
   const [freteGratis, setFreteGratis] = useState(total >= 1000);
   const [touchedFrete, setTouchedFrete] = useState(false);
+  // Acesso é compartilhado pelos vendedores → NUNCA memorizar a última escolha.
+  const [vendedor, setVendedor] = useState('');
+
+  const vendedoresAtivos = useMemo(
+    () => (data.vendedores ?? []).filter((v) => v.ativo && v.nome.trim()),
+    [data.vendedores],
+  );
 
   useEffect(() => { if (!open) { setResultado(null); setEnviando(false); } }, [open]);
   useEffect(() => {
     if (open) {
       setTouchedFrete(false);
       setFreteGratis(total >= 1000);
+      setVendedor('');
     }
   }, [open]);
   useEffect(() => {
     if (!touchedFrete) setFreteGratis(total >= 1000);
   }, [total, touchedFrete]);
   useEffect(() => { if (open && nomeInicial && !nome.trim()) setNome(nomeInicial); }, [open, nomeInicial]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const itens = useMemo(() => montarLineItems(data, entries), [data, entries]);
   const notasInternas = useMemo(() => montarNotasInternas(data, entries), [data, entries]);
@@ -279,11 +290,14 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
 
   const enviar = async () => {
     if (!itens.length) { toast.error('Nenhum item para enviar'); return; }
+    if (!vendedor.trim()) { toast.error('Selecione o vendedor deste pedido'); return; }
     setEnviando(true);
     try {
       const { data: res, error } = await supabase.functions.invoke('criar-draft-order-shopify', {
         body: {
           itens,
+          vendedor: vendedor.trim(),
+
           cliente: {
             nome: nome.trim() || undefined,
             email: email.trim() || undefined,
@@ -380,7 +394,29 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Vendedor — obrigatório, sempre vazio a cada lançamento */}
+            <div className="space-y-1.5">
+              <Label htmlFor="sh-vendedor" className="text-xs">Vendedor <span className="text-destructive">*</span></Label>
+              {vendedoresAtivos.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground rounded-xl border border-dashed p-3">
+                  Nenhum vendedor ativo cadastrado. Cadastre em Configuradores → Valores do Simulador → aba Vendedores.
+                </p>
+              ) : (
+                <Select value={vendedor} onValueChange={setVendedor}>
+                  <SelectTrigger id="sh-vendedor" className="h-11 rounded-xl">
+                    <SelectValue placeholder="Quem está vendendo?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendedoresAtivos.map((v) => (
+                      <SelectItem key={v.nome} value={v.nome}>{v.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
             {/* Resumo dos itens */}
+
             <div className="rounded-xl border p-3 space-y-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {itens.length} {itens.length === 1 ? 'item' : 'itens'}
@@ -516,7 +552,7 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
               />
             </div>
 
-            <Button className="w-full h-11 rounded-xl gap-2" onClick={enviar} disabled={enviando || !itens.length}>
+            <Button className="w-full h-11 rounded-xl gap-2" onClick={enviar} disabled={enviando || !itens.length || !vendedor.trim()}>
               {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}
               Criar pedido na Shopify
             </Button>
