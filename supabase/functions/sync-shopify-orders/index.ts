@@ -60,6 +60,14 @@ function mapPaymentGateway(gateways: string[]): string {
   return gateways.join(', ') || '-';
 }
 
+/** Lê a tag `vendedor:Nome` do pedido. Sem tag (venda direta pelo site) → "Site". */
+function vendedorDoPedido(tags?: string): string {
+  const lista = (tags || '').split(',').map((t) => t.trim());
+  const tag = lista.find((t) => t.toLowerCase().startsWith('vendedor:'));
+  const nome = tag ? tag.slice('vendedor:'.length).trim() : '';
+  return nome || 'Site';
+}
+
 interface ShopifyOrder {
   id: number;
   name: string;
@@ -67,6 +75,8 @@ interface ShopifyOrder {
   total_price: string;
   financial_status: string;
   payment_gateway_names: string[];
+  tags?: string;
+
   customer?: {
     first_name?: string;
     last_name?: string;
