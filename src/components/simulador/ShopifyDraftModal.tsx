@@ -226,18 +226,27 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
   const [dadosExpandidos, setDadosExpandidos] = useState(false);
   const [freteGratis, setFreteGratis] = useState(total >= 1000);
   const [touchedFrete, setTouchedFrete] = useState(false);
+  // Acesso é compartilhado pelos vendedores → NUNCA memorizar a última escolha.
+  const [vendedor, setVendedor] = useState('');
+
+  const vendedoresAtivos = useMemo(
+    () => (data.vendedores ?? []).filter((v) => v.ativo && v.nome.trim()),
+    [data.vendedores],
+  );
 
   useEffect(() => { if (!open) { setResultado(null); setEnviando(false); } }, [open]);
   useEffect(() => {
     if (open) {
       setTouchedFrete(false);
       setFreteGratis(total >= 1000);
+      setVendedor('');
     }
   }, [open]);
   useEffect(() => {
     if (!touchedFrete) setFreteGratis(total >= 1000);
   }, [total, touchedFrete]);
   useEffect(() => { if (open && nomeInicial && !nome.trim()) setNome(nomeInicial); }, [open, nomeInicial]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const itens = useMemo(() => montarLineItems(data, entries), [data, entries]);
   const notasInternas = useMemo(() => montarNotasInternas(data, entries), [data, entries]);
