@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSimuladorConfig, SIMULADOR_CONFIG_CHAVE } from '@/hooks/useSimuladorConfig';
 import {
-  SEED, BRL, type SimuladorData, type Modelo, type Opcao, type Precos, type Classe, type PesosConfig,
+  SEED, BRL, type SimuladorData, type Modelo, type Opcao, type Precos, type Classe, type PesosConfig, type Vendedor,
 } from '@/lib/simuladorData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,14 +12,16 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import {
-  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette, Weight, Trash2,
+  Calculator, Save, RotateCcw, Loader2, Search, Wrench, Package, Sparkles, X, Plus, Palette, Weight, Trash2, Users,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+
 
 
 // Clona profundo (dados são simples: objetos/arrays/números/strings)
