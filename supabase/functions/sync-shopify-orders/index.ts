@@ -463,7 +463,8 @@ Deno.serve(async (req) => {
                 dataBR,                                                             // B - Data
                 valorOuTraco(nomeCliente),                                          // C - Nome
                 'Site',                                                             // D - Canal
-                'Site',                                                             // E - Vendedor
+                vendedorDoPedido(order.tags),                                       // E - Vendedor (tag vendedor: / "Site")
+
                 (parseFloat(order.total_price) || 0).toFixed(2).replace('.', ','), // F - Valor (R$)
                 mapPaymentGateway(order.payment_gateway_names),                     // G - Forma de Pag.
                 order.financial_status === 'paid' ? 'Pago' : 'Pendente',           // H - Status
