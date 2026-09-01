@@ -288,11 +288,14 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
 
   const enviar = async () => {
     if (!itens.length) { toast.error('Nenhum item para enviar'); return; }
+    if (!vendedor.trim()) { toast.error('Selecione o vendedor deste pedido'); return; }
     setEnviando(true);
     try {
       const { data: res, error } = await supabase.functions.invoke('criar-draft-order-shopify', {
         body: {
           itens,
+          vendedor: vendedor.trim(),
+
           cliente: {
             nome: nome.trim() || undefined,
             email: email.trim() || undefined,
