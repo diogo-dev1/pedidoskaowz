@@ -20,7 +20,10 @@ interface LineItemIn {
 
 interface Payload {
   itens: LineItemIn[];
+  /** Vendedor responsável pelo pedido (obrigatório no lançamento pelo simulador) */
+  vendedor?: string;
   cliente?: {
+
     nome?: string;
     email?: string;
     telefone?: string;
