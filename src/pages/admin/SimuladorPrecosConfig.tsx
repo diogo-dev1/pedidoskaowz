@@ -430,6 +430,60 @@ export default function SimuladorPrecosConfig() {
             ))}
           </section>
         </TabsContent>
+
+        {/* ── Vendedores ── */}
+        <TabsContent value="vendedores" className="mt-4 space-y-3">
+          <p className="text-[11px] text-muted-foreground px-1 leading-snug">
+            Equipe que aparece na seleção ao lançar o pedido no Shopify. Desative um vendedor
+            para tirá-lo da lista sem apagar o histórico de quem já vendeu.
+          </p>
+
+          <div className="flex items-center gap-2">
+            <Input
+              value={novoVendedor}
+              onChange={(e) => setNovoVendedor(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); adicionarVendedor(); } }}
+              placeholder="Nome do vendedor"
+              className="h-10 flex-1"
+            />
+            <Button className="h-10 gap-1.5 shrink-0" onClick={adicionarVendedor}>
+              <Plus className="w-4 h-4" /> Adicionar
+            </Button>
+          </div>
+
+          {(draft.vendedores ?? []).length === 0 ? (
+            <div className="rounded-lg border border-dashed p-6 text-center text-xs text-muted-foreground">
+              Nenhum vendedor cadastrado ainda.
+            </div>
+          ) : (
+            (draft.vendedores ?? []).map((v, i) => (
+              <div key={i} className="flex items-center gap-2 rounded-lg border bg-card p-2.5">
+                <Input
+                  value={v.nome}
+                  onChange={(e) => setVendedores(draft.vendedores.map((x, j) => (j === i ? { ...x, nome: e.target.value } : x)))}
+                  className="h-9 text-sm font-medium flex-1 min-w-0"
+                />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Switch
+                    checked={v.ativo}
+                    onCheckedChange={(c) => setVendedores(draft.vendedores.map((x, j) => (j === i ? { ...x, ativo: c } : x)))}
+                  />
+                  <span className={`text-[10px] font-semibold uppercase w-12 ${v.ativo ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                    {v.ativo ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+                <Button
+                  type="button" size="icon" variant="ghost"
+                  className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => setVendedores(draft.vendedores.filter((_, j) => j !== i))}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))
+          )}
+        </TabsContent>
+
       </Tabs>
 
       {/* Novo modelo */}
