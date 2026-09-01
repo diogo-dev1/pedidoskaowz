@@ -50,6 +50,12 @@ export interface PesosConfig {
   generico: number;
 }
 
+/** Vendedor cadastrado no painel. Inativo some da seleção mas continua no cadastro. */
+export interface Vendedor {
+  nome: string;
+  ativo: boolean;
+}
+
 export interface SimuladorData {
   modelos: Modelo[];
   acos: Opcao[];        // primeiro item (Inox) é o incluso
@@ -63,7 +69,10 @@ export interface SimuladorData {
   bainhaAdicional: Precos;
   /** Pesos padrão para cotação de frete (gramas) */
   pesos: PesosConfig;
+  /** Equipe de vendas — cadastrada pelo admin */
+  vendedores: Vendedor[];
 }
+
 
 
 /** Fallback do preço da bainha adicional, caso a config não traga valores. */
