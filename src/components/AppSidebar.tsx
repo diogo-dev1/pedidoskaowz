@@ -26,6 +26,7 @@ const GRUPOS: NavGroup[] = [
     label: 'Vendas',
     items: [
       { title: 'Pedidos a Lançar', url: '/triagem', icon: ClipboardList },
+      { title: 'Pedidos Planilha', url: '/pedidos-planilha', icon: ClipboardList },
       { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
       { title: 'Calcular Frete', url: '/calcular-frete', icon: Truck },
       { title: 'Simulador de Preços', url: '/simulador-precos', icon: Calculator },
