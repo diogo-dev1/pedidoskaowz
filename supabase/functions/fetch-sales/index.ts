@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // Version for cache busting
-const VERSION = "v1.0.5";
+const VERSION = "v1.0.6";
 
 console.log(`[${VERSION}] Edge function starting`);
 
@@ -147,8 +147,8 @@ function parseCSV(csv: string): Sale[] {
     const valueIndex = columnMap['value'] ?? 5;
     const value = parseLocalizedNumber(values[valueIndex] || '0');
 
-    // Skip summary / control rows
-    const label = `${rawDate} ${nameValue}`.toLowerCase();
+    // Skip summary / control rows (label lives in the date column)
+    const label = rawDate.toLowerCase();
     if (/meta|valor recebido|valor rastreado|total/.test(label)) continue;
 
     const dateOk = isValidDate(rawDate);
