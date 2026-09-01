@@ -147,8 +147,8 @@ function parseCSV(csv: string): Sale[] {
     const valueIndex = columnMap['value'] ?? 5;
     const value = parseLocalizedNumber(values[valueIndex] || '0');
 
-    // Skip summary / control rows
-    const label = `${rawDate} ${nameValue}`.toLowerCase();
+    // Skip summary / control rows (label lives in the date column)
+    const label = rawDate.toLowerCase();
     if (/meta|valor recebido|valor rastreado|total/.test(label)) continue;
 
     const dateOk = isValidDate(rawDate);
