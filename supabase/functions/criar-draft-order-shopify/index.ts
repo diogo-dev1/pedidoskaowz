@@ -284,6 +284,8 @@ Deno.serve(async (req) => {
       tags: ['Kaowz-Simulador'],
       // Pedido isento de tributos: remove a linha de "Tributos" do checkout/e-mail
       taxExempt: true,
+      // Exibe o campo de código de desconto no checkout do draft order
+      discountCodesEnabled: true,
       useCustomerDefaultAddress: !!customerId,
     };
     if (customerId) {
