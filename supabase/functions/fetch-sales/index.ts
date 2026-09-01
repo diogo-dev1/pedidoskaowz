@@ -196,7 +196,8 @@ function parseCSV(csv: string): Sale[] {
     const sale: Sale = {
       id: `sale-${i}`,
       date: dateValue,
-      name: nameValue,
+      name: nameValue || 'Sem nome',
+
       channel: channel,
       seller: seller,
       value: value,
