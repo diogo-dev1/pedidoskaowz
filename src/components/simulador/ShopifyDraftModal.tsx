@@ -394,7 +394,29 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Vendedor — obrigatório, sempre vazio a cada lançamento */}
+            <div className="space-y-1.5">
+              <Label htmlFor="sh-vendedor" className="text-xs">Vendedor <span className="text-destructive">*</span></Label>
+              {vendedoresAtivos.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground rounded-xl border border-dashed p-3">
+                  Nenhum vendedor ativo cadastrado. Cadastre em Configuradores → Valores do Simulador → aba Vendedores.
+                </p>
+              ) : (
+                <Select value={vendedor} onValueChange={setVendedor}>
+                  <SelectTrigger id="sh-vendedor" className="h-11 rounded-xl">
+                    <SelectValue placeholder="Quem está vendendo?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendedoresAtivos.map((v) => (
+                      <SelectItem key={v.nome} value={v.nome}>{v.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
             {/* Resumo dos itens */}
+
             <div className="rounded-xl border p-3 space-y-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {itens.length} {itens.length === 1 ? 'item' : 'itens'}
