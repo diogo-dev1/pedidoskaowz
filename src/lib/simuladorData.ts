@@ -640,7 +640,11 @@ export const SEED: SimuladorData = {
 
   // Pesos ainda não medidos — o admin preenche em /admin/simulador-precos (aba Pesos).
   pesos: { faca: { P: 0, M: 0, G: 0 }, bainha: 0, adicionais: {}, generico: 0 },
+
+  // Equipe de vendas — cadastrada pelo admin na aba "Vendedores".
+  vendedores: [],
 };
+
 
 /** Pesos vazios (nada definido) — base do merge. */
 export const PESOS_VAZIO: PesosConfig = {
