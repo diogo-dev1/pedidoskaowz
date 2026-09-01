@@ -683,8 +683,14 @@ export function normalizarData(raw: unknown): SimuladorData {
       adicionais: p.adicionais ?? {},
       generico: p.generico ?? 0,
     },
+    vendedores: Array.isArray(d.vendedores)
+      ? d.vendedores
+          .filter((v) => v && typeof v.nome === 'string' && v.nome.trim())
+          .map((v) => ({ nome: v.nome.trim(), ativo: v.ativo !== false }))
+      : [],
   };
 }
+
 
 /* ════════════════ Pesos para cotação de frete ════════════════ */
 
