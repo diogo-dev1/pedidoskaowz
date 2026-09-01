@@ -119,6 +119,8 @@ function parseCSV(csv: string): Sale[] {
   console.log('Column mapping:', JSON.stringify(columnMap));
 
   const sales: Sale[] = [];
+  let lastValidDate = '';
+
 
   // Expected number of columns based on header
   const expectedColumns = headerValues.length;
