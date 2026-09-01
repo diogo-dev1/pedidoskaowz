@@ -6,7 +6,9 @@ const corsHeaders = {
 };
 
 const SPREADSHEET_ID = '1gSgwf7vOAHAk7fzA87_9Bo-darg1dSYyAf9lNk2p8pg';
-const SHEET_NAME = 'Vendas';
+// Aba real do Relatório de Vendas. A coluna A é vazia (espaçador) — os dados vão de B a K.
+const SHEET_NAME = 'Vendas Diário';
+
 
 interface SaleData {
   date: string;
