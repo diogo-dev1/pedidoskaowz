@@ -137,23 +137,34 @@ function parseCSV(csv: string): Sale[] {
       values.push('');
     }
 
-    // Get date and validate it
-    const dateValue = values[columnMap['date'] ?? 1] || '';
-
-    // Skip rows with invalid dates (like "Valor Recebido", "Meta Diária", etc.)
-    if (!isValidDate(dateValue)) continue;
-
-    // Only skip if there's no name at all (likely empty row that passed date check somehow)
-    const nameValue = values[columnMap['name'] ?? 2] || '';
-    if (!nameValue.trim()) continue;
+    // Get date (may be a marker like "COP" for event batches)
+    const rawDate = (values[columnMap['date'] ?? 1] || '').trim();
+    const nameValue = (values[columnMap['name'] ?? 2] || '').trim();
 
     // Parse value - handle Brazilian currency format (1.234,56 or 1234,56)
     const valueIndex = columnMap['value'] ?? 5;
     const value = parseLocalizedNumber(values[valueIndex] || '0');
 
+    // Skip summary / control rows
+    const label = `${rawDate} ${nameValue}`.toLowerCase();
+    if (/meta|valor recebido|valor rastreado|total/.test(label)) continue;
+
+    const dateOk = isValidDate(rawDate);
+    if (dateOk) lastValidDate = rawDate;
+
+    // Keep the row when it carries a name or a monetary value.
+    // Rows without any of these are just spacing/control rows.
+    if (!nameValue && value === 0) continue;
+
+    // Rows using a marker instead of a date (ex.: "COP") inherit the last date seen
+    const dateValue = dateOk ? rawDate : (lastValidDate || rawDate);
+    const marker = dateOk ? '' : rawDate;
+
     // Get all field values using column mapping
-    const channel = values[columnMap['channel'] ?? 4] || '';
+    let channel = values[columnMap['channel'] ?? 4] || '';
+    if (!channel && marker) channel = marker;
     const seller = values[columnMap['seller'] ?? 3] || '';
+
     const paymentMethod = values[columnMap['paymentMethod'] ?? 6] || '';
     const status = values[columnMap['status'] ?? 7] || '';
     const item = values[columnMap['item'] ?? 8] || '';
