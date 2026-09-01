@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const API_VERSION = '2024-10';
+const API_VERSION = '2026-07';
 
 interface LineItemIn {
   title: string;
@@ -284,6 +284,8 @@ Deno.serve(async (req) => {
       tags: ['Kaowz-Simulador'],
       // Pedido isento de tributos: remove a linha de "Tributos" do checkout/e-mail
       taxExempt: true,
+      // Permite que o cliente informe um cupom ao abrir o checkout deste rascunho.
+      allowDiscountCodesInCheckout: true,
 
       useCustomerDefaultAddress: !!customerId,
     };
