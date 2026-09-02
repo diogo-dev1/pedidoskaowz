@@ -25,6 +25,7 @@ const GRUPOS: NavGroup[] = [
   {
     label: 'Vendas',
     items: [
+      { title: 'Novo Pedido', url: '/novo-pedido', icon: ShoppingCart },
       { title: 'Pedidos a Lançar', url: '/triagem', icon: ClipboardList },
       { title: 'Pedidos Planilha', url: '/pedidos-planilha', icon: ClipboardList },
       { title: 'Lista de Valores', url: '/lista-valores', icon: DollarSign },
