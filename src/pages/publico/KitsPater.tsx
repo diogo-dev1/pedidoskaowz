@@ -98,7 +98,7 @@ export default function KitsPater() {
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-300 md:text-xl">
-            No churrasco, na cozinha ou no campo, uma lâmina ruim te deixa na mão.
+            No churrasco ou na cozinha, uma lâmina ruim te deixa na mão.
             Os Kits Pater foram feitos para quem não aceita depender de ferramenta inferior.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -322,21 +322,21 @@ export default function KitsPater() {
               </div>
               <h3 className="font-bebas text-3xl uppercase tracking-wide text-white">Estou começando agora</h3>
               <p className="mt-3 flex-1 text-sm leading-relaxed text-zinc-400">
-                Não tem nenhuma peça ainda? O Kit Urban EDC e o Kit Pater Inox 420 são os pontos de entrada
-                perfeitos para começar com qualidade Kaowz.
+                Não tem nenhuma peça ainda? O Kit Pater Inox 420 Completo é o ponto de entrada perfeito:
+                aço inox 420, acabamento artesanal e o corte Kaowz pelo melhor investimento inicial.
               </p>
               <div className="mt-6 space-y-3">
                 <a
-                  href="https://kaowz.com.br/products/kit-urban-edc"
+                  href="https://kaowz.com.br/products/kit-pater-defensor-provisor-inox-420"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   <Button className="w-full rounded-none bg-red-600 py-6 text-sm font-bold uppercase tracking-wider text-white hover:bg-red-700">
-                    Começar com Urban EDC
+                    Começar com Pater Inox 420 Completo
                   </Button>
                 </a>
                 <a
-                  href="https://kaowz.com.br/products/kit-pater-defensor-provisor-inox-420"
+                  href="https://kaowz.com.br/products/kit-churrasco-kaowz-grafite-3-itens"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -344,7 +344,7 @@ export default function KitsPater() {
                     variant="outline"
                     className="w-full rounded-none border-zinc-700 py-6 text-sm font-bold uppercase tracking-wider text-white hover:border-red-600 hover:bg-zinc-800"
                   >
-                    Começar com Pater Inox 420
+                    Ver Tríade Inox 420
                   </Button>
                 </a>
               </div>
