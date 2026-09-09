@@ -6,7 +6,6 @@ import imgSandvikCompleto from '@/assets/kit-pater-sandvik-completo.jpg';
 import imgSandvikTriade from '@/assets/kit-pater-sandvik-triade.jpg';
 import imgInox420Triade from '@/assets/kit-pater-inox-420-triade.jpg';
 import imgInox420Completo from '@/assets/kit-pater-inox-420-completo.jpg';
-import imgUrbanEdc from '@/assets/kit-urban-edc-hero.jpg';
 
 const WHATSAPP_NUMBER = '5528999025695';
 
