@@ -42,14 +42,6 @@ const kits = [
     link: 'https://kaowz.com.br/products/kit-pater-defensor-provisor-inox-420',
     publico: 'inicio',
   },
-  {
-    id: 'urban-edc',
-    nome: 'Kit Urban EDC',
-    imagem: imgUrbanEdc,
-    caso: 'Para o dia a dia, o campo e a cidade. O ponto de entrada Kaowz com identidade, utilidade e porte discreto.',
-    link: 'https://kaowz.com.br/products/kit-urban-edc',
-    publico: 'inicio',
-  },
 ];
 
 const diferenciais = [
