@@ -97,6 +97,7 @@ const App = () => (
             <Route path="/descubra" element={<Descubra />} />
             <Route path="/descubra/resultado" element={<Resultado />} />
             <Route path="/vitrine" element={<Vitrine />} />
+            <Route path="/kits-pater" element={<KitsPater />} />
             <Route path="/montar" element={<Montar />} />
             <Route path="/arsenal/:token" element={<ArsenalPublico />} />
             <Route path="/install" element={<Install />} />
