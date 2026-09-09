@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Descubra from "./pages/publico/Descubra";
 import Resultado from "./pages/publico/Resultado";
 import Vitrine from "./pages/publico/Vitrine";
+import KitsPater from "./pages/publico/KitsPater";
 import Montar from "./pages/publico/Montar";
 import ArsenalPublico from "./pages/publico/Arsenal";
 import Home from "./pages/Home";
@@ -96,6 +97,7 @@ const App = () => (
             <Route path="/descubra" element={<Descubra />} />
             <Route path="/descubra/resultado" element={<Resultado />} />
             <Route path="/vitrine" element={<Vitrine />} />
+            <Route path="/kits-pater" element={<KitsPater />} />
             <Route path="/montar" element={<Montar />} />
             <Route path="/arsenal/:token" element={<ArsenalPublico />} />
             <Route path="/install" element={<Install />} />
