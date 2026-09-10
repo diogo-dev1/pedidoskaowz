@@ -349,12 +349,21 @@ Deno.serve(async (req) => {
       return obsVendasExistentes.some((o) => o.toLowerCase().includes(marcador));
     };
 
-    /** Primeira linha (0-based) sem Data preenchida a partir da linha 24 — para reaproveitar linhas já criadas. */
+    /**
+     * Primeira linha (0-based) disponível para gravar: sempre DEPOIS da última linha com Data
+     * preenchida (a partir da linha 24). Isso evita que o pedido caia em uma linha em branco
+     * no meio da planilha, fora da ordem cronológica.
+     */
     const acharLinhaVazia = (): number => {
-      const primeiraPos0 = PRIMEIRA_LINHA_VENDAS - 1;
-      for (let i = primeiraPos0; i < linhaVazia.length; i++) if (linhaVazia[i]) return i;
+      let ultimaComData = -1;
+      for (let i = colDatas.length - 1; i >= 0; i--) {
+        if (colDatas[i] !== null) { ultimaComData = i; break; }
+      }
+      const inicio = Math.max(PRIMEIRA_LINHA_VENDAS - 1, ultimaComData + 1);
+      for (let i = inicio; i < linhaVazia.length; i++) if (linhaVazia[i]) return i;
       return -1;
     };
+
 
     let importados = 0;
     let erros = 0;
