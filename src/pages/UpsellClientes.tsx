@@ -284,6 +284,9 @@ export default function UpsellClientes() {
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
+          <Button size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => setAvulsoOpen(true)}>
+            <MessageCircle className="h-4 w-4" /> Enviar WhatsApp
+          </Button>
           <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => setGerenciarOpen(true)}>
             <Settings2 className="h-4 w-4" /> Modelos
           </Button>
