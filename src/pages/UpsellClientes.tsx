@@ -141,6 +141,7 @@ export default function UpsellClientes() {
   const [mensagem, setMensagem] = useState('');
   const [templateId, setTemplateId] = useState('');
   const [gerenciarOpen, setGerenciarOpen] = useState(false);
+  const [avulsoOpen, setAvulsoOpen] = useState(false);
 
   // debounce da busca
   useEffect(() => {
@@ -283,6 +284,9 @@ export default function UpsellClientes() {
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
+          <Button size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => setAvulsoOpen(true)}>
+            <MessageCircle className="h-4 w-4" /> Enviar WhatsApp
+          </Button>
           <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => setGerenciarOpen(true)}>
             <Settings2 className="h-4 w-4" /> Modelos
           </Button>
@@ -512,7 +516,116 @@ export default function UpsellClientes() {
       </Dialog>
 
       <TemplatesDialog open={gerenciarOpen} onOpenChange={setGerenciarOpen} templates={templates ?? []} />
+
+      <AvulsoDialog
+        open={avulsoOpen}
+        onOpenChange={setAvulsoOpen}
+        templates={(templates ?? []).filter((t) => t.ativo)}
+        vendedorNome={vendedorNome}
+      />
     </div>
+  );
+}
+
+// ── Mensagem avulsa (número digitado) ────────────────────────────────────────
+function AvulsoDialog({
+  open, onOpenChange, templates, vendedorNome,
+}: { open: boolean; onOpenChange: (v: boolean) => void; templates: Template[]; vendedorNome: string }) {
+  const [telefone, setTelefone] = useState('');
+  const [nome, setNome] = useState('');
+  const [templateId, setTemplateId] = useState('');
+  const [mensagem, setMensagem] = useState('');
+
+  const clienteFake = (n: string): ClienteRow => ({
+    contato_bling_id: 0,
+    nome: n.trim() || 'cliente',
+    documento: null, tipo_pessoa: null, email: null,
+    total_gasto: 0, qtd_pedidos: 0, ticket_medio: 0,
+    primeiro_pedido_em: null, ultimo_pedido_em: null,
+    cidade: null, uf: null,
+    telefone_whatsapp: null, whatsapp_valido: false,
+    canais: [], produtos: [],
+    status: 'pendente', contatado_em: null, observacoes: null,
+  } as unknown as ClienteRow);
+
+  useEffect(() => {
+    if (!open) return;
+    setTelefone(''); setNome('');
+    const tpl = templates[0];
+    setTemplateId(tpl?.id ?? '');
+    setMensagem(tpl ? montarMensagem(tpl.mensagem, clienteFake(''), vendedorNome) : '');
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const aplicarModelo = (id: string) => {
+    setTemplateId(id);
+    const tpl = templates.find((t) => t.id === id);
+    if (tpl) setMensagem(montarMensagem(tpl.mensagem, clienteFake(nome), vendedorNome));
+  };
+
+  const enviar = () => {
+    const fone = normalizarTelefone(telefone);
+    if (!fone) { toast.error('Informe um número válido com DDD.'); return; }
+    if (!mensagem.trim()) { toast.error('Escreva a mensagem.'); return; }
+    window.open(`https://wa.me/${fone}?text=${encodeURIComponent(mensagem)}`, '_blank');
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full max-w-lg max-h-[88vh] overflow-y-auto p-4 sm:p-6 rounded-xl">
+        <DialogHeader>
+          <DialogTitle className="text-base">Mensagem avulsa no WhatsApp</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Número (com DDD)</label>
+              <Input
+                value={telefone}
+                onChange={(e) => setTelefone(e.target.value)}
+                inputMode="tel"
+                placeholder="(11) 99999-9999"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Nome (opcional)</label>
+              <Input
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                onBlur={() => templateId && aplicarModelo(templateId)}
+                placeholder="Nome do cliente"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Modelo de mensagem</label>
+            <Select value={templateId} onValueChange={aplicarModelo}>
+              <SelectTrigger><SelectValue placeholder="Selecione um modelo" /></SelectTrigger>
+              <SelectContent>
+                {templates.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mensagem (editável)</label>
+            <Textarea value={mensagem} onChange={(e) => setMensagem(e.target.value)} rows={9} className="text-sm min-h-[180px]" />
+          </div>
+        </div>
+        <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+          <Button variant="outline" className="gap-2 w-full sm:w-auto"
+            onClick={() => { navigator.clipboard.writeText(mensagem); toast.success('Mensagem copiada'); }}>
+            <Copy className="h-4 w-4" /> Copiar
+          </Button>
+          <Button className="gap-2 w-full sm:w-auto" onClick={enviar}>
+            <MessageCircle className="h-4 w-4" /> Abrir WhatsApp
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
