@@ -141,6 +141,7 @@ export default function UpsellClientes() {
   const [mensagem, setMensagem] = useState('');
   const [templateId, setTemplateId] = useState('');
   const [gerenciarOpen, setGerenciarOpen] = useState(false);
+  const [avulsoOpen, setAvulsoOpen] = useState(false);
 
   // debounce da busca
   useEffect(() => {
