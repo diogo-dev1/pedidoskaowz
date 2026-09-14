@@ -1608,6 +1608,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ofertas: {
+        Row: {
+          ativo: boolean
+          condicoes: string | null
+          created_at: string
+          descricao: string | null
+          etiqueta: string | null
+          id: string
+          imagens: string[]
+          link_produto: string | null
+          ordem: number
+          titulo: string
+          valor: number | null
+          valor_de: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          condicoes?: string | null
+          created_at?: string
+          descricao?: string | null
+          etiqueta?: string | null
+          id?: string
+          imagens?: string[]
+          link_produto?: string | null
+          ordem?: number
+          titulo: string
+          valor?: number | null
+          valor_de?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          condicoes?: string | null
+          created_at?: string
+          descricao?: string | null
+          etiqueta?: string | null
+          id?: string
+          imagens?: string[]
+          link_produto?: string | null
+          ordem?: number
+          titulo?: string
+          valor?: number | null
+          valor_de?: number | null
+        }
+        Relationships: []
+      }
       opcoes_componentes: {
         Row: {
           created_at: string
