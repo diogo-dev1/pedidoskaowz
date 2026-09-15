@@ -64,6 +64,7 @@ const GRUPOS: NavGroup[] = [
       { title: 'Auxílio de Vendas', url: '/auxilio-vendas', icon: BookOpen },
       { title: 'Mensagens', url: '/mensagens', icon: MessageSquare },
       { title: 'Mídia', url: '/midia', icon: Image },
+      { title: 'Novidades e Ofertas', url: '/ofertas', icon: Sparkles },
     ],
   },
   {
