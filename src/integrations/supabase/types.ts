@@ -2526,6 +2526,39 @@ export type Database = {
         }
         Relationships: []
       }
+      upsell_lista_avulsa: {
+        Row: {
+          created_at: string
+          enviado: boolean
+          enviado_em: string | null
+          id: string
+          nome: string | null
+          observacao: string | null
+          origem: string | null
+          telefone: string
+        }
+        Insert: {
+          created_at?: string
+          enviado?: boolean
+          enviado_em?: string | null
+          id?: string
+          nome?: string | null
+          observacao?: string | null
+          origem?: string | null
+          telefone: string
+        }
+        Update: {
+          created_at?: string
+          enviado?: boolean
+          enviado_em?: string | null
+          id?: string
+          nome?: string | null
+          observacao?: string | null
+          origem?: string | null
+          telefone?: string
+        }
+        Relationships: []
+      }
       upsell_segmentos: {
         Row: {
           created_at: string
