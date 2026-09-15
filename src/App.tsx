@@ -100,6 +100,17 @@ const App = () => (
             <Route path="/descubra/resultado" element={<Resultado />} />
             <Route path="/vitrine" element={<Vitrine />} />
             <Route path="/kits-pater" element={<KitsPater />} />
+            <Route path="/ofertas" element={<Ofertas />} />
+            <Route
+              path="/admin/ofertas"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Layout>
+                    <OfertasAdmin />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/montar" element={<Montar />} />
             <Route path="/arsenal/:token" element={<ArsenalPublico />} />
             <Route path="/install" element={<Install />} />
