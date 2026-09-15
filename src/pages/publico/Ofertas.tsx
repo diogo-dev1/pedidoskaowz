@@ -177,19 +177,59 @@ function OfertaCard({ o }: { o: Oferta }) {
 export default function Ofertas() {
   const [ofertas, setOfertas] = useState<Oferta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(false);
   const [busca, setBusca] = useState('');
 
   useEffect(() => {
     document.title = 'Novidades e Ofertas | Kaowz';
-    (async () => {
-      const { data } = await supabase
+
+    let ativo = true;
+
+    const carregarOfertas = async (mostrarCarregamento = false) => {
+      if (mostrarCarregamento && ativo) setLoading(true);
+
+      const { data, error } = await supabase
         .from('ofertas')
         .select('*')
         .eq('ativo', true)
         .order('ordem', { ascending: true });
+
+      if (!ativo) return;
+
+      if (error) {
+        setErro(true);
+        setLoading(false);
+        return;
+      }
+
       setOfertas((data as Oferta[]) || []);
+      setErro(false);
       setLoading(false);
-    })();
+    };
+
+    const atualizarAoRetornar = () => {
+      if (document.visibilityState === 'visible') void carregarOfertas();
+    };
+
+    void carregarOfertas(true);
+    window.addEventListener('focus', atualizarAoRetornar);
+    document.addEventListener('visibilitychange', atualizarAoRetornar);
+
+    const canal = supabase
+      .channel('ofertas-publicas-atualizacao')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ofertas' },
+        () => void carregarOfertas(),
+      )
+      .subscribe();
+
+    return () => {
+      ativo = false;
+      window.removeEventListener('focus', atualizarAoRetornar);
+      document.removeEventListener('visibilitychange', atualizarAoRetornar);
+      void supabase.removeChannel(canal);
+    };
   }, []);
 
   const filtradas = ofertas.filter((o) => o.titulo.toLowerCase().includes(busca.toLowerCase()));
@@ -236,6 +276,13 @@ export default function Ofertas() {
                 <div className="h-5 bg-zinc-700 rounded w-1/2" />
               </div>
             ))}
+          </div>
+        ) : erro ? (
+          <div className="py-20 text-center">
+            <p className="mb-3 text-sm text-zinc-400">Não foi possível atualizar as ofertas.</p>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Tentar novamente
+            </Button>
           </div>
         ) : filtradas.length === 0 ? (
           <p className="text-center text-zinc-400 py-20">Nenhuma oferta disponível no momento</p>
