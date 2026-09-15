@@ -69,6 +69,14 @@ export default defineConfig(({ mode }) => ({
             handler: "NetworkOnly",
           },
           {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/ofertas.*/i,
+            handler: "NetworkOnly",
+          },
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/catalogo_modelos.*/i,
+            handler: "NetworkOnly",
+          },
+          {
             urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/.*/i,
             handler: "NetworkFirst",
             options: {
