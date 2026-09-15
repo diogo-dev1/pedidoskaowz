@@ -27,14 +27,16 @@ interface Form {
   etiqueta: string;
   valor: string;
   valor_de: string;
-  condicoes: string;
+  texto_pix: string;
+  texto_parcelamento: string;
+  selos: string[];
   link_produto: string;
   imagens: string[];
 }
 
 const vazio: Form = {
   titulo: '', descricao: '', etiqueta: '', valor: '', valor_de: '',
-  condicoes: '', link_produto: '', imagens: [],
+  texto_pix: '', texto_parcelamento: '', selos: [], link_produto: '', imagens: [],
 };
 
 export default function OfertasAdmin() {
@@ -45,6 +47,7 @@ export default function OfertasAdmin() {
   const [salvando, setSalvando] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [excluir, setExcluir] = useState<Oferta | null>(null);
+  const [novoSelo, setNovoSelo] = useState('');
 
   const carregar = async () => {
     const { data, error } = await supabase.from('ofertas').select('*').order('ordem', { ascending: true });
@@ -55,7 +58,7 @@ export default function OfertasAdmin() {
 
   useEffect(() => { carregar(); }, []);
 
-  const abrirNova = () => { setForm(vazio); setOpen(true); };
+  const abrirNova = () => { setForm(vazio); setNovoSelo(''); setOpen(true); };
 
   const abrirEdicao = (o: Oferta) => {
     setForm({
@@ -65,11 +68,29 @@ export default function OfertasAdmin() {
       etiqueta: o.etiqueta || '',
       valor: o.valor != null ? String(o.valor) : '',
       valor_de: o.valor_de != null ? String(o.valor_de) : '',
-      condicoes: o.condicoes || '',
+      texto_pix: o.texto_pix || '',
+      texto_parcelamento: o.texto_parcelamento || '',
+      selos: o.selos || [],
       link_produto: o.link_produto || '',
       imagens: o.imagens || [],
     });
+    setNovoSelo('');
     setOpen(true);
+  };
+
+  const adicionarSelo = () => {
+    const selo = novoSelo.trim();
+    if (!selo) return;
+    if (form.selos.some((item) => item.toLocaleLowerCase('pt-BR') === selo.toLocaleLowerCase('pt-BR'))) {
+      toast.error('Este selo já foi adicionado');
+      return;
+    }
+    setForm((atual) => ({ ...atual, selos: [...atual.selos, selo] }));
+    setNovoSelo('');
+  };
+
+  const removerSelo = (indice: number) => {
+    setForm((atual) => ({ ...atual, selos: atual.selos.filter((_, i) => i !== indice) }));
   };
 
   const subirImagens = async (files: FileList | null) => {
@@ -117,7 +138,9 @@ export default function OfertasAdmin() {
       etiqueta: form.etiqueta.trim() || null,
       valor: form.valor ? Number(form.valor) : null,
       valor_de: form.valor_de ? Number(form.valor_de) : null,
-      condicoes: form.condicoes.trim() || null,
+      texto_pix: form.texto_pix.trim() || null,
+      texto_parcelamento: form.texto_parcelamento.trim() || null,
+      selos: form.selos,
       link_produto: form.link_produto.trim() || null,
       imagens: form.imagens,
     };
@@ -252,8 +275,53 @@ export default function OfertasAdmin() {
               </div>
             </div>
             <div>
-              <Label>Condições</Label>
-              <Input placeholder="Ex.: 5% no Pix ou 3x sem juros" value={form.condicoes} onChange={(e) => setForm({ ...form, condicoes: e.target.value })} />
+              <Label>Texto do Pix</Label>
+              <Input placeholder="Ex.: R$ 950,00 no Pix (5% OFF)" value={form.texto_pix} onChange={(e) => setForm({ ...form, texto_pix: e.target.value })} />
+            </div>
+            <div>
+              <Label>Parcelamento</Label>
+              <Input placeholder="Ex.: 10x sem juros" value={form.texto_parcelamento} onChange={(e) => setForm({ ...form, texto_parcelamento: e.target.value })} />
+            </div>
+            <div>
+              <Label>Selos</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Ex.: FRETE GRÁTIS"
+                  value={novoSelo}
+                  onChange={(e) => setNovoSelo(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      adicionarSelo();
+                    }
+                  }}
+                />
+                <Button type="button" variant="secondary" onClick={adicionarSelo} disabled={!novoSelo.trim()}>
+                  Adicionar
+                </Button>
+              </div>
+              {form.selos.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {form.selos.map((selo, indice) => (
+                    <Badge key={`${selo}-${indice}`} variant="secondary" className="gap-1 pr-1">
+                      {selo}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() => removerSelo(indice)}
+                        aria-label={`Remover selo ${selo}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <p className="mt-1 text-xs text-muted-foreground">
+                Use textos bem curtos — eles aparecem sobre a imagem do card.
+              </p>
             </div>
             <div>
               <Label>Link do produto</Label>
