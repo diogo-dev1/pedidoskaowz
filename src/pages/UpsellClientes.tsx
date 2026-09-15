@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { normalizarTelefone } from '@/lib/telefone';
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Search, Loader2, RefreshCw, TrendingUp, MessageCircle, Check, X,
-  Settings2, Copy, Plus, Trash2, Bookmark, BookmarkPlus,
+  Settings2, Copy, Plus, Trash2, Bookmark, BookmarkPlus, ClipboardList,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -128,6 +129,7 @@ function argsRpc(f: FiltrosUpsell, status: string) {
 
 // ── Página ───────────────────────────────────────────────────────────────────
 export default function UpsellClientes() {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const vendedorNome = profile?.nome_vendedor?.split(' ')[0] ?? '';
   const qc = useQueryClient();
@@ -283,7 +285,10 @@ export default function UpsellClientes() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => navigate('/upsell-lista-avulsa')}>
+            <ClipboardList className="h-4 w-4" /> Lista avulsa (feira)
+          </Button>
           <Button size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => setAvulsoOpen(true)}>
             <MessageCircle className="h-4 w-4" /> Enviar WhatsApp
           </Button>
