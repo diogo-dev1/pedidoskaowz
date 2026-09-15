@@ -6,7 +6,7 @@ import {
   ShoppingBag, MessageSquare, BookOpen, Image, DollarSign, Factory,
   CheckSquare, Store, Layers, Package, Settings, Info, Link2, Globe, Truck,
   ClipboardList, Boxes, Download, ShoppingCart, Briefcase, Send, Eye, LogOut, Compass, Sliders, Wand2,
-  Menu, X,
+  Menu, X, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
