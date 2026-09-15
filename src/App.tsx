@@ -58,6 +58,7 @@ import EstoqueFeira from "./pages/EstoqueFeira";
 
 import CheckoutsAbandonados from "./pages/CheckoutsAbandonados";
 import UpsellClientes from "./pages/UpsellClientes";
+import UpsellListaAvulsa from "./pages/UpsellListaAvulsa";
 import PedidosPlanilha from "./pages/PedidosPlanilha";
 import ShopifyOrders from "./pages/ShopifyOrders";
 import Triagem from "./pages/Triagem";
@@ -484,6 +485,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <UpsellClientes />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/upsell-lista-avulsa"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <UpsellListaAvulsa />
                   </Layout>
                 </ProtectedRoute>
               }
