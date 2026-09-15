@@ -81,6 +81,8 @@ import BlingPedido from "./pages/BlingPedido";
 import NotFound from "./pages/NotFound";
 import KnivesAdmin from "./pages/KnivesAdmin";
 import Showroom from "./pages/Showroom";
+import Ofertas from "./pages/publico/Ofertas";
+import OfertasAdmin from "./pages/admin/OfertasAdmin";
 
 const queryClient = new QueryClient();
 
