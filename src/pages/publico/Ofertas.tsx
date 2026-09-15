@@ -16,6 +16,9 @@ export interface Oferta {
   valor: number | null;
   valor_de: number | null;
   condicoes: string | null;
+  texto_pix: string | null;
+  texto_parcelamento: string | null;
+  selos: string[];
   link_produto: string | null;
   imagens: string[];
   ordem: number;
@@ -93,6 +96,19 @@ function OfertaCard({ o }: { o: Oferta }) {
                 ))}
               </div>
             )}
+
+            {o.selos?.length > 0 && (
+              <div className="absolute left-2 top-2 z-20 flex max-w-[calc(100%-1rem)] flex-col items-start gap-1">
+                {o.selos.map((selo, i) => (
+                  <Badge
+                    key={`${selo}-${i}`}
+                    className="max-w-full truncate rounded border-0 bg-accent px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white md:text-[10px]"
+                  >
+                    {selo}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
 
           {o.etiqueta && (
@@ -103,30 +119,33 @@ function OfertaCard({ o }: { o: Oferta }) {
         </div>
 
         <div className="flex flex-1 flex-col gap-1 p-2 md:p-4">
-          <h3 className="font-bold line-clamp-2 text-sm md:text-base text-white">{o.titulo}</h3>
-          {o.descricao && <p className="text-[10px] md:text-xs text-zinc-400 line-clamp-3">{o.descricao}</p>}
+          <h3 className="line-clamp-1 text-sm font-bold text-white md:text-base">{o.titulo}</h3>
+          {o.descricao && <p className="line-clamp-2 text-[10px] leading-snug text-zinc-400 md:text-xs">{o.descricao}</p>}
 
           <div className="flex-1">
             {o.valor != null && (
               <>
                 {o.valor_de != null && (
-                  <p className="text-xs text-zinc-500 line-through">{BRL(Number(o.valor_de))}</p>
+                  <p className="mt-0.5 text-[10px] text-zinc-500 line-through md:text-xs">{BRL(Number(o.valor_de))}</p>
                 )}
-                <p className="mt-0.5 truncate text-base md:text-2xl font-black text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]">
+                <p className="truncate text-base font-black text-accent drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)] md:text-2xl">
                   {BRL(Number(o.valor))}
                 </p>
               </>
             )}
-            {o.condicoes && (
-              <p className="text-[10px] md:text-xs text-emerald-400 font-semibold">{o.condicoes}</p>
+            {o.texto_pix && (
+              <p className="truncate text-[10px] font-bold text-emerald-400 md:text-sm">{o.texto_pix}</p>
+            )}
+            {o.texto_parcelamento && (
+              <p className="truncate text-[10px] text-zinc-400 md:text-xs">{o.texto_parcelamento}</p>
             )}
           </div>
 
-          <div className={`mt-1.5 grid gap-1.5 ${temLink ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <div className={`mt-0.5 grid gap-1.5 ${temLink ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <Button
               asChild
               size="sm"
-              className="h-8 rounded-lg bg-green-600 hover:bg-green-700 text-white text-[10px] font-semibold md:h-10 md:text-xs"
+              className="h-8 rounded-lg bg-green-600/90 text-[10px] font-semibold text-white hover:bg-green-600 md:h-9 md:text-xs"
             >
               <a
                 href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`}
@@ -141,9 +160,9 @@ function OfertaCard({ o }: { o: Oferta }) {
                 asChild
                 size="sm"
                 variant="outline"
-                className="h-8 border-zinc-600 bg-transparent text-[10px] font-semibold text-zinc-300 hover:border-accent hover:bg-transparent hover:text-accent md:h-10 md:text-xs"
+                className="h-8 border-zinc-600 bg-transparent text-[10px] font-semibold text-zinc-300 hover:border-accent hover:bg-transparent hover:text-accent md:h-9 md:text-xs"
               >
-                <a href={o.link_produto!} target="_blank" rel="noopener noreferrer">
+                <a href={o.link_produto} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="mr-1 h-3 w-3" /> Ver na loja
                 </a>
               </Button>

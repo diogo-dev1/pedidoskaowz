@@ -1619,6 +1619,9 @@ export type Database = {
           imagens: string[]
           link_produto: string | null
           ordem: number
+          selos: string[]
+          texto_parcelamento: string | null
+          texto_pix: string | null
           titulo: string
           valor: number | null
           valor_de: number | null
@@ -1633,6 +1636,9 @@ export type Database = {
           imagens?: string[]
           link_produto?: string | null
           ordem?: number
+          selos?: string[]
+          texto_parcelamento?: string | null
+          texto_pix?: string | null
           titulo: string
           valor?: number | null
           valor_de?: number | null
@@ -1647,6 +1653,9 @@ export type Database = {
           imagens?: string[]
           link_produto?: string | null
           ordem?: number
+          selos?: string[]
+          texto_parcelamento?: string | null
+          texto_pix?: string | null
           titulo?: string
           valor?: number | null
           valor_de?: number | null
