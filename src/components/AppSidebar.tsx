@@ -6,7 +6,7 @@ import {
   ShoppingBag, MessageSquare, BookOpen, Image, DollarSign, Factory,
   CheckSquare, Store, Layers, Package, Settings, Info, Link2, Globe, Truck,
   ClipboardList, Boxes, Download, ShoppingCart, Briefcase, Send, Eye, LogOut, Compass, Sliders, Wand2,
-  Menu, X,
+  Menu, X, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -64,6 +64,7 @@ const GRUPOS: NavGroup[] = [
       { title: 'Auxílio de Vendas', url: '/auxilio-vendas', icon: BookOpen },
       { title: 'Mensagens', url: '/mensagens', icon: MessageSquare },
       { title: 'Mídia', url: '/midia', icon: Image },
+      { title: 'Novidades e Ofertas', url: '/ofertas', icon: Sparkles },
     ],
   },
   {
@@ -102,6 +103,7 @@ const GRUPOS: NavGroup[] = [
 const ADMIN: NavItem[] = [
   { title: 'Cases Patola', url: '/admin/cases-patola', icon: Briefcase },
   { title: 'Modelos', url: '/admin/modelos', icon: Layers },
+  { title: 'Novidades e Ofertas', url: '/admin/ofertas', icon: Sparkles },
   { title: 'Componentes', url: '/admin/componentes', icon: Package },
   { title: 'Valores do Simulador', url: '/admin/simulador-precos', icon: Calculator },
   { title: 'Configurações', url: '/admin/configuracoes', icon: Settings },
