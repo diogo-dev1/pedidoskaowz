@@ -88,7 +88,7 @@ function extrairEntrada(entrada: string) {
 function montarMensagem(texto: string, nome: string | null) {
   const primeiroNome = nome?.trim().split(/\s+/)[0] ?? '';
   return texto
-    .replaceAll('{nome}', primeiroNome)
+    .split('{nome}').join(primeiroNome)
     .replace(/\s+([,.;!?])/g, '$1')
     .replace(/([,.;!?])\1+/g, '$1')
     .replace(/\s{2,}/g, ' ')
@@ -99,7 +99,7 @@ function montarMensagem(texto: string, nome: string | null) {
 
 function csvCampo(valor: string | boolean | null) {
   const texto = valor === null ? '' : String(valor);
-  return `"${texto.replaceAll('"', '""')}"`;
+  return `"${texto.split('"').join('""')}"`;
 }
 
 export default function UpsellListaAvulsa() {
@@ -193,8 +193,11 @@ export default function UpsellListaAvulsa() {
     if (!processado?.validos.length) { toast.error('Não há contatos novos para salvar'); return; }
     const origemValidada = origemSchema.safeParse(origem);
     if (!origemValidada.success) { toast.error('A origem deve ter no máximo 200 caracteres'); return; }
-    const linhas = processado.validos.map((c) => contatoSchema.parse(c)).map((c) => ({
-      ...c,
+    const todosValidos = processado.validos.every((c) => contatoSchema.safeParse(c).success);
+    if (!todosValidos) { toast.error('Há um contato com dados inválidos'); return; }
+    const linhas = processado.validos.map((c) => ({
+      telefone: c.telefone,
+      nome: c.nome,
       origem: origemValidada.data || null,
     }));
     setSalvando(true);
