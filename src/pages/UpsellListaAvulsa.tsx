@@ -33,9 +33,9 @@ interface Contato {
 
 interface Template {
   id: string;
-  titulo: string;
-  conteudo: string;
-  categoria: string;
+  nome: string;
+  mensagem: string;
+  ativo: boolean;
 }
 
 interface Processado {
@@ -132,13 +132,13 @@ export default function UpsellListaAvulsa() {
   });
 
   const { data: templates = [] } = useQuery({
-    queryKey: ['mensagens-padrao-lista-avulsa'],
+    queryKey: ['upsell-templates'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('mensagens_padrao')
-        .select('id, titulo, conteudo, categoria')
-        .order('categoria', { ascending: true })
-        .order('created_at', { ascending: false });
+        .from('upsell_clientes_templates')
+        .select('id, nome, mensagem, ativo')
+        .eq('ativo', true)
+        .order('ordem', { ascending: true });
       if (error) throw error;
       return data as Template[];
     },
@@ -212,7 +212,7 @@ export default function UpsellListaAvulsa() {
   const escolherTemplate = (id: string) => {
     setTemplateId(id);
     if (id === 'livre') { setMensagem(''); return; }
-    setMensagem(templates.find((t) => t.id === id)?.conteudo ?? '');
+    setMensagem(templates.find((t) => t.id === id)?.mensagem ?? '');
   };
 
   const atualizarContato = async (id: string, alteracoes: Partial<Contato>) => {
@@ -320,7 +320,7 @@ export default function UpsellListaAvulsa() {
 
       <section className="border rounded-xl bg-card p-3 sm:p-4 space-y-3">
         <div><h2 className="font-semibold text-sm">Mensagem geral</h2><p className="text-[11px] text-muted-foreground">A mesma mensagem será usada para todos os contatos.</p></div>
-        <Select value={templateId} onValueChange={escolherTemplate}><SelectTrigger><SelectValue placeholder="Escolha uma mensagem cadastrada" /></SelectTrigger><SelectContent><SelectItem value="livre">Mensagem livre</SelectItem>{templates.map((t) => <SelectItem key={t.id} value={t.id}>{t.titulo}</SelectItem>)}</SelectContent></Select>
+        <Select value={templateId} onValueChange={escolherTemplate}><SelectTrigger><SelectValue placeholder="Escolha um modelo do Upsell" /></SelectTrigger><SelectContent><SelectItem value="livre">Mensagem livre</SelectItem>{templates.map((t) => <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>)}</SelectContent></Select>
         <Textarea value={mensagem} onChange={(e) => setMensagem(e.target.value)} rows={6} maxLength={4000} placeholder="Olá {nome}, tudo bem?" className="text-sm" />
         <p className="text-[11px] text-muted-foreground">Mensagens idênticas em massa aumentam o risco de bloqueio. Use {'{nome}'} e evite enviar link na primeira mensagem.</p>
         {mensagem && <div className="rounded-lg bg-muted/50 border p-2.5"><p className="text-[10px] font-medium text-muted-foreground mb-1">Pré-visualização</p><p className="text-xs whitespace-pre-wrap">{montarMensagem(mensagem, 'Maria Silva')}</p></div>}
