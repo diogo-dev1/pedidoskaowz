@@ -103,6 +103,7 @@ const GRUPOS: NavGroup[] = [
 const ADMIN: NavItem[] = [
   { title: 'Cases Patola', url: '/admin/cases-patola', icon: Briefcase },
   { title: 'Modelos', url: '/admin/modelos', icon: Layers },
+  { title: 'Novidades e Ofertas', url: '/admin/ofertas', icon: Sparkles },
   { title: 'Componentes', url: '/admin/componentes', icon: Package },
   { title: 'Valores do Simulador', url: '/admin/simulador-precos', icon: Calculator },
   { title: 'Configurações', url: '/admin/configuracoes', icon: Settings },
