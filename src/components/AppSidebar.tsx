@@ -11,7 +11,12 @@ import {
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
-interface NavItem { title: string; url: string; icon: React.ComponentType<{ className?: string }> }
+interface NavItem {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  external?: boolean;
+}
 interface NavGroup { label: string; items: NavItem[] }
 
 const MAIN: NavItem[] = [
@@ -64,7 +69,7 @@ const GRUPOS: NavGroup[] = [
       { title: 'Auxílio de Vendas', url: '/auxilio-vendas', icon: BookOpen },
       { title: 'Mensagens', url: '/mensagens', icon: MessageSquare },
       { title: 'Mídia', url: '/midia', icon: Image },
-      { title: 'Novidades e Ofertas', url: '/ofertas', icon: Sparkles },
+      { title: 'Ver Ofertas (público)', url: '/ofertas', icon: Sparkles, external: true },
     ],
   },
   {
@@ -211,23 +216,29 @@ export function AppSidebar() {
                       </AccordionTrigger>
                       <AccordionContent className="pb-2">
                         <div className="space-y-0.5">
-                          {group.items.map((item) => (
-                            <NavLink
-                              key={item.url}
-                              to={item.url}
-                              className={({ isActive }) =>
-                                cn(
-                                  'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
-                                  isActive
-                                    ? 'bg-brand/10 text-brand font-medium'
-                                    : 'text-foreground hover:bg-secondary'
-                                )
-                              }
-                            >
-                              <item.icon className="h-4 w-4 shrink-0" />
-                              <span className="truncate">{item.title}</span>
-                            </NavLink>
-                          ))}
+                          {group.items.map((item) => {
+                            const className = 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary';
+
+                            if (item.external) {
+                              return (
+                                <a key={item.url} href={item.url} target="_blank" rel="noopener noreferrer" className={className}>
+                                  <item.icon className="h-4 w-4 shrink-0" />
+                                  <span className="truncate">{item.title}</span>
+                                </a>
+                              );
+                            }
+
+                            return (
+                              <NavLink
+                                key={item.url}
+                                to={item.url}
+                                className={({ isActive }) => cn(className, isActive && 'bg-brand/10 text-brand font-medium')}
+                              >
+                                <item.icon className="h-4 w-4 shrink-0" />
+                                <span className="truncate">{item.title}</span>
+                              </NavLink>
+                            );
+                          })}
                         </div>
                       </AccordionContent>
                     </AccordionItem>

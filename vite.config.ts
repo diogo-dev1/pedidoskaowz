@@ -15,6 +15,8 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: null,
+      devOptions: { enabled: false },
       includeAssets: ["favicon.jpg", "apple-touch-icon.jpg", "mask-icon.svg"],
       manifest: {
         name: "Kaowz Blade Builder",
@@ -43,7 +45,7 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
-        navigateFallbackDenylist: [/^\/auth/, /^\/~oauth/],
+        navigateFallbackDenylist: [/^\/auth/, /^\/~oauth/, /^\/ofertas/, /^\/catalogo/, /^\/catalogo-revendedor/, /^\/catalogo-internacional/, /^\/vitrine/, /^\/descubra/, /^\/p\//, /^\/showroom/],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
