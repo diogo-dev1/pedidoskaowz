@@ -1611,6 +1611,7 @@ export type Database = {
       ofertas: {
         Row: {
           ativo: boolean
+          bordao_modal: string | null
           condicoes: string | null
           created_at: string
           descricao: string | null
@@ -1618,6 +1619,7 @@ export type Database = {
           id: string
           imagens: string[]
           link_produto: string | null
+          midias: Json
           ordem: number
           selos: string[]
           texto_parcelamento: string | null
@@ -1628,6 +1630,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          bordao_modal?: string | null
           condicoes?: string | null
           created_at?: string
           descricao?: string | null
@@ -1635,6 +1638,7 @@ export type Database = {
           id?: string
           imagens?: string[]
           link_produto?: string | null
+          midias?: Json
           ordem?: number
           selos?: string[]
           texto_parcelamento?: string | null
@@ -1645,6 +1649,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          bordao_modal?: string | null
           condicoes?: string | null
           created_at?: string
           descricao?: string | null
@@ -1652,6 +1657,7 @@ export type Database = {
           id?: string
           imagens?: string[]
           link_produto?: string | null
+          midias?: Json
           ordem?: number
           selos?: string[]
           texto_parcelamento?: string | null
