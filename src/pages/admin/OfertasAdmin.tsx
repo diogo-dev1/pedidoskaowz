@@ -53,7 +53,7 @@ export default function OfertasAdmin() {
   const carregar = async () => {
     const { data, error } = await supabase.from('ofertas').select('*').order('ordem', { ascending: true });
     if (error) toast.error('Erro ao carregar ofertas');
-    setOfertas((data as Oferta[]) || []);
+    setOfertas((data as unknown as Oferta[]) || []);
     setLoading(false);
   };
 

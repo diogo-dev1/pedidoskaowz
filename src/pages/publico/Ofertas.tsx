@@ -29,6 +29,7 @@ export interface Oferta {
 }
 
 export interface MidiaOferta {
+  [key: string]: string;
   url: string;
   tipo: 'imagem' | 'video';
 }
@@ -306,7 +307,7 @@ export default function Ofertas() {
         return;
       }
 
-      setOfertas((data as Oferta[]) || []);
+       setOfertas((data as unknown as Oferta[]) || []);
       setErro(false);
       setLoading(false);
     };
