@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X, Globe, DollarSign, Swords } from 'lucide-react';
+import { Search, MessageCircle, Check, ChevronDown, Star, ArrowRight, ChevronLeft, ChevronRight, Zap, Package, SlidersHorizontal, X, Globe, DollarSign, Swords, Tag } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -777,6 +777,19 @@ export default function CatalogoPublico({ isInternacional = false }: CatalogoPub
               {T.monteKit}
             </Button>
           </div>
+
+          {!isInternacional && (
+            <div className="flex justify-center max-w-lg mx-auto mt-3">
+              <Button
+                onClick={() => navigate('/ofertas')}
+                variant="outline"
+                className="w-full border-zinc-700 bg-zinc-900 text-white hover:border-accent hover:bg-zinc-800 hover:text-accent font-bold h-12 text-sm md:text-base rounded-xl transition-all"
+              >
+                <Tag className="h-4 w-4 mr-2 text-accent" />
+                Novidades e Ofertas
+              </Button>
+            </div>
+          )}
 
           {/* WhatsApp CTA */}
           <div className="text-center mt-10 pt-8 border-t border-zinc-800/50">
