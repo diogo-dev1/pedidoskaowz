@@ -14,8 +14,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, ArrowUp, ArrowDown, Pencil, Trash2, ExternalLink, Star, X, Loader2 } from 'lucide-react';
-import type { Oferta } from '@/pages/publico/Ofertas';
+import { Plus, ArrowUp, ArrowDown, Pencil, Trash2, ExternalLink, Star, X, Loader2, Video } from 'lucide-react';
+import type { MidiaOferta, Oferta } from '@/pages/publico/Ofertas';
 
 const BUCKET = 'catalogo-midias';
 const BRL = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -24,6 +24,7 @@ interface Form {
   id?: string;
   titulo: string;
   descricao: string;
+  bordao_modal: string;
   etiqueta: string;
   valor: string;
   valor_de: string;
@@ -31,12 +32,12 @@ interface Form {
   texto_parcelamento: string;
   selos: string[];
   link_produto: string;
-  imagens: string[];
+  midias: MidiaOferta[];
 }
 
 const vazio: Form = {
-  titulo: '', descricao: '', etiqueta: '', valor: '', valor_de: '',
-  texto_pix: '', texto_parcelamento: '', selos: [], link_produto: '', imagens: [],
+  titulo: '', descricao: '', bordao_modal: '', etiqueta: '', valor: '', valor_de: '',
+  texto_pix: '', texto_parcelamento: '', selos: [], link_produto: '', midias: [],
 };
 
 export default function OfertasAdmin() {
@@ -65,6 +66,7 @@ export default function OfertasAdmin() {
       id: o.id,
       titulo: o.titulo,
       descricao: o.descricao || '',
+      bordao_modal: o.bordao_modal || '',
       etiqueta: o.etiqueta || '',
       valor: o.valor != null ? String(o.valor) : '',
       valor_de: o.valor_de != null ? String(o.valor_de) : '',
@@ -72,7 +74,7 @@ export default function OfertasAdmin() {
       texto_parcelamento: o.texto_parcelamento || '',
       selos: o.selos || [],
       link_produto: o.link_produto || '',
-      imagens: o.imagens || [],
+      midias: Array.isArray(o.midias) && o.midias.length ? o.midias : (o.imagens || []).map((url) => ({ url, tipo: 'imagem' })),
     });
     setNovoSelo('');
     setOpen(true);
@@ -93,41 +95,41 @@ export default function OfertasAdmin() {
     setForm((atual) => ({ ...atual, selos: atual.selos.filter((_, i) => i !== indice) }));
   };
 
-  const subirImagens = async (files: FileList | null) => {
+  const subirMidias = async (files: FileList | null) => {
     if (!files?.length) return;
     setEnviando(true);
-    const urls: string[] = [];
+    const midias: MidiaOferta[] = [];
     for (const file of Array.from(files)) {
       const path = `ofertas/${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name.replace(/[^\w.-]/g, '_')}`;
       const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true, contentType: file.type });
       if (error) { toast.error(`Falha ao enviar ${file.name}`); continue; }
-      urls.push(supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
+       midias.push({ url: supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl, tipo: file.type.startsWith('video/') ? 'video' : 'imagem' });
     }
-    setForm((f) => ({ ...f, imagens: [...f.imagens, ...urls] }));
+    setForm((f) => ({ ...f, midias: [...f.midias, ...midias] }));
     setEnviando(false);
-    if (urls.length) toast.success(`${urls.length} imagem(ns) enviada(s)`);
+    if (midias.length) toast.success(`${midias.length} mídia(s) enviada(s)`);
   };
 
   const moverImagem = (i: number, dir: -1 | 1) => {
     setForm((f) => {
-      const arr = [...f.imagens];
+      const arr = [...f.midias];
       const j = i + dir;
       if (j < 0 || j >= arr.length) return f;
       [arr[i], arr[j]] = [arr[j], arr[i]];
-      return { ...f, imagens: arr };
+      return { ...f, midias: arr };
     });
   };
 
   const tornarCapa = (i: number) => {
     setForm((f) => {
-      const arr = [...f.imagens];
+      const arr = [...f.midias];
       const [img] = arr.splice(i, 1);
-      return { ...f, imagens: [img, ...arr] };
+      return { ...f, midias: [img, ...arr] };
     });
   };
 
-  const removerImagem = (i: number) =>
-    setForm((f) => ({ ...f, imagens: f.imagens.filter((_, k) => k !== i) }));
+  const removerMidia = (i: number) =>
+    setForm((f) => ({ ...f, midias: f.midias.filter((_, k) => k !== i) }));
 
   const salvar = async () => {
     if (!form.titulo.trim()) { toast.error('Informe o título'); return; }
@@ -135,6 +137,7 @@ export default function OfertasAdmin() {
     const payload = {
       titulo: form.titulo.trim(),
       descricao: form.descricao.trim() || null,
+      bordao_modal: form.bordao_modal.trim() || null,
       etiqueta: form.etiqueta.trim() || null,
       valor: form.valor ? Number(form.valor) : null,
       valor_de: form.valor_de ? Number(form.valor_de) : null,
@@ -142,7 +145,8 @@ export default function OfertasAdmin() {
       texto_parcelamento: form.texto_parcelamento.trim() || null,
       selos: form.selos,
       link_produto: form.link_produto.trim() || null,
-      imagens: form.imagens,
+      midias: form.midias,
+      imagens: form.midias.filter((item) => item.tipo === 'imagem').map((item) => item.url),
     };
     const res = form.id
       ? await supabase.from('ofertas').update(payload).eq('id', form.id)
@@ -213,7 +217,9 @@ export default function OfertasAdmin() {
               className={`flex items-center gap-3 rounded-lg border bg-card p-3 ${o.ativo ? '' : 'opacity-60'}`}
             >
               <div className="h-16 w-12 shrink-0 overflow-hidden rounded bg-muted">
-                {o.imagens?.[0] && <img src={o.imagens[0]} alt={o.titulo} className="h-full w-full object-cover" />}
+                 {(o.midias?.[0] || o.imagens?.[0]) && ((o.midias?.[0]?.tipo === 'video')
+                   ? <video src={o.midias[0].url} className="h-full w-full object-cover" muted playsInline />
+                   : <img src={o.midias?.[0]?.url || o.imagens[0]} alt={o.titulo} className="h-full w-full object-cover" />)}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -259,6 +265,11 @@ export default function OfertasAdmin() {
             <div>
               <Label>Descrição</Label>
               <Textarea rows={3} value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
+            </div>
+            <div>
+              <Label>Bordão de apresentação</Label>
+              <Textarea maxLength={300} rows={2} placeholder="Ex.: A lâmina que transforma presença em assinatura." value={form.bordao_modal} onChange={(e) => setForm({ ...form, bordao_modal: e.target.value })} />
+              <p className="mt-1 text-xs text-muted-foreground">Aparece em destaque somente ao abrir os detalhes do produto.</p>
             </div>
             <div>
               <Label>Etiqueta</Label>
@@ -329,25 +340,26 @@ export default function OfertasAdmin() {
             </div>
 
             <div>
-              <Label>Imagens</Label>
+              <Label>Mídias</Label>
               <p className="text-xs text-muted-foreground mb-1">
-                A primeira imagem é a capa do card. As demais aparecem na troca ao passar o mouse (ou arrastar no celular).
+                Adicione imagens e vídeos. A primeira mídia é a capa; as demais passam no card e aparecem nos detalhes.
               </p>
-              <Input type="file" accept="image/*" multiple onChange={(e) => subirImagens(e.target.files)} />
+              <Input type="file" accept="image/*,video/*" multiple onChange={(e) => subirMidias(e.target.files)} />
               {enviando && (
                 <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Enviando imagens...
+                   <Loader2 className="h-3 w-3 animate-spin" /> Enviando mídias...
                 </p>
               )}
-              {form.imagens.length > 0 && (
+              {form.midias.length > 0 && (
                 <div className="mt-2 grid grid-cols-3 gap-2">
-                  {form.imagens.map((img, i) => (
-                    <div key={img + i} className="relative rounded border overflow-hidden">
-                      <img src={img} alt="" className="aspect-[3/4] w-full object-cover" />
+                  {form.midias.map((midia, i) => (
+                    <div key={midia.url + i} className="relative rounded border overflow-hidden">
+                      {midia.tipo === 'video' ? <video src={midia.url} className="aspect-[3/4] w-full object-cover" muted playsInline /> : <img src={midia.url} alt="" className="aspect-[3/4] w-full object-cover" />}
                       {i === 0 && <Badge className="absolute left-1 top-1 bg-accent text-white text-[10px]">Capa</Badge>}
+                      {midia.tipo === 'video' && <Badge variant="secondary" className="absolute bottom-8 left-1 gap-1 text-[9px]"><Video className="h-3 w-3" /> Vídeo</Badge>}
                       <button
                         type="button"
-                        onClick={() => removerImagem(i)}
+                        onClick={() => removerMidia(i)}
                         className="absolute right-1 top-1 rounded bg-black/70 p-1 text-white"
                       >
                         <X className="h-3 w-3" />
@@ -359,7 +371,7 @@ export default function OfertasAdmin() {
                         <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => tornarCapa(i)} title="Tornar capa">
                           <Star className="h-3 w-3" />
                         </Button>
-                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => moverImagem(i, 1)} disabled={i === form.imagens.length - 1}>
+                         <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => moverImagem(i, 1)} disabled={i === form.midias.length - 1}>
                           <ArrowDown className="h-3 w-3" />
                         </Button>
                       </div>
