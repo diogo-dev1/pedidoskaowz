@@ -21,7 +21,7 @@ import {
   novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, novaEntradaFacaDeCatalogo,
   espacadorIdx, nomeBainha, nomeCatalogo, calcCatalogo, ehFacaDoCatalogo,
   LOCAIS_GRAVACAO, LOCAIS_BLOQUEADOS_POR_LOGO, acoEhInox, acabamentoSoCarbono, composeLaser, personalizacaoDefinida,
-  precoBainhaAdicional, LASER_PRECO, EMBALAGENS,
+  precoBainhaAdicional, LASER_PRECO, LASER_PRECO_DORSO, LASER_PRECO_LOGO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
   type CatalogoCfg,
 } from '@/lib/simuladorData';
@@ -380,6 +380,11 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                     const marcado = cfg.gravacoes?.[local] !== undefined;
                     const logoMarcada = cfg.gravacoes?.['Logo'] !== undefined;
                     const bloqueadoPorLogo = logoMarcada && (LOCAIS_BLOQUEADOS_POR_LOGO as readonly string[]).includes(local);
+                    const precoLocal = local === 'Logo'
+                      ? LASER_PRECO_LOGO
+                      : (LOCAIS_BLOQUEADOS_POR_LOGO as readonly string[]).includes(local)
+                        ? LASER_PRECO_DORSO
+                        : LASER_PRECO;
                     const toggle = (v: boolean) => {
                       const g = { ...(cfg.gravacoes ?? {}) };
                       if (v) g[local] = g[local] ?? ''; else delete g[local];
@@ -399,6 +404,7 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                         <label className={`flex items-center gap-2.5 ${bloqueadoPorLogo ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                           <Checkbox checked={marcado} disabled={bloqueadoPorLogo} onCheckedChange={(v) => toggle(v === true)} />
                           <span className="text-sm font-medium">{local}</span>
+                          <span className="text-[10px] text-muted-foreground">+{BRL(precoLocal)}</span>
                           {bloqueadoPorLogo && <span className="text-[10px] text-muted-foreground">logo só na lateral</span>}
                         </label>
                         {marcado && (
@@ -419,7 +425,7 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
                   </p>
                 )}
                 <p className="text-[10px] text-muted-foreground">
-                  Gravação à laser: +{BRL(LASER_PRECO)} quando houver gravação.
+                  Cada local marcado é somado ao valor do item.
                 </p>
               </Secao>
 
