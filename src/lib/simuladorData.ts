@@ -82,8 +82,10 @@ export const BAINHA_ADICIONAL_PADRAO: Precos = { P: 195, M: 220, G: 250 };
 export function precoBainhaAdicional(data: SimuladorData, c: Classe = 'P'): number {
   return precoClasse(data.bainhaAdicional ?? BAINHA_ADICIONAL_PADRAO, c);
 }
-/** Preço da gravação à laser (mesma regra usada em Novo Pedido). */
+/** Preços da gravação a laser por tipo. */
 export const LASER_PRECO = 30;
+export const LASER_PRECO_DORSO = 15;
+export const LASER_PRECO_LOGO = 75;
 /** Opções de embalagem (campo INTERNO — nunca exposto ao cliente). */
 export const EMBALAGENS = ['Comum', 'Patola Padrão', 'Patola KIT'] as const;
 
@@ -211,6 +213,20 @@ export function composeLaser(gravacoes: Record<string, string> | undefined): str
   return Object.entries(gravacoes ?? {})
     .map(([local, txt]) => `${local}: ${(txt || '').trim() || '-'}`)
     .join(' | ');
+}
+
+/** Preço total das gravações marcadas. Cada posição é cobrada separadamente. */
+export function precoGravacoes(cfg: ItemCfg): number {
+  const locais = Object.keys(cfg.gravacoes ?? {});
+  if (locais.length === 0) return temLaser(cfg) ? LASER_PRECO : 0;
+
+  return locais.reduce((total, local) => {
+    if (local === 'Logo') return total + LASER_PRECO_LOGO;
+    if (LOCAIS_BLOQUEADOS_POR_LOGO.includes(local as typeof LOCAIS_BLOQUEADOS_POR_LOGO[number])) {
+      return total + LASER_PRECO_DORSO;
+    }
+    return total + LASER_PRECO;
+  }, 0);
 }
 
 /** A personalização foi definida (sem gravação ou ao menos um local marcado)? */
@@ -401,8 +417,7 @@ export function calcItemBase(data: SimuladorData, cfg: ItemCfg): number {
   });
   // A primeira bainha já está inclusa no preço base; a partir da segunda, cobra-se.
   if (bainhas.length > 1) t += (bainhas.length - 1) * precoBainhaAdicional(data, c);
-  // Personalização à laser (mesma regra do Novo Pedido)
-  if (temLaser(cfg)) t += LASER_PRECO;
+  t += precoGravacoes(cfg);
   return t;
 }
 
