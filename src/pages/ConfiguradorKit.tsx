@@ -8,19 +8,19 @@ import imgAcetinada from '@/assets/push-dagger-acetinada.jpeg';
 import imgStoneWashed from '@/assets/push-dagger-stone-washed.jpeg';
 import imgTactical from '@/assets/push-dagger-tactical.jpeg';
 
-type FinishKey = 'satin' | 'sw' | 'tac';
-type SizeKey = 'standard' | 'compact' | 'micro';
+export type FinishKey = 'satin' | 'sw' | 'tac';
+export type SizeKey = 'standard' | 'compact' | 'micro';
 type QtyKey = 1 | 2 | 3;
 export type VersionKey = 'standard' | 'nonmetallic' | 'blue';
 export type AcoKey = 'sandvik' | 'inox';
 export type EmpunhaduraKey = 'g10' | 'micarta';
 
-const FINISH_NAMES: Record<FinishKey, string> = {
+export const FINISH_NAMES: Record<FinishKey, string> = {
   satin: 'Acetinada',
   sw: 'Stone Washed',
   tac: 'Tactical',
 };
-const FINISH_KEYS: FinishKey[] = ['satin', 'sw', 'tac'];
+export const FINISH_KEYS: FinishKey[] = ['satin', 'sw', 'tac'];
 
 export const ACO_NAMES: Record<AcoKey, string> = {
   sandvik: 'Sandvik 14C28N',
@@ -41,7 +41,7 @@ export const BAINHA_EXTRA_NAMES: Record<BainhaExtraKey, string> = {
 };
 export const BAINHA_EXTRA_KEYS: BainhaExtraKey[] = ['velada', 'multi'];
 
-const SIZE_LIST: { key: SizeKey; name: string; bladeMm: number; gripMm: number }[] = [
+export const SIZE_LIST: { key: SizeKey; name: string; bladeMm: number; gripMm: number }[] = [
   { key: 'standard', name: 'STANDARD', bladeMm: 62.49, gripMm: 87.97 },
   { key: 'compact',  name: 'COMPACT',  bladeMm: 52.74, gripMm: 73.84 },
   { key: 'micro',    name: 'MICRO',    bladeMm: 37.16, gripMm: 68.51 },
