@@ -76,6 +76,7 @@ interface ShopifyOrder {
   financial_status: string;
   payment_gateway_names: string[];
   tags?: string;
+  note_attributes?: { name?: string; value?: string }[];
 
   customer?: {
     first_name?: string;
@@ -104,6 +105,12 @@ interface ShopifyOrder {
     zip?: string;
     name?: string;
   };
+}
+
+/** Origem definida no rascunho; vendas feitas diretamente no site usam "Site". */
+function origemDoPedido(noteAttributes?: ShopifyOrder['note_attributes']): string {
+  const atributo = (noteAttributes || []).find((item) => item.name?.trim().toLowerCase() === 'origem');
+  return atributo?.value?.trim() || 'Site';
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -185,9 +192,9 @@ async function getSheetId(accessToken: string, spreadsheetId: string, title: str
   return sheet?.properties?.sheetId ?? null;
 }
 
-/** Lê todas as linhas (B:K) da aba "Vendas Diário" — coluna A é vazia, dados começam em B. */
+/** Lê todas as linhas (B:L) da aba "Vendas Diário" — coluna A é vazia, dados começam em B. */
 async function lerVendas(accessToken: string, spreadsheetId: string): Promise<string[][]> {
-  const range = encodeURIComponent(`${ABA_VENDAS}!B:K`);
+  const range = encodeURIComponent(`${ABA_VENDAS}!B:L`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!res.ok) {
@@ -216,9 +223,9 @@ async function inserirLinhaVazia(accessToken: string, spreadsheetId: string, she
   if (!res.ok) throw new Error(`Falha ao inserir linha na planilha: ${await res.text()}`);
 }
 
-/** Escreve os valores de um pedido na linha rowNumber1 (1-based) da aba "Vendas Diário" (B:K). */
+/** Escreve os valores de um pedido na linha rowNumber1 (1-based) da aba "Vendas Diário" (B:L). */
 async function escreverLinhaVendas(accessToken: string, spreadsheetId: string, rowNumber1: number, row: string[]): Promise<void> {
-  const range = encodeURIComponent(`${ABA_VENDAS}!B${rowNumber1}:K${rowNumber1}`);
+  const range = encodeURIComponent(`${ABA_VENDAS}!B${rowNumber1}:L${rowNumber1}`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueInputOption=USER_ENTERED`;
   const res = await fetch(url, {
     method: 'PUT',
@@ -330,7 +337,7 @@ Deno.serve(async (req) => {
         colDatas = linhas.map((r) => diaDaDataBR((r?.[0] || '').toString()));
         linhaVazia = linhas.map((r) => !((r?.[0] || '').toString().trim()));
         obsVendasExistentes = linhas.map((r) => (r?.[8] || '').toString());
-        console.log(`Vendas Diário: ${linhas.length} linha(s) lidas (B:K, sheetId=${sheetId})`);
+        console.log(`Vendas Diário: ${linhas.length} linha(s) lidas (B:L, sheetId=${sheetId})`);
         if (sheetId === null) {
           console.error(`Aba "${ABA_VENDAS}" não encontrada — pulando lançamento na planilha`);
           sheetsToken = null;
@@ -481,6 +488,7 @@ Deno.serve(async (req) => {
                 valorOuTraco(itensTexto),                                           // I - Item
                 obs,                                                                // J - OBS (inclui marcador de dedup)
                 valorOuTraco(cupom),                                                // K - Cupom
+                origemDoPedido(order.note_attributes),                              // L - Origem
               ];
 
               // Reaproveita primeira linha em branco a partir da 24 (preserva formatação/validação existentes).
