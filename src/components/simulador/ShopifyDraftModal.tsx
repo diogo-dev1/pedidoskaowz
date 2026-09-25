@@ -230,6 +230,7 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
   const [touchedFrete, setTouchedFrete] = useState(false);
   // Acesso é compartilhado pelos vendedores → NUNCA memorizar a última escolha.
   const [vendedor, setVendedor] = useState('');
+  const [origemVenda, setOrigemVenda] = useState('');
 
   const vendedoresAtivos = useMemo(
     () => (data.vendedores ?? []).filter((v) => v.ativo && v.nome.trim()),
@@ -242,6 +243,7 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
       setTouchedFrete(false);
       setFreteGratis(total >= 1000);
       setVendedor('');
+      setOrigemVenda('');
     }
   }, [open]);
   useEffect(() => {
@@ -291,12 +293,14 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
   const enviar = async () => {
     if (!itens.length) { toast.error('Nenhum item para enviar'); return; }
     if (!vendedor.trim()) { toast.error('Selecione o vendedor deste pedido'); return; }
+    if (!origemVenda) { toast.error('Selecione a origem desta venda'); return; }
     setEnviando(true);
     try {
       const { data: res, error } = await supabase.functions.invoke('criar-draft-order-shopify', {
         body: {
           itens,
           vendedor: vendedor.trim(),
+          origem: origemVenda,
 
           cliente: {
             nome: nome.trim() || undefined,
@@ -413,6 +417,21 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
                   </SelectContent>
                 </Select>
               )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="sh-origem" className="text-xs">Origem <span className="text-destructive">*</span></Label>
+              <Select value={origemVenda} onValueChange={setOrigemVenda}>
+                <SelectTrigger id="sh-origem" className="h-11 rounded-xl">
+                  <SelectValue placeholder="Como esta venda chegou?" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Recorrência">Recorrência</SelectItem>
+                  <SelectItem value="Orgânico">Orgânico</SelectItem>
+                  <SelectItem value="Tráfego">Tráfego</SelectItem>
+                  <SelectItem value="Presencial">Presencial</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Resumo dos itens */}

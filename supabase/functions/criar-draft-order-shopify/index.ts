@@ -22,6 +22,8 @@ interface Payload {
   itens: LineItemIn[];
   /** Vendedor responsável pelo pedido (obrigatório no lançamento pelo simulador) */
   vendedor?: string;
+  /** Origem comercial usada no Relatório de Vendas. */
+  origem?: string;
   cliente?: {
 
     nome?: string;
@@ -278,10 +280,19 @@ Deno.serve(async (req) => {
     // Atributos do pedido (CPF/nascimento também aqui, para visibilidade)
     const customAttributes: { key: string; value: string }[] = [];
     const vendedor = (payload.vendedor ?? '').trim();
+    const origensPermitidas = ['Recorrência', 'Orgânico', 'Tráfego', 'Presencial'];
+    const origem = origensPermitidas.includes((payload.origem ?? '').trim())
+      ? (payload.origem ?? '').trim()
+      : '';
+    if (!origem) {
+      return new Response(JSON.stringify({ sucesso: false, erro: 'Selecione uma origem válida para a venda' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     if (vendedor) customAttributes.push({ key: 'Vendedor', value: vendedor.slice(0, 255) });
     if (cliente.cpf?.trim()) customAttributes.push({ key: 'CPF', value: cliente.cpf.trim() });
     if (cliente.dataNascimento?.trim()) customAttributes.push({ key: 'Data de nascimento', value: cliente.dataNascimento.trim() });
-    customAttributes.push({ key: 'Origem', value: 'Simulador Kaowz' });
+    customAttributes.push({ key: 'Origem', value: origem });
 
     const tags = ['Kaowz-Simulador'];
     if (vendedor) tags.push(`vendedor:${vendedor}`);
