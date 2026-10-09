@@ -28,6 +28,13 @@ import { Label } from '@/components/ui/label';
 const clone = (d: SimuladorData): SimuladorData => JSON.parse(JSON.stringify(d));
 
 const CLASSES: Classe[] = ['P', 'M', 'G'];
+type GrupoCustom = 'acos' | 'empunhaduras' | 'acabamentos' | 'bainhas';
+const GRUPOS_CUSTOM: { key: GrupoCustom; label: string; comCores?: boolean; comTipoAco?: boolean }[] = [
+  { key: 'acos', label: 'Aço', comTipoAco: true },
+  { key: 'empunhaduras', label: 'Empunhadura', comCores: true },
+  { key: 'acabamentos', label: 'Acabamento' },
+  { key: 'bainhas', label: 'Bainha', comCores: true },
+];
 
 /** Input de preço compacto (aceita vazio = 0). */
 function PrecoInput({ value, onChange, className = '' }: { value: number; onChange: (n: number) => void; className?: string }) {
@@ -91,12 +98,12 @@ function CoresEditor({ cores, onChange }: { cores: string[]; onChange: (c: strin
 }
 
 /** Editor de uma opção com preços por tamanho (P/M/G). `comCores` habilita o cadastro de cores. */
-function OpcaoPrecos({ op, onChange, comCores = false, comTipoAco = false }: { op: Opcao; onChange: (o: Opcao) => void; comCores?: boolean; comTipoAco?: boolean }) {
+function OpcaoPrecos({ op, onChange, comCores = false, comTipoAco = false, onDelete, protegerExclusao = false }: { op: Opcao; onChange: (o: Opcao) => void; comCores?: boolean; comTipoAco?: boolean; onDelete?: () => void; protegerExclusao?: boolean }) {
   return (
     <div className="rounded-lg border bg-card p-3 space-y-2">
       <div className="flex items-center gap-2">
         <Input value={op.nome} onChange={(e) => onChange({ ...op, nome: e.target.value })}
-          className="h-9 text-sm font-medium flex-1" />
+          aria-label="Nome da opção" className="h-9 text-sm font-medium flex-1 min-w-0" />
         {comTipoAco && (
           <Select value={op.tipo ?? 'carbono'} onValueChange={(v) => onChange({ ...op, tipo: v as Opcao['tipo'] })}>
             <SelectTrigger className="h-9 w-32 shrink-0"><SelectValue /></SelectTrigger>
@@ -107,6 +114,13 @@ function OpcaoPrecos({ op, onChange, comCores = false, comTipoAco = false }: { o
           </Select>
         )}
         {op.incluso && <span className="text-[10px] font-semibold text-emerald-600 uppercase shrink-0">incluso</span>}
+        {onDelete && (
+          <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+            aria-label={`Excluir ${op.nome}`} title={protegerExclusao ? 'Opção padrão: não pode ser excluída' : `Excluir ${op.nome}`}
+            disabled={protegerExclusao} onClick={onDelete}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
       {comTipoAco && (
         <p className="text-[10px] text-muted-foreground">
@@ -171,6 +185,8 @@ export default function SimuladorPrecosConfig() {
   const [busca, setBusca] = useState('');
   const [novoModelo, setNovoModelo] = useState<Modelo | null>(null);
   const [excluir, setExcluir] = useState<{ idx: number; nome: string } | null>(null);
+  const [novaOpcao, setNovaOpcao] = useState<{ grupo: GrupoCustom; opcao: Opcao } | null>(null);
+  const [excluirOpcao, setExcluirOpcao] = useState<{ grupo: GrupoCustom; idx: number; nome: string } | null>(null);
 
   // Sincroniza o rascunho quando a config carrega (sem sobrescrever edições em andamento)
   useEffect(() => { if (!draft && !isLoading) setDraft(clone(configData)); }, [configData, isLoading, draft]);
@@ -190,6 +206,11 @@ export default function SimuladorPrecosConfig() {
 
   const salvar = async () => {
     if (!draft) return;
+    for (const grupo of GRUPOS_CUSTOM) {
+      const nomes = draft[grupo.key].map((o) => o.nome.trim().toLowerCase());
+      if (nomes.some((nome) => !nome)) { toast.error(`Preencha o nome de todas as opções de ${grupo.label}.`); return; }
+      if (new Set(nomes).size !== nomes.length) { toast.error(`Existem nomes repetidos em ${grupo.label}.`); return; }
+    }
     setSaving(true);
     try {
       const { error } = await supabase
@@ -228,6 +249,29 @@ export default function SimuladorPrecosConfig() {
     set({ modelos: draft.modelos.filter((_, i) => i !== excluir.idx) });
     setExcluir(null);
     toast.success('Modelo removido. Clique em Salvar valores para aplicar.');
+  };
+
+  const confirmarNovaOpcao = () => {
+    if (!novaOpcao || !draft) return;
+    const { grupo, opcao } = novaOpcao;
+    const nome = opcao.nome.trim();
+    if (!nome) { toast.error('Informe o nome da opção.'); return; }
+    if (draft[grupo].some((o) => o.nome.trim().toLowerCase() === nome.toLowerCase())) {
+      toast.error(`Já existe uma opção chamada "${nome}".`); return;
+    }
+    set({ [grupo]: [...draft[grupo], { ...opcao, nome }] });
+    setNovaOpcao(null);
+    toast.success('Opção adicionada. Clique em Salvar valores para aplicar.');
+  };
+
+  const confirmarExclusaoOpcao = () => {
+    if (!excluirOpcao || !draft) return;
+    const { grupo, idx } = excluirOpcao;
+    const opcao = draft[grupo][idx];
+    if (!opcao || idx === 0 || opcao.incluso || draft[grupo].length <= 1) return;
+    set({ [grupo]: draft[grupo].filter((_, i) => i !== idx) });
+    setExcluirOpcao(null);
+    toast.success('Opção removida. Clique em Salvar valores para aplicar.');
   };
 
   const restaurarPadrao = () => {
@@ -328,27 +372,25 @@ export default function SimuladorPrecosConfig() {
 
         {/* ── Customizações ── */}
         <TabsContent value="customizacoes" className="mt-4 space-y-5">
-          <section className="space-y-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Aço</h2>
-            {draft.acos.map((o, i) => <OpcaoPrecos key={i} op={o} comTipoAco onChange={(x) => updateOpcao('acos', i, x)} />)}
-            <PrecosTamanho label="Brute Forge (opcional do aço)" precos={draft.bruteForge} onChange={(p) => set({ bruteForge: p })} />
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Empunhadura</h2>
-            {draft.empunhaduras.map((o, i) => <OpcaoPrecos key={i} op={o} comCores onChange={(x) => updateOpcao('empunhaduras', i, x)} />)}
-            <PrecosTamanho label="Dragon Scale (opcional da empunhadura)" precos={draft.dragonScale} onChange={(p) => set({ dragonScale: p })} />
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Acabamento</h2>
-            {draft.acabamentos.map((o, i) => <OpcaoPrecos key={i} op={o} onChange={(x) => updateOpcao('acabamentos', i, x)} />)}
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Bainha</h2>
-            {draft.bainhas.map((o, i) => <OpcaoPrecos key={i} op={o} comCores onChange={(x) => updateOpcao('bainhas', i, x)} />)}
-          </section>
+          {GRUPOS_CUSTOM.map((grupo) => (
+            <section key={grupo.key} className="space-y-2" aria-label={grupo.label}>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{grupo.label}</h2>
+                <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5"
+                  aria-label={`Adicionar ${grupo.label.toLowerCase()}`}
+                  onClick={() => setNovaOpcao({ grupo: grupo.key, opcao: { nome: '', precos: { P: 0, M: 0, G: 0 }, ...(grupo.comTipoAco ? { tipo: 'carbono' as const } : {}) } })}>
+                  <Plus className="h-3.5 w-3.5" /> Adicionar
+                </Button>
+              </div>
+              {draft[grupo.key].map((o, i) => (
+                <OpcaoPrecos key={i} op={o} comTipoAco={grupo.comTipoAco} comCores={grupo.comCores}
+                  onChange={(x) => updateOpcao(grupo.key, i, x)} protegerExclusao={i === 0 || !!o.incluso}
+                  onDelete={() => setExcluirOpcao({ grupo: grupo.key, idx: i, nome: o.nome })} />
+              ))}
+              {grupo.key === 'acos' && <PrecosTamanho label="Brute Forge (opcional do aço)" precos={draft.bruteForge} onChange={(p) => set({ bruteForge: p })} />}
+              {grupo.key === 'empunhaduras' && <PrecosTamanho label="Dragon Scale (opcional da empunhadura)" precos={draft.dragonScale} onChange={(p) => set({ dragonScale: p })} />}
+            </section>
+          ))}
         </TabsContent>
 
         {/* ── Adicionais (preço único) ── */}
@@ -485,6 +527,37 @@ export default function SimuladorPrecosConfig() {
         </TabsContent>
 
       </Tabs>
+
+      <Dialog open={!!novaOpcao} onOpenChange={(open) => !open && setNovaOpcao(null)}>
+        <DialogContent className="sm:max-w-md max-h-[85dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Adicionar {GRUPOS_CUSTOM.find((g) => g.key === novaOpcao?.grupo)?.label.toLowerCase()}</DialogTitle>
+            <DialogDescription>Nova opção de customização</DialogDescription>
+          </DialogHeader>
+          {novaOpcao && (
+            <OpcaoPrecos op={novaOpcao.opcao} comTipoAco={novaOpcao.grupo === 'acos'}
+              comCores={novaOpcao.grupo === 'empunhaduras' || novaOpcao.grupo === 'bainhas'}
+              onChange={(opcao) => setNovaOpcao({ ...novaOpcao, opcao })} />
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setNovaOpcao(null)}>Cancelar</Button>
+            <Button onClick={confirmarNovaOpcao}>Adicionar opção</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!excluirOpcao} onOpenChange={(open) => !open && setExcluirOpcao(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir customização</DialogTitle>
+            <DialogDescription>Remover a opção "{excluirOpcao?.nome}"? A remoção só é aplicada ao salvar e não altera pedidos já enviados.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setExcluirOpcao(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmarExclusaoOpcao}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Novo modelo */}
       <Dialog open={!!novoModelo} onOpenChange={(o) => !o && setNovoModelo(null)}>
