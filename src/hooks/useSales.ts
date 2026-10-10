@@ -67,8 +67,11 @@ export function useSales() {
   const query = useQuery({
     queryKey: ['sales'],
     queryFn: fetchSales,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchInterval: 1000 * 60 * 5, // Auto-refresh every 5 minutes
+    staleTime: 0,
+    // Detecta também sincronizações agendadas ou feitas em outra sessão.
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
   const sales = query.data?.sales || [];
