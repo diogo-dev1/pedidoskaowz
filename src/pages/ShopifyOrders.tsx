@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +8,7 @@ import { toast } from 'sonner';
 import { Download, Loader2 } from 'lucide-react';
 
 export default function ShopifyOrders() {
+  const queryClient = useQueryClient();
   const hoje = new Date().toISOString().split('T')[0];
   const [dataInicio, setDataInicio] = useState(hoje);
   const [dataFim, setDataFim] = useState(hoje);
@@ -36,6 +38,7 @@ export default function ShopifyOrders() {
       }
 
       if (data?.sucesso) {
+        await queryClient.invalidateQueries({ queryKey: ['sales'] });
         toast.success(data.mensagem);
         setResultado(data.mensagem);
       } else {

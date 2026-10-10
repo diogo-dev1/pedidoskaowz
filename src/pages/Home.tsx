@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { NavLink } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,15 +18,14 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
 } from 'recharts';
 
-const META_DIARIA = 9000;
+const META_DIARIA = 20000;
 
 const brl = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 /** Data de hoje no formato DD/MM/YYYY — mesmo formato da planilha de vendas. */
 function hojeBR(): string {
-  const d = new Date();
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
 function chaveDia(d: Date): string {
@@ -59,6 +59,7 @@ const CARDS: Card[] = [
 
 export default function Home() {
   const { profile } = useAuth();
+  const queryClient = useQueryClient();
   const [periodo, setPeriodo] = useState<7 | 30 | 90>(7);
 
   const isAdmin = profile?.cargo === 'admin';
@@ -77,6 +78,8 @@ export default function Home() {
         body: { data_inicio: syncFrom, data_fim: syncTo },
       });
       if (error) throw error;
+      if (!data?.sucesso) throw new Error(data?.erro || 'Erro ao sincronizar');
+      await queryClient.invalidateQueries({ queryKey: ['sales'] });
       const msg = data?.mensagem ?? 'Pedidos sincronizados!';
       setSyncMsg(msg);
       toast.success(msg);
@@ -100,14 +103,14 @@ export default function Home() {
   } = useSales();
 
   // Vendas de hoje — direto da planilha (data no formato DD/MM/YYYY)
+  const diaAtual = hojeBR();
   const hoje = useMemo(() => {
-    const chave = hojeBR();
-    const doDia = sales.filter((s) => s.date === chave);
+    const doDia = sales.filter((s) => s.date === diaAtual);
     return {
       total: doDia.length,
       valor: doDia.reduce((sum, s) => sum + s.value, 0),
     };
-  }, [sales]);
+  }, [sales, diaAtual]);
 
   // Gráfico: soma da planilha por dia, nos últimos N dias
   const dadosGrafico = useMemo(() => {
