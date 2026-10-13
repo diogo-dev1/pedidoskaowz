@@ -278,10 +278,12 @@ Deno.serve(async (req) => {
       const ex = existentes.get(o.name);
       // Mantém as flags de envio já registradas no app
       const itens = itensNovos.map((i, idx) => {
-        const antigo = (ex?.itens ?? []).find((a: ItemPE, j: number) => a.titulo === i.titulo && (j === idx || true));
+        const antigos: ItemPE[] = ex?.itens ?? [];
+        const antigo = antigos[idx]?.titulo === i.titulo ? antigos[idx] : antigos.find((a) => a.titulo === i.titulo);
         return antigo ? { ...i, enviado: !!antigo.enviado, enviado_em: antigo.enviado_em ?? null } : i;
       });
-      const modo = ex?.modo_envio && ex.modo_envio !== 'a_definir' ? ex.modo_envio : (ex?.modo_envio === 'a_definir' && modoShopify === null ? 'a_definir' : modoShopify);
+      // modo_envio já definido no app nunca é sobrescrito
+      const modo = ex?.modo_envio && ex.modo_envio !== 'a_definir' ? ex.modo_envio : modoShopify;
       const camposShopify = {
         shopify_order_id: o.id,
         origem: temTag('Kaowz-Simulador') ? 'simulador' : 'site',
