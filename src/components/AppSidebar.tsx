@@ -44,6 +44,7 @@ const GRUPOS: NavGroup[] = [
   {
     label: 'Produção',
     items: [
+      { title: 'Pronta Entrega', url: '/pronta-entrega', icon: Truck },
       { title: 'Expedição', url: '/expedicao', icon: Truck },
       { title: 'Lote (legado)', url: '/lote', icon: Package },
     ],

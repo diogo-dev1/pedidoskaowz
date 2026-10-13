@@ -61,6 +61,7 @@ import UpsellClientes from "./pages/UpsellClientes";
 import UpsellListaAvulsa from "./pages/UpsellListaAvulsa";
 import PedidosPlanilha from "./pages/PedidosPlanilha";
 import ShopifyOrders from "./pages/ShopifyOrders";
+import ProntaEntrega from "./pages/ProntaEntrega";
 import Triagem from "./pages/Triagem";
 import Pedidos from "./pages/Pedidos";
 import PushDaggerConfigurador from "./pages/PushDaggerConfigurador";
@@ -123,6 +124,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Home />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pronta-entrega"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ProntaEntrega />
                   </Layout>
                 </ProtectedRoute>
               }
