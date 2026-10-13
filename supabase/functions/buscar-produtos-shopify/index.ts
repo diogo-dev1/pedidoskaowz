@@ -62,6 +62,7 @@ const PRODUCTS_QUERY = `
           id
           title
           status
+          vendor
           featuredImage { url }
           variants(first: 25) {
             edges {
@@ -103,6 +104,7 @@ Deno.serve(async (req) => {
         produtos.push({
           produtoId: p.id,
           titulo: p.title,
+          vendor: p.vendor ?? '',
           variante: v.title && v.title !== 'Default Title' ? v.title : '',
           variantId: v.id,
           preco: Number(v.price) || 0,

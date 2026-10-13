@@ -1132,7 +1132,7 @@ export default function SimuladorPrecos() {
   };
   const addCatalogo = (p: ProdutoShopify) => {
     const dadosProduto = {
-      variantId: p.variantId, titulo: p.titulo, variante: p.variante, imagem: p.imagem, preco: p.preco,
+      variantId: p.variantId, titulo: p.titulo, variante: p.variante, imagem: p.imagem, preco: p.preco, vendor: p.vendor,
     };
     const eFaca = ehFacaDoCatalogo(data, { titulo: p.titulo, variante: p.variante });
     const e = eFaca ? novaEntradaFacaDeCatalogo(data, dadosProduto) : novaEntradaCatalogo(dadosProduto);

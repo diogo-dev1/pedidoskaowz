@@ -98,6 +98,8 @@ export interface OrigemCatalogo {
   varianteTitulo: string;
   imagem?: string | null;
   precoOriginal: number;
+  /** FORNECEDOR do produto no site (define pronta entrega / sob encomenda) */
+  vendor?: string;
   /** Assinatura da configuração no momento em que veio do catálogo */
   snapshot: string;
 }
@@ -173,6 +175,8 @@ export interface CatalogoCfg {
   /** Preço praticado (editável). É esse que vale. */
   preco: number;
   quantidade: number;
+  /** FORNECEDOR do produto no site (define pronta entrega / sob encomenda) */
+  vendor?: string;
 }
 
 
@@ -259,7 +263,7 @@ export function novaEntradaCustom(descricao = '', preco = 0, quantidade = 1, bri
 }
 
 export function novaEntradaCatalogo(p: {
-  variantId: string; titulo: string; variante?: string; imagem?: string | null; preco: number;
+  variantId: string; titulo: string; variante?: string; imagem?: string | null; preco: number; vendor?: string;
 }): PedidoEntry {
   return {
     id: crypto.randomUUID(),
@@ -273,6 +277,7 @@ export function novaEntradaCatalogo(p: {
       precoOriginal: p.preco,
       preco: p.preco,
       quantidade: 1,
+      vendor: p.vendor,
     },
   };
 }
@@ -333,7 +338,7 @@ export function ehFacaDoCatalogo(data: SimuladorData, p: { titulo: string; varia
 /** Cria uma faca configurável pré-preenchida a partir de um produto/variante da vitrine. */
 
 export function facaDeProdutoShopify(data: SimuladorData, p: {
-  variantId: string; titulo: string; variante?: string; imagem?: string | null; preco: number;
+  variantId: string; titulo: string; variante?: string; imagem?: string | null; preco: number; vendor?: string;
 }): ItemCfg {
   const texto = [p.titulo, p.variante ?? ''].join(' ');
   const cfg = newItem();
@@ -372,6 +377,7 @@ export function facaDeProdutoShopify(data: SimuladorData, p: {
     varianteTitulo: p.variante ?? '',
     imagem: p.imagem ?? null,
     precoOriginal: p.preco,
+    vendor: p.vendor,
     snapshot: assinaturaCfg(cfg),
   };
   return cfg;
@@ -379,7 +385,7 @@ export function facaDeProdutoShopify(data: SimuladorData, p: {
 
 /** Entrada de pedido do tipo faca, pré-preenchida a partir da vitrine. */
 export function novaEntradaFacaDeCatalogo(data: SimuladorData, p: {
-  variantId: string; titulo: string; variante?: string; imagem?: string | null; preco: number;
+  variantId: string; titulo: string; variante?: string; imagem?: string | null; preco: number; vendor?: string;
 }): PedidoEntry {
   return { id: crypto.randomUUID(), kind: 'faca', faca: facaDeProdutoShopify(data, p) };
 }

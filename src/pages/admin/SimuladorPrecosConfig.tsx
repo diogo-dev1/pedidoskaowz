@@ -21,6 +21,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import ExpedicaoConfigTab from '@/components/admin/ExpedicaoConfigTab';
+import { Truck as TruckIcon } from 'lucide-react';
 
 
 
@@ -324,12 +326,13 @@ export default function SimuladorPrecosConfig() {
       </div>
 
       <Tabs defaultValue="modelos" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="modelos" className="gap-1 text-[11px] sm:text-sm"><Package className="w-3.5 h-3.5" /> Modelos</TabsTrigger>
           <TabsTrigger value="customizacoes" className="gap-1 text-[11px] sm:text-sm"><Wrench className="w-3.5 h-3.5" /> Custom.</TabsTrigger>
           <TabsTrigger value="adicionais" className="gap-1 text-[11px] sm:text-sm"><Sparkles className="w-3.5 h-3.5" /> Adicionais</TabsTrigger>
           <TabsTrigger value="pesos" className="gap-1 text-[11px] sm:text-sm"><Weight className="w-3.5 h-3.5" /> Pesos</TabsTrigger>
           <TabsTrigger value="vendedores" className="gap-1 text-[11px] sm:text-sm"><Users className="w-3.5 h-3.5" /> Vendedores</TabsTrigger>
+          <TabsTrigger value="expedicao" className="gap-1 text-[11px] sm:text-sm"><TruckIcon className="w-3.5 h-3.5" /> Expedição</TabsTrigger>
         </TabsList>
 
 
@@ -526,6 +529,10 @@ export default function SimuladorPrecosConfig() {
           )}
         </TabsContent>
 
+        {/* ── Expedição (salva na hora, não depende de "Salvar valores") ── */}
+        <TabsContent value="expedicao" className="mt-4">
+          <ExpedicaoConfigTab />
+        </TabsContent>
       </Tabs>
 
       <Dialog open={!!novaOpcao} onOpenChange={(open) => !open && setNovaOpcao(null)}>

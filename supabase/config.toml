@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.criar-draft-order-shopify]
 verify_jwt = false
+
+[functions.sincronizar-pronta-entrega]
+verify_jwt = false

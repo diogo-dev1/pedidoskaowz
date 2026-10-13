@@ -20,6 +20,8 @@ interface LineItemIn {
 
 interface Payload {
   itens: LineItemIn[];
+  /** Pedido misto: 'junto' (tudo de uma vez) ou 'parcial' (pronta entrega primeiro) */
+  modoEnvio?: 'junto' | 'parcial';
   /** Vendedor responsável pelo pedido (obrigatório no lançamento pelo simulador) */
   vendedor?: string;
   /** Origem comercial usada no Relatório de Vendas. */
@@ -296,6 +298,16 @@ Deno.serve(async (req) => {
 
     const tags = ['Kaowz-Simulador'];
     if (vendedor) tags.push(`vendedor:${vendedor}`);
+    // Pronta entrega — lida dos atributos de cada linha
+    const flagPE = (i: LineItemIn) => (i.properties ?? []).find((p) => p?.name === 'Pronta entrega')?.value;
+    const temPronta = itens.some((i) => flagPE(i) === 'Sim');
+    const temEncomenda = itens.some((i) => flagPE(i) === 'Não');
+    if (temPronta) tags.push('Contém pronta entrega');
+    if (temPronta && temEncomenda) {
+      tags.push('Misto');
+      if (payload.modoEnvio === 'junto') tags.push('Envio junto');
+      else if (payload.modoEnvio === 'parcial') tags.push('Envio parcial');
+    }
 
     const input: Record<string, unknown> = {
       lineItems,

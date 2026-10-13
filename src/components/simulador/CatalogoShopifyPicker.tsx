@@ -12,6 +12,8 @@ export interface ProdutoShopify {
   preco: number;
   imagem: string | null;
   disponivel?: boolean;
+  /** Campo FORNECEDOR do Shopify — define pronta entrega / sob encomenda */
+  vendor?: string;
 }
 
 /** Busca produtos do catálogo Shopify (ativos e publicados) e devolve a variante escolhida. */
