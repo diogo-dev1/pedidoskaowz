@@ -37,7 +37,7 @@ interface PedidoPE {
   observacao: string | null;
 }
 
-type Aba = 'enviar' | 'definir' | 'producao' | 'enviados';
+type Aba = 'todos' | 'enviar' | 'definir' | 'producao' | 'enviados';
 type Filtro = null | 'atrasados' | 'hoje' | 'amanha' | 'semana';
 
 const diaMes = (ymd?: string | null) => (ymd ? ymd.slice(8, 10) + '/' + ymd.slice(5, 7) : '—');
@@ -51,10 +51,10 @@ function textoPrazo(r: number) {
   return `Faltam ${r} dias úteis`;
 }
 function corPrazo(r: number) {
-  if (r < 0) return { faixa: 'bg-red-500', texto: 'text-red-500' };
-  if (r === 0) return { faixa: 'bg-orange-500', texto: 'text-orange-500' };
-  if (r === 1) return { faixa: 'bg-yellow-500', texto: 'text-yellow-500' };
-  return { faixa: 'bg-green-500', texto: 'text-green-500' };
+  if (r < 0) return { faixa: 'bg-destructive', texto: 'text-destructive' };
+  if (r === 0) return { faixa: 'bg-primary', texto: 'text-primary' };
+  if (r === 1) return { faixa: 'bg-warning', texto: 'text-warning' };
+  return { faixa: 'bg-success', texto: 'text-success' };
 }
 function inicioSemana(): string {
   const h = ymdBR(new Date());
@@ -76,11 +76,11 @@ const itensTxt = (it: ItemPE[]) => it.map((i) => `${i.quantidade}x ${i.titulo}`)
 
 export default function ProntaEntrega() {
   const qc = useQueryClient();
-  const [aba, setAba] = useState<Aba>('enviar');
+  const [aba, setAba] = useState<Aba>('todos');
   const [filtro, setFiltro] = useState<Filtro>(null);
   const [busca, setBusca] = useState('');
   const [sincronizando, setSincronizando] = useState(false);
-  const [, setTick] = useState(0);
+  const [tick, setTick] = useState(0);
   const [enviar, setEnviar] = useState<PedidoPE | null>(null);
   const [desfazer, setDesfazer] = useState<PedidoPE | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
@@ -91,7 +91,9 @@ export default function ProntaEntrega() {
     queryFn: async () => {
       const { data, error } = await supabase.from('pedidos_pronta_entrega').select('*').order('prazo_limite', { ascending: true });
       if (error) throw error;
-      return (data ?? []) as unknown as PedidoPE[];
+      return ((data ?? []) as unknown as PedidoPE[]).map((p) =>
+        p.origem !== 'simulador' && p.modo_envio === 'a_definir' ? { ...p, modo_envio: 'junto' } : p
+      );
     },
   });
   const { data: feriados = new Set<string>() } = useQuery({
@@ -139,7 +141,7 @@ export default function ProntaEntrega() {
 
   const grupos = useMemo(() => {
     const enviar = pedidos.filter((p) => p.status === 'pendente' && (p.modo_envio === null || p.modo_envio === 'parcial'));
-    const definir = pedidos.filter((p) => p.status === 'pendente' && p.modo_envio === 'a_definir');
+    const definir = pedidos.filter((p) => p.origem === 'simulador' && p.status === 'pendente' && p.modo_envio === 'a_definir');
     const producao = pedidos.filter((p) => (p.status === 'pendente' && p.modo_envio === 'junto') || p.status === 'enviado_parcial');
     const enviados = pedidos.filter((p) => p.status === 'enviado').sort((a, b) => (b.enviado_em ?? '').localeCompare(a.enviado_em ?? ''));
     return { enviar, definir, producao, enviados };
@@ -160,12 +162,19 @@ export default function ProntaEntrega() {
       const r = restantes(p);
       return filtro === 'atrasados' ? r < 0 : filtro === 'hoje' ? r === 0 : r === 1;
     });
-    else l = grupos[aba];
-    if (aba === 'enviar' && !filtro) l = [...l].sort((a, b) => restantes(a) - restantes(b));
+    else l = aba === 'todos' ? pedidos : grupos[aba];
+    l = [...l].sort((a, b) => {
+      const enviados = Number(a.status === 'enviado') - Number(b.status === 'enviado');
+      if (enviados) return enviados;
+      if (a.status === 'enviado' && b.status === 'enviado') return (b.enviado_em ?? '').localeCompare(a.enviado_em ?? '');
+      return (a.prazo_limite ?? '9999-12-31').localeCompare(b.prazo_limite ?? '9999-12-31')
+        || (a.data_pagamento ?? '').localeCompare(b.data_pagamento ?? '')
+        || a.pedido_numero.localeCompare(b.pedido_numero, 'pt-BR', { numeric: true });
+    });
     const q = busca.trim().toLowerCase();
     if (q) l = l.filter((p) => (p.cliente_nome ?? '').toLowerCase().includes(q) || p.pedido_numero.toLowerCase().includes(q));
     return l;
-  }, [pedidos, grupos, aba, filtro, busca, restantes, semana]);
+  }, [pedidos, grupos, aba, filtro, busca, restantes, semana, tick]);
 
   const definirModo = async (p: PedidoPE, modo: 'junto' | 'parcial') => {
     setAcaoId(p.id);
@@ -178,15 +187,16 @@ export default function ProntaEntrega() {
   };
 
   const cartoes: { k: Exclude<Filtro, null>; titulo: string; n: number; cls: string }[] = [
-    { k: 'atrasados', titulo: 'Atrasados', n: cont.atrasados, cls: 'border-red-500/50 bg-red-500/10 text-red-500' },
-    { k: 'hoje', titulo: 'Enviar hoje', n: cont.hoje, cls: 'border-orange-500/50 bg-orange-500/10 text-orange-500' },
-    { k: 'amanha', titulo: 'Vencem amanhã', n: cont.amanha, cls: 'border-yellow-500/50 bg-yellow-500/10 text-yellow-500' },
-    { k: 'semana', titulo: 'Enviados na semana', n: cont.semana, cls: 'border-border bg-muted/40 text-muted-foreground' },
+    { k: 'atrasados', titulo: 'Atrasados', n: cont.atrasados, cls: 'text-destructive' },
+    { k: 'hoje', titulo: 'Enviar hoje', n: cont.hoje, cls: 'text-primary' },
+    { k: 'amanha', titulo: 'Vencem amanhã', n: cont.amanha, cls: 'text-warning' },
+    { k: 'semana', titulo: 'Enviados na semana', n: cont.semana, cls: 'text-muted-foreground' },
   ];
 
   const vazio: Record<Aba, string> = {
+    todos: 'Nenhum pedido de pronta entrega encontrado.',
     enviar: 'Nenhum pedido para separar agora. Quando entrar uma venda com item pronta entrega, ela aparece aqui automaticamente.',
-    definir: 'Nenhum pedido esperando decisão. Aqui aparecem pedidos do site que têm item pronto e lâmina sob encomenda juntos.',
+    definir: 'Nenhum pedido esperando decisão. Aqui aparecem somente pedidos de rascunho com envio ainda não definido.',
     producao: 'Nada aguardando produção. Aqui ficam pedidos que vão "tudo junto" e os que já tiveram a parte pronta enviada.',
     enviados: 'Nenhum pedido enviado ainda. Depois de clicar em "Marcar como enviado", o pedido aparece aqui.',
   };
@@ -198,7 +208,7 @@ export default function ProntaEntrega() {
           <Truck className="h-6 w-6 text-primary" />
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">Pronta Entrega</h1>
-            <p className="text-xs text-muted-foreground">Pedidos com itens prontos que precisam sair rápido. Os mais urgentes aparecem primeiro.</p>
+            <p className="text-xs text-muted-foreground">{pedidos.length} pedidos · {pedidos.filter((p) => p.status !== 'enviado').length} em aberto</p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-0.5">
@@ -209,22 +219,16 @@ export default function ProntaEntrega() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-2xl">
         {cartoes.map((c) => (
-          <button key={c.k} type="button" onClick={() => setFiltro(filtro === c.k ? null : c.k)}
-            className={cn('rounded-xl border p-3 text-left transition-all', c.cls, filtro === c.k && 'ring-2 ring-primary')}>
-            <span className="block text-3xl font-bold tabular-nums">{c.n}</span>
-            <span className="block text-xs font-medium">{c.titulo}</span>
-          </button>
+          <Button key={c.k} type="button" variant="outline" aria-pressed={filtro === c.k}
+            onClick={() => { setAba('todos'); setFiltro(filtro === c.k ? null : c.k); }}
+            className={cn('aspect-square h-auto min-w-0 rounded-none p-3 sm:p-4 flex flex-col items-start justify-between whitespace-normal text-left bg-card shadow-none', filtro === c.k && 'border-primary ring-1 ring-primary')}>
+            <span className={cn('text-3xl sm:text-4xl font-semibold tabular-nums', c.cls)}>{c.n}</span>
+            <span className="text-xs font-medium text-muted-foreground">{c.titulo}</span>
+          </Button>
         ))}
       </div>
-      {filtro && (
-        <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-xs">
-          <span>Mostrando só: <b>{cartoes.find((c) => c.k === filtro)?.titulo}</b></span>
-          <button className="text-primary underline" onClick={() => setFiltro(null)}>Ver todos</button>
-        </div>
-      )}
-
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -238,21 +242,26 @@ export default function ProntaEntrega() {
         </div>
       </div>
 
-      {!filtro && (
-        <Tabs value={aba} onValueChange={(v) => setAba(v as Aba)}>
-          <TabsList className="grid w-full grid-cols-4 h-auto">
-            <TabsTrigger value="enviar" className="text-[11px] sm:text-sm px-1 py-1.5">A enviar ({grupos.enviar.length})</TabsTrigger>
-            <TabsTrigger value="definir" className="text-[11px] sm:text-sm px-1 py-1.5">Envio a definir ({grupos.definir.length})</TabsTrigger>
-            <TabsTrigger value="producao" className="text-[11px] sm:text-sm px-1 py-1.5">Aguard. produção ({grupos.producao.length})</TabsTrigger>
-            <TabsTrigger value="enviados" className="text-[11px] sm:text-sm px-1 py-1.5">Enviados ({grupos.enviados.length})</TabsTrigger>
+      <div className="space-y-2 border-b pb-3">
+        <Tabs value={aba} onValueChange={(v) => { setAba(v as Aba); setFiltro(null); }}>
+          <TabsList className="flex flex-wrap justify-start w-full h-auto gap-1 rounded-none bg-transparent p-0">
+            <TabsTrigger value="todos" className="rounded-none text-xs px-3 py-2">Todos ({pedidos.length})</TabsTrigger>
+            <TabsTrigger value="enviar" className="rounded-none text-xs px-3 py-2">A enviar ({grupos.enviar.length})</TabsTrigger>
+            <TabsTrigger value="definir" className="rounded-none text-xs px-3 py-2">Envio a definir ({grupos.definir.length})</TabsTrigger>
+            <TabsTrigger value="producao" className="rounded-none text-xs px-3 py-2">Aguardando produção ({grupos.producao.length})</TabsTrigger>
+            <TabsTrigger value="enviados" className="rounded-none text-xs px-3 py-2">Enviados ({grupos.enviados.length})</TabsTrigger>
           </TabsList>
         </Tabs>
-      )}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span>{lista.length} {lista.length === 1 ? 'pedido' : 'pedidos'}{filtro ? ` · ${cartoes.find((c) => c.k === filtro)?.titulo}` : ''} · Mais urgentes primeiro</span>
+          {(filtro || aba !== 'todos' || busca) && <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setFiltro(null); setAba('todos'); setBusca(''); }}>Limpar filtros</Button>}
+        </div>
+      </div>
 
       {isLoading ? (
         <p className="text-center text-muted-foreground py-8">Carregando pedidos...</p>
       ) : lista.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground space-y-1">
+        <div className="rounded-none border border-dashed p-6 text-center text-sm text-muted-foreground space-y-1">
           <Info className="h-5 w-5 mx-auto" />
           <p>{busca ? 'Nenhum pedido encontrado com essa busca.' : filtro ? 'Nenhum pedido nesta situação. 👍' : vazio[aba]}</p>
         </div>
@@ -266,7 +275,7 @@ export default function ProntaEntrega() {
 
             if (p.status === 'enviado') {
               return (
-                <div key={p.id} className="rounded-xl border bg-muted/30 p-3 text-muted-foreground space-y-1">
+                <div key={p.id} className="rounded-none border bg-muted/30 p-3 text-muted-foreground space-y-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-semibold text-foreground/80 truncate">{p.cliente_nome ?? 'Sem nome'}</p>
@@ -281,19 +290,19 @@ export default function ProntaEntrega() {
               );
             }
 
-            if (p.modo_envio === 'a_definir' && p.status === 'pendente') {
+            if (p.origem === 'simulador' && p.modo_envio === 'a_definir' && p.status === 'pendente') {
               return (
-                <div key={p.id} className="rounded-xl border border-yellow-500/50 bg-yellow-500/10 p-3 space-y-2">
+                <div key={p.id} className="rounded-none border border-warning/40 bg-card p-3 space-y-2">
                   <div>
                     <p className="font-semibold">{p.cliente_nome ?? 'Sem nome'}</p>
                     <p className="text-xs text-muted-foreground">{p.pedido_numero}{p.vendedor ? ` · ${p.vendedor}` : ''}{p.cliente_telefone ? ` · ${p.cliente_telefone}` : ''}</p>
                   </div>
-                  <p className="text-xs flex gap-1.5"><AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />O vendedor precisa confirmar com o cliente se envia tudo junto ou a pronta entrega antes. A expedição não deve enviar ainda.</p>
+                  <p className="text-xs flex gap-1.5"><AlertTriangle className="h-4 w-4 text-warning shrink-0" />O vendedor precisa confirmar com o cliente se envia tudo junto ou a pronta entrega antes. A expedição não deve enviar ainda.</p>
                   <div className="text-xs grid sm:grid-cols-2 gap-1">
                     <div><b>Prontos:</b> {itensTxt(prontos).join(', ')}</div>
                     <div><b>Sob encomenda:</b> {itensTxt(encomenda).join(', ')}</div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <Button variant="outline" className="h-11" disabled={acaoId === p.id} onClick={() => definirModo(p, 'junto')}>Tudo junto</Button>
                     <Button className="h-11" disabled={acaoId === p.id} onClick={() => definirModo(p, 'parcial')}>Pronta entrega primeiro</Button>
                   </div>
@@ -304,7 +313,7 @@ export default function ProntaEntrega() {
             const aguardando = p.status === 'enviado_parcial' || p.modo_envio === 'junto';
             if (aguardando) {
               return (
-                <div key={p.id} className="rounded-xl border p-3 space-y-1.5">
+                <div key={p.id} className="rounded-none border bg-card p-3 space-y-1.5">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-semibold truncate">{p.cliente_nome ?? 'Sem nome'}</p>
@@ -328,16 +337,16 @@ export default function ProntaEntrega() {
             const cor = corPrazo(r);
             const separar = p.modo_envio === 'parcial' ? prontos : p.itens;
             return (
-              <div key={p.id} className="relative overflow-hidden rounded-xl border bg-card p-3 pl-5 space-y-1.5">
-                <span className={cn('absolute left-0 top-0 bottom-0 w-2', cor.faixa)} />
-                <p className={cn('text-lg font-bold leading-tight', cor.texto)}>{textoPrazo(r)}</p>
+              <div key={p.id} className="relative overflow-hidden rounded-none border bg-card p-3 pl-4 space-y-1.5">
+                <span className={cn('absolute left-0 top-0 bottom-0 w-1', cor.faixa)} />
+                <p className={cn('text-sm font-semibold leading-tight', cor.texto)}>{textoPrazo(r)}</p>
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                   <p className="font-semibold">{p.cliente_nome ?? 'Sem nome'}</p>
                   <p className="text-xs text-muted-foreground">Prazo limite: <b>{diaMes(p.prazo_limite)}</b></p>
                 </div>
                 <p className="text-xs text-muted-foreground">{p.pedido_numero}{p.vendedor ? ` · Vendedor: ${p.vendedor}` : ''}{p.origem === 'manual' ? ' · Manual' : ''}</p>
-                <div className="rounded-lg bg-muted/40 p-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">Separar agora</p>
+                <div className="border-t pt-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-normal text-muted-foreground mb-0.5">Separar agora</p>
                   <ul className="text-sm space-y-0.5">{itensTxt(separar).map((t, i) => <li key={i}>• {t}</li>)}</ul>
                 </div>
                 {p.modo_envio === 'parcial' && encomenda.length > 0 && (
@@ -392,13 +401,13 @@ function EnviarDialog({ pedido, onClose, onDone }: { pedido: PedidoPE | null; on
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md rounded-2xl">
+      <DialogContent className="max-w-md rounded-lg">
         <DialogHeader>
           <DialogTitle>Marcar como enviado</DialogTitle>
           <DialogDescription>Confira se estes itens estão na caixa antes de confirmar.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="rounded-lg bg-muted/40 p-2 text-sm">
+          <div className="border-t pt-2 text-sm">
             <p className="font-semibold">{pedido.cliente_nome ?? 'Sem nome'} <span className="text-xs text-muted-foreground font-normal">· {pedido.pedido_numero}</span></p>
             <ul className="mt-1 space-y-0.5">{itensTxt(itens).map((t, i) => <li key={i}>• {t}</li>)}</ul>
           </div>
@@ -489,7 +498,7 @@ function ManualDialog({ open, onClose, onDone }: { open: boolean; onClose: () =>
   };
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md rounded-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md rounded-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Adicionar pedido manual</DialogTitle>
           <DialogDescription>Só para exceções que não passaram pelo Simulador nem pelo site.</DialogDescription>
@@ -501,7 +510,7 @@ function ManualDialog({ open, onClose, onDone }: { open: boolean; onClose: () =>
             <Label>Itens *</Label>
             <Textarea value={itens} onChange={(e) => setItens(e.target.value)} rows={3} placeholder={'Um por linha. Ex.:\n2x Push Dagger Compact\n1x Strop'} />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="space-y-1"><Label>Pago em</Label><Input type="datetime-local" value={pago} onChange={(e) => setPago(e.target.value)} className="h-11" /></div>
             <div className="space-y-1"><Label>Prazo (dias úteis)</Label><Input type="number" min={1} value={prazo} onChange={(e) => setPrazo(Math.max(1, Number(e.target.value) || 1))} className="h-11" /></div>
           </div>

@@ -269,7 +269,9 @@ Deno.serve(async (req) => {
       const misto = itensNovos.some((i) => !i.pronta_entrega);
       const tagsAtuais: string[] = o.tags ?? [];
       const temTag = (t: string) => tagsAtuais.some((x) => x.toLowerCase() === t.toLowerCase());
-      const modoShopify = temTag('Envio parcial') ? 'parcial' : temTag('Envio junto') ? 'junto' : misto ? 'a_definir' : null;
+      const origem = temTag('Kaowz-Simulador') ? 'simulador' : 'site';
+      // Sem decisão explícita, pedidos comuns do site seguem juntos; só drafts aguardam definição.
+      const modoShopify = temTag('Envio parcial') ? 'parcial' : temTag('Envio junto') ? 'junto' : misto ? (origem === 'simulador' ? 'a_definir' : 'junto') : null;
       const pago = (o.transactions ?? []).filter((t: any) => t.status === 'SUCCESS' && ['SALE', 'CAPTURE'].includes(t.kind))
         .map((t: any) => t.processedAt).sort()[0] ?? o.processedAt;
       const vendTag = tagsAtuais.find((t) => /^vendedor:/i.test(t));
@@ -285,7 +287,7 @@ Deno.serve(async (req) => {
       const modo = ex?.modo_envio && ex.modo_envio !== 'a_definir' ? ex.modo_envio : modoShopify;
       const camposShopify = {
         shopify_order_id: o.id,
-        origem: temTag('Kaowz-Simulador') ? 'simulador' : 'site',
+        origem,
         cliente_nome: o.customer?.displayName ?? o.shippingAddress?.name ?? null,
         cliente_telefone: o.customer?.phone ?? o.shippingAddress?.phone ?? null,
         vendedor, data_pagamento: pago, itens,
