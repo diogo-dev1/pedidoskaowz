@@ -29,6 +29,8 @@ All colors MUST be HSL.
     --brand-foreground: 0 0% 100%;
     --destructive: 0 70% 45%;
     --destructive-foreground: 0 0% 100%;
+    --warning: 42 90% 36%;
+    --success: 150 65% 32%;
     --border: 220 14% 89%;
     --input: 220 14% 89%;
     --ring: 24 84% 44%;
@@ -72,6 +74,8 @@ All colors MUST be HSL.
     --brand-foreground: 0 0% 100%;
 
     --destructive: 0 70% 50%;
+    --warning: 42 90% 60%;
+    --success: 150 65% 55%;
     --destructive-foreground: 0 0% 100%;
     --border: 0 0% 20%;
     --input: 0 0% 20%;
