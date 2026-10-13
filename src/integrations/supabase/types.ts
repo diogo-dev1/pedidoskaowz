@@ -836,6 +836,24 @@ export type Database = {
         }
         Relationships: []
       }
+      config_expedicao: {
+        Row: {
+          chave: string
+          updated_at: string
+          valor: string | null
+        }
+        Insert: {
+          chave: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Update: {
+          chave?: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Relationships: []
+      }
       config_internacional: {
         Row: {
           chave: string
@@ -932,6 +950,27 @@ export type Database = {
         }
         Relationships: []
       }
+      equipe_expedicao: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       expedicao: {
         Row: {
           brindes: string | null
@@ -1002,6 +1041,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      feriados: {
+        Row: {
+          data: string
+          descricao: string | null
+        }
+        Insert: {
+          data: string
+          descricao?: string | null
+        }
+        Update: {
+          data?: string
+          descricao?: string | null
+        }
+        Relationships: []
       }
       financeiro_recebimentos: {
         Row: {
@@ -2200,6 +2254,72 @@ export type Database = {
           shopify_order_id?: string
           shopify_order_name?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      pedidos_pronta_entrega: {
+        Row: {
+          classificacao: string
+          cliente_nome: string | null
+          cliente_telefone: string | null
+          created_at: string
+          data_pagamento: string | null
+          enviado_em: string | null
+          enviado_por: string | null
+          id: string
+          itens: Json
+          modo_envio: string | null
+          observacao: string | null
+          origem: string
+          pedido_numero: string
+          prazo_limite: string | null
+          rastreio: string | null
+          shopify_order_id: string | null
+          status: string
+          synced_at: string | null
+          vendedor: string | null
+        }
+        Insert: {
+          classificacao?: string
+          cliente_nome?: string | null
+          cliente_telefone?: string | null
+          created_at?: string
+          data_pagamento?: string | null
+          enviado_em?: string | null
+          enviado_por?: string | null
+          id?: string
+          itens?: Json
+          modo_envio?: string | null
+          observacao?: string | null
+          origem?: string
+          pedido_numero: string
+          prazo_limite?: string | null
+          rastreio?: string | null
+          shopify_order_id?: string | null
+          status?: string
+          synced_at?: string | null
+          vendedor?: string | null
+        }
+        Update: {
+          classificacao?: string
+          cliente_nome?: string | null
+          cliente_telefone?: string | null
+          created_at?: string
+          data_pagamento?: string | null
+          enviado_em?: string | null
+          enviado_por?: string | null
+          id?: string
+          itens?: Json
+          modo_envio?: string | null
+          observacao?: string | null
+          origem?: string
+          pedido_numero?: string
+          prazo_limite?: string | null
+          rastreio?: string | null
+          shopify_order_id?: string | null
+          status?: string
+          synced_at?: string | null
+          vendedor?: string | null
         }
         Relationships: []
       }
