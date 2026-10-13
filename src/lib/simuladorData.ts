@@ -175,6 +175,8 @@ export interface CatalogoCfg {
   /** Preço praticado (editável). É esse que vale. */
   preco: number;
   quantidade: number;
+  /** FORNECEDOR do produto no site (define pronta entrega / sob encomenda) */
+  vendor?: string;
 }
 
 
