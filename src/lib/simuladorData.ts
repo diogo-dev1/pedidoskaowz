@@ -98,6 +98,8 @@ export interface OrigemCatalogo {
   varianteTitulo: string;
   imagem?: string | null;
   precoOriginal: number;
+  /** FORNECEDOR do produto no site (define pronta entrega / sob encomenda) */
+  vendor?: string;
   /** Assinatura da configuração no momento em que veio do catálogo */
   snapshot: string;
 }
@@ -148,8 +150,6 @@ export interface AvulsoCfg {
   id: string;
   adicionalIdx: number;
   quantidade: number;
-  /** FORNECEDOR do produto no site (define pronta entrega / sob encomenda) */
-  vendor?: string;
 }
 
 /** Item personalizado — descrição livre e preço definido manualmente
