@@ -379,7 +379,6 @@ function EnviarDialog({ pedido, onClose, onDone }: { pedido: PedidoPE | null; on
   const itens = pedido.itens.filter((i) => !i.enviado && (!soProntos || i.pronta_entrega));
 
   const confirmar = async () => {
-    if (!quem) { toast.error('Escolha quem está enviando'); return; }
     setSalvando(true);
     try {
       const { data, error } = await supabase.functions.invoke('sincronizar-pronta-entrega', {
@@ -404,12 +403,12 @@ function EnviarDialog({ pedido, onClose, onDone }: { pedido: PedidoPE | null; on
             <ul className="mt-1 space-y-0.5">{itensTxt(itens).map((t, i) => <li key={i}>• {t}</li>)}</ul>
           </div>
           <div className="space-y-1">
-            <Label>Quem está enviando *</Label>
+            <Label>Quem está enviando (opcional)</Label>
             <Select value={quem} onValueChange={setQuem}>
-              <SelectTrigger className="h-11"><SelectValue placeholder="Escolha seu nome" /></SelectTrigger>
+              <SelectTrigger className="h-11"><SelectValue placeholder="Não é obrigatório informar" /></SelectTrigger>
               <SelectContent>{equipe.map((e) => <SelectItem key={e.id} value={e.nome}>{e.nome}</SelectItem>)}</SelectContent>
             </Select>
-            {equipe.length === 0 && <p className="text-[11px] text-muted-foreground">Nenhuma pessoa cadastrada. Peça ao administrador para cadastrar a equipe em Valores do Simulador → Expedição.</p>}
+            {equipe.length === 0 && <p className="text-[11px] text-muted-foreground">Nenhuma pessoa cadastrada — não precisa informar nada, é só confirmar o envio.</p>}
           </div>
           <div className="space-y-1">
             <Label>Código de rastreio (opcional)</Label>
@@ -422,7 +421,7 @@ function EnviarDialog({ pedido, onClose, onDone }: { pedido: PedidoPE | null; on
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={confirmar} disabled={salvando || !quem} className="gap-1.5">
+          <Button onClick={confirmar} disabled={salvando} className="gap-1.5">
             {salvando && <Loader2 className="h-4 w-4 animate-spin" />} Confirmar envio
           </Button>
         </DialogFooter>

@@ -185,7 +185,6 @@ Deno.serve(async (req) => {
 
     if (acao === 'marcar_enviado') {
       const enviadoPor = String(body.enviado_por ?? '').trim();
-      if (!enviadoPor) return json({ sucesso: false, erro: 'Informe quem está enviando' }, 400);
       const p = await carregar(String(body.id));
       const agora = new Date().toISOString();
       const itens: ItemPE[] = p.itens ?? [];
@@ -195,7 +194,7 @@ Deno.serve(async (req) => {
       const restante = novos.some((i) => !i.enviado);
       const status = restante ? 'enviado_parcial' : 'enviado';
       await db.from('pedidos_pronta_entrega').update({
-        itens: novos, status, enviado_em: agora, enviado_por: enviadoPor,
+        itens: novos, status, enviado_em: agora, enviado_por: enviadoPor || p.enviado_por || null,
         rastreio: String(body.rastreio ?? '').trim() || p.rastreio,
         observacao: String(body.observacao ?? '').trim() || p.observacao,
       }).eq('id', p.id);
