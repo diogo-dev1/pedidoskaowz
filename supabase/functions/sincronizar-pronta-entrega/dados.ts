@@ -21,6 +21,7 @@ const baseFields = `name note processedAt displayFinancialStatus paymentGatewayN
 export async function obterDetalhes(shopify: (q: string, v: Record<string, unknown>) => Promise<any>, id: string) {
   const groups = {
     email: 'email', phone: 'phone', shippingAddress: 'shippingAddress { name phone address1 address2 city province provinceCode zip }',
+    billingAddress: 'billingAddress { name phone address1 address2 city province provinceCode zip }',
     customer: 'customer { displayName email phone metafield(namespace: "kaowz", key: "cpf") { value } }',
     localizedFields: 'localizedFields(first: 5) { edges { node { countryCode purpose title value } } }',
   };
@@ -39,7 +40,7 @@ export async function obterDetalhes(shopify: (q: string, v: Record<string, unkno
       const remove = [...active].filter(k => message.toLowerCase().includes(k.toLowerCase()) || (k === 'customer' && /customer|cliente/i.test(message)));
       const keys = remove.length ? remove : [...active];
       if (!keys.length) throw e;
-      for (const key of keys) { active.delete(key); avisos.push(({ email: 'e-mail', phone: 'telefone', customer: 'dados do cliente', shippingAddress: 'endereço', localizedFields: 'CPF/CNPJ' } as Record<string, string>)[key]); }
+      for (const key of keys) { active.delete(key); avisos.push(({ email: 'e-mail', phone: 'telefone', customer: 'dados do cliente', shippingAddress: 'endereço de entrega', billingAddress: 'endereço de cobrança', localizedFields: 'CPF/CNPJ' } as Record<string, string>)[key]); }
     }
   }
   throw new Error('Não foi possível carregar os detalhes');
@@ -52,8 +53,11 @@ export async function buscarRastreio(db: any, pedido: any) {
   if (!numericId) throw new Error('ID do Shopify inválido');
   let detalhe: any;
   try {
-    if (pedido.bling_pedido_id) detalhe = (await blingGet(db, `pedidos/vendas/${encodeURIComponent(pedido.bling_pedido_id)}`)).data;
-    else {
+    if (pedido.bling_pedido_id) {
+      const candidate = (await blingGet(db, `pedidos/vendas/${encodeURIComponent(pedido.bling_pedido_id)}`)).data;
+      if (String(candidate?.numeroLoja ?? '') === numericId) detalhe = candidate;
+    }
+    if (!detalhe) {
       // Cache narrows candidates, but always verify numeroLoja from the API detail.
       const { data: cache } = await db.from('bling_pedidos').select('bling_id').contains('dados_completos', { numeroLoja: numericId }).limit(1);
       if (cache?.[0]) {

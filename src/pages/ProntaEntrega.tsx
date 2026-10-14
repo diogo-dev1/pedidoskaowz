@@ -14,7 +14,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { RefreshCw, Loader2, Plus, Maximize, Minimize, Truck, Search, PackageCheck, StickyNote, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { calcularPrazoLimite, prazoDoPedido, diasUteisRestantes, ymdBR, TZ_BR } from '@/lib/prontaEntrega';
+import { calcularPrazoLimite, prazoDoPedido, diasUteisRestantes, TZ_BR } from '@/lib/prontaEntrega';
 import { acaoPE, pendente, ultimoEnvio, certificadoDiferente, textoPrazo, corPrazo, dataHora, type PedidoPE } from '@/lib/pedidoPE';
 import { PedidoDetalhes, copiarPE, rastrearPE } from '@/components/pronta-entrega/PedidoDetalhes';
 const hora = (d: Date) => d.toLocaleTimeString('pt-BR', { timeZone: TZ_BR, hour: '2-digit', minute: '2-digit' });
@@ -92,7 +92,6 @@ export default function ProntaEntrega() {
     if (telaCheia) { setTelaCheia(false); if (document.fullscreenElement) await document.exitFullscreen().catch(() => {}); }
     else { setTelaCheia(true); try { await document.documentElement.requestFullscreen(); } catch { /* modo painel funciona sem suporte nativo */ } }
   };
-  const hoje = ymdBR(agora);
   const abertos = useMemo(() => pedidos.filter(p => p.itens.some(i => i.pronta_entrega)).map(p => pendente(p) && p.data_pagamento
     ? { ...p, prazo_limite: calcularPrazoLimite(new Date(p.data_pagamento), prazoDoPedido(p.itens), corte, feriados) } : p), [pedidos, corte, feriados]);
   const restantes = (p: PedidoPE) => p.prazo_limite ? diasUteisRestantes(p.prazo_limite, feriados, agora) : 99;
