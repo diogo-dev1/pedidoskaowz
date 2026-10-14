@@ -1,5 +1,10 @@
 # Pronta Entrega — painel e notas
 
+- [ ] Criar acompanhamento, detalhes Shopify e rastreio Bling preservando dados locais.
+- [ ] Reorganizar a página em três colunas com detalhes e confirmação simples.
+- [ ] Corrigir host/token Bling em todas as funções e atributos do simulador.
+- [ ] Validar API Bling e fluxos desktop/mobile, conferir compilação.
+
 - [x] Substituir a apresentação por Kanban integrado ao tema do app e detalhes completos.
 - [x] Validar monitor, tablet e celular, incluindo envio e desfazer com dados interceptados.
 
