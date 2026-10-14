@@ -1,5 +1,8 @@
 # Pronta Entrega — painel e notas
 
+- [x] Substituir a apresentação por Kanban integrado ao tema do app e detalhes completos.
+- [x] Validar monitor, tablet e celular, incluindo envio e desfazer com dados interceptados.
+
 - [x] Redesenhar somente a apresentação com grade única, indicador principal e barras de prazo.
 - [x] Validar estados, animações e interação em 1920×1080 e 390×844 sem alterar dados.
 
