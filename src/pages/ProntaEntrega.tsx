@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RefreshCw, Loader2, Plus, Maximize, Minimize, Copy, MessageCircle, ExternalLink, Undo2, Truck, Search, Info, PackageCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -26,7 +27,7 @@ interface PedidoPE {
 const itensTxt = (itens: ItemPE[]) => itens.map((item) => `${item.quantidade}x ${item.titulo}`);
 const hora = (data: Date) => data.toLocaleTimeString('pt-BR', { timeZone: TZ_BR, hour: '2-digit', minute: '2-digit', hour12: false });
 type Filtro = null | 'atrasados' | 'hoje' | 'amanha' | 'semana';
-type Aba = 'todos' | 'enviar' | 'enviados';
+type Aba = 'todos' | 'urgente' | 'enviados';
 const dataHora = (data: string | null | undefined) => data ? new Date(data).toLocaleString('pt-BR', { timeZone: TZ_BR, dateStyle: 'short', timeStyle: 'short' }) : '—';
 const dataDia = (data: string | null) => data ? data.split('-').reverse().join('/') : '—';
 const diaMes = (ymd?: string | null) => (ymd ? ymd.slice(8, 10) + '/' + ymd.slice(5, 7) : '—');
@@ -92,7 +93,8 @@ export default function ProntaEntrega() {
   const qc = useQueryClient();
   const [selecionado, setSelecionado] = useState<PedidoPE | null>(null);
   const [agora, setAgora] = useState(() => new Date());
-  const [enviar, setEnviar] = useState<PedidoPE | null>(null);
+  const [enviar, setEnviar] = useState<PedidoPE[] | null>(null);
+  const [marcados, setMarcados] = useState<Set<string>>(new Set());
   const [manualOpen, setManualOpen] = useState(false);
   const [telaCheia, setTelaCheia] = useState(false);
   const [sincronizando, setSincronizando] = useState(false);
@@ -182,13 +184,14 @@ export default function ProntaEntrega() {
   let lista: PedidoPE[];
   if (filtro === 'semana') lista = abertos.filter(naSemana);
   else if (filtro) lista = aEnviar.filter((p) => { const r = restantes(p); return filtro === 'atrasados' ? r < 0 : filtro === 'hoje' ? r === 0 : r === 1; });
-  else lista = aba === 'todos' ? abertos : aba === 'enviar' ? aEnviar : enviados;
+  else lista = aba === 'todos' ? abertos : aba === 'urgente' ? aEnviar : enviados;
   lista = [...lista].sort((a, b) => {
     const e = Number(!pendente(a)) - Number(!pendente(b));
     if (e) return e;
     if (!pendente(a)) return (ultimoEnvio(b) || '').localeCompare(ultimoEnvio(a) || '');
     return (a.prazo_limite ?? '9999').localeCompare(b.prazo_limite ?? '9999') || (a.data_pagamento ?? '').localeCompare(b.data_pagamento ?? '') || a.pedido_numero.localeCompare(b.pedido_numero, 'pt-BR', { numeric: true });
   });
+  if (aba === 'todos' && !filtro) lista.reverse();
   const q = busca.trim().toLowerCase();
   if (q) lista = lista.filter((p) => (p.cliente_nome ?? '').toLowerCase().includes(q) || p.pedido_numero.toLowerCase().includes(q));
   const cartoes: { k: Exclude<Filtro, null>; titulo: string; n: number; cls: string }[] = [
@@ -199,7 +202,7 @@ export default function ProntaEntrega() {
   ];
   const vazio: Record<Aba, string> = {
     todos: 'Nenhum pedido de pronta entrega encontrado.',
-    enviar: 'Nenhum pedido para separar agora. Quando entrar uma venda com item pronta entrega, ela aparece aqui automaticamente.',
+    urgente: 'Nenhum pedido para separar agora. Quando entrar uma venda com item pronta entrega, ela aparece aqui automaticamente.',
     enviados: 'Nenhum pedido enviado ainda. Depois de clicar em "Marcar como enviado", o pedido aparece aqui.',
   };
   const abrir = (p: PedidoPE) => setSelecionado(p);
@@ -250,7 +253,7 @@ export default function ProntaEntrega() {
       <Tabs value={aba} onValueChange={(v) => { setAba(v as Aba); setFiltro(null); }}>
         <TabsList className="flex flex-wrap justify-start w-full h-auto gap-1 rounded-none bg-transparent p-0">
           <TabsTrigger value="todos" className="rounded-none text-xs px-3 py-2">Todos ({abertos.length})</TabsTrigger>
-          <TabsTrigger value="enviar" className="rounded-none text-xs px-3 py-2">A enviar ({aEnviar.length})</TabsTrigger>
+          <TabsTrigger value="urgente" className="rounded-none text-xs px-3 py-2">Urgente ({aEnviar.length})</TabsTrigger>
           <TabsTrigger value="enviados" className="rounded-none text-xs px-3 py-2">Enviados ({enviados.length})</TabsTrigger>
         </TabsList>
       </Tabs>
@@ -269,6 +272,21 @@ export default function ProntaEntrega() {
       </div>
     ) : (
       <div className="space-y-2">
+        {lista.some(pendente) && (() => {
+          const visiveis = lista.filter(pendente);
+          const todos = visiveis.every((p) => marcados.has(p.id));
+          const sel = abertos.filter((p) => marcados.has(p.id) && pendente(p));
+          return <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border bg-card p-2">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+              <Checkbox checked={todos} onCheckedChange={(v) => setMarcados(v ? new Set(visiveis.map((p) => p.id)) : new Set())} className="h-5 w-5" />
+              {sel.length ? `${sel.length} ${sel.length === 1 ? 'selecionado' : 'selecionados'}` : 'Selecionar todos'}
+            </label>
+            {sel.length > 0 && <div className="flex gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setMarcados(new Set())}>Limpar</Button>
+              <Button size="sm" className="gap-1.5" onClick={() => setEnviar(sel)}><PackageCheck className="h-4 w-4" /> Marcar {sel.length} como enviados</Button>
+            </div>}
+          </div>;
+        })()}
         {lista.map((p) => {
           const label = `Ver pedido: ${p.cliente_nome || 'Sem nome'}, ${p.pedido_numero}`;
           const tecla = (e: React.KeyboardEvent) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); abrir(p); } };
@@ -298,7 +316,13 @@ export default function ProntaEntrega() {
             <div key={p.id} role="button" tabIndex={0} aria-label={label} onClick={() => abrir(p)} onKeyDown={tecla}
               className="cursor-pointer relative overflow-hidden rounded-none border bg-card p-3 pl-4 space-y-1.5 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <span className={cn('absolute left-0 top-0 bottom-0 w-1', cor.faixa)} />
-              <p className={cn('text-sm font-semibold leading-tight', cor.texto)}>{textoPrazo(r)}</p>
+              <div className="flex items-center gap-2">
+                <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="flex">
+                  <Checkbox aria-label={`Selecionar ${p.cliente_nome || p.pedido_numero}`} checked={marcados.has(p.id)}
+                    onCheckedChange={(v) => setMarcados((m) => { const n = new Set(m); if (v) n.add(p.id); else n.delete(p.id); return n; })} className="h-5 w-5" />
+                </span>
+                <p className={cn('text-sm font-semibold leading-tight', cor.texto)}>{textoPrazo(r)}</p>
+              </div>
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                 <p className="font-semibold">{p.cliente_nome ?? 'Sem nome'}</p>
                 <p className="text-xs text-muted-foreground">Prazo limite: <b>{diaMes(p.prazo_limite)}</b></p>
@@ -314,19 +338,19 @@ export default function ProntaEntrega() {
                 </p>
               )}
               {p.observacao && <p className="text-[11px] text-muted-foreground">Obs.: {p.observacao}</p>}
-              <Button className="w-full sm:w-auto h-11 gap-1.5 mt-1" onClick={(e) => { e.stopPropagation(); setEnviar(p); }}><PackageCheck className="h-4 w-4" /> Marcar como enviado</Button>
+              <Button className="w-full sm:w-auto h-11 gap-1.5 mt-1" onClick={(e) => { e.stopPropagation(); setEnviar([p]); }}><PackageCheck className="h-4 w-4" /> Marcar como enviado</Button>
             </div>
           );
         })}
       </div>
     )}
-    <PedidoDetalhes pedido={selecionado} onClose={() => setSelecionado(null)} onEnviar={setEnviar} onDone={recarregar} hoje={hoje} amanha={amanhaYmd} feriados={feriados} agora={agora} />
-    <EnviarDialog pedido={enviar} onClose={() => setEnviar(null)} onDone={recarregar} />
+    <PedidoDetalhes pedido={selecionado} onClose={() => setSelecionado(null)} onEnviar={(p) => setEnviar([p])} onDone={recarregar} hoje={hoje} amanha={amanhaYmd} feriados={feriados} agora={agora} />
+    <EnviarDialog pedidos={enviar} onClose={() => setEnviar(null)} onDone={() => { setMarcados(new Set()); recarregar(); }} />
     <ManualDialog open={manualOpen} onClose={() => setManualOpen(false)} onDone={recarregar} />
   </div>;
 }
 
-function EnviarDialog({ pedido, onClose, onDone }: { pedido: PedidoPE | null; onClose: () => void; onDone: () => void }) {
+function EnviarDialog({ pedidos, onClose, onDone }: { pedidos: PedidoPE[] | null; onClose: () => void; onDone: () => void }) {
   const [quem, setQuem] = useState('');
   const [rastreio, setRastreio] = useState('');
   const [obs, setObs] = useState('');
@@ -339,35 +363,43 @@ function EnviarDialog({ pedido, onClose, onDone }: { pedido: PedidoPE | null; on
     },
   });
   // Acesso compartilhado → nunca lembrar a última escolha
-  useEffect(() => { if (pedido) { setQuem(''); setRastreio(''); setObs(''); } }, [pedido]);
-  if (!pedido) return null;
-  const itens = pedido.itens.filter((i) => !i.enviado && i.pronta_entrega);
+  useEffect(() => { if (pedidos) { setQuem(''); setRastreio(''); setObs(''); } }, [pedidos]);
+  if (!pedidos?.length) return null;
+  const varios = pedidos.length > 1;
 
   const confirmar = async () => {
     if (!quem) { toast.error('Escolha quem está enviando'); return; }
     setSalvando(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('sincronizar-pronta-entrega', {
-        body: { acao: 'marcar_enviado', id: pedido.id, enviado_por: quem, rastreio, observacao: obs },
-      });
-      if (error || !data?.sucesso) throw new Error(data?.erro ?? error?.message);
-      toast.success('Itens prontos marcados como enviados!');
-      onDone(); onClose();
-    } catch (e: any) { toast.error(e?.message ?? 'Erro ao marcar'); } finally { setSalvando(false); }
+    let ok = 0; const falhas: string[] = [];
+    for (const pedido of pedidos) {
+      try {
+        const { data, error } = await supabase.functions.invoke('sincronizar-pronta-entrega', {
+          body: { acao: 'marcar_enviado', id: pedido.id, enviado_por: quem, rastreio: varios ? '' : rastreio, observacao: obs },
+        });
+        if (error || !data?.sucesso) throw new Error(data?.erro ?? error?.message);
+        ok++;
+      } catch { falhas.push(pedido.cliente_nome || pedido.pedido_numero); }
+    }
+    setSalvando(false);
+    if (ok) toast.success(varios ? `${ok} pedidos marcados como enviados!` : 'Itens prontos marcados como enviados!');
+    if (falhas.length) toast.error(`Não foi possível marcar: ${falhas.join(', ')}`);
+    onDone(); if (!falhas.length) onClose();
   };
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md rounded-lg">
+      <DialogContent className="max-w-md rounded-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Marcar como enviado</DialogTitle>
+          <DialogTitle>{varios ? `Marcar ${pedidos.length} pedidos como enviados` : 'Marcar como enviado'}</DialogTitle>
           <DialogDescription>Confira se estes itens estão na caixa antes de confirmar.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="border-t pt-2 text-sm">
-            <p className="font-semibold">{pedido.cliente_nome ?? 'Sem nome'} <span className="text-xs text-muted-foreground font-normal">· {pedido.pedido_numero}</span></p>
-            <ul className="mt-1 space-y-0.5">{itensTxt(itens).map((t, i) => <li key={i}>• {t}</li>)}</ul>
-          </div>
+          {pedidos.map((pedido) => (
+            <div key={pedido.id} className="border-t pt-2 text-sm">
+              <p className="font-semibold">{pedido.cliente_nome ?? 'Sem nome'} <span className="text-xs text-muted-foreground font-normal">· {pedido.pedido_numero}</span></p>
+              <ul className="mt-1 space-y-0.5">{itensTxt(pedido.itens.filter((i) => !i.enviado && i.pronta_entrega)).map((t, i) => <li key={i}>• {t}</li>)}</ul>
+            </div>
+          ))}
           <div className="space-y-1">
             <Label>Quem está enviando *</Label>
             <Select value={quem} onValueChange={setQuem}>
@@ -376,10 +408,10 @@ function EnviarDialog({ pedido, onClose, onDone }: { pedido: PedidoPE | null; on
             </Select>
             {equipe.length === 0 && <p className="text-[11px] text-muted-foreground">Cadastre uma pessoa ativa em Valores do Simulador → Expedição antes de confirmar.</p>}
           </div>
-          <div className="space-y-1">
+          {!varios && <div className="space-y-1">
             <Label>Código de rastreio (opcional)</Label>
             <Input value={rastreio} onChange={(e) => setRastreio(e.target.value)} placeholder="Ex.: AA123456789BR" className="h-11" />
-          </div>
+          </div>}
           <div className="space-y-1">
             <Label>Observação (opcional)</Label>
             <Textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} />
@@ -419,7 +451,7 @@ function ManualDialog({ open, onClose, onDone }: { open: boolean; onClose: () =>
         body: { acao: 'adicionar_manual', cliente_nome: cliente, cliente_telefone: tel, itens, data_pagamento: pago ? new Date(pago).toISOString() : undefined, prazo_dias_uteis: prazo, observacao: obs },
       });
       if (error || !data?.sucesso) throw new Error(data?.erro ?? error?.message);
-      toast.success('Pedido manual adicionado em "A enviar".');
+      toast.success('Pedido manual adicionado em "Urgente".');
       onDone(); onClose();
     } catch (e: any) { toast.error(e?.message ?? 'Erro ao salvar'); } finally { setSalvando(false); }
   };
