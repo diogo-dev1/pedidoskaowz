@@ -30,7 +30,7 @@
 .pe-hero-summary { margin-top: 16px; font-size: var(--pe-medium); font-weight: 500; }
 .pe-hero-next { margin-top: 16px; font-size: var(--pe-small); color: hsl(var(--muted-foreground)); }
 .pe-hero-muted { color: hsl(var(--muted-foreground)); }
-.pe-hero:not(:has(.pe-hero-number)) .pe-hero-value { font-size: var(--pe-medium); }
+.pe-hero:not(:has(.pe-hero-number)) .pe-hero-value { font-size: 48px; }
 .pe-card-scroll { min-height: 0; scrollbar-width: none; }
 .pe-card-scroll::-webkit-scrollbar { display: none; }
 .pe-board { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 4px; }
