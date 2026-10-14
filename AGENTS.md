@@ -13,3 +13,4 @@
 - Use distinct query keys when cached response shapes change; isolate shipping configuration rows from the legacy timestamp cache to keep existing sessions compatible.
 
 - All Bling functions share paced API transport and refresh recovery; verify Shopify numeroLoja exactly before accepting a tracking match, and preserve manual tracking.
+- Privileged Bling and order functions validate callers through the shared auth helper before using server credentials; this prevents anonymous access while preserving scheduled server calls.

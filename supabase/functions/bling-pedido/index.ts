@@ -1,3 +1,4 @@
+import { authenticatedRequest } from "../_shared/auth.ts";
 import { getValidToken, blingFetch } from "../_shared/bling.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -202,6 +203,8 @@ async function gerarNfe(supabase: any, pedido: any, enviarSefaz: boolean) {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  if (!await authenticatedRequest(req)) return new Response(JSON.stringify({ error: 'Faça login para continuar' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,

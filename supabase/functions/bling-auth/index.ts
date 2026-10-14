@@ -1,3 +1,4 @@
+import { authenticatedRequest } from "../_shared/auth.ts";
 import { tokenRequest, getValidToken } from "../_shared/bling.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
@@ -7,10 +8,12 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  if (!await authenticatedRequest(req)) return new Response(JSON.stringify({ error: 'Faça login para continuar' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
   const BLING_CLIENT_ID = Deno.env.get("BLING_CLIENT_ID");
   const BLING_CLIENT_SECRET = Deno.env.get("BLING_CLIENT_SECRET");
-  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
   if (!BLING_CLIENT_ID || !BLING_CLIENT_SECRET) {
     return new Response(JSON.stringify({ error: "Bling credentials not configured" }), {
@@ -37,7 +40,7 @@ Deno.serve(async (req) => {
     }
 
     if (!tokenResponse.ok) {
-      const errBody = await tokenResponse.text();
+      await tokenResponse.body?.cancel();
 
       return new Response(JSON.stringify({ error: "Failed to get Bling token", details: `HTTP ${tokenResponse.status}` }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -74,8 +74,10 @@ export async function buscarRastreio(db: any, pedido: any) {
         return String(d?.numeroLoja ?? '') === numericId ? d : null;
       };
       if (!detalhe) {
-        const filtered = await blingGet(db, `pedidos/vendas?numerosLojas[]=${encodeURIComponent(numericId)}&limite=100`);
-        for (const c of filtered.data ?? []) { detalhe = await check(c, false); if (detalhe) break; }
+        try {
+          const filtered = await blingGet(db, `pedidos/vendas?numerosLojas[]=${encodeURIComponent(numericId)}&limite=100`);
+          for (const c of filtered.data ?? []) { detalhe = await check(c, false); if (detalhe) break; }
+        } catch { /* Some Bling accounts reject the store filter; use the exact-match date search below. */ }
       }
       if (!detalhe) {
         const initial = new Date(pedido.data_pagamento || now); initial.setUTCDate(initial.getUTCDate() - 3);
