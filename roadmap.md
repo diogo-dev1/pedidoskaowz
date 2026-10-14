@@ -1,7 +1,7 @@
 # Pronta Entrega — painel e notas
 
-- [ ] Mover classificação e prazo para cada item; remover decisão de envio.
-- [ ] Reformatar notas internas curtas com bloco de pronta entrega no topo.
-- [ ] Atualizar sincronização, atributos e envio somente de itens prontos.
-- [ ] Criar painel por urgência com atualização automática, tela cheia e confirmação identificada.
-- [ ] Validar regras, telas e funções publicadas; conferir pedidos reais quando houver sessão.
+- [x] Mover classificação e prazo para cada item; remover decisão de envio.
+- [x] Reformatar notas internas curtas com bloco de pronta entrega no topo.
+- [x] Atualizar sincronização, atributos e envio somente de itens prontos.
+- [x] Criar painel por urgência com atualização automática, tela cheia e confirmação identificada.
+- [x] Validar regras, telas e funções publicadas; conferir pedidos reais e fluxo manual completo com sessão autenticada. Dados temporários removidos.

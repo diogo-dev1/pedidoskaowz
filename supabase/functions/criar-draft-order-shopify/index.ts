@@ -198,6 +198,10 @@ Deno.serve(async (req) => {
     const schema = z.object({
       itens: z.array(z.object({ title: z.string().min(1).max(5000), quantity: z.number().int().min(1).max(10000), price: z.number().min(0), properties: z.array(z.object({ name: z.string().max(100), value: z.string().max(5000) })).optional(), variantId: z.string().regex(/^gid:\/\/shopify\/ProductVariant\/\d+$/).optional() }).passthrough()).max(250).optional(),
       vendedor: z.string().max(255).optional(), origem: z.string().max(100).optional(), diagnostico: z.boolean().optional(),
+      cliente: z.object({ nome: z.string().max(255).optional(), email: z.string().max(255).optional(), telefone: z.string().max(50).optional(), cpf: z.string().max(30).optional(), dataNascimento: z.string().max(30).optional() }).optional(),
+      endereco: z.object({ cep: z.string().max(30).optional(), estado: z.string().max(100).optional(), cidade: z.string().max(255).optional(), bairro: z.string().max(255).optional(), endereco: z.string().max(500).optional(), numero: z.string().max(50).optional(), complemento: z.string().max(500).optional() }).optional(),
+      observacao: z.string().max(20000).optional(), notasInternas: z.array(z.string().max(50000)).max(1000).optional(),
+      totalDesejado: z.number().min(0).optional(), freteGratis: z.boolean().optional(),
     }).passthrough();
     const parsed = schema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) return new Response(JSON.stringify({ sucesso: false, erro: 'Confira os dados dos itens do pedido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

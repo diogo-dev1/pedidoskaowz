@@ -45,7 +45,7 @@
 .pe-column-scroll { padding: 12px 0; display: flex; flex-direction: column; gap: 12px; scrollbar-width: none; }
 .pe-column-scroll::-webkit-scrollbar { display: none; }
 .pe-order { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; text-align: left; white-space: normal; height: auto; flex-shrink: 0; padding: 18px; border-radius: 6px; border-color: hsl(var(--border)); border-left: 4px solid hsl(var(--pe-tone)); background: hsl(var(--card)); color: hsl(var(--foreground)); overflow-wrap: anywhere; word-break: break-word; box-shadow: none; }
-.pe-order:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); border-color: hsl(var(--pe-tone) / .65); }
+.pe-panel .pe-order:hover, .pe-panel .pe-order:focus, .pe-panel .pe-order:focus-visible { background: hsl(var(--muted)); color: hsl(var(--foreground)); border-color: hsl(var(--pe-tone) / .65); }
 .pe-order-name { font-size: 25px; line-height: 1.15; font-weight: 750; }
 .pe-order-number { margin-top: 6px; color: hsl(var(--muted-foreground)); font-size: 14px; }
 .pe-order-items { display: flex; flex-direction: column; gap: 8px; font-size: 20px; font-weight: 600; line-height: 1.35; margin-block: 20px; }
