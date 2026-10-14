@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { RefreshCw, Loader2, Plus, Maximize, Minimize } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { calcularPrazoLimite, prazoDoPedido, diasUteisRestantes, ymdBR, TZ_BR, type ItemPE } from '@/lib/prontaEntrega';
+import { calcularPrazoLimite, prazoDoPedido, diasUteisRestantes, inicioContagem, ymdBR, TZ_BR, type ItemPE } from '@/lib/prontaEntrega';
 
 interface PedidoPE {
   id: string; pedido_numero: string; shopify_order_id: string | null; origem: string;
@@ -23,12 +24,6 @@ const itensTxt = (itens: ItemPE[]) => itens.map((item) => `${item.quantidade}x $
 const hora = (data: Date) => data.toLocaleTimeString('pt-BR', { timeZone: TZ_BR, hour: '2-digit', minute: '2-digit', hour12: false });
 const nomeCurto = (nome: string | null) => { const partes = (nome || 'Sem nome').trim().split(/\s+/); return partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1]}` : partes[0]; };
 type Grupo = 'atrasado' | 'hoje' | 'amanha' | 'proximos';
-const COLUNAS: { key: Grupo; titulo: string; cor: string }[] = [
-  { key: 'atrasado', titulo: 'ATRASADO', cor: 'pe-late' },
-  { key: 'hoje', titulo: 'HOJE', cor: 'pe-today' },
-  { key: 'amanha', titulo: 'AMANHÃ', cor: 'pe-tomorrow' },
-  { key: 'proximos', titulo: 'PRÓXIMOS DIAS', cor: 'pe-next' },
-];
 function prazoTexto(prazo: string, hoje: string, amanha: string, feriados: Set<string>, agora: Date) {
   if (prazo < hoje) { const dias = Math.max(1, -diasUteisRestantes(prazo, feriados, agora)); return `atrasado há ${dias} ${dias === 1 ? 'dia' : 'dias'}`; }
   if (prazo === hoje) return 'vence hoje';
@@ -38,50 +33,67 @@ function prazoTexto(prazo: string, hoje: string, amanha: string, feriados: Set<s
   return `vence ${semana} (${prazo.slice(8, 10)}/${prazo.slice(5, 7)})`;
 }
 
-function ColunaPainel({ titulo, cor, pedidos, onSelect, hoje, amanha, feriados, agora }: {
-  titulo: string; cor: string; pedidos: PedidoPE[]; onSelect: (p: PedidoPE) => void;
-  hoje: string; amanha: string; feriados: Set<string>; agora: Date;
+function CartoesPainel({ pedidos, onSelect, hoje, amanha, feriados, agora, corte }: {
+  pedidos: PedidoPE[]; onSelect: (p: PedidoPE) => void;
+  hoje: string; amanha: string; feriados: Set<string>; agora: Date; corte: string;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   const pausa = useRef(0);
+  const reduced = useReducedMotion();
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    let frame = 0; let ultimo = 0; let posicao = 0;
+    if (reduced) return;
+    let frame = 0; let ultimo = 0; let direcao = 1; let posicao = 0;
+    pausa.current = performance.now() + 4000;
     const mover = (tempo: number) => {
       const element = scroller.current;
       if (element && window.innerWidth >= 1024 && tempo > pausa.current && element.scrollHeight > element.clientHeight) {
+        const max = element.scrollHeight - element.clientHeight;
         const delta = ultimo ? Math.min(tempo - ultimo, 50) : 0;
-        posicao = Math.max(posicao, element.scrollTop) + delta * 0.018;
-        if (posicao >= element.scrollHeight - element.clientHeight) {
-          element.scrollTop = 0; posicao = 0; pausa.current = tempo + 3500;
-        } else element.scrollTop = posicao;
+        if (Math.abs(element.scrollTop - posicao) > 2) posicao = element.scrollTop;
+        posicao = Math.max(0, Math.min(max, posicao + direcao * delta * 0.018));
+        element.scrollTop = posicao;
+        if (posicao >= max || posicao <= 0) { direcao *= -1; pausa.current = tempo + 4000; }
       }
       ultimo = tempo; frame = requestAnimationFrame(mover);
     };
     frame = requestAnimationFrame(mover);
     return () => cancelAnimationFrame(frame);
-  }, [pedidos]);
-  return <section className={cn('pe-column', cor)} aria-label={titulo}>
-    <header className="pe-column-heading"><h2>{titulo}</h2><span>{pedidos.length}</span></header>
-    <div className="pe-column-scroll" ref={scroller} onPointerEnter={() => { pausa.current = Infinity; }}
-      onPointerLeave={() => { pausa.current = performance.now() + 2000; }} onTouchStart={() => { pausa.current = performance.now() + 10000; }}>
-      {!pedidos.length ? <div className="pe-empty"><span>—</span><p>Nada aqui</p></div> : pedidos.map((pedido) => {
+  }, [reduced]);
+  return <div className="pe-card-scroll" ref={scroller} onPointerEnter={() => { pausa.current = Infinity; }}
+    onPointerLeave={() => { pausa.current = performance.now() + 4000; }}
+    onTouchStart={() => { pausa.current = Infinity; }} onTouchEnd={() => { pausa.current = performance.now() + 4000; }}
+    onFocusCapture={() => { pausa.current = Infinity; }} onBlurCapture={() => { pausa.current = performance.now() + 4000; }}>
+    <div className="pe-board"><AnimatePresence initial={false} mode="popLayout">
+      {pedidos.map((pedido) => {
+        const prazo = pedido.prazo_limite || hoje;
+        const late = prazo < hoje; const today = prazo === hoje; const future = prazo > amanha;
         const encomenda = pedido.itens.filter((item) => !item.pronta_entrega).reduce((soma, item) => soma + item.quantidade, 0);
-        return <Button key={pedido.id} variant="outline" className="pe-order" onClick={() => onSelect(pedido)}
-          aria-label={`Marcar como enviado: ${pedido.cliente_nome || 'Sem nome'}, ${pedido.pedido_numero}`}>
-          <span className="pe-order-name">{nomeCurto(pedido.cliente_nome)}</span>
-          <span className="pe-order-number">{pedido.pedido_numero}</span>
-          <span className="pe-order-items">{pedido.itens.filter((item) => item.pronta_entrega && !item.enviado).map((item, index) => <span key={index}>{item.quantidade}x {item.titulo}</span>)}</span>
-          {encomenda > 0 && <span className="pe-order-warning">+{encomenda} {encomenda === 1 ? 'item' : 'itens'} sob encomenda — não enviar</span>}
-          <span className="pe-order-deadline">{prazoTexto(pedido.prazo_limite || hoje, hoje, amanha, feriados, agora)}</span>
-        </Button>;
+        const inicio = pedido.data_pagamento ? inicioContagem(new Date(pedido.data_pagamento), corte, feriados) : null;
+        const total = inicio ? Math.max(0, diasUteisRestantes(prazo, feriados, new Date(`${inicio}T12:00:00-03:00`))) : 0;
+        const restante = Math.max(0, diasUteisRestantes(prazo, feriados, agora));
+        const fracao = late || today ? 1 : total > 0 ? Math.max(0, Math.min(1, (total - restante) / total)) : 0;
+        const pago = pedido.data_pagamento ? ymdBR(new Date(pedido.data_pagamento)) : null;
+        return <motion.div key={pedido.id} layout={!reduced} className={cn('pe-card-slot', late && 'pe-late', today && 'pe-today', future && 'pe-future')}
+          initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.97 }}
+          transition={{ duration: reduced ? 0 : 0.4, ease: 'easeOut', layout: { duration: reduced ? 0 : 0.4 }, opacity: { duration: reduced ? 0 : 0.3 } }}>
+          <Button variant="outline" className="pe-order" onClick={() => onSelect(pedido)}
+            aria-label={`Marcar como enviado: ${pedido.cliente_nome || 'Sem nome'}, ${pedido.pedido_numero}`}>
+            <span className="pe-order-heading"><span className="pe-order-name">{nomeCurto(pedido.cliente_nome)}</span><span className="pe-order-number">{pedido.pedido_numero}</span></span>
+            <span className="pe-order-items">{pedido.itens.filter((item) => item.pronta_entrega && !item.enviado).map((item, index) => <span key={index}>{item.quantidade}x {item.titulo}</span>)}</span>
+            {encomenda > 0 && <span className="pe-order-warning">+{encomenda} sob encomenda — não enviar</span>}
+            <span className="pe-progress" role="progressbar" aria-label="Prazo consumido" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(fracao * 100)}><span style={{ transform: `scaleX(${fracao})` }} /></span>
+            <span className="pe-order-bottom"><span className="pe-order-deadline">{prazoTexto(prazo, hoje, amanha, feriados, agora)}</span>{pago && <span className="pe-order-paid">pago {pago.slice(8, 10)}/{pago.slice(5, 7)}</span>}</span>
+          </Button>
+        </motion.div>;
       })}
-    </div>
-  </section>;
+    </AnimatePresence></div>
+  </div>;
 }
 
 export default function ProntaEntrega() {
   const qc = useQueryClient();
+  const reduced = useReducedMotion();
   const [agora, setAgora] = useState(() => new Date());
   const [enviar, setEnviar] = useState<PedidoPE | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
@@ -168,7 +180,11 @@ export default function ProntaEntrega() {
   }, [pedidos, feriados, corte, hoje, amanhaYmd]);
   const enviadosHoje = pedidos.filter((pedido) => pedido.itens.some((item) => item.pronta_entrega && item.enviado && item.enviado_em && ymdBR(new Date(item.enviado_em)) === hoje)).length;
   const atrasados = grupos.atrasado.length; const paraHoje = grupos.hoje.length;
-  const status = atrasados ? `${atrasados} ${atrasados === 1 ? 'ENVIO ATRASADO' : 'ENVIOS ATRASADOS'}` : paraHoje ? `${paraHoje} PARA ENVIAR HOJE` : 'TUDO EM DIA';
+  const ordenados = [...grupos.atrasado, ...grupos.hoje, ...grupos.amanha, ...grupos.proximos];
+  const urgente = atrasados + paraHoje;
+  const resumo = atrasados ? [ `${atrasados} ${atrasados === 1 ? 'atrasado' : 'atrasados'}`, paraHoje ? `${paraHoje} para hoje` : '' ].filter(Boolean).join(' · ') : 'para enviar hoje';
+  const hero = isLoading ? 'Carregando…' : isError ? 'Não foi possível carregar' : urgente ? String(urgente) : 'Tudo em dia';
+  const proximo = ordenados[0];
   return <div className={cn('pe-panel', telaCheia && 'pe-panel-fullscreen')}>
     <header className="pe-header">
       <h1>PRONTA ENTREGA</h1>
@@ -179,10 +195,12 @@ export default function ProntaEntrega() {
         <div className="pe-clock"><time>{hora(agora)}</time><span>{ultimaSync ? `Atualizado às ${hora(new Date(ultimaSync))}` : 'Aguardando atualização'}</span></div>
       </div>
     </header>
-    <div role="status" className={cn('pe-status', atrasados ? 'pe-late' : paraHoje ? 'pe-today' : 'pe-next')}>
-      {isLoading ? 'CARREGANDO PEDIDOS' : isError ? 'NÃO FOI POSSÍVEL CARREGAR' : status}
+    <div role="status" className={cn('pe-hero', !isLoading && !isError && (atrasados ? 'pe-late' : paraHoje ? 'pe-today' : ''), (isLoading || isError) && 'pe-hero-muted')}>
+      <AnimatePresence mode="wait" initial={false}><motion.div key={hero} className={cn('pe-hero-value', urgente > 0 && !isLoading && !isError && 'pe-hero-number')}
+        initial={reduced ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduced ? 0 : -8 }} transition={{ duration: reduced ? 0 : 0.18 }}>{hero}</motion.div></AnimatePresence>
+      {!isLoading && !isError && <p className={urgente ? 'pe-hero-summary' : 'pe-hero-next'}>{urgente ? resumo : proximo ? `Próximo envio: ${prazoTexto(proximo.prazo_limite || hoje, hoje, amanhaYmd, feriados, agora)}` : 'Nenhum envio em aberto'}</p>}
     </div>
-    <div className="pe-board">{COLUNAS.map((coluna) => <ColunaPainel key={coluna.key} {...coluna} pedidos={grupos[coluna.key]} onSelect={setEnviar} hoje={hoje} amanha={amanhaYmd} feriados={feriados} agora={agora} />)}</div>
+    {!isLoading && !isError && ordenados.length > 0 && <CartoesPainel pedidos={ordenados} onSelect={setEnviar} hoje={hoje} amanha={amanhaYmd} feriados={feriados} agora={agora} corte={corte} />}
     <footer className="pe-footer">Enviados hoje: <strong>{enviadosHoje}</strong></footer>
     <EnviarDialog pedido={enviar} onClose={() => setEnviar(null)} onDone={recarregar} />
     <ManualDialog open={manualOpen} onClose={() => setManualOpen(false)} onDone={recarregar} />
