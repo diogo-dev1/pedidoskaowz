@@ -1,10 +1,10 @@
 // Cria um Draft Order na Shopify a partir do Simulador de Preços.
 // Autentica via client_credentials (SHOPIFY_CLIENT_ID/SECRET) contra SHOPIFY_STORE_DOMAIN.
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { createClient } from 'npm:@supabase/supabase-js@2';
+import { z } from 'npm:zod@3';
+import { classificarItemPE } from '../_shared/prontaEntrega.ts';
 
 const API_VERSION = '2026-07';
 
@@ -20,8 +20,6 @@ interface LineItemIn {
 
 interface Payload {
   itens: LineItemIn[];
-  /** Pedido misto: 'junto' (tudo de uma vez) ou 'parcial' (pronta entrega primeiro) */
-  modoEnvio?: 'junto' | 'parcial';
   /** Vendedor responsável pelo pedido (obrigatório no lançamento pelo simulador) */
   vendedor?: string;
   /** Origem comercial usada no Relatório de Vendas. */
@@ -192,7 +190,18 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const payload: Payload & { diagnostico?: boolean } = await req.json();
+    const client = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
+      global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
+    });
+    const { data: session } = await client.auth.getUser();
+    if (!session.user) return new Response(JSON.stringify({ sucesso: false, erro: 'Faça login para lançar o pedido' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const schema = z.object({
+      itens: z.array(z.object({ title: z.string().min(1).max(5000), quantity: z.number().int().min(1).max(10000), price: z.number().min(0), properties: z.array(z.object({ name: z.string().max(100), value: z.string().max(5000) })).optional(), variantId: z.string().regex(/^gid:\/\/shopify\/ProductVariant\/\d+$/).optional() }).passthrough()).max(250).optional(),
+      vendedor: z.string().max(255).optional(), origem: z.string().max(100).optional(), diagnostico: z.boolean().optional(),
+    }).passthrough();
+    const parsed = schema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return new Response(JSON.stringify({ sucesso: false, erro: 'Confira os dados dos itens do pedido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const payload = parsed.data as unknown as Payload & { diagnostico?: boolean };
 
     if (payload.diagnostico) {
       const dom = resolveDomain();
@@ -244,8 +253,8 @@ Deno.serve(async (req) => {
       const base: Record<string, unknown> = {
         quantity: Math.max(1, Number(i.quantity) || 1),
         customAttributes: (i.properties ?? [])
-          .filter((p) => p?.name && p?.value)
-          .map((p) => ({ key: String(p.name).slice(0, 100), value: truncaLimpo(String(p.value), MAX_VALOR_PROP) })),
+          .filter((p) => p?.name && p?.value && (p.name !== 'Pronta entrega' || classificarItemPE(undefined, i.properties).pronta))
+          .map((p) => ({ key: String(p.name).slice(0, 100), value: p.name === 'Pronta entrega' ? `SIM — envio em até ${classificarItemPE(undefined, i.properties).prazo} dias úteis` : truncaLimpo(String(p.value), MAX_VALOR_PROP) })),
       };
       if (i.variantId) {
         // Produto real do catálogo: usa a variante (baixa estoque / relatórios por produto).
@@ -298,16 +307,11 @@ Deno.serve(async (req) => {
 
     const tags: string[] = [];
     if (vendedor) tags.push(`vendedor:${vendedor}`);
-    // Pronta entrega — lida dos atributos de cada linha
-    const flagPE = (i: LineItemIn) => (i.properties ?? []).find((p) => p?.name === 'Pronta entrega')?.value;
-    const temPronta = itens.some((i) => flagPE(i) === 'Sim');
-    const temEncomenda = itens.some((i) => flagPE(i) === 'Não');
+    const flagPE = (item: LineItemIn) => classificarItemPE(undefined, item.properties).pronta;
+    const temPronta = itens.some(flagPE);
+    const temEncomenda = itens.some((item) => !flagPE(item));
     if (temPronta) tags.push('Contém pronta entrega');
-    if (temPronta && temEncomenda) {
-      tags.push('Misto');
-      if (payload.modoEnvio === 'junto') tags.push('Envio junto');
-      else if (payload.modoEnvio === 'parcial') tags.push('Envio parcial');
-    }
+    if (temPronta && temEncomenda) tags.push('Misto');
 
     const input: Record<string, unknown> = {
       lineItems,
@@ -330,15 +334,21 @@ Deno.serve(async (req) => {
       const tel = normalizaTelefone(cliente.telefone);
       if (tel) customAttributes.push({ key: 'Telefone', value: tel });
     }
-    // Note do draft = observação + notas internas (visível só no admin, nunca no checkout)
-    const notaPartes: string[] = [];
-    if (payload.observacao?.trim()) notaPartes.push(payload.observacao.trim());
+    // O bloco de pronta entrega deve ser a primeira linha da nota.
+    const limpar = (value: string) => String(value).replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '').trim();
+    const curto = (value: string) => limpar(value).split('\n').map((line) => {
+      const linhas: string[] = []; let atual = '';
+      for (const palavra of line.split(/\s+/)) {
+        if (atual && atual.length + palavra.length + 1 > 32) { linhas.push(atual); atual = ''; }
+        atual += (atual ? ' ' : '') + palavra;
+      }
+      if (atual) linhas.push(atual);
+      return linhas.join('\n');
+    }).join('\n');
     const internas = (payload.notasInternas ?? []).map((n) => String(n).trim()).filter(Boolean);
-    if (titulosCompletos.length) {
-      internas.push('Descrições completas de itens (título truncado na linha):', ...titulosCompletos);
-    }
-    if (internas.length) notaPartes.push('[INTERNO]', ...internas);
-    if (notaPartes.length) input.note = notaPartes.join('\n');
+    const finais = [vendedor ? curto(`Vendedor: ${vendedor}`) : '', curto(`Origem: ${origem}`), payload.observacao?.trim() ? curto(`Observação: ${payload.observacao}`) : ''].filter(Boolean);
+    if (titulosCompletos.length) finais.push('Descrições completas:', ...titulosCompletos.map(curto));
+    if (internas.length || finais.length) input.note = [...internas, '━━━━━━━━━━━━━━━━━━', ...finais].join('\n');
 
     // Total manual: aplica desconto (ou linha de acréscimo) sobre a soma dos itens
     const somaItens = itens.reduce((s, i) => s + Number(i.price) * Math.max(1, Number(i.quantity) || 1), 0);
