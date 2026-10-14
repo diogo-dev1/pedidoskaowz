@@ -21,7 +21,7 @@ interface PedidoPE {
 }
 const itensTxt = (itens: ItemPE[]) => itens.map((item) => `${item.quantidade}x ${item.titulo}`);
 const hora = (data: Date) => data.toLocaleTimeString('pt-BR', { timeZone: TZ_BR, hour: '2-digit', minute: '2-digit', hour12: false });
-const nomeCurto = (nome: string | null) => { const partes = (nome || 'Sem nome').trim().split(/\s+/); return partes.length > 1 ? `${partes[0]} ${partes.at(-1)}` : partes[0]; };
+const nomeCurto = (nome: string | null) => { const partes = (nome || 'Sem nome').trim().split(/\s+/); return partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1]}` : partes[0]; };
 type Grupo = 'atrasado' | 'hoje' | 'amanha' | 'proximos';
 const COLUNAS: { key: Grupo; titulo: string; cor: string }[] = [
   { key: 'atrasado', titulo: 'ATRASADO', cor: 'pe-late' },
