@@ -258,7 +258,7 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
       ...item,
       properties: [
         ...item.properties.filter((p) => !/^pronta entrega$|^prazo \(dias/i.test(p.name)),
-        ...(item.prontaEntrega ? [{ name: 'Pronta entrega', value: `SIM — envio em até ${item.prazoEntrega} dias úteis` }] : []),
+        ...(item.prontaEntrega ? [{ name: 'Pronta entrega', value: `SIM — envio em até ${item.prazoEntrega} dias úteis` }] : [{ name: 'Disponibilidade', value: 'Sob encomenda' }]),
         { name: 'Prazo (dias úteis)', value: String(item.prazoEntrega) },
       ],
     }));

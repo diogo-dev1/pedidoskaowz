@@ -29,6 +29,7 @@ export function classificarItemPE(vendor?: string | null, attrs?: AtributoPE[]):
   const flag = attr(attrs, 'Pronta entrega');
   let pronta: boolean;
   if (flag && /^(sim|nao)(?:$|\s*[—–-])/.test(semAcento(flag))) pronta = semAcento(flag).startsWith('sim');
+  else if (semAcento(attr(attrs, 'Disponibilidade') ?? '') === 'sob encomenda') pronta = false;
   else if (v.includes('pronta entrega')) pronta = true;
   else pronta = false; // "encomenda" ou desconhecido → sob encomenda
 
