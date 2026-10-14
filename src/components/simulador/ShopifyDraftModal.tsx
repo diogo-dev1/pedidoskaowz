@@ -8,12 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Loader2, ShoppingBag, Sparkles, Copy, Send, ExternalLink, Truck, AlertTriangle } from 'lucide-react';
-import { classificarItemPE, PRAZO_PADRAO_PRONTA, PRAZO_PADRAO_ENCOMENDA } from '@/lib/prontaEntrega';
+import { montarNotasInternas } from '@/lib/shopifyNotas';
+export { montarNotasInternas } from '@/lib/shopifyNotas';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  BRL, calcEntry, calcItem, nomeBainha, espacadorIdx, temLaser, nomeCatalogo, catalogoIntacto,
+  entregaDaEntrada, BRL, calcEntry, calcItem, nomeBainha, espacadorIdx, temLaser, nomeCatalogo, catalogoIntacto,
   type SimuladorData, type PedidoEntry,
 } from '@/lib/simuladorData';
 
@@ -28,77 +29,19 @@ interface DraftLineItem {
   /** Veio do catálogo do site → pronta entrega definida pelo FORNECEDOR do produto */
   doCatalogo?: boolean;
   vendor?: string;
+  prontaEntrega?: boolean | null;
+  prazoEntrega?: number;
 }
 
-
-/** Notas internas (configuração completa de cada item) — nunca viram propriedade visível da linha. */
-export function montarNotasInternas(data: SimuladorData, entries: PedidoEntry[]): string[] {
-  const out: string[] = [];
-  let n = 0;
-  entries.forEach((e) => {
-    n++;
-
-    if (e.kind === 'faca') {
-      const cfg = e.faca;
-      const m = cfg.modeloIdx !== null ? data.modelos[cfg.modeloIdx] : null;
-      const titulo = cfg.origem?.produtoTitulo ?? m?.nome ?? '';
-      if (!titulo) return;
-
-      const linhas: string[] = [`Item ${n} — ${titulo}`];
-      if (cfg.origem) linhas.push(`  Base: ${cfg.origem.produtoTitulo}`);
-      if (m) linhas.push(`  Modelo: ${m.nome}`);
-
-      const aco = data.acos[cfg.acoIdx]?.nome ?? '';
-      if (aco) linhas.push(`  Aço: ${aco}`);
-      if (cfg.bruteForge) linhas.push(`  Brute Forge: Sim`);
-
-      const emp = data.empunhaduras[cfg.empIdx]?.nome ?? '';
-      if (emp) linhas.push(`  Empunhadura: ${emp}${cfg.empCor ? ` (${cfg.empCor})` : ''}`);
-      if (cfg.dragonScale) linhas.push(`  Dragon Scale: Sim`);
-      linhas.push(`  Espaçador: ${cfg.espacador ? `Sim${cfg.espacadorCor ? ` (${cfg.espacadorCor})` : ''}` : 'Não'}`);
-
-      const acab = data.acabamentos[cfg.acabIdx]?.nome ?? '';
-      if (acab) linhas.push(`  Acabamento: ${acab}`);
-
-      const bainhas = (cfg.bainhaIdxs ?? []).map((i) => nomeBainha(data, cfg, i)).filter(Boolean);
-      if (bainhas.length) linhas.push(`  Bainhas: ${bainhas.join(', ')}`);
-
-      const laser = (cfg.textoLaser ?? '').trim();
-      linhas.push(`  Personalização: ${temLaser(cfg) ? `Sim — ${laser}` : 'Não'}`);
-
-      const cert = (cfg.certificado ?? '').trim();
-      linhas.push(`  Certificado: ${cert || 'Não'}`);
-
-      const emb = (cfg.embalagem ?? '').trim();
-      if (emb) linhas.push(`  Embalagem: ${emb}`);
-
-      out.push(linhas.join('\n'));
-      return;
-    }
-
-    if (e.kind === 'avulso') {
-      const a = data.adicionais[e.avulso.adicionalIdx];
-      if (!a) return;
-      out.push(`Item ${n} — ${a.nome}${e.avulso.quantidade > 1 ? ` ×${e.avulso.quantidade}` : ''}`);
-      return;
-    }
-
-    if (e.kind === 'catalogo') {
-      const c = e.catalogo;
-      out.push(`Item ${n} — ${nomeCatalogo(c)}${c.quantidade > 1 ? ` ×${c.quantidade}` : ''}`);
-      return;
-    }
-
-    const c = e.custom;
-    out.push(`Item ${n} — ${(c.descricao.trim() || 'Item personalizado')}${c.brinde ? ' (Brinde)' : ''}${c.quantidade > 1 ? ` ×${c.quantidade}` : ''}`);
-  });
-  return out;
-}
 
 /** Converte as entradas do simulador em custom line items da Shopify. */
 export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): DraftLineItem[] {
   const out: DraftLineItem[] = [];
 
+  const adicionar = (entry: PedidoEntry, item: DraftLineItem) => {
+    const pe = entregaDaEntrada(entry);
+    out.push({ ...item, prontaEntrega: pe.pronta, prazoEntrega: pe.prazo });
+  };
   entries.forEach((e) => {
     if (e.kind === 'faca') {
       const cfg = e.faca;
@@ -138,7 +81,7 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
 
       // Veio da vitrine e não foi alterada → usa a variante real (baixa estoque)
       if (cfg.origem && catalogoIntacto(cfg)) {
-        out.push({
+        adicionar(e, {
           title: cfg.origem.varianteTitulo
             ? `${cfg.origem.produtoTitulo} — ${cfg.origem.varianteTitulo}`
             : cfg.origem.produtoTitulo,
@@ -153,7 +96,7 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
       }
       if (cfg.origem) props.push({ name: 'Base', value: cfg.origem.produtoTitulo });
 
-      out.push({
+      adicionar(e, {
         title: tituloPartes.join(' — '),
         quantity: 1,
         price: calcItem(data, cfg),
@@ -167,7 +110,7 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
     if (e.kind === 'avulso') {
       const a = data.adicionais[e.avulso.adicionalIdx];
       if (!a) return;
-      out.push({
+      adicionar(e, {
         title: a.nome,
         quantity: Math.max(1, e.avulso.quantidade),
         price: a.preco,
@@ -178,7 +121,7 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
 
     if (e.kind === 'catalogo') {
       const c = e.catalogo;
-      out.push({
+      adicionar(e, {
         title: nomeCatalogo(c),
         quantity: Math.max(1, c.quantidade),
         price: Math.max(0, c.preco),
@@ -191,7 +134,7 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
     }
 
     const c = e.custom;
-    out.push({
+    adicionar(e, {
       title: (c.descricao.trim() || 'Item personalizado') + (c.brinde ? ' (Brinde)' : ''),
       quantity: Math.max(1, c.quantidade),
       price: c.brinde ? 0 : Math.max(0, c.preco),
@@ -241,10 +184,6 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
   // Acesso é compartilhado pelos vendedores → NUNCA memorizar a última escolha.
   const [vendedor, setVendedor] = useState('');
   const [origemVenda, setOrigemVenda] = useState('');
-  // Pronta entrega: respostas por item avulso (índice da linha) + prazo da encomenda + modo de envio
-  const [respostasPE, setRespostasPE] = useState<Record<number, { pronta: boolean | null; prazo: number }>>({});
-  const [prazoEncomenda, setPrazoEncomenda] = useState(PRAZO_PADRAO_ENCOMENDA);
-  const [modoEnvio, setModoEnvio] = useState<'' | 'junto' | 'parcial'>('');
 
   const vendedoresAtivos = useMemo(
     () => (data.vendedores ?? []).filter((v) => v.ativo && v.nome.trim()),
@@ -258,9 +197,6 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
       setFreteGratis(total >= 1000);
       setVendedor('');
       setOrigemVenda('');
-      setRespostasPE({});
-      setPrazoEncomenda(PRAZO_PADRAO_ENCOMENDA);
-      setModoEnvio('');
     }
   }, [open]);
   useEffect(() => {
@@ -274,29 +210,12 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
   const somaItens = useMemo(() => itens.reduce((s, i) => s + i.price * i.quantity, 0), [itens]);
   const ajuste = +(total - somaItens).toFixed(2);
 
-  // Classificação de cada linha: catálogo → pelo fornecedor; avulso → resposta do vendedor
-  const itensPE = useMemo(() => itens.map((i, idx) => {
-    if (i.doCatalogo) {
-      const c = classificarItemPE(i.vendor, i.properties);
-      return { pronta: c.pronta as boolean | null, prazo: c.prazo, auto: true };
-    }
-    const r = respostasPE[idx];
-    const pronta = r?.pronta ?? null;
-    return { pronta, prazo: pronta ? (r?.prazo || PRAZO_PADRAO_PRONTA) : prazoEncomenda, auto: false };
-  }), [itens, respostasPE, prazoEncomenda]);
-  const temPronta = itensPE.some((i) => i.pronta === true);
-  const temEncomenda = itensPE.some((i) => i.pronta === false);
-  const ehMisto = temPronta && temEncomenda;
-  const maxPronta = Math.max(0, ...itensPE.filter((i) => i.pronta).map((i) => i.prazo));
-  const maxEncomenda = Math.max(0, ...itensPE.filter((i) => i.pronta === false).map((i) => i.prazo));
-  const faltaPE = itensPE.filter((i) => i.pronta === null).length;
-
   const pendencias: string[] = [];
   if (!vendedor.trim()) pendencias.push('escolher o vendedor');
   if (!origemVenda) pendencias.push('escolher a origem da venda');
-  if (faltaPE) pendencias.push(`responder se ${faltaPE === 1 ? '1 item é' : `${faltaPE} itens são`} pronta entrega`);
-  if (ehMisto && !modoEnvio) pendencias.push('escolher como será o envio do pedido');
-
+  entries.forEach((entry, index) => {
+    if (entregaDaEntrada(entry).pronta === null) pendencias.push(`Item ${index + 1}: informe se é pronta entrega`);
+  });
 
 
   const preencherComIA = async () => {
@@ -335,12 +254,12 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
     if (!vendedor.trim()) { toast.error('Selecione o vendedor deste pedido'); return; }
     if (!origemVenda) { toast.error('Selecione a origem desta venda'); return; }
     if (pendencias.length) { toast.error(`Falta ${pendencias.join(', ')}`); return; }
-    const itensEnvio = itens.map((i, idx) => ({
-      ...i,
+    const itensEnvio = itens.map((item) => ({
+      ...item,
       properties: [
-        ...i.properties.filter((p) => !/^pronta entrega$|^prazo \(dias/i.test(p.name)),
-        { name: 'Pronta entrega', value: itensPE[idx].pronta ? 'Sim' : 'Não' },
-        { name: 'Prazo (dias úteis)', value: String(itensPE[idx].prazo) },
+        ...item.properties.filter((p) => !/^pronta entrega$|^prazo \(dias/i.test(p.name)),
+        ...(item.prontaEntrega ? [{ name: 'Pronta entrega', value: `SIM — envio em até ${item.prazoEntrega} dias úteis` }] : []),
+        { name: 'Prazo (dias úteis)', value: String(item.prazoEntrega) },
       ],
     }));
     setEnviando(true);
@@ -348,7 +267,6 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
       const { data: res, error } = await supabase.functions.invoke('criar-draft-order-shopify', {
         body: {
           itens: itensEnvio,
-          modoEnvio: ehMisto ? modoEnvio : undefined,
           vendedor: vendedor.trim(),
           origem: origemVenda,
 
@@ -491,51 +409,12 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
                 {itens.length} {itens.length === 1 ? 'item' : 'itens'}
               </span>
               <ul className="space-y-1.5">
-                {itens.map((i, idx) => {
-                  const pe = itensPE[idx];
-                  const resp = respostasPE[idx];
-                  const setResp = (v: { pronta: boolean | null; prazo: number }) =>
-                    setRespostasPE((p) => ({ ...p, [idx]: v }));
-                  return (
-                  <li key={idx} className="text-xs space-y-1.5 border-b border-border/50 pb-2 last:border-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="min-w-0 flex-1">{i.title}{i.quantity > 1 ? ` ×${i.quantity}` : ''}</span>
-                      <span className="tabular-nums font-semibold flex-shrink-0">{BRL(i.price * i.quantity)}</span>
-                    </div>
-                    {pe.auto ? (
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold',
-                          pe.pronta ? 'bg-green-600/15 text-green-500' : 'bg-muted text-muted-foreground')}>
-                          <Truck className="h-3 w-3" />
-                          {pe.pronta ? 'Pronta entrega' : 'Sob encomenda'} • {pe.prazo} dias úteis
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">definido pelo cadastro do produto no site</span>
-                      </div>
-                    ) : (
-                      <div className="rounded-lg bg-muted/40 p-2 space-y-1.5">
-                        <p className="text-[11px] font-medium">Esse item é pronta entrega? *</p>
-                        <div className="grid grid-cols-2 gap-1.5">
-                          <Button type="button" size="sm" variant={resp?.pronta === true ? 'default' : 'outline'} className="h-10"
-                            onClick={() => setResp({ pronta: true, prazo: resp?.prazo || PRAZO_PADRAO_PRONTA })}>Sim</Button>
-                          <Button type="button" size="sm" variant={resp?.pronta === false ? 'default' : 'outline'} className="h-10"
-                            onClick={() => setResp({ pronta: false, prazo: resp?.prazo || PRAZO_PADRAO_PRONTA })}>Não</Button>
-                        </div>
-                        {resp?.pronta === true && (
-                          <div className="space-y-0.5">
-                            <Label className="text-[11px]">Prazo de envio (dias úteis)</Label>
-                            <Input type="number" min={1} inputMode="numeric" className="h-9 w-24"
-                              value={resp.prazo} onChange={(e) => setResp({ pronta: true, prazo: Math.max(1, Number(e.target.value) || 1) })} />
-                            <p className="text-[10px] text-muted-foreground">Prazo padrão de pronta entrega — altere só se este item for diferente</p>
-                          </div>
-                        )}
-                        {resp?.pronta === false && (
-                          <p className="text-[10px] text-muted-foreground">Usa o prazo da lâmina sob encomenda ({prazoEncomenda} dias úteis), definido abaixo.</p>
-                        )}
-                      </div>
-                    )}
-                  </li>
-                  );
-                })}
+                {itens.map((item, index) => <li key={index} className="text-xs space-y-1 border-b pb-2 last:border-0">
+                  <div className="flex justify-between gap-2"><span>{item.title}{item.quantity > 1 ? ` ×${item.quantity}` : ''}</span><span className="shrink-0 font-semibold">{BRL(item.price * item.quantity)}</span></div>
+                  <p className={item.prontaEntrega ? 'text-success' : 'text-muted-foreground'}>
+                    {item.prontaEntrega === null ? `Item ${index + 1}: informe se é pronta entrega` : `${item.prontaEntrega ? 'Pronta entrega' : 'Sob encomenda'} · ${item.prazoEntrega} dias úteis`}
+                  </p>
+                </li>)}
               </ul>
               <div className="flex items-center justify-between border-t pt-2 text-sm font-bold">
                 <span>Total</span><span className="text-accent tabular-nums">{BRL(total)}</span>
@@ -552,31 +431,6 @@ export default function ShopifyDraftModal({ open, onOpenChange, data, entries, t
               )}
 
             </div>
-
-            {/* Prazo da encomenda + modo de envio */}
-            <div className="rounded-xl border p-3 space-y-1">
-              <Label className="text-xs">Prazo da lâmina sob encomenda (dias úteis)</Label>
-              <Input type="number" min={1} inputMode="numeric" className="h-9 w-24" value={prazoEncomenda}
-                onChange={(e) => setPrazoEncomenda(Math.max(1, Number(e.target.value) || 1))} />
-              <p className="text-[10px] text-muted-foreground">Padrão: {PRAZO_PADRAO_ENCOMENDA} dias úteis. Vale para os itens avulsos marcados como "Não".</p>
-            </div>
-            {ehMisto && (
-              <div className="rounded-xl border border-yellow-500/50 bg-yellow-500/10 p-3 space-y-2">
-                <p className="text-sm font-semibold flex items-center gap-1.5"><AlertTriangle className="h-4 w-4 text-yellow-500" /> Como será o envio deste pedido? *</p>
-                {([
-                  ['junto', 'Tudo junto', `O cliente recebe tudo de uma vez, no prazo da lâmina sob encomenda (${maxEncomenda} dias úteis).`],
-                  ['parcial', 'Pronta entrega primeiro', `Os itens prontos saem em até ${maxPronta} dias úteis; a lâmina segue depois, em outro envio.`],
-                ] as const).map(([v, t, d]) => (
-                  <button key={v} type="button" onClick={() => setModoEnvio(v)}
-                    className={cn('w-full text-left rounded-lg border p-2.5 transition-colors',
-                      modoEnvio === v ? 'border-primary bg-primary/10' : 'border-border bg-background/40')}>
-                    <span className="block text-sm font-semibold">{t}</span>
-                    <span className="block text-[11px] text-muted-foreground">{d}</span>
-                  </button>
-                ))}
-                <p className="text-[11px] text-muted-foreground">Confirme essa escolha com o cliente antes de lançar.</p>
-              </div>
-            )}
 
             {/* Dados do cliente — colapsado por padrão */}
             {!dadosExpandidos ? (
