@@ -1,3 +1,4 @@
+import { tokenRequest, getValidToken } from "../_shared/bling.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 
@@ -25,32 +26,10 @@ Deno.serve(async (req) => {
 
     if (code) {
       // Exchange authorization code for tokens
-      const credentials = btoa(`${BLING_CLIENT_ID}:${BLING_CLIENT_SECRET}`);
-      tokenResponse = await fetch("https://www.bling.com.br/Api/v3/oauth/token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Authorization": `Basic ${credentials}`,
-        },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          code,
-        }),
-      });
+      tokenResponse = await tokenRequest(new URLSearchParams({ grant_type: "authorization_code", code }));
     } else if (refresh_token) {
-      // Refresh expired token
-      const credentials = btoa(`${BLING_CLIENT_ID}:${BLING_CLIENT_SECRET}`);
-      tokenResponse = await fetch("https://www.bling.com.br/Api/v3/oauth/token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Authorization": `Basic ${credentials}`,
-        },
-        body: new URLSearchParams({
-          grant_type: "refresh_token",
-          refresh_token,
-        }),
-      });
+      await getValidToken(supabase);
+      return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     } else {
       return new Response(JSON.stringify({ error: "code or refresh_token required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -59,8 +38,8 @@ Deno.serve(async (req) => {
 
     if (!tokenResponse.ok) {
       const errBody = await tokenResponse.text();
-      console.error("Bling token error:", errBody);
-      return new Response(JSON.stringify({ error: "Failed to get Bling token", details: errBody }), {
+
+      return new Response(JSON.stringify({ error: "Failed to get Bling token", details: `HTTP ${tokenResponse.status}` }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -68,8 +47,7 @@ Deno.serve(async (req) => {
     const tokenData = await tokenResponse.json();
     const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
 
-    // Delete old tokens and insert new one
-    await supabase.from("bling_tokens").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    // Keep token history; shared refresh always reads the latest row.
 
     const { error: insertError } = await supabase.from("bling_tokens").insert({
       access_token: tokenData.access_token,

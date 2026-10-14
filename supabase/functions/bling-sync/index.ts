@@ -1,66 +1,14 @@
+import { getValidToken, blingFetch } from "../_shared/bling.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 
-const BLING_API_BASE = "https://www.bling.com.br/Api/v3";
+const BLING_API_BASE = "https://api.bling.com.br/Api/v3";
 const THROTTLE_MS = 400; // ~2.5 req/s — limite do Bling é 3 req/s
-
-async function getValidToken(supabase: any) {
-  const { data: tokens, error } = await supabase
-    .from("bling_tokens")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(1);
-
-  if (error || !tokens?.length) {
-    throw new Error("No Bling token found. Please authorize first.");
-  }
-
-  const token = tokens[0];
-  const now = new Date();
-  const expiresAt = new Date(token.expires_at);
-
-  if (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000) {
-    const BLING_CLIENT_ID = Deno.env.get("BLING_CLIENT_ID")!;
-    const BLING_CLIENT_SECRET = Deno.env.get("BLING_CLIENT_SECRET")!;
-    const credentials = btoa(`${BLING_CLIENT_ID}:${BLING_CLIENT_SECRET}`);
-
-    const refreshResponse = await fetch(`${BLING_API_BASE}/oauth/token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${credentials}`,
-      },
-      body: new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: token.refresh_token,
-      }),
-    });
-
-    if (!refreshResponse.ok) {
-      const err = await refreshResponse.text();
-      throw new Error(`Token refresh failed: ${err}`);
-    }
-
-    const newToken = await refreshResponse.json();
-    const newExpiresAt = new Date(Date.now() + newToken.expires_in * 1000).toISOString();
-
-    await supabase.from("bling_tokens").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-    await supabase.from("bling_tokens").insert({
-      access_token: newToken.access_token,
-      refresh_token: newToken.refresh_token,
-      expires_at: newExpiresAt,
-    });
-
-    return newToken.access_token;
-  }
-
-  return token.access_token;
-}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function fetchWithRetry(url: string, options: RequestInit, retries = 3, delay = 1000): Promise<Response> {
-  const response = await fetch(url, options);
+  const response = await blingFetch(url, options);
   if (response.status === 429 && retries > 0) {
     console.warn(`Rate limit hit. Retrying in ${delay}ms...`);
     await sleep(delay);

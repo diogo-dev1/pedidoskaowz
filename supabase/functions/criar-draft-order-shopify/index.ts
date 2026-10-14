@@ -308,6 +308,7 @@ Deno.serve(async (req) => {
     if (cliente.cpf?.trim()) customAttributes.push({ key: 'CPF', value: cliente.cpf.trim() });
     if (cliente.dataNascimento?.trim()) customAttributes.push({ key: 'Data de nascimento', value: cliente.dataNascimento.trim() });
     customAttributes.push({ key: 'Origem', value: origem });
+    if (payload.observacao?.trim()) customAttributes.push({ key: 'Observação', value: truncaLimpo(payload.observacao.trim(), 255) });
 
     const tags: string[] = [];
     if (vendedor) tags.push(`vendedor:${vendedor}`);
