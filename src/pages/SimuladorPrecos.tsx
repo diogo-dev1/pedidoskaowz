@@ -17,13 +17,13 @@ import CatalogoShopifyPicker, { type ProdutoShopify } from '@/components/simulad
 import { useSimuladorConfig } from '@/hooks/useSimuladorConfig';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
+  entregaDaEntrada, atualizarEntrega, BRL, TAM_DOT, newItem, precoClasse, classeDo, calcItem, calcItemBase, calcEntry, gerarOrcamento,
   novaEntradaFaca, novaEntradaAvulso, novaEntradaCustom, novaEntradaCatalogo, novaEntradaFacaDeCatalogo,
   espacadorIdx, nomeBainha, nomeCatalogo, calcCatalogo, ehFacaDoCatalogo,
   LOCAIS_GRAVACAO, LOCAIS_BLOQUEADOS_POR_LOGO, acoEhInox, acabamentoSoCarbono, composeLaser, personalizacaoDefinida,
   precoBainhaAdicional, LASER_PRECO, LASER_PRECO_DORSO, LASER_PRECO_LOGO, EMBALAGENS,
   type SimuladorData, type ItemCfg, type PedidoEntry, type Modelo, type Opcao, type CustomCfg,
-  type CatalogoCfg,
+  type CatalogoCfg, type EntregaCfg,
 } from '@/lib/simuladorData';
 
 
@@ -63,6 +63,25 @@ function Secao({ title, children }: { title: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+function EntregaItem({ entry, onChange }: { entry: PedidoEntry; onChange: (patch: EntregaCfg) => void }) {
+  const pe = entregaDaEntrada(entry);
+  return <div className="px-4 py-3 space-y-2 border-t">
+    <p className="text-sm font-semibold">Pronta entrega?</p>
+    <div className="grid grid-cols-2 gap-2">
+      <Button type="button" variant={pe.pronta === true ? 'default' : 'outline'} aria-pressed={pe.pronta === true}
+        onClick={() => onChange({ prontaEntrega: true, prazoEntrega: pe.pronta ? pe.prazo : 5 })}>Sim</Button>
+      <Button type="button" variant={pe.pronta === false ? 'default' : 'outline'} aria-pressed={pe.pronta === false}
+        onClick={() => onChange({ prontaEntrega: false, prazoEntrega: 65 })}>Não</Button>
+    </div>
+    {pe.catalogo && <p className="text-xs text-muted-foreground">Definido pelo cadastro do produto — altere só se este item for diferente</p>}
+    {pe.pronta === true && <div className="space-y-1">
+      <Label htmlFor={`prazo-${entry.id}`}>Prazo (dias úteis)</Label>
+      <Input id={`prazo-${entry.id}`} type="number" min={1} max={365} inputMode="numeric" className="w-24 h-10" value={pe.prazo}
+        onChange={(event) => onChange({ prazoEntrega: Math.min(365, Math.max(1, Number(event.target.value) || 1)) })} />
+    </div>}
+  </div>;
 }
 
 /* ════════════════ Busca de modelo ════════════════ */
@@ -157,7 +176,7 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
 
 
   return (
-    <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
+    <div className="bg-card overflow-hidden">
       <button type="button" onClick={onToggle}
         className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors active:bg-muted/50">
         <span className="w-8 h-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold flex-shrink-0">
@@ -193,7 +212,7 @@ function ItemCard({ data, cfg, onChange, onRemove, onDuplicate, index, expanded,
               </div>
             ) : (
               <ModeloSearch modelos={data.modelos} currentIdx={cfg.modeloIdx}
-                onSelect={(i) => onChange({ ...newItem(), id: cfg.id, modeloIdx: i, certificado: cfg.certificado, origem: cfg.origem })} />
+                onSelect={(i) => onChange({ ...newItem(), id: cfg.id, modeloIdx: i, certificado: cfg.certificado, origem: cfg.origem, prontaEntrega: cfg.prontaEntrega, prazoEntrega: cfg.prazoEntrega })} />
             )}
           </Secao>
 
@@ -517,7 +536,7 @@ function AvulsoRow({ data, cfg, onChange, onRemove }: {
   if (!a) return null;
   const subtotal = a.preco * cfg.quantidade;
   return (
-    <div className="rounded-2xl border bg-card overflow-hidden shadow-sm flex items-center gap-3 p-4">
+    <div className="bg-card overflow-hidden flex items-center gap-3 p-4">
       <span className="w-8 h-8 rounded-xl bg-accent/15 text-accent flex items-center justify-center flex-shrink-0">
         <PackagePlus className="w-4 h-4" />
       </span>
@@ -601,7 +620,7 @@ function CustomRow({ cfg, onChange, onRemove }: {
   const subtotal = cfg.brinde ? 0 : Math.max(0, cfg.preco) * Math.max(1, cfg.quantidade);
   return (
     <>
-      <div className="rounded-2xl border bg-card overflow-hidden shadow-sm flex items-center gap-3 p-4">
+      <div className="bg-card overflow-hidden flex items-center gap-3 p-4">
         <span className="w-8 h-8 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center flex-shrink-0">
           <FilePlus2 className="w-4 h-4" />
         </span>
@@ -718,7 +737,7 @@ function CatalogoRow({ cfg, onChange, onRemove, expanded, onToggle }: {
   const subtotal = calcCatalogo(cfg);
   const editado = Math.abs(cfg.preco - cfg.precoOriginal) >= 0.01;
   return (
-    <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
+    <div className="bg-card overflow-hidden">
       <button type="button" onClick={onToggle}
         className="w-full flex items-center gap-3 p-3 hover:bg-muted/30 active:bg-muted/50 transition-colors text-left">
         {cfg.imagem ? (
@@ -1255,7 +1274,7 @@ export default function SimuladorPrecos() {
 
       {entries.length > 0 && (
         <div className="space-y-2.5">
-          {entries.map((e, idx) => {
+          {entries.map((e, idx) => <div key={e.id} className="rounded-2xl border bg-card overflow-hidden">{(() => {
             if (e.kind === 'faca') return (
               <ItemCard key={e.id} data={data} cfg={e.faca} index={idx}
                 onChange={(u) => updateFaca(e.id, u)}
@@ -1283,7 +1302,7 @@ export default function SimuladorPrecos() {
                 onChange={(u) => updateCustom(e.id, u)}
                 onRemove={() => removeEntry(e.id)} />
             );
-          })}
+          })()}<EntregaItem entry={e} onChange={(patch) => setEntries((prev) => prev.map((item) => item.id === e.id ? atualizarEntrega(item, patch) : item))} /></div>)}
         </div>
       )}
 

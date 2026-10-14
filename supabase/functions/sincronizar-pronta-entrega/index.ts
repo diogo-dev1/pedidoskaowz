@@ -5,10 +5,9 @@ import {
   classificarItemPE, calcularPrazoLimite, prazoDoPedido, type ItemPE, TZ_BR,
 } from '../_shared/prontaEntrega.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { z } from 'npm:zod@3';
+
 const API_VERSION = '2026-07';
 const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -33,7 +32,8 @@ async function getAccessToken(domain: string): Promise<string> {
   const t = await res.text();
   if (!res.ok) throw new Error(`Falha no token Shopify (HTTP ${res.status}): ${t.slice(0, 200)}`);
   tokenCache = JSON.parse(t).access_token;
-  return tokenCache!;
+  if (!tokenCache) throw new Error('Token Shopify ausente');
+  return tokenCache;
 }
 async function shopify(query: string, variables: Record<string, unknown>) {
   const domain = resolveDomain();
@@ -125,7 +125,6 @@ async function garantirAbas(token: string) {
 }
 
 // ───────────── Helpers ─────────────
-const modoTexto: Record<string, string> = { junto: 'Tudo junto', parcial: 'Pronta entrega primeiro', a_definir: 'A definir' };
 const statusTexto: Record<string, string> = { pendente: 'Pendente', enviado_parcial: 'Enviado parcial', enviado: 'Enviado' };
 const dataBR = (iso?: string | null) => iso ? new Date(iso).toLocaleString('pt-BR', { timeZone: TZ_BR }) : '';
 const diaBR = (ymd?: string | null) => ymd ? ymd.split('-').reverse().join('/') : '';
@@ -155,8 +154,16 @@ Deno.serve(async (req) => {
     if (!u?.user) return json({ sucesso: false, erro: 'Faça login para usar a Pronta Entrega' }, 401);
     const db = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-    const body = await req.json().catch(() => ({}));
-    const acao = String(body?.acao ?? 'sincronizar');
+    const schema = z.object({
+      acao: z.enum(['sincronizar', 'marcar_enviado', 'desfazer', 'adicionar_manual']).default('sincronizar'),
+      id: z.string().uuid().optional(), enviado_por: z.string().max(255).optional(), rastreio: z.string().max(255).optional(), observacao: z.string().max(5000).optional(),
+      cliente_nome: z.string().max(255).optional(), cliente_telefone: z.string().max(50).optional(), itens: z.string().max(20000).optional(), data_pagamento: z.string().datetime().optional(), prazo_dias_uteis: z.number().int().min(1).max(365).optional(),
+    });
+    const parsed = schema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return json({ sucesso: false, erro: 'Dados inválidos. Confira os campos informados.' }, 400);
+    const body = parsed.data;
+    const acao = body.acao;
+    if (['marcar_enviado', 'desfazer'].includes(acao) && !body.id) return json({ sucesso: false, erro: 'Informe o pedido' }, 400);
 
     const [{ data: fer }, { data: cfg }] = await Promise.all([
       db.from('feriados').select('data'),
@@ -164,8 +171,8 @@ Deno.serve(async (req) => {
     ]);
     const feriados = new Set<string>((fer ?? []).map((f: any) => f.data));
     const corte = (cfg ?? []).find((c: any) => c.chave === 'horario_corte')?.valor || '14:00';
-    const prazoLimite = (pag: string | null, itens: ItemPE[], modo: string | null) =>
-      calcularPrazoLimite(pag ? new Date(pag) : new Date(), prazoDoPedido(itens, modo), corte, feriados);
+    const prazoLimite = (pag: string | null, itens: ItemPE[]) =>
+      calcularPrazoLimite(pag ? new Date(pag) : new Date(), prazoDoPedido(itens), corte, feriados);
 
     const carregar = async (id: string) => {
       const { data, error } = await db.from('pedidos_pronta_entrega').select('*').eq('id', id).single();
@@ -174,34 +181,26 @@ Deno.serve(async (req) => {
     };
 
     // ───── Ações da página ─────
-    if (acao === 'definir_modo') {
-      const modo = body.modo === 'junto' ? 'junto' : body.modo === 'parcial' ? 'parcial' : null;
-      if (!modo) return json({ sucesso: false, erro: 'Modo inválido' }, 400);
-      const p = await carregar(String(body.id));
-      await db.from('pedidos_pronta_entrega').update({ modo_envio: modo, prazo_limite: prazoLimite(p.data_pagamento, p.itens, modo) }).eq('id', p.id);
-      await tags('add', p.shopify_order_id, [modo === 'junto' ? 'Envio junto' : 'Envio parcial']);
-      return json({ sucesso: true });
-    }
-
     if (acao === 'marcar_enviado') {
       const enviadoPor = String(body.enviado_por ?? '').trim();
+      if (!enviadoPor) return json({ sucesso: false, erro: 'Escolha quem está enviando' }, 400);
+      const { data: pessoa, error: equipeErro } = await db.from('equipe_expedicao').select('id').eq('nome', enviadoPor).eq('ativo', true).limit(1);
+      if (equipeErro) throw equipeErro;
+      if (!pessoa?.length) return json({ sucesso: false, erro: 'Escolha uma pessoa ativa da equipe' }, 400);
       const p = await carregar(String(body.id));
       const agora = new Date().toISOString();
       const itens: ItemPE[] = p.itens ?? [];
-      // Parcial ou só pronta → envia os prontos; junto/encomenda restante → envia tudo que falta
-      const soProntos = p.status === 'pendente' && p.modo_envio !== 'junto';
-      const novos = itens.map((i) => (!i.enviado && (!soProntos || i.pronta_entrega)) ? { ...i, enviado: true, enviado_em: agora } : i);
+      if (!itens.some((i) => i.pronta_entrega && !i.enviado)) return json({ sucesso: false, erro: 'Os itens prontos deste pedido já foram enviados' }, 409);
+      const novos = itens.map((i) => !i.enviado && i.pronta_entrega ? { ...i, enviado: true, enviado_em: agora } : i);
       const restante = novos.some((i) => !i.enviado);
       const status = restante ? 'enviado_parcial' : 'enviado';
-      await db.from('pedidos_pronta_entrega').update({
+      const { error: envioErro } = await db.from('pedidos_pronta_entrega').update({
         itens: novos, status, enviado_em: agora, enviado_por: enviadoPor || p.enviado_por || null,
         rastreio: String(body.rastreio ?? '').trim() || p.rastreio,
         observacao: String(body.observacao ?? '').trim() || p.observacao,
       }).eq('id', p.id);
-      if (status === 'enviado') {
-        await tags('remove', p.shopify_order_id, ['Enviado parcial']);
-        await tags('add', p.shopify_order_id, ['Enviado']);
-      } else await tags('add', p.shopify_order_id, ['Enviado parcial']);
+      if (envioErro) throw envioErro;
+      await tags('add', p.shopify_order_id, ['Enviado']);
       return json({ sucesso: true, status });
     }
 
@@ -213,14 +212,11 @@ Deno.serve(async (req) => {
         ? { ...i, enviado: false, enviado_em: null } : i);
       const algum = novos.filter((i) => i.enviado && i.enviado_em);
       const status = algum.length ? 'enviado_parcial' : 'pendente';
-      const anterior = algum.length ? algum.map((i) => i.enviado_em!).sort().at(-1)! : null;
+      const anterior = algum.map((i) => i.enviado_em ?? '').sort().at(-1) || null;
       await db.from('pedidos_pronta_entrega').update({
         itens: novos, status, enviado_em: anterior, ...(status === 'pendente' ? { enviado_por: null } : {}),
       }).eq('id', p.id);
-      if (p.status === 'enviado') {
-        await tags('remove', p.shopify_order_id, ['Enviado']);
-        if (status === 'enviado_parcial') await tags('add', p.shopify_order_id, ['Enviado parcial']);
-      } else await tags('remove', p.shopify_order_id, ['Enviado parcial']);
+      await tags('remove', p.shopify_order_id, ['Enviado']);
       return json({ sucesso: true, status });
     }
 
@@ -233,7 +229,7 @@ Deno.serve(async (req) => {
       const { error } = await db.from('pedidos_pronta_entrega').insert({
         pedido_numero: `MAN-${Date.now()}`, origem: 'manual', cliente_nome: cliente,
         cliente_telefone: String(body.cliente_telefone ?? '').trim() || null, data_pagamento: pag,
-        itens, classificacao: 'pronta', modo_envio: null, prazo_limite: prazoLimite(pag, itens, null),
+        itens, classificacao: 'pronta', modo_envio: null, prazo_limite: prazoLimite(pag, itens),
         observacao: String(body.observacao ?? '').trim() || null,
       });
       if (error) throw error;
@@ -269,9 +265,7 @@ Deno.serve(async (req) => {
       const misto = itensNovos.some((i) => !i.pronta_entrega);
       const tagsAtuais: string[] = o.tags ?? [];
       const temTag = (t: string) => tagsAtuais.some((x) => x.toLowerCase() === t.toLowerCase());
-      const origem = temTag('Kaowz-Simulador') ? 'simulador' : 'site';
-      // Sem decisão explícita, pedidos comuns do site seguem juntos; só drafts aguardam definição.
-      const modoShopify = temTag('Envio parcial') ? 'parcial' : temTag('Envio junto') ? 'junto' : misto ? (origem === 'simulador' ? 'a_definir' : 'junto') : null;
+      const origem = temTag('Kaowz-Simulador') || tagsAtuais.some((t) => /^vendedor:/i.test(t)) ? 'simulador' : 'site';
       const pago = (o.transactions ?? []).filter((t: any) => t.status === 'SUCCESS' && ['SALE', 'CAPTURE'].includes(t.kind))
         .map((t: any) => t.processedAt).sort()[0] ?? o.processedAt;
       const vendTag = tagsAtuais.find((t) => /^vendedor:/i.test(t));
@@ -283,8 +277,6 @@ Deno.serve(async (req) => {
         const antigo = antigos[idx]?.titulo === i.titulo ? antigos[idx] : antigos.find((a) => a.titulo === i.titulo);
         return antigo ? { ...i, enviado: !!antigo.enviado, enviado_em: antigo.enviado_em ?? null } : i;
       });
-      // modo_envio já definido no app nunca é sobrescrito
-      const modo = ex?.modo_envio && ex.modo_envio !== 'a_definir' ? ex.modo_envio : modoShopify;
       const camposShopify = {
         shopify_order_id: o.id,
         origem,
@@ -292,14 +284,14 @@ Deno.serve(async (req) => {
         cliente_telefone: o.customer?.phone ?? o.shippingAddress?.phone ?? null,
         vendedor, data_pagamento: pago, itens,
         classificacao: misto ? 'misto' : 'pronta',
-        prazo_limite: prazoLimite(pago, itens, modo),
+        prazo_limite: prazoLimite(pago, itens),
         synced_at: new Date().toISOString(),
       };
       if (ex) {
-        await db.from('pedidos_pronta_entrega').update({ ...camposShopify, ...(ex.modo_envio && ex.modo_envio !== 'a_definir' ? {} : { modo_envio: modo }) }).eq('id', ex.id);
+        await db.from('pedidos_pronta_entrega').update(camposShopify).eq('id', ex.id);
         resumo.atualizados++;
       } else {
-        const { error } = await db.from('pedidos_pronta_entrega').insert({ pedido_numero: o.name, ...camposShopify, modo_envio: modo });
+        const { error } = await db.from('pedidos_pronta_entrega').insert({ pedido_numero: o.name, ...camposShopify });
         if (error) resumo.avisos.push(`${o.name}: ${error.message}`); else resumo.novos++;
       }
       const faltando = ['Contém pronta entrega', ...(misto ? ['Misto'] : [])].filter((t) => !temTag(t));
@@ -324,7 +316,7 @@ Deno.serve(async (req) => {
           const pag = (parseDataBR(pagTxt) ?? new Date()).toISOString();
           const { error } = await db.from('pedidos_pronta_entrega').insert({
             pedido_numero: `MAN-${Date.now()}-${i}`, origem: 'manual', cliente_nome: cli.trim(), cliente_telefone: tel?.trim() || null,
-            data_pagamento: pag, itens, classificacao: 'pronta', prazo_limite: prazoLimite(pag, itens, null), observacao: obs?.trim() || null,
+            data_pagamento: pag, itens, classificacao: 'pronta', prazo_limite: prazoLimite(pag, itens), observacao: obs?.trim() || null,
           });
           if (error) { resumo.avisos.push(`Linha manual ${i + 2}: ${error.message}`); continue; }
           await gs(gt, `/values/${encodeURIComponent(`'${ABA_MANUAL}'!G${i + 2}`)}?valueInputOption=RAW`, { method: 'PUT', body: JSON.stringify({ values: [['Sim']] }) });
@@ -335,7 +327,7 @@ Deno.serve(async (req) => {
         const rows = (todos ?? []).map((p: any) => [
           p.pedido_numero, p.origem, p.cliente_nome ?? '', p.cliente_telefone ?? '', p.vendedor ?? '', dataBR(p.data_pagamento),
           itensTexto((p.itens ?? []).filter((i: ItemPE) => i.pronta_entrega)), itensTexto((p.itens ?? []).filter((i: ItemPE) => !i.pronta_entrega)),
-          modoTexto[p.modo_envio] ?? 'Só pronta entrega', diaBR(p.prazo_limite), statusTexto[p.status] ?? p.status,
+          'Pronta entrega por item', diaBR(p.prazo_limite), statusTexto[p.status] ?? p.status,
           dataBR(p.enviado_em), p.enviado_por ?? '', p.rastreio ?? '', p.observacao ?? '',
         ]);
         await gs(gt, `/values/${encodeURIComponent(`'${ABA_ESPELHO}'!A1:O5000`)}:clear`, { method: 'POST', body: '{}' });
