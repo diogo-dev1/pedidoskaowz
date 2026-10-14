@@ -2,27 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Shipping Kanban uses the application theme; only layout is page-specific. */
+/* Ready-delivery dashboard uses the application theme; only fullscreen layout is page-specific. */
 .pe-panel { min-width: 0; }
-.pe-panel-fullscreen { position: fixed; inset: 0; z-index: 40; padding: 20px; overflow-y: auto; }
-.pe-board { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
-.pe-column-heading { position: sticky; top: 0; z-index: 1; }
-.pe-column-scroll { min-height: 0; scrollbar-width: none; }
-.pe-column-scroll::-webkit-scrollbar { display: none; }
-@media (min-width: 768px) {
-  .pe-board { display: grid; grid-template-columns: repeat(5, 290px); overflow-x: auto; align-items: stretch; scroll-behavior: smooth; }
-  .pe-column { min-height: 300px; }
-  .pe-column-heading { position: static; }
-}
-@media (min-width: 1280px) {
-  .pe-panel { height: calc(100dvh - 100px); display: flex; flex-direction: column; }
-  .pe-panel-fullscreen { height: 100dvh; }
-  .pe-board { flex: 1; grid-template-columns: repeat(5, minmax(0, 1fr)); overflow: hidden; }
-  .pe-column { min-height: 0; overflow: hidden; }
-  .pe-column-scroll { overflow-y: auto; flex: 1; }
-  .pe-panel-fullscreen .pe-row-name { font-size: 18px; }
-  .pe-panel-fullscreen .pe-row-detail { font-size: 15px; }
-}
+.pe-panel-fullscreen { position: fixed; inset: 0; z-index: 40; padding: 20px; overflow-y: auto; background: hsl(var(--background)); max-width: none !important; }
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
