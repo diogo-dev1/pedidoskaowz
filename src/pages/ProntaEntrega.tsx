@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,13 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { RefreshCw, Loader2, Plus, Maximize, Minimize, Clock, ChevronDown, Copy, MessageCircle, ExternalLink, Undo2, Columns3 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RefreshCw, Loader2, Plus, Maximize, Minimize, Copy, MessageCircle, ExternalLink, Undo2, Truck, Search, Info, PackageCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Card, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { normalizarTelefone } from '@/lib/telefone';
@@ -28,74 +25,30 @@ interface PedidoPE {
 }
 const itensTxt = (itens: ItemPE[]) => itens.map((item) => `${item.quantidade}x ${item.titulo}`);
 const hora = (data: Date) => data.toLocaleTimeString('pt-BR', { timeZone: TZ_BR, hour: '2-digit', minute: '2-digit', hour12: false });
-type Grupo = 'atrasado' | 'hoje' | 'amanha' | 'proximos';
-const COLUNAS = [
-  { key: 'atrasado', titulo: 'Atrasado', tone: 'bg-destructive', text: 'text-destructive' },
-  { key: 'hoje', titulo: 'Hoje', tone: 'bg-accent', text: 'text-accent' },
-  { key: 'amanha', titulo: 'Amanhã', tone: 'bg-muted-foreground', text: 'text-muted-foreground' },
-  { key: 'proximos', titulo: 'Próximos dias', tone: 'bg-muted-foreground', text: 'text-muted-foreground' },
-  { key: 'enviados', titulo: 'Enviados hoje', tone: 'bg-muted-foreground', text: 'text-muted-foreground' },
-] as const;
+type Filtro = null | 'atrasados' | 'hoje' | 'amanha' | 'semana';
+type Aba = 'todos' | 'enviar' | 'enviados';
 const dataHora = (data: string | null | undefined) => data ? new Date(data).toLocaleString('pt-BR', { timeZone: TZ_BR, dateStyle: 'short', timeStyle: 'short' }) : '—';
 const dataDia = (data: string | null) => data ? data.split('-').reverse().join('/') : '—';
+const diaMes = (ymd?: string | null) => (ymd ? ymd.slice(8, 10) + '/' + ymd.slice(5, 7) : '—');
 const ultimoEnvio = (p: PedidoPE) => p.itens.filter(i => i.pronta_entrega && i.enviado && i.enviado_em).map(i => i.enviado_em || '').sort().reverse()[0] || p.enviado_em;
-function prazoCurto(p: PedidoPE, hoje: string, amanha: string, feriados: Set<string>, agora: Date) {
-  const prazo = p.prazo_limite || hoje;
-  if (prazo < hoje) { const dias = Math.max(1, -diasUteisRestantes(prazo, feriados, agora)); return `há ${dias} ${dias === 1 ? 'dia' : 'dias'}`; }
-  if (prazo === hoje) return 'hoje';
-  if (prazo === amanha) return 'amanhã';
-  return `${new Date(`${prazo}T12:00:00-03:00`).toLocaleDateString('pt-BR', { timeZone: TZ_BR, weekday: 'short' }).replace('.', '')} ${prazo.slice(8, 10)}/${prazo.slice(5, 7)}`;
+const pendente = (p: PedidoPE) => p.itens.some(i => i.pronta_entrega && !i.enviado);
+function textoPrazo(r: number) {
+  if (r < 0) return `Atrasado há ${-r} ${-r === 1 ? 'dia útil' : 'dias úteis'}`;
+  if (r === 0) return 'Enviar hoje';
+  if (r === 1) return 'Vence amanhã';
+  return `Faltam ${r} dias úteis`;
 }
-function ColunaKanban({ coluna, pedidos, onSelect, hoje, amanha, feriados, agora }: {
-  coluna: typeof COLUNAS[number]; pedidos: PedidoPE[]; onSelect: (p: PedidoPE) => void;
-  hoje: string; amanha: string; feriados: Set<string>; agora: Date;
-}) {
-  const mobile = useIsMobile();
-  const [expanded, setExpanded] = useState(false);
-  const reduced = useReducedMotion();
-  const scroller = useRef<HTMLDivElement>(null);
-  const pausa = useRef(0);
-  const enviado = coluna.key === 'enviados';
-  useEffect(() => {
-    if (reduced) return;
-    let frame = 0; let ultimo = 0; let direcao = 1;
-    pausa.current = performance.now() + 4000;
-    const mover = (tempo: number) => {
-      const el = scroller.current;
-      if (el && window.innerWidth >= 1280 && tempo > pausa.current && el.scrollHeight > el.clientHeight) {
-        const max = el.scrollHeight - el.clientHeight;
-        const delta = ultimo ? Math.min(tempo - ultimo, 50) : 0;
-        el.scrollTop = Math.max(0, Math.min(max, el.scrollTop + direcao * delta * 0.018));
-        if (el.scrollTop >= max - 1 || el.scrollTop <= 0) { direcao *= -1; pausa.current = tempo + 4000; }
-      }
-      ultimo = tempo; frame = requestAnimationFrame(mover);
-    };
-    frame = requestAnimationFrame(mover);
-    return () => cancelAnimationFrame(frame);
-  }, [reduced]);
-  const header = <><span className={cn('h-2 w-2 rounded-full shrink-0', coluna.tone)} /><span className="flex-1 font-medium text-sm">{coluna.titulo}</span><Badge variant="secondary">{pedidos.length}</Badge></>;
-  const content = <div ref={scroller} className="pe-column-scroll p-2 space-y-2"
-    onPointerEnter={() => { pausa.current = Infinity; }} onPointerLeave={() => { pausa.current = performance.now() + 4000; }}
-    onTouchStart={() => { pausa.current = Infinity; }} onTouchEnd={() => { pausa.current = performance.now() + 4000; }}
-    onFocusCapture={() => { pausa.current = Infinity; }} onBlurCapture={() => { pausa.current = performance.now() + 4000; }}>
-    {!pedidos.length && <p className="text-xs text-muted-foreground px-2 py-4">Nenhum pedido</p>}
-    <AnimatePresence initial={false}>{pedidos.map(p => {
-      const itens = p.itens.filter(i => i.pronta_entrega && (enviado ? i.enviado : !i.enviado));
-      const primeiro = itens[0]; const extras = itens.slice(1).reduce((n, i) => n + i.quantidade, 0);
-      return <motion.div key={p.id} initial={reduced ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: reduced ? 0 : 0.18 }}>
-        <Button variant="outline" className={cn('pe-order w-full h-auto p-3 flex flex-col items-stretch gap-1.5 bg-card border shadow-none text-left hover:bg-muted hover:text-foreground', enviado && 'opacity-60')}
-          aria-label={`Ver pedido: ${p.cliente_nome || 'Sem nome'}, ${p.pedido_numero}`} onClick={() => onSelect(p)}>
-          <span className="flex items-center gap-2 min-w-0"><span className="pe-row-name truncate flex-1 font-medium text-sm">{p.cliente_nome || 'Sem nome'}</span><span className="pe-row-detail shrink-0 text-xs text-muted-foreground">{p.pedido_numero}</span></span>
-          <span className="flex items-center gap-2 min-w-0"><span className="pe-row-detail truncate flex-1 text-xs text-muted-foreground">{primeiro ? `${primeiro.quantidade}x ${primeiro.titulo}` : 'Itens enviados'}{extras > 0 ? ` +${extras} ${extras === 1 ? 'item' : 'itens'}` : ''}</span>
-            {p.itens.some(i => !i.pronta_entrega) && <Tooltip><TooltipTrigger asChild><span tabIndex={0} aria-label="Tem item sob encomenda — não enviar" className="shrink-0 text-muted-foreground"><Clock className="h-3.5 w-3.5" /></span></TooltipTrigger><TooltipContent>Tem item sob encomenda — não enviar</TooltipContent></Tooltip>}
-            <span className={cn('pe-row-detail shrink-0 text-xs', coluna.text)}>{enviado && ultimoEnvio(p) ? `enviado ${hora(new Date(ultimoEnvio(p) || ''))}` : prazoCurto(p, hoje, amanha, feriados, agora)}</span>
-          </span>
-        </Button>
-      </motion.div>;
-    })}</AnimatePresence>
-  </div>;
-  if (mobile && enviado) return <Collapsible open={expanded} onOpenChange={setExpanded} className="border rounded-lg bg-card"><CollapsibleTrigger asChild><Button variant="ghost" className="w-full flex gap-2 p-3 h-auto text-left">{header}<ChevronDown className={cn('h-4 w-4', expanded && 'rotate-180')} /></Button></CollapsibleTrigger><CollapsibleContent>{content}</CollapsibleContent></Collapsible>;
-  return <Card className="pe-column shadow-none min-w-0 flex flex-col"><CardHeader className="pe-column-heading flex flex-row items-center gap-2 space-y-0 p-3 border-b bg-card rounded-t-lg">{header}</CardHeader>{content}</Card>;
+function corPrazo(r: number) {
+  if (r < 0) return { faixa: 'bg-destructive', texto: 'text-destructive' };
+  if (r === 0) return { faixa: 'bg-primary', texto: 'text-primary' };
+  if (r === 1) return { faixa: 'bg-warning', texto: 'text-warning' };
+  return { faixa: 'bg-success', texto: 'text-success' };
+}
+function inicioSemana(hoje: string): string {
+  const [y, m, d] = hoje.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() - ((dt.getUTCDay() + 6) % 7));
+  return dt.toISOString().slice(0, 10);
 }
 function PedidoDetalhes({ pedido, onClose, onEnviar, onDone, hoje, amanha, feriados, agora }: {
   pedido: PedidoPE | null; onClose: () => void; onEnviar: (p: PedidoPE) => void; onDone: () => void;
@@ -210,29 +163,163 @@ export default function ProntaEntrega() {
   const hoje = ymdBR(agora);
   const amanha = new Date(`${hoje}T12:00:00Z`); amanha.setUTCDate(amanha.getUTCDate() + 1);
   const amanhaYmd = amanha.toISOString().slice(0, 10);
-  const grupos = useMemo(() => {
-    const resultado: Record<Grupo, PedidoPE[]> = { atrasado: [], hoje: [], amanha: [], proximos: [] };
-    const abertos = pedidos.filter((p) => p.itens.some((item) => item.pronta_entrega && !item.enviado)).map((p) => ({
-      ...p, prazo_limite: p.data_pagamento ? calcularPrazoLimite(new Date(p.data_pagamento), prazoDoPedido(p.itens), corte, feriados) : p.prazo_limite,
-    })).sort((a, b) => (a.prazo_limite || '9999').localeCompare(b.prazo_limite || '9999') || (a.data_pagamento || '').localeCompare(b.data_pagamento || '') || a.pedido_numero.localeCompare(b.pedido_numero));
-    for (const pedido of abertos) {
-      const prazo = pedido.prazo_limite || hoje;
-      const grupo: Grupo = prazo < hoje ? 'atrasado' : prazo === hoje ? 'hoje' : prazo === amanhaYmd ? 'amanha' : 'proximos';
-      resultado[grupo].push(pedido);
-    }
-    return resultado;
-  }, [pedidos, feriados, corte, hoje, amanhaYmd]);
-  const enviadosHoje = pedidos.filter(p => p.itens.some(i => i.pronta_entrega && i.enviado && i.enviado_em && ymdBR(new Date(i.enviado_em)) === hoje)).sort((a, b) => (ultimoEnvio(b) || '').localeCompare(ultimoEnvio(a) || ''));
-  return <div className={cn('pe-panel bg-background text-foreground space-y-4', telaCheia && 'pe-panel-fullscreen')}>
-    <header className="flex flex-wrap items-start justify-between gap-3">
-      <div className="flex gap-3"><Columns3 className="h-6 w-6 text-accent shrink-0 mt-0.5" /><div><h1 className="text-xl font-bold leading-tight">Pronta Entrega</h1><p className="text-xs text-muted-foreground mt-1">Pedidos com itens prontos para enviar</p></div></div>
-      <div className="flex flex-wrap items-center gap-2"><div className="text-xs text-muted-foreground mr-1"><time className="font-medium tabular-nums text-foreground">{hora(agora)}</time><p>{ultimaSync ? `Atualizado às ${hora(new Date(ultimaSync))}` : 'Aguardando atualização'}</p></div>
-        <Button variant="outline" size="sm" disabled={sincronizando} onClick={() => sincronizar(false)} className="gap-1.5"><RefreshCw className={cn('h-4 w-4', sincronizando && 'animate-spin')} />Sincronizar</Button>
-        <Button variant="outline" size="sm" onClick={() => setManualOpen(true)} className="gap-1.5"><Plus className="h-4 w-4" />Adicionar manual</Button>
+  const abertos = useMemo(() => pedidos.map((p) => pendente(p) && p.data_pagamento
+    ? { ...p, prazo_limite: calcularPrazoLimite(new Date(p.data_pagamento), prazoDoPedido(p.itens), corte, feriados) } : p), [pedidos, corte, feriados]);
+  const restantes = (p: PedidoPE) => (p.prazo_limite ? diasUteisRestantes(p.prazo_limite, feriados, agora) : 99);
+  const [aba, setAba] = useState<Aba>('todos');
+  const [filtro, setFiltro] = useState<Filtro>(null);
+  const [busca, setBusca] = useState('');
+  const semana = inicioSemana(hoje);
+  const aEnviar = abertos.filter(pendente);
+  const enviados = abertos.filter((p) => !pendente(p));
+  const naSemana = (p: PedidoPE) => { const u = ultimoEnvio(p); return !!u && ymdBR(new Date(u)) >= semana; };
+  const cont = {
+    atrasados: aEnviar.filter((p) => restantes(p) < 0).length,
+    hoje: aEnviar.filter((p) => restantes(p) === 0).length,
+    amanha: aEnviar.filter((p) => restantes(p) === 1).length,
+    semana: abertos.filter(naSemana).length,
+  };
+  let lista: PedidoPE[];
+  if (filtro === 'semana') lista = abertos.filter(naSemana);
+  else if (filtro) lista = aEnviar.filter((p) => { const r = restantes(p); return filtro === 'atrasados' ? r < 0 : filtro === 'hoje' ? r === 0 : r === 1; });
+  else lista = aba === 'todos' ? abertos : aba === 'enviar' ? aEnviar : enviados;
+  lista = [...lista].sort((a, b) => {
+    const e = Number(!pendente(a)) - Number(!pendente(b));
+    if (e) return e;
+    if (!pendente(a)) return (ultimoEnvio(b) || '').localeCompare(ultimoEnvio(a) || '');
+    return (a.prazo_limite ?? '9999').localeCompare(b.prazo_limite ?? '9999') || (a.data_pagamento ?? '').localeCompare(b.data_pagamento ?? '') || a.pedido_numero.localeCompare(b.pedido_numero, 'pt-BR', { numeric: true });
+  });
+  const q = busca.trim().toLowerCase();
+  if (q) lista = lista.filter((p) => (p.cliente_nome ?? '').toLowerCase().includes(q) || p.pedido_numero.toLowerCase().includes(q));
+  const cartoes: { k: Exclude<Filtro, null>; titulo: string; n: number; cls: string }[] = [
+    { k: 'atrasados', titulo: 'Atrasados', n: cont.atrasados, cls: 'text-destructive' },
+    { k: 'hoje', titulo: 'Enviar hoje', n: cont.hoje, cls: 'text-primary' },
+    { k: 'amanha', titulo: 'Vencem amanhã', n: cont.amanha, cls: 'text-warning' },
+    { k: 'semana', titulo: 'Enviados na semana', n: cont.semana, cls: 'text-muted-foreground' },
+  ];
+  const vazio: Record<Aba, string> = {
+    todos: 'Nenhum pedido de pronta entrega encontrado.',
+    enviar: 'Nenhum pedido para separar agora. Quando entrar uma venda com item pronta entrega, ela aparece aqui automaticamente.',
+    enviados: 'Nenhum pedido enviado ainda. Depois de clicar em "Marcar como enviado", o pedido aparece aqui.',
+  };
+  const abrir = (p: PedidoPE) => setSelecionado(p);
+  return <div className={cn('pe-panel max-w-5xl mx-auto py-4 px-2 sm:px-4 space-y-4', telaCheia && 'pe-panel-fullscreen')}>
+    <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="flex items-center gap-3">
+        <Truck className="h-6 w-6 text-primary" />
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold">Pronta Entrega</h1>
+          <p className="text-xs text-muted-foreground">{abertos.length} pedidos · {aEnviar.length} em aberto</p>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-start gap-2">
+        <div className="flex flex-col items-end gap-0.5">
+          <Button size="sm" onClick={() => sincronizar(false)} disabled={sincronizando} className="gap-1.5">
+            {sincronizando ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Sincronizar agora
+          </Button>
+          <span className="text-[10px] text-muted-foreground">{hora(agora)} · {ultimaSync ? `Atualizado às ${hora(new Date(ultimaSync))}` : 'Aguardando atualização'}</span>
+        </div>
         <Button variant="outline" size="sm" onClick={alternarTela} className="gap-1.5">{telaCheia ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}{telaCheia ? 'Sair' : 'Tela cheia'}</Button>
       </div>
-    </header>
-    {isLoading ? <p role="status" className="text-sm text-muted-foreground">Carregando pedidos…</p> : isError ? <p role="alert" className="text-sm text-muted-foreground">Não foi possível carregar os pedidos. Tente sincronizar novamente.</p> : <div className="pe-board">{COLUNAS.map(coluna => <ColunaKanban key={coluna.key} coluna={coluna} pedidos={coluna.key === 'enviados' ? enviadosHoje : grupos[coluna.key]} onSelect={setSelecionado} hoje={hoje} amanha={amanhaYmd} feriados={feriados} agora={agora} />)}</div>}
+    </div>
+
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-2xl">
+      {cartoes.map((c) => (
+        <Button key={c.k} type="button" variant="outline" aria-pressed={filtro === c.k}
+          onClick={() => { setAba('todos'); setFiltro(filtro === c.k ? null : c.k); }}
+          className={cn('aspect-square h-auto min-w-0 rounded-none p-3 sm:p-4 flex flex-col items-start justify-between whitespace-normal text-left bg-card shadow-none', filtro === c.k && 'border-primary ring-1 ring-primary')}>
+          <span className={cn('text-3xl sm:text-4xl font-semibold tabular-nums', c.cls)}>{c.n}</span>
+          <span className="text-xs font-medium text-muted-foreground">{c.titulo}</span>
+        </Button>
+      ))}
+    </div>
+    <div className="flex flex-col sm:flex-row gap-2">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Buscar por cliente ou número do pedido..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-9" />
+      </div>
+      <div className="flex flex-col items-start sm:items-end">
+        <Button variant="outline" size="sm" className="gap-1.5 h-10" onClick={() => setManualOpen(true)}>
+          <Plus className="h-4 w-4" /> Adicionar pedido manual
+        </Button>
+        <span className="text-[10px] text-muted-foreground">Use só para exceções — o normal é lançar pelo Simulador</span>
+      </div>
+    </div>
+
+    <div className="space-y-2 border-b pb-3">
+      <Tabs value={aba} onValueChange={(v) => { setAba(v as Aba); setFiltro(null); }}>
+        <TabsList className="flex flex-wrap justify-start w-full h-auto gap-1 rounded-none bg-transparent p-0">
+          <TabsTrigger value="todos" className="rounded-none text-xs px-3 py-2">Todos ({abertos.length})</TabsTrigger>
+          <TabsTrigger value="enviar" className="rounded-none text-xs px-3 py-2">A enviar ({aEnviar.length})</TabsTrigger>
+          <TabsTrigger value="enviados" className="rounded-none text-xs px-3 py-2">Enviados ({enviados.length})</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span>{lista.length} {lista.length === 1 ? 'pedido' : 'pedidos'}{filtro ? ` · ${cartoes.find((c) => c.k === filtro)?.titulo}` : ''} · Mais urgentes primeiro</span>
+        {(filtro || aba !== 'todos' || busca) && <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setFiltro(null); setAba('todos'); setBusca(''); }}>Limpar filtros</Button>}
+      </div>
+    </div>
+
+    {isLoading ? <p className="text-center text-muted-foreground py-8">Carregando pedidos...</p>
+    : isError ? <p role="alert" className="text-center text-muted-foreground py-8">Não foi possível carregar os pedidos. Tente sincronizar novamente.</p>
+    : lista.length === 0 ? (
+      <div className="rounded-none border border-dashed p-6 text-center text-sm text-muted-foreground space-y-1">
+        <Info className="h-5 w-5 mx-auto" />
+        <p>{busca ? 'Nenhum pedido encontrado com essa busca.' : filtro ? 'Nenhum pedido nesta situação. 👍' : vazio[aba]}</p>
+      </div>
+    ) : (
+      <div className="space-y-2">
+        {lista.map((p) => {
+          const label = `Ver pedido: ${p.cliente_nome || 'Sem nome'}, ${p.pedido_numero}`;
+          const tecla = (e: React.KeyboardEvent) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); abrir(p); } };
+          if (!pendente(p)) {
+            const enviadosItens = p.itens.filter((i) => i.enviado);
+            return (
+              <div key={p.id} role="button" tabIndex={0} aria-label={label} onClick={() => abrir(p)} onKeyDown={tecla}
+                className="cursor-pointer rounded-none border bg-muted/30 p-3 text-muted-foreground space-y-1 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground/80 truncate">{p.cliente_nome ?? 'Sem nome'}</p>
+                    <p className="text-xs">{p.pedido_numero}{p.vendedor ? ` · ${p.vendedor}` : ''}</p>
+                  </div>
+                  <Button size="sm" variant="ghost" className="gap-1 shrink-0" onClick={(e) => { e.stopPropagation(); abrir(p); }}><Undo2 className="h-4 w-4" /> Desfazer</Button>
+                </div>
+                <p className="text-xs">Enviado em {dataHora(ultimoEnvio(p))}{p.enviado_por ? <> por <b>{p.enviado_por}</b></> : ''}</p>
+                <p className="text-xs">Rastreio: {p.rastreio || 'não informado'}</p>
+                <ul className="text-xs list-disc pl-4">{itensTxt(enviadosItens).map((t, i) => <li key={i}>{t}</li>)}</ul>
+              </div>
+            );
+          }
+          const r = restantes(p);
+          const cor = corPrazo(r);
+          const separar = p.itens.filter((i) => i.pronta_entrega && !i.enviado);
+          const encomenda = p.itens.filter((i) => !i.pronta_entrega);
+          return (
+            <div key={p.id} role="button" tabIndex={0} aria-label={label} onClick={() => abrir(p)} onKeyDown={tecla}
+              className="cursor-pointer relative overflow-hidden rounded-none border bg-card p-3 pl-4 space-y-1.5 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <span className={cn('absolute left-0 top-0 bottom-0 w-1', cor.faixa)} />
+              <p className={cn('text-sm font-semibold leading-tight', cor.texto)}>{textoPrazo(r)}</p>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <p className="font-semibold">{p.cliente_nome ?? 'Sem nome'}</p>
+                <p className="text-xs text-muted-foreground">Prazo limite: <b>{diaMes(p.prazo_limite)}</b></p>
+              </div>
+              <p className="text-xs text-muted-foreground">{p.pedido_numero}{p.vendedor ? ` · Vendedor: ${p.vendedor}` : ''}{p.origem === 'manual' ? ' · Manual' : ''}</p>
+              <div className="border-t pt-2">
+                <p className="text-[11px] font-semibold uppercase tracking-normal text-muted-foreground mb-0.5">Separar agora</p>
+                <ul className="text-sm space-y-0.5">{itensTxt(separar).map((t, i) => <li key={i}>• {t}</li>)}</ul>
+              </div>
+              {encomenda.length > 0 && (
+                <p className="text-[11px] text-muted-foreground">
+                  Também neste pedido: {encomenda.length} {encomenda.length === 1 ? 'item sob encomenda' : 'itens sob encomenda'} — não enviar
+                </p>
+              )}
+              {p.observacao && <p className="text-[11px] text-muted-foreground">Obs.: {p.observacao}</p>}
+              <Button className="w-full sm:w-auto h-11 gap-1.5 mt-1" onClick={(e) => { e.stopPropagation(); setEnviar(p); }}><PackageCheck className="h-4 w-4" /> Marcar como enviado</Button>
+            </div>
+          );
+        })}
+      </div>
+    )}
     <PedidoDetalhes pedido={selecionado} onClose={() => setSelecionado(null)} onEnviar={setEnviar} onDone={recarregar} hoje={hoje} amanha={amanhaYmd} feriados={feriados} agora={agora} />
     <EnviarDialog pedido={enviar} onClose={() => setEnviar(null)} onDone={recarregar} />
     <ManualDialog open={manualOpen} onClose={() => setManualOpen(false)} onDone={recarregar} />
