@@ -3,7 +3,13 @@
 @tailwind utilities;
 
 /* Ready-delivery dashboard uses the application theme; only fullscreen layout is page-specific. */
-.pe-panel { min-width: 0; }
+.pe-panel { min-width: 0; width: 100%; }
+@media (min-width: 1024px) {
+  .pe-panel { height: calc(100dvh - 88px); display: flex; flex-direction: column; }
+  .pe-columns { flex: 1; overflow: hidden; }
+  .pe-column-scroll { scrollbar-width: thin; }
+  .pe-panel.pe-panel-fullscreen { height: 100dvh; }
+}
 .pe-panel-fullscreen { position: fixed; inset: 0; z-index: 40; padding: 20px; overflow-y: auto; background: hsl(var(--background)); max-width: none !important; }
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 

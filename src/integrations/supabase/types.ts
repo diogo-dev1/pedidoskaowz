@@ -2259,67 +2259,109 @@ export type Database = {
       }
       pedidos_pronta_entrega: {
         Row: {
+          bling_pedido_id: string | null
+          case_pronta: boolean
+          case_pronta_em: string | null
+          certificado_pronto: boolean
+          certificado_pronto_em: string | null
+          certificados: string[]
           classificacao: string
           cliente_nome: string | null
           cliente_telefone: string | null
           created_at: string
           data_pagamento: string | null
+          detalhes: Json | null
+          embalagens: string[]
           enviado_em: string | null
           enviado_por: string | null
           id: string
           itens: Json
           modo_envio: string | null
           observacao: string | null
+          observacao_pedido: string | null
           origem: string
           pedido_numero: string
           prazo_limite: string | null
           rastreio: string | null
+          rastreio_buscado_em: string | null
+          rastreio_origem: string | null
+          rastreio_servico: string | null
           shopify_order_id: string | null
           status: string
           synced_at: string | null
           vendedor: string | null
+          visualizado: boolean
+          visualizado_em: string | null
         }
         Insert: {
+          bling_pedido_id?: string | null
+          case_pronta?: boolean
+          case_pronta_em?: string | null
+          certificado_pronto?: boolean
+          certificado_pronto_em?: string | null
+          certificados?: string[]
           classificacao?: string
           cliente_nome?: string | null
           cliente_telefone?: string | null
           created_at?: string
           data_pagamento?: string | null
+          detalhes?: Json | null
+          embalagens?: string[]
           enviado_em?: string | null
           enviado_por?: string | null
           id?: string
           itens?: Json
           modo_envio?: string | null
           observacao?: string | null
+          observacao_pedido?: string | null
           origem?: string
           pedido_numero: string
           prazo_limite?: string | null
           rastreio?: string | null
+          rastreio_buscado_em?: string | null
+          rastreio_origem?: string | null
+          rastreio_servico?: string | null
           shopify_order_id?: string | null
           status?: string
           synced_at?: string | null
           vendedor?: string | null
+          visualizado?: boolean
+          visualizado_em?: string | null
         }
         Update: {
+          bling_pedido_id?: string | null
+          case_pronta?: boolean
+          case_pronta_em?: string | null
+          certificado_pronto?: boolean
+          certificado_pronto_em?: string | null
+          certificados?: string[]
           classificacao?: string
           cliente_nome?: string | null
           cliente_telefone?: string | null
           created_at?: string
           data_pagamento?: string | null
+          detalhes?: Json | null
+          embalagens?: string[]
           enviado_em?: string | null
           enviado_por?: string | null
           id?: string
           itens?: Json
           modo_envio?: string | null
           observacao?: string | null
+          observacao_pedido?: string | null
           origem?: string
           pedido_numero?: string
           prazo_limite?: string | null
           rastreio?: string | null
+          rastreio_buscado_em?: string | null
+          rastreio_origem?: string | null
+          rastreio_servico?: string | null
           shopify_order_id?: string | null
           status?: string
           synced_at?: string | null
           vendedor?: string | null
+          visualizado?: boolean
+          visualizado_em?: string | null
         }
         Relationships: []
       }

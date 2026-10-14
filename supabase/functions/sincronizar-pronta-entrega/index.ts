@@ -1,3 +1,4 @@
+import { buscarRastreio, obterDetalhes, extrairDados, normal } from './dados.ts';
 // Pronta Entrega: sincroniza pedidos pagos do Shopify, aplica tags, espelha na planilha
 // e executa as ações da página /pronta-entrega (definir modo, marcar enviado, desfazer, manual).
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -54,9 +55,7 @@ const ORDERS_Q = `query($q: String!, $after: String) {
   orders(first: 50, query: $q, after: $after, sortKey: PROCESSED_AT) {
     pageInfo { hasNextPage endCursor }
     edges { node {
-      id name tags processedAt
-      customer { displayName phone }
-      shippingAddress { name phone }
+      id name tags processedAt note
       customAttributes { key value }
       transactions(first: 20) { kind status processedAt }
       lineItems(first: 50) { edges { node { name quantity vendor customAttributes { key value } } } }
@@ -147,15 +146,18 @@ function parseDataBR(s: string): Date | null {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    const url = Deno.env.get('SUPABASE_URL')!;
+    const url = Deno.env.get('SUPABASE_URL');
+    const anon = Deno.env.get('SUPABASE_ANON_KEY'); const service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !anon || !service) throw new Error('Serviço não configurado');
     const authHeader = req.headers.get('Authorization') ?? '';
-    const userClient = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: authHeader } } });
+    const userClient = createClient(url, anon, { global: { headers: { Authorization: authHeader } } });
     const { data: u } = await userClient.auth.getUser();
     if (!u?.user) return json({ sucesso: false, erro: 'Faça login para usar a Pronta Entrega' }, 401);
-    const db = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const db = createClient(url, service);
 
     const schema = z.object({
-      acao: z.enum(['sincronizar', 'marcar_enviado', 'desfazer', 'adicionar_manual']).default('sincronizar'),
+      acao: z.enum(['sincronizar', 'marcar_enviado', 'desfazer', 'adicionar_manual', 'atualizar_detalhes', 'buscar_rastreio', 'acompanhamento']).default('sincronizar'),
+      campo: z.enum(['visualizado', 'case_pronta', 'certificado_pronto', 'rastreio']).optional(), valor: z.union([z.boolean(), z.string().max(255)]).optional(),
       id: z.string().uuid().optional(), enviado_por: z.string().max(255).optional(), rastreio: z.string().max(255).optional(), observacao: z.string().max(5000).optional(),
       cliente_nome: z.string().max(255).optional(), cliente_telefone: z.string().max(50).optional(), itens: z.string().max(20000).optional(), data_pagamento: z.string().datetime().optional(), prazo_dias_uteis: z.number().int().min(1).max(365).optional(),
     });
@@ -163,7 +165,7 @@ Deno.serve(async (req) => {
     if (!parsed.success) return json({ sucesso: false, erro: 'Dados inválidos. Confira os campos informados.' }, 400);
     const body = parsed.data;
     const acao = body.acao;
-    if (['marcar_enviado', 'desfazer'].includes(acao) && !body.id) return json({ sucesso: false, erro: 'Informe o pedido' }, 400);
+    if (['marcar_enviado', 'desfazer', 'atualizar_detalhes', 'buscar_rastreio', 'acompanhamento'].includes(acao) && !body.id) return json({ sucesso: false, erro: 'Informe o pedido' }, 400);
 
     const [{ data: fer }, { data: cfg }] = await Promise.all([
       db.from('feriados').select('data'),
@@ -180,13 +182,29 @@ Deno.serve(async (req) => {
       return data as any;
     };
 
+    const atualizarDetalhes = async (p: any) => {
+      if (!p.shopify_order_id) return p;
+      const detalhes = await obterDetalhes(shopify, p.shopify_order_id);
+      const extra = extrairDados(detalhes, p.origem, p.itens ?? []);
+      const patch = { detalhes, ...extra, cliente_nome: detalhes.customer?.displayName || detalhes.shippingAddress?.name || p.cliente_nome, cliente_telefone: detalhes.phone || detalhes.customer?.phone || detalhes.shippingAddress?.phone || p.cliente_telefone };
+      const { error } = await db.from('pedidos_pronta_entrega').update(patch).eq('id', p.id);
+      if (error) throw error;
+      return { ...p, ...patch };
+    };
+    if (acao === 'atualizar_detalhes') { const pedido = await atualizarDetalhes(await carregar(String(body.id))); return json({ sucesso: true, pedido }); }
+    if (acao === 'buscar_rastreio') return json({ sucesso: true, ...await buscarRastreio(db, await carregar(String(body.id))) });
+    if (acao === 'acompanhamento') {
+      if (!body.campo || body.valor === undefined) return json({ sucesso: false, erro: 'Informe o campo e valor' }, 400);
+      const p = await carregar(String(body.id));
+      const campo = body.campo;
+      if ((campo === 'rastreio' && typeof body.valor !== 'string') || (campo !== 'rastreio' && typeof body.valor !== 'boolean')) return json({ sucesso: false, erro: 'Valor inválido' }, 400);
+      const patch = campo === 'rastreio' ? { rastreio: String(body.valor).trim() || null, rastreio_origem: 'manual' } : { [campo]: body.valor, [campo === 'case_pronta' ? 'case_pronta_em' : `${campo}_em`]: body.valor ? new Date().toISOString() : null };
+      const { error } = await db.from('pedidos_pronta_entrega').update(patch).eq('id', p.id);
+      if (error) throw error;
+      return json({ sucesso: true });
+    }
     // ───── Ações da página ─────
     if (acao === 'marcar_enviado') {
-      const enviadoPor = String(body.enviado_por ?? '').trim();
-      if (!enviadoPor) return json({ sucesso: false, erro: 'Escolha quem está enviando' }, 400);
-      const { data: pessoa, error: equipeErro } = await db.from('equipe_expedicao').select('id').eq('nome', enviadoPor).eq('ativo', true).limit(1);
-      if (equipeErro) throw equipeErro;
-      if (!pessoa?.length) return json({ sucesso: false, erro: 'Escolha uma pessoa ativa da equipe' }, 400);
       const p = await carregar(String(body.id));
       const agora = new Date().toISOString();
       const itens: ItemPE[] = p.itens ?? [];
@@ -195,9 +213,7 @@ Deno.serve(async (req) => {
       const restante = novos.some((i) => !i.enviado);
       const status = restante ? 'enviado_parcial' : 'enviado';
       const { error: envioErro } = await db.from('pedidos_pronta_entrega').update({
-        itens: novos, status, enviado_em: agora, enviado_por: enviadoPor || p.enviado_por || null,
-        rastreio: String(body.rastreio ?? '').trim() || p.rastreio,
-        observacao: String(body.observacao ?? '').trim() || p.observacao,
+        itens: novos, status, enviado_em: agora, enviado_por: body.enviado_por?.trim() || p.enviado_por || null,
       }).eq('id', p.id);
       if (envioErro) throw envioErro;
       await tags('add', p.shopify_order_id, ['Enviado']);
@@ -213,9 +229,10 @@ Deno.serve(async (req) => {
       const algum = novos.filter((i) => i.enviado && i.enviado_em);
       const status = algum.length ? 'enviado_parcial' : 'pendente';
       const anterior = algum.map((i) => i.enviado_em ?? '').sort().at(-1) || null;
-      await db.from('pedidos_pronta_entrega').update({
-        itens: novos, status, enviado_em: anterior, ...(status === 'pendente' ? { enviado_por: null } : {}),
+      const { error: desfazerErro } = await db.from('pedidos_pronta_entrega').update({
+        itens: novos, status, enviado_em: anterior, visualizado: true, visualizado_em: p.visualizado_em || new Date().toISOString(), ...(status === 'pendente' ? { enviado_por: null } : {}),
       }).eq('id', p.id);
+      if (desfazerErro) throw desfazerErro;
       await tags('remove', p.shopify_order_id, ['Enviado']);
       return json({ sucesso: true, status });
     }
@@ -227,7 +244,7 @@ Deno.serve(async (req) => {
       if (!cliente || !itens.length) return json({ sucesso: false, erro: 'Informe o cliente e pelo menos um item' }, 400);
       const pag = body.data_pagamento ? new Date(body.data_pagamento).toISOString() : new Date().toISOString();
       const { error } = await db.from('pedidos_pronta_entrega').insert({
-        pedido_numero: `MAN-${Date.now()}`, origem: 'manual', cliente_nome: cliente,
+        pedido_numero: `MAN-${Date.now()}`, origem: 'manual', visualizado: true, visualizado_em: new Date().toISOString(), cliente_nome: cliente,
         cliente_telefone: String(body.cliente_telefone ?? '').trim() || null, data_pagamento: pag,
         itens, classificacao: 'pronta', modo_envio: null, prazo_limite: prazoLimite(pag, itens),
         observacao: String(body.observacao ?? '').trim() || null,
@@ -259,7 +276,7 @@ Deno.serve(async (req) => {
       const itensNovos: ItemPE[] = (o.lineItems?.edges ?? []).map((e: any) => {
         const n = e.node;
         const c = classificarItemPE(n.vendor, n.customAttributes);
-        return { titulo: n.name, quantidade: n.quantity, pronta_entrega: c.pronta, prazo_dias_uteis: c.prazo, enviado: false, enviado_em: null };
+        return { propriedades: n.customAttributes ?? [], certificado: (n.customAttributes ?? []).find((a: any) => normal(a.key) === 'certificado')?.value || null, titulo: n.name, quantidade: n.quantity, pronta_entrega: c.pronta, prazo_dias_uteis: c.prazo, enviado: false, enviado_em: null };
       });
       if (!itensNovos.some((i) => i.pronta_entrega)) continue;
       const misto = itensNovos.some((i) => !i.pronta_entrega);
@@ -280,24 +297,42 @@ Deno.serve(async (req) => {
       const camposShopify = {
         shopify_order_id: o.id,
         origem,
-        cliente_nome: o.customer?.displayName ?? o.shippingAddress?.name ?? null,
-        cliente_telefone: o.customer?.phone ?? o.shippingAddress?.phone ?? null,
+        ...extrairDados(o, origem, itens),
+        cliente_nome: (o.customAttributes ?? []).find((a: any) => normal(a.key) === 'cliente')?.value || ex?.cliente_nome || null,
+        cliente_telefone: (o.customAttributes ?? []).find((a: any) => normal(a.key) === 'telefone')?.value || ex?.cliente_telefone || null,
         vendedor, data_pagamento: pago, itens,
         classificacao: misto ? 'misto' : 'pronta',
         prazo_limite: prazoLimite(pago, itens),
         synced_at: new Date().toISOString(),
       };
+      let salvo: any = ex;
       if (ex) {
-        await db.from('pedidos_pronta_entrega').update(camposShopify).eq('id', ex.id);
+        const { error } = await db.from('pedidos_pronta_entrega').update(camposShopify).eq('id', ex.id);
+        if (error) { resumo.avisos.push(`${o.name}: ${error.message}`); continue; }
         resumo.atualizados++;
+        salvo = { ...ex, ...camposShopify };
       } else {
-        const { error } = await db.from('pedidos_pronta_entrega').insert({ pedido_numero: o.name, ...camposShopify });
-        if (error) resumo.avisos.push(`${o.name}: ${error.message}`); else resumo.novos++;
+        const { data, error } = await db.from('pedidos_pronta_entrega').insert({ pedido_numero: o.name, ...camposShopify }).select('*').single();
+        if (error) resumo.avisos.push(`${o.name}: ${error.message}`); else { resumo.novos++; salvo = data; }
+      }
+      if (salvo && !ex?.detalhes) {
+        try { await atualizarDetalhes(salvo); } catch (e) { resumo.avisos.push(`${o.name}: ${(e as Error).message}`); }
       }
       const faltando = ['Contém pronta entrega', ...(misto ? ['Misto'] : [])].filter((t) => !temTag(t));
       if (faltando.length && await tags('add', o.id, faltando)) resumo.tags_aplicadas += faltando.length;
     }
 
+    // Tracking failures are isolated and never block Shopify or Sheets.
+    const { data: semRastreio } = await db.from('pedidos_pronta_entrega').select('*')
+      .in('status', ['enviado', 'enviado_parcial']).not('shopify_order_id', 'is', null)
+      .gte('enviado_em', new Date(Date.now() - 15 * 86400000).toISOString())
+      .or('rastreio.is.null,rastreio.eq.').or(`rastreio_buscado_em.is.null,rastreio_buscado_em.lt.${new Date(Date.now() - 1800000).toISOString()}`)
+      .order('rastreio_buscado_em', { nullsFirst: true }).limit(10);
+    for (const p of semRastreio ?? []) {
+      if ((p.itens ?? []).some((i: ItemPE) => i.pronta_entrega && !i.enviado)) continue;
+      const resultado = await buscarRastreio(db, p);
+      if (resultado.aviso) resumo.avisos.push(`${p.pedido_numero}: ${resultado.aviso}`);
+    }
     // ───── Planilha ─────
     const sa = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
     if (sa && Deno.env.get('GOOGLE_SHEETS_VENDAS_ID')) {
@@ -315,7 +350,7 @@ Deno.serve(async (req) => {
           if (!itens.length) continue;
           const pag = (parseDataBR(pagTxt) ?? new Date()).toISOString();
           const { error } = await db.from('pedidos_pronta_entrega').insert({
-            pedido_numero: `MAN-${Date.now()}-${i}`, origem: 'manual', cliente_nome: cli.trim(), cliente_telefone: tel?.trim() || null,
+            pedido_numero: `MAN-${Date.now()}-${i}`, origem: 'manual', visualizado: true, visualizado_em: new Date().toISOString(), cliente_nome: cli.trim(), cliente_telefone: tel?.trim() || null,
             data_pagamento: pag, itens, classificacao: 'pronta', prazo_limite: prazoLimite(pag, itens), observacao: obs?.trim() || null,
           });
           if (error) { resumo.avisos.push(`Linha manual ${i + 2}: ${error.message}`); continue; }
@@ -327,8 +362,8 @@ Deno.serve(async (req) => {
         const rows = (todos ?? []).map((p: any) => [
           p.pedido_numero, p.origem, p.cliente_nome ?? '', p.cliente_telefone ?? '', p.vendedor ?? '', dataBR(p.data_pagamento),
           itensTexto((p.itens ?? []).filter((i: ItemPE) => i.pronta_entrega)), itensTexto((p.itens ?? []).filter((i: ItemPE) => !i.pronta_entrega)),
-          'Pronta entrega por item', diaBR(p.prazo_limite), statusTexto[p.status] ?? p.status,
-          dataBR(p.enviado_em), p.enviado_por ?? '', p.rastreio ?? '', p.observacao ?? '',
+          'Pronta entrega por item', diaBR(p.prazo_limite), (p.itens ?? []).some((i: ItemPE) => i.pronta_entrega && !i.enviado) ? (p.visualizado ? 'A seguir' : 'Novo') : 'Enviado',
+          dataBR(p.enviado_em), p.enviado_por ?? '', p.rastreio ?? '', p.observacao_pedido || p.observacao || '',
         ]);
         await gs(gt, `/values/${encodeURIComponent(`'${ABA_ESPELHO}'!A1:O5000`)}:clear`, { method: 'POST', body: '{}' });
         await gs(gt, `/values/${encodeURIComponent(`'${ABA_ESPELHO}'!A1`)}?valueInputOption=RAW`, {

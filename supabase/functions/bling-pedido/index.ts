@@ -1,3 +1,5 @@
+import { authenticatedRequest } from "../_shared/auth.ts";
+import { getValidToken, blingFetch } from "../_shared/bling.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -5,39 +7,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const BLING_API_BASE = "https://www.bling.com.br/Api/v3";
+const BLING_API_BASE = "https://api.bling.com.br/Api/v3";
 const NCM_PADRAO = Deno.env.get("BLING_NCM_PADRAO") || "82119100";
 const ORIGEM_PADRAO = Number(Deno.env.get("BLING_ORIGEM_PADRAO") ?? 0);
 
-async function getValidToken(supabase: any) {
-  const { data: tokens, error } = await supabase
-    .from("bling_tokens").select("*").order("created_at", { ascending: false }).limit(1);
-  if (error || !tokens?.length) throw new Error("Token Bling não encontrado — conecte o Bling em /bling");
-
-  const token = tokens[0];
-  const expiresAt = new Date(token.expires_at);
-  if (expiresAt.getTime() - Date.now() < 5 * 60 * 1000) {
-    const credentials = btoa(`${Deno.env.get("BLING_CLIENT_ID")}:${Deno.env.get("BLING_CLIENT_SECRET")}`);
-    const res = await fetch(`${BLING_API_BASE}/oauth/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded", "Authorization": `Basic ${credentials}` },
-      body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: token.refresh_token }),
-    });
-    if (!res.ok) throw new Error(`Refresh token Bling falhou: ${await res.text()}`);
-    const novo = await res.json();
-    await supabase.from("bling_tokens").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-    await supabase.from("bling_tokens").insert({
-      access_token: novo.access_token,
-      refresh_token: novo.refresh_token,
-      expires_at: new Date(Date.now() + novo.expires_in * 1000).toISOString(),
-    });
-    return novo.access_token;
-  }
-  return token.access_token;
-}
-
 async function blingRequest(accessToken: string, endpoint: string, method = "GET", body?: any) {
-  const res = await fetch(`${BLING_API_BASE}/${endpoint}`, {
+  const res = await blingFetch(`${BLING_API_BASE}/${endpoint}`, {
     method,
     headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json", "Accept": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
@@ -228,6 +203,8 @@ async function gerarNfe(supabase: any, pedido: any, enviarSefaz: boolean) {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  if (!await authenticatedRequest(req)) return new Response(JSON.stringify({ error: 'Faça login para continuar' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,

@@ -87,7 +87,7 @@ export function montarLineItems(data: SimuladorData, entries: PedidoEntry[]): Dr
             : cfg.origem.produtoTitulo,
           quantity: 1,
           price: calcItem(data, cfg),
-          properties: [],
+          properties: (cfg.certificado ?? "").trim() ? [{ name: "Certificado", value: (cfg.certificado ?? "").trim() }] : [],
           variantId: cfg.origem.variantId,
           doCatalogo: true,
           vendor: cfg.origem.vendor,
