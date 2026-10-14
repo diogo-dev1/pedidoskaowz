@@ -8,3 +8,4 @@
 - Pronta-entrega ignores shipping modes and shows only unshipped ready items in deadline-sorted urgency columns; made-to-order items never affect the panel deadline or shipping action.
 - Generate internal Shopify notes through the shared note formatter; preserve the ready-delivery block first and append order metadata last for narrow plain-text display.
 - The shipping panel owns fullscreen and wake-lock lifecycle; Layout only observes its panel-mode event to hide navigation without remounting the page.
+- Use distinct query keys when cached response shapes change; isolate shipping configuration rows from the legacy timestamp cache to keep existing sessions compatible.

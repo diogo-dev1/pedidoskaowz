@@ -100,13 +100,16 @@ export default function ProntaEntrega() {
     const { data, error } = await supabase.from('feriados').select('data'); if (error) throw error;
     return new Set((data ?? []).map((f) => f.data));
   } });
-  const { data: config = [] } = useQuery({ queryKey: ['pe-ultima-sync'], refetchInterval: 120000, queryFn: async () => {
+  const { data: configData } = useQuery({ queryKey: ['pe-config-expedicao', 'rows-v1'], refetchInterval: 120000, queryFn: async () => {
     const { data, error } = await supabase.from('config_expedicao').select('chave, valor'); if (error) throw error; return data ?? [];
   } });
+  // Older sessions cached only an ISO timestamp under pe-ultima-sync.
+  // A distinct key isolates the new row-list contract; guard malformed cache data too.
+  const config = Array.isArray(configData) ? configData : [];
   const ultimaSync = config.find((c) => c.chave === 'ultima_sincronizacao')?.valor;
   const corte = config.find((c) => c.chave === 'horario_corte')?.valor || '14:00';
   const recarregar = useCallback(() => {
-    qc.invalidateQueries({ queryKey: ['pronta-entrega'] }); qc.invalidateQueries({ queryKey: ['pe-ultima-sync'] });
+    qc.invalidateQueries({ queryKey: ['pronta-entrega'] }); qc.invalidateQueries({ queryKey: ['pe-config-expedicao'] });
   }, [qc]);
   const sincronizar = useCallback(async (silencioso = true) => {
     if (executando.current) return;
