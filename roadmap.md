@@ -1,6 +1,7 @@
-# Pronta Entrega
+# Pronta Entrega — painel e notas
 
-- [x] Simplificar cards e mostrar todos os pedidos por padrão, mantendo filtros.
-- [x] Restringir envio a definir a pedidos de rascunho, preservando escolhas existentes; mistos comuns do site sem decisão seguem juntos.
-- [x] Testar filtros e ordenação e publicar a sincronização; compilação sem erros.
-- [ ] Conferir visualmente com pedidos reais: bloqueado até o usuário entrar na prévia, pois não há sessão disponível para teste.
+- [ ] Mover classificação e prazo para cada item; remover decisão de envio.
+- [ ] Reformatar notas internas curtas com bloco de pronta entrega no topo.
+- [ ] Atualizar sincronização, atributos e envio somente de itens prontos.
+- [ ] Criar painel por urgência com atualização automática, tela cheia e confirmação identificada.
+- [ ] Validar regras, telas e funções publicadas; conferir pedidos reais quando houver sessão.
