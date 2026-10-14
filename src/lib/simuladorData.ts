@@ -1,3 +1,4 @@
+import { classificarItemPE } from './prontaEntrega';
 /* ════════════════════════════════════════════════════════════════
    Simulador de Preços — dados e lógica compartilhados.
 
@@ -105,7 +106,12 @@ export interface OrigemCatalogo {
 }
 
 /** Configuração escolhida pelo usuário para UMA faca. Índices apontam para SEED/config. */
-export interface ItemCfg {
+export interface EntregaCfg {
+  prontaEntrega?: boolean | null;
+  prazoEntrega?: number;
+}
+
+export interface ItemCfg extends EntregaCfg {
   id: string;
   modeloIdx: number | null;
   acoIdx: number;      // default 0 (Inox incluso)
@@ -146,7 +152,7 @@ export function espacadorIdx(data: SimuladorData): number {
 
 /** Item avulso — um produto do catálogo de Adicionais comprado fora da
  *  configuração de uma faca (ex.: brinde, acessório vendido à parte). */
-export interface AvulsoCfg {
+export interface AvulsoCfg extends EntregaCfg {
   id: string;
   adicionalIdx: number;
   quantidade: number;
@@ -154,7 +160,7 @@ export interface AvulsoCfg {
 
 /** Item personalizado — descrição livre e preço definido manualmente
  *  pelo vendedor (ex.: produto que não está no catálogo). */
-export interface CustomCfg {
+export interface CustomCfg extends EntregaCfg {
   id: string;
   descricao: string;
   preco: number;
@@ -164,7 +170,7 @@ export interface CustomCfg {
 }
 
 /** Produto real do catálogo Shopify (variante). Baixa estoque no draft order. */
-export interface CatalogoCfg {
+export interface CatalogoCfg extends EntregaCfg {
   id: string;
   variantId: string;      // gid://shopify/ProductVariant/...
   titulo: string;
@@ -188,6 +194,23 @@ export type PedidoEntry =
   | { id: string; kind: 'custom'; custom: CustomCfg }
   | { id: string; kind: 'catalogo'; catalogo: CatalogoCfg };
 
+
+/** A resposta pertence ao item, nunca ao modal de fechamento. */
+export function entregaDaEntrada(e: PedidoEntry) {
+  const cfg = e.kind === 'faca' ? e.faca : e.kind === 'catalogo' ? e.catalogo : e.kind === 'avulso' ? e.avulso : e.custom;
+  const vendor = e.kind === 'faca' ? e.faca.origem?.vendor : e.kind === 'catalogo' ? e.catalogo.vendor : undefined;
+  const catalogo = e.kind === 'catalogo' || (e.kind === 'faca' && !!e.faca.origem);
+  const auto = classificarItemPE(vendor);
+  const pronta = typeof cfg.prontaEntrega === 'boolean' ? cfg.prontaEntrega : catalogo ? auto.pronta : null;
+  return { pronta, prazo: cfg.prazoEntrega ?? (catalogo && pronta === auto.pronta ? auto.prazo : pronta ? 5 : 65), catalogo };
+}
+
+export function atualizarEntrega(e: PedidoEntry, patch: EntregaCfg): PedidoEntry {
+  if (e.kind === 'faca') return { ...e, faca: { ...e.faca, ...patch } };
+  if (e.kind === 'catalogo') return { ...e, catalogo: { ...e.catalogo, ...patch } };
+  if (e.kind === 'avulso') return { ...e, avulso: { ...e.avulso, ...patch } };
+  return { ...e, custom: { ...e.custom, ...patch } };
+}
 
 export const BRL = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });

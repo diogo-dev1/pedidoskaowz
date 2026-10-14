@@ -27,13 +27,15 @@ export function classificarItemPE(vendor?: string | null, attrs?: AtributoPE[]):
   const v = semAcento(vendor ?? '');
   const flag = attr(attrs, 'Pronta entrega');
   let pronta: boolean;
-  if (flag && /^(sim|nao)$/.test(semAcento(flag))) pronta = semAcento(flag) === 'sim';
+  if (flag && /^(sim|nao)(?:$|\s*[—–-])/.test(semAcento(flag))) pronta = semAcento(flag).startsWith('sim');
   else if (v.includes('pronta entrega')) pronta = true;
   else pronta = false; // "encomenda" ou desconhecido → sob encomenda
 
   let prazo = pronta ? PRAZO_PADRAO_PRONTA : PRAZO_PADRAO_ENCOMENDA;
   const m = v.match(/em ate\s*(\d+)\s*dias? uteis/);
   if (m) prazo = parseInt(m[1], 10);
+  const prazoFlag = semAcento(flag ?? '').match(/em ate\s*(\d+)\s*dias? uteis/);
+  if (prazoFlag) prazo = parseInt(prazoFlag[1], 10);
   const pa = attr(attrs, 'Prazo (dias úteis)');
   if (pa && /^\d+$/.test(pa)) prazo = parseInt(pa, 10);
   return { pronta, prazo };
@@ -103,9 +105,7 @@ export interface ItemPE {
   enviado_em?: string | null;
 }
 
-/** Maior prazo considerado: só prontos (parcial / só pronta / a definir) ou todos (junto). */
-export function prazoDoPedido(itens: ItemPE[], modo: string | null): number {
-  const base = modo === 'junto' ? itens : itens.filter((i) => i.pronta_entrega);
-  const lista = base.length ? base : itens;
-  return Math.max(0, ...lista.map((i) => Number(i.prazo_dias_uteis) || 0));
+/** Encomendas nunca alteram o prazo do painel de pronta entrega. */
+export function prazoDoPedido(itens: ItemPE[]): number {
+  return Math.max(0, ...itens.filter((i) => i.pronta_entrega).map((i) => Number(i.prazo_dias_uteis) || PRAZO_PADRAO_PRONTA));
 }
