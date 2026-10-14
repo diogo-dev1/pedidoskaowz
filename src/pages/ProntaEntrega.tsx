@@ -41,7 +41,7 @@ const dataDia = (data: string | null) => data ? data.split('-').reverse().join('
 const ultimoEnvio = (p: PedidoPE) => p.itens.filter(i => i.pronta_entrega && i.enviado && i.enviado_em).map(i => i.enviado_em || '').sort().reverse()[0] || p.enviado_em;
 function prazoCurto(p: PedidoPE, hoje: string, amanha: string, feriados: Set<string>, agora: Date) {
   const prazo = p.prazo_limite || hoje;
-  if (prazo < hoje) return `há ${Math.max(1, -diasUteisRestantes(prazo, feriados, agora))} dias`;
+  if (prazo < hoje) { const dias = Math.max(1, -diasUteisRestantes(prazo, feriados, agora)); return `há ${dias} ${dias === 1 ? 'dia' : 'dias'}`; }
   if (prazo === hoje) return 'hoje';
   if (prazo === amanha) return 'amanhã';
   return `${new Date(`${prazo}T12:00:00-03:00`).toLocaleDateString('pt-BR', { timeZone: TZ_BR, weekday: 'short' }).replace('.', '')} ${prazo.slice(8, 10)}/${prazo.slice(5, 7)}`;
