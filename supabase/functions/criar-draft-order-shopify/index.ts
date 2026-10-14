@@ -296,7 +296,7 @@ Deno.serve(async (req) => {
     if (cliente.dataNascimento?.trim()) customAttributes.push({ key: 'Data de nascimento', value: cliente.dataNascimento.trim() });
     customAttributes.push({ key: 'Origem', value: origem });
 
-    const tags = ['Kaowz-Simulador'];
+    const tags: string[] = [];
     if (vendedor) tags.push(`vendedor:${vendedor}`);
     // Pronta entrega — lida dos atributos de cada linha
     const flagPE = (i: LineItemIn) => (i.properties ?? []).find((p) => p?.name === 'Pronta entrega')?.value;
