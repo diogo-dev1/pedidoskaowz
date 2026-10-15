@@ -10,7 +10,7 @@ import { Copy, MessageCircle, ExternalLink, ChevronDown, RefreshCw } from 'lucid
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { normalizarTelefone } from '@/lib/telefone';
-import { acaoPE, pendente, nomesCertificado, normalPE, textoPrazo, dataHora, dataDia, type PedidoPE, type ItemPedidoPE } from '@/lib/pedidoPE';
+import { acaoPE, pendente, nomesCertificado, normalPE, textoPrazo, dataHora, dataDia, dataPedido, type PedidoPE, type ItemPedidoPE } from '@/lib/pedidoPE';
 export async function copiarPE(value: string) { try { await navigator.clipboard.writeText(value); toast.success('Copiado'); } catch { toast.error('Não foi possível copiar'); } }
 export async function rastrearPE(p: PedidoPE) {
   const d = await acaoPE({ acao: 'buscar_rastreio', id: p.id });
