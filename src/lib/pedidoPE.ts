@@ -4,7 +4,7 @@ export interface ItemPedidoPE extends ItemPE { propriedades?: { key: string; val
 export interface PedidoPE {
   id: string; pedido_numero: string; shopify_order_id: string | null; origem: string;
   cliente_nome: string | null; cliente_telefone: string | null; vendedor: string | null;
-  data_pagamento: string | null; itens: ItemPedidoPE[]; classificacao: string; prazo_limite: string | null;
+  data_pagamento: string | null; created_at?: string | null; itens: ItemPedidoPE[]; classificacao: string; prazo_limite: string | null;
   status: string; enviado_em: string | null; enviado_por: string | null; rastreio: string | null; observacao: string | null;
   visualizado: boolean; visualizado_em: string | null; case_pronta: boolean; case_pronta_em: string | null;
   certificado_pronto: boolean; certificado_pronto_em: string | null; certificados: string[]; embalagens: string[];
@@ -21,6 +21,8 @@ export const pendente = (p: PedidoPE) => p.itens.some(i => i.pronta_entrega && !
 export const ultimoEnvio = (p: PedidoPE) => p.itens.filter(i => i.pronta_entrega && i.enviado && i.enviado_em).map(i => i.enviado_em || '').sort().reverse()[0] || p.enviado_em;
 export const dataHora = (d?: string | null) => d ? new Date(d).toLocaleString('pt-BR', { timeZone: TZ_BR, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
 export const dataDia = (d?: string | null) => d ? d.split('-').reverse().join('/') : '—';
+/** Data em que o pedido foi feito: pagamento quando houver, senão a criação do registro. */
+export const dataPedido = (p: PedidoPE) => p.data_pagamento || p.created_at || null;
 export const nomesCertificado = (p: PedidoPE) => p.certificados?.length ? p.certificados : [...new Set(p.itens.map(i => i.certificado).filter((n): n is string => !!n))];
 export const certificadoDiferente = (p: PedidoPE) => nomesCertificado(p).filter(n => normalPE(n) !== normalPE(p.cliente_nome || ''));
 export function textoPrazo(r: number) { return r < 0 ? `Atrasado há ${-r} ${r === -1 ? 'dia útil' : 'dias úteis'}` : r === 0 ? 'Enviar hoje' : r === 1 ? 'Vence amanhã' : `Faltam ${r} dias úteis`; }
