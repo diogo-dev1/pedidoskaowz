@@ -4,7 +4,9 @@
 - [x] Reorganizar a página em três colunas com detalhes e confirmação simples.
 - [x] Corrigir host/token Bling em todas as funções e atributos do simulador.
 - [x] Validar GET Bling com limite 1, testes isolados de helpers e fluxos interceptados em 1920×1080, 1024×768 e 390×844; compilação OK.
-- [ ] Confirmar atualização Shopify e rastreio com sessão real: bloqueado por ausência de sessão; usuário precisa entrar na prévia.
+- [x] Confirmar atualização de dados do Shopify com sessão real: card aberto e "Atualizar dados do Shopify" sem erros.
+- [ ] Confirmar rastreio Bling com pedido real já enviado: nenhum pedido enviado no momento; exige uma expedição real.
+- [x] Mostrar a data do pedido em cada card e no detalhe.
 
 - [x] Substituir a apresentação por Kanban integrado ao tema do app e detalhes completos.
 - [x] Validar monitor, tablet e celular, incluindo envio e desfazer com dados interceptados.
