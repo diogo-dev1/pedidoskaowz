@@ -1,4 +1,9 @@
-import { expect, test } from 'bun:test';
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+const expect = (actual: unknown) => ({
+  toBe: (expected: unknown) => assert.equal(actual, expected),
+  toBeNull: () => assert.equal(actual, null),
+});
 import type { Sale } from '@/types/sales';
 import { aggregateSales, chartBuckets, dateKey, periodSummaries, saoPauloDay } from './homeSalesChart';
 
