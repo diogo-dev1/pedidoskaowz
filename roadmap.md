@@ -1,5 +1,9 @@
 # Pronta Entrega — painel e notas
 
+## Gráfico da tela inicial
+- [x] Substituir somente o gráfico por Dia/Semana/Mês com totais e detalhamento diário.
+- [ ] Validar regras de período e gráfico em 390px e 1280px.
+
 - [x] Criar acompanhamento, detalhes Shopify e rastreio Bling preservando dados locais.
 - [x] Reorganizar a página em três colunas com detalhes e confirmação simples.
 - [x] Corrigir host/token Bling em todas as funções e atributos do simulador.
