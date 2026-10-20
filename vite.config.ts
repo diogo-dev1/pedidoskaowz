@@ -44,6 +44,7 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        importScripts: ["push-sw.js"],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         navigateFallbackDenylist: [/^\/auth/, /^\/~oauth/, /^\/ofertas/, /^\/catalogo/, /^\/catalogo-revendedor/, /^\/catalogo-internacional/, /^\/vitrine/, /^\/descubra/, /^\/p\//, /^\/showroom/],
         cleanupOutdatedCaches: true,
