@@ -2,7 +2,8 @@
 
 ## Gráfico da tela inicial
 - [x] Substituir somente o gráfico por Dia/Semana/Mês com totais e detalhamento diário.
-- [ ] Validar regras de período e gráfico em 390px e 1280px.
+- [x] Validar oito cenários de cálculo e abas/detalhamento em 390px e 1280px com vendas simuladas, sem rolagem horizontal.
+- [ ] Conferir a tela inicial com vendas reais: acesso autenticado indisponível; requer entrar na prévia.
 
 - [x] Criar acompanhamento, detalhes Shopify e rastreio Bling preservando dados locais.
 - [x] Reorganizar a página em três colunas com detalhes e confirmação simples.
