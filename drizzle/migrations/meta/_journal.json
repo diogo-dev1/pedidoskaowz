@@ -15,6 +15,13 @@
       "when": 1791990332600,
       "tag": "0001_pronta_entrega_acompanhamento_detalhes_rastreio",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792522709324,
+      "tag": "0002_push_notificacoes_carrinhos",
+      "breakpoints": true
     }
   ]
 }

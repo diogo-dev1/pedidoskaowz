@@ -367,6 +367,36 @@ export type Database = {
         }
         Relationships: []
       }
+      carrinhos_notificados: {
+        Row: {
+          aparelhos: number
+          checkout_id: string
+          criado_no_shopify: string | null
+          nome: string | null
+          notificado_em: string | null
+          situacao: string
+          total: number | null
+        }
+        Insert: {
+          aparelhos?: number
+          checkout_id: string
+          criado_no_shopify?: string | null
+          nome?: string | null
+          notificado_em?: string | null
+          situacao: string
+          total?: number | null
+        }
+        Update: {
+          aparelhos?: number
+          checkout_id?: string
+          criado_no_shopify?: string | null
+          nome?: string | null
+          notificado_em?: string | null
+          situacao?: string
+          total?: number | null
+        }
+        Relationships: []
+      }
       cases_patola_config: {
         Row: {
           chave: string
@@ -2502,6 +2532,69 @@ export type Database = {
           id?: string
           nome_vendedor?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      push_aparelhos: {
+        Row: {
+          ativo: boolean
+          auth: string
+          created_at: string | null
+          endpoint: string
+          falhas: number
+          id: string
+          nome: string
+          p256dh: string
+          plataforma: string | null
+          tipos: string[]
+          ultimo_envio_em: string | null
+          ultimo_erro: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          auth: string
+          created_at?: string | null
+          endpoint: string
+          falhas?: number
+          id?: string
+          nome: string
+          p256dh: string
+          plataforma?: string | null
+          tipos?: string[]
+          ultimo_envio_em?: string | null
+          ultimo_erro?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          auth?: string
+          created_at?: string | null
+          endpoint?: string
+          falhas?: number
+          id?: string
+          nome?: string
+          p256dh?: string
+          plataforma?: string | null
+          tipos?: string[]
+          ultimo_envio_em?: string | null
+          ultimo_erro?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      push_config: {
+        Row: {
+          chave: string
+          valor: string
+        }
+        Insert: {
+          chave: string
+          valor: string
+        }
+        Update: {
+          chave?: string
+          valor?: string
         }
         Relationships: []
       }
