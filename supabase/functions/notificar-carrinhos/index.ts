@@ -139,7 +139,7 @@ async function verificar(db: ReturnType<typeof admin>) {
   } else {
     for (const c of aNotificar) {
       try {
-        const rec = aparelhos.length ? await enviar(db, aparelhos.filter((_, i) => i >= 0), {
+        const rec = aparelhos.length ? await enviar(db, aparelhos, {
           title: `Carrinho perdido · ${brl(parseFloat(c.total) || 0)}`, body: corpoCarrinho(c),
           url: `/checkouts-abandonados?checkout=${c.id}`, tag: `carrinho-${c.id}`,
         }) : 0;
