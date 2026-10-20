@@ -14,3 +14,4 @@
 
 - All Bling functions share paced API transport and refresh recovery; verify Shopify numeroLoja exactly before accepting a tracking match, and preserve manual tracking.
 - Privileged Bling and order functions validate callers through the shared auth helper before using server credentials; this prevents anonymous access while preserving scheduled server calls.
+- Abandoned-checkout screen and push alerts both read Shopify through `supabase/functions/_shared/checkoutsShopify.ts`; notified carts must match the screen exactly.
