@@ -11,10 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Search, Loader2, RefreshCw, ShoppingCart, MessageCircle, Check, X,
-  Settings2, Copy, Plus, Trash2, ExternalLink,
+  Settings2, Copy, Plus, Trash2, ExternalLink, Bell,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
 import { normalizarTelefone } from '@/lib/telefone';
+import NotificacoesDialog from '@/components/checkouts/NotificacoesDialog';
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 interface CheckoutItem { titulo: string; variante: string | null; quantidade: number; preco: string }
@@ -90,6 +92,8 @@ export default function CheckoutsAbandonados() {
   const [mensagem, setMensagem] = useState('');
   const [templateId, setTemplateId] = useState<string>('');
   const [gerenciarOpen, setGerenciarOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['shopify-checkouts', dias],
@@ -171,6 +175,18 @@ export default function CheckoutsAbandonados() {
     setMensagem(tpl ? montarMensagem(tpl.mensagem, c, vendedorNome) : '');
   };
 
+  // Abre direto o carrinho vindo de uma notificação (?checkout=<id>)
+  useEffect(() => {
+    const alvo = searchParams.get('checkout');
+    if (!alvo || !data || templates === undefined) return;
+    const c = data.checkouts.find((x) => x.id === alvo);
+    if (c) abrirContato(c);
+    else toast.error('Esse carrinho não está mais aberto na Shopify');
+    const p = new URLSearchParams(searchParams);
+    p.delete('checkout');
+    setSearchParams(p, { replace: true });
+  }, [data, templates, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!selecionado || !templateId) return;
     const tpl = (templates ?? []).find((t) => t.id === templateId);
@@ -218,6 +234,9 @@ export default function CheckoutsAbandonados() {
         <div className="flex gap-2 shrink-0">
           <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => setGerenciarOpen(true)}>
             <Settings2 className="h-4 w-4" /> Modelos
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => setNotifOpen(true)}>
+            <Bell className="h-4 w-4" /> Notificações
           </Button>
           <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => refetch()} disabled={isFetching}>
             {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
