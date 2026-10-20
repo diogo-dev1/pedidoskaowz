@@ -14,9 +14,7 @@ import {
   Calculator, ShoppingBag, Truck, MessageSquare, TrendingUp, Repeat,
   ShoppingCart, RefreshCw, Loader2, AlertCircle,
 } from 'lucide-react';
-import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
-} from 'recharts';
+import { HomeSalesChart } from '@/components/relatorio-vendas/dashboard/HomeSalesChart';
 
 const META_DIARIA = 20000;
 
@@ -26,10 +24,6 @@ const brl = (n: number) =>
 /** Data de hoje no formato DD/MM/YYYY — mesmo formato da planilha de vendas. */
 function hojeBR(): string {
   return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-}
-
-function chaveDia(d: Date): string {
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
 
 type Card = {
@@ -60,7 +54,6 @@ const CARDS: Card[] = [
 export default function Home() {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
-  const [periodo, setPeriodo] = useState<7 | 30 | 90>(7);
 
   const isAdmin = profile?.cargo === 'admin';
   const hojeISO = new Date().toISOString().split('T')[0];
@@ -111,24 +104,6 @@ export default function Home() {
       valor: doDia.reduce((sum, s) => sum + s.value, 0),
     };
   }, [sales, diaAtual]);
-
-  // Gráfico: soma da planilha por dia, nos últimos N dias
-  const dadosGrafico = useMemo(() => {
-    const mapa = new Map<string, number>();
-    for (const s of sales) {
-      mapa.set(s.date, (mapa.get(s.date) ?? 0) + s.value);
-    }
-    const dias: { dia: string; valor: number }[] = [];
-    for (let i = periodo - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      dias.push({
-        dia: `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`,
-        valor: mapa.get(chaveDia(d)) ?? 0,
-      });
-    }
-    return dias;
-  }, [sales, periodo]);
 
   const metaPct = Math.min(100, Math.round((hoje.valor / META_DIARIA) * 100));
   const horaAtualizacao = lastUpdated
@@ -199,48 +174,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* ── Gráfico de vendas por dia — planilha ───────────────── */}
-      <div className="rounded-xl border bg-card p-4 sm:p-5">
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
-          <h2 className="font-semibold">Vendas por dia</h2>
-          <div className="flex rounded-lg border overflow-hidden">
-            {([7, 30, 90] as const).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriodo(p)}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                  periodo === p ? 'bg-accent text-accent-foreground' : 'bg-card text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                {p === 90 ? '3M' : `${p}D`}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dadosGrafico} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(0 0% 90%)" />
-              <XAxis
-                dataKey="dia"
-                tick={{ fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-                interval={periodo === 7 ? 0 : 'preserveStartEnd'}
-              />
-              <YAxis
-                tick={{ fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-                width={70}
-                tickFormatter={(v: number) => (v >= 1000 ? `R$ ${(v / 1000).toFixed(0)}k` : `R$ ${v}`)}
-              />
-              <Tooltip formatter={(v: number) => [brl(Number(v)), 'Vendas']} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
-              <Bar dataKey="valor" fill="hsl(28 90% 55%)" radius={[4, 4, 0, 0]} maxBarSize={40} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      <HomeSalesChart sales={sales} dailyGoal={META_DIARIA} />
 
       {/* ── Modal: sincronizar pedidos do site ─────────────────── */}
       <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
