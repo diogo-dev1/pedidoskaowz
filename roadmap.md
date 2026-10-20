@@ -18,4 +18,5 @@
 - [x] Reformatar notas internas curtas com bloco de pronta entrega no topo.
 - [x] Atualizar sincronização, atributos e envio somente de itens prontos.
 - [x] Criar painel por urgência com atualização automática, tela cheia e confirmação identificada.
-- [x] Validar regras, telas e funções publicadas; conferir pedidos reais e fluxo manual completo com sessão autenticada. Dados temporários removidos.
+- [x] Validar regras, telas e funções publicadas; conferir pedidos reais e fluxo manual completo com sessão autenticada. Dados temporários removidos.- [x] Notificações push de carrinho perdido (função, agendamento a cada 5 min, botão Notificações, abrir carrinho pela notificação).
+- [ ] Ativar um aparelho real no app publicado (exige publicar e ativar no celular).

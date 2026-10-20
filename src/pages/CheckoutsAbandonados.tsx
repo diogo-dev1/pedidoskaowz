@@ -423,6 +423,7 @@ export default function CheckoutsAbandonados() {
       </Dialog>
 
       <TemplatesDialog open={gerenciarOpen} onOpenChange={setGerenciarOpen} templates={templates ?? []} />
+      <NotificacoesDialog open={notifOpen} onOpenChange={setNotifOpen} />
     </div>
   );
 }
