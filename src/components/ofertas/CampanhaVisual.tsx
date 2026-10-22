@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight, Gift } from 'lucide-react';
 import { Midia, midiasDaOferta, type Oferta } from './OfertaVisual';
 import { type CampanhaItem, moeda } from '@/lib/campanhas';
 import { comboDestaque, limparDescricao, mensagemCombo, valoresCombo, type OpcaoCombo } from '@/lib/campanhaCombos';
-import type { Extra, ItemExtra } from '@/lib/campanhaExtras';
+import { nomeCurtoExtra, type Extra, type ItemExtra } from '@/lib/campanhaExtras';
 import { CampanhaExtrasPublicos } from './CampanhaExtrasPublicos';
 
 const wa = (msg: string) => `https://wa.me/5528999025695?text=${encodeURIComponent(msg)}`;
@@ -47,13 +47,22 @@ export function CampanhaCard({ item, oferta, opcoes, campanha, onOpen }: { item:
   const { valorDe, valorBrindes, economia } = valoresCombo(item, combo);
   return <article className="min-w-0 flex flex-col overflow-hidden rounded-lg border border-[hsl(var(--oferta-borda))] bg-[hsl(var(--campanha-barra))] text-[hsl(var(--oferta-texto))] hover:border-accent transition-colors">
     <div role="button" tabIndex={0} aria-label={`Ver detalhes de ${oferta.titulo}`} className="cursor-pointer focus-visible:ring-2 focus-visible:ring-accent" onClick={onOpen} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } }}><GaleriaCampanha oferta={oferta} brindes={combo.brindes}/></div>
-    <div className="flex flex-1 min-w-0 flex-col gap-2 p-3 md:p-4">
+    <div className="flex flex-1 min-w-0 flex-col gap-2 p-2 md:p-4">
       {item.categoria_linha?.trim() && <p className="text-[10px] md:text-[11px] uppercase tracking-widest text-[hsl(var(--oferta-muted))] truncate">{item.categoria_linha}</p>}
       <h2 className="text-[15px] md:text-lg font-bold leading-snug line-clamp-2 break-words cursor-pointer" onClick={onOpen}>{item.titulo_curto?.trim() || item.titulo}</h2>
-      {combo.brindes.length > 0 && <div className="flex min-w-0 flex-col gap-2 text-xs md:text-[13px]"><div className="flex flex-wrap items-start gap-x-2 gap-y-1"><div className="flex flex-1 basis-20 min-w-0 items-start gap-1"><Gift className="h-3.5 w-3.5 shrink-0 mt-0.5 text-accent"/><span className="line-clamp-2 break-words text-[hsl(var(--oferta-detalhe))]">{combo.brindes.map(e => e.nome).join(' + ')}</span></div><span className="ml-auto flex flex-wrap items-baseline justify-end gap-x-1">{valorBrindes > 0 && <span className="line-through text-[hsl(var(--oferta-suporte))]">{moeda(valorBrindes)}</span>}<strong className="font-semibold text-[hsl(var(--campanha-economia))]">grátis</strong></span></div><MiniaturasBrindes brindes={combo.brindes} variante="cartao"/></div>}
-      <div className="flex flex-wrap items-baseline gap-x-2"><strong className="text-[22px] md:text-[28px] font-black whitespace-nowrap">{moeda(combo.preco)}</strong>{valorDe > combo.preco && <span className="text-xs line-through text-[hsl(var(--oferta-suporte))] whitespace-nowrap">{moeda(valorDe)}</span>}</div>
-      <p className="text-xs leading-relaxed break-words text-[hsl(var(--oferta-muted))]">{[oferta.texto_parcelamento, economia > 0 ? `economize ${moeda(economia)}` : ''].filter(Boolean).join(' · ')}{oferta.texto_pix && <span className="block">{oferta.texto_pix}</span>}</p>
-      <div className="mt-auto space-y-2.5 pt-2"><AcaoCampanha item={item} combo={combo} campanha={campanha}/><LinkLoja link={oferta.link_produto}/></div>
+      {combo.brindes.length > 0 && <section aria-label="Brindes inclusos" className="min-w-0 rounded-lg border border-[hsl(var(--campanha-brindes-borda))] p-2 md:px-3 md:py-2.5">
+        <div className="flex min-w-0 items-baseline justify-between gap-1">
+          <span className="flex min-w-0 items-baseline gap-1 text-[11px] font-semibold uppercase leading-snug"><Gift className="h-3 w-3 shrink-0 self-center text-accent"/><span>GANHE {combo.brindes.length} {combo.brindes.length === 1 ? 'BRINDE' : 'BRINDES'}</span></span>
+          <span className="flex shrink-0 flex-col items-end text-xs leading-snug md:flex-row md:gap-1">{valorBrindes > 0 && <span className="whitespace-nowrap line-through text-[hsl(var(--oferta-suporte))]">{moeda(valorBrindes)}</span>}<strong className="font-semibold text-[hsl(var(--campanha-economia))]">grátis</strong></span>
+        </div>
+        <div className="mt-2.5 grid min-w-0 grid-cols-3 gap-1.5 text-center">{combo.brindes.map(e => <div key={e.id} className="min-w-0" title={e.nome}>
+          <div className="mx-auto flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[hsl(var(--campanha-circulo-borda))] bg-[hsl(var(--campanha-selo-fundo))] text-[hsl(var(--campanha-selo-texto))] shadow-[var(--campanha-circulo-sombra)] md:h-12 md:w-12">{e.imagem_url?.trim() ? <img src={e.imagem_url} alt={e.nome} loading="lazy" className="h-full w-full object-contain"/> : <Gift className="h-4 w-4"/>}</div>
+          <p className="mt-1 line-clamp-1 break-all text-[10px] leading-relaxed text-[hsl(var(--oferta-muted))] md:text-[11px]">{nomeCurtoExtra(e)}</p>
+        </div>)}</div>
+      </section>}
+      <div className="min-w-0"><div className="flex min-w-0 items-baseline gap-1 md:gap-2"><strong className="text-[18px] md:text-[28px] font-black whitespace-nowrap">{moeda(combo.preco)}</strong>{valorDe > combo.preco && <span className="min-w-0 whitespace-nowrap text-[8px] leading-snug line-through text-[hsl(var(--oferta-suporte))] md:text-xs">de {moeda(valorDe)}</span>}</div>
+      <p className="mt-2 text-xs leading-relaxed break-words text-[hsl(var(--oferta-muted))] md:mt-2.5">{[oferta.texto_parcelamento, economia > 0 ? `economize ${moeda(economia)}` : ''].filter(Boolean).join(' · ')}{oferta.texto_pix && <span className="block">{oferta.texto_pix}</span>}</p></div>
+      <div className="mt-auto space-y-2.5 pt-1.5"><AcaoCampanha item={item} combo={combo} campanha={campanha}/><LinkLoja link={oferta.link_produto}/></div>
     </div>
   </article>;
 }

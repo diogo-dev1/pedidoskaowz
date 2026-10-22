@@ -1,6 +1,7 @@
 # Pronta Entrega — painel e notas
 
 ## Campanhas minimalistas
+- [x] Adicionar nome curto opcional na biblioteca/cadastro/importação, reorganizar brindes em grade de três e espaçar preço/parcelamento/botão; gravação e releitura reais conferidas, valores restaurados, 375px/desktop sem rolagem lateral, 23 testes e compilação OK.
 - [x] Redesenhar cartão/modal e upsells com preços brancos, brindes na foto e ações discretas, sem alterar Novidades ou regras.
 - [x] Conferir 19 testes, compilação e cartão/modal públicos com dados reais em 375px e desktop, sem rolagem horizontal.
 - [x] Mover os círculos dos brindes da foto para o corpo do cartão (nomes em cima, círculos abaixo); conferir 375px e desktop sem rolagem horizontal.

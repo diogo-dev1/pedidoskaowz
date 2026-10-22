@@ -1,8 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { precoExtra, extrasDoItem, atualizacaoExtraDoSite, type ItemExtra } from './campanhaExtras';
+import { precoExtra, extrasDoItem, atualizacaoExtraDoSite, nomeCurtoExtra, type ItemExtra } from './campanhaExtras';
 import type { ProdutoCampanha } from './campanhas';
 const vinculo = (tipo = 'upsell', especial: number | null = null, normal: number | null = 100) => ({ tipo, preco_campanha: especial, campanha_extras: { preco: normal }, campanha_item_id: 'faca', ordem: 0, created_at: '2026-10-22' }) as ItemExtra;
+test('configured short name overrides the full name', () => assert.equal(nomeCurtoExtra({ nome: 'Cinto Tático Kaowz - Preto', nome_curto: ' Cinto tático ' }), 'Cinto tático'));
+test('empty short name falls back to the first two words without color suffix', () => assert.equal(nomeCurtoExtra({ nome: 'Cinto Tático Kaowz - Preto', nome_curto: ' ' }), 'Cinto Tático'));
+test('fallback removes hyphenated suffix even before the second word', () => assert.equal(nomeCurtoExtra({ nome: 'Multitool-Preto' }), 'Multitool'));
+test('Shopify refresh preserves configured short name', () => assert.equal({ nome_curto: 'Cinto tático', ...atualizacaoExtraDoSite({ preco: 50, imagens: ['foto'], link: 'loja' } as ProdutoCampanha) }.nome_curto, 'Cinto tático'));
 test('brinde is free even with normal price', () => assert.equal(precoExtra(vinculo('brinde', null, 150)), 0));
 test('empty campaign price uses normal price', () => assert.equal(precoExtra(vinculo()), 100));
 test('lower campaign price applies', () => assert.equal(precoExtra(vinculo('upsell', 75)), 75));

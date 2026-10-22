@@ -36,6 +36,7 @@ All colors MUST be HSL.
     --campanha-selo-fundo: 0 0% 100%;
     --campanha-selo-texto: 240 10% 4%;
     --campanha-barra: 240 6% 10%;
+    --campanha-brindes-borda: 240 5.2631579% 26.0784314%;
     --campanha-economia: 158 64% 52%;
     --campanha-circulo-borda: 240 5% 84%;
     --campanha-circulo-sombra: 0 2px 6px hsl(240 10% 4% / .18);
