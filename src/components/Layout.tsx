@@ -66,7 +66,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const hideNavigation = isPanel && panelFullscreen;
 
   return (
-    <div className="min-h-screen flex flex-col w-full bg-background overflow-x-hidden">
+    <div className="min-h-screen flex flex-col w-full bg-background overflow-x-clip">
       {!hideNavigation && <TopNav title={title} />}
 
       <div className="flex flex-1 w-full">
