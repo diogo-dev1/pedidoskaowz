@@ -18,6 +18,21 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    --oferta-preto: 0 0% 0%;
+    --oferta-fundo: 240 10% 3.9%;
+    --oferta-modal: 240 5.9% 10%;
+    --oferta-superficie: 240 3.7% 15.9%;
+    --oferta-borda: 240 5.2% 33.9%;
+    --oferta-borda-suave: 240 3.8% 46.1%;
+    --oferta-suporte: 240 5% 64.9%;
+    --oferta-muted: 240 5% 64.9%;
+    --oferta-detalhe: 240 4.9% 83.9%;
+    --oferta-texto: 0 0% 100%;
+    --oferta-pix: 158.1 64.4% 51.6%;
+    --oferta-whatsapp: 142.1 76.2% 36.3%;
+    --oferta-garantia: 164 86% 16%;
+    --oferta-garantia-fundo: 164 86% 16%;
+    --oferta-sombra: 0 2px 10px hsl(27 96% 61% / 0.3);
     /* Fundo neutro levemente frio; superfícies brancas */
     --background: 220 16% 96%;
     --foreground: 220 14% 18%;
@@ -107,6 +122,8 @@ All colors MUST be HSL.
     --chart-5: 262 83% 65%;
   }
 }
+
+.oferta-garantia { background: linear-gradient(to right, hsl(var(--oferta-garantia-fundo) / .3), hsl(var(--oferta-modal) / .5), hsl(var(--oferta-garantia-fundo) / .3)); border-color: hsl(var(--oferta-garantia) / .2); }
 
 @layer base {
   * {

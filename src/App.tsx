@@ -86,6 +86,8 @@ import KnivesAdmin from "./pages/KnivesAdmin";
 import Showroom from "./pages/Showroom";
 import Ofertas from "./pages/publico/Ofertas";
 import OfertasAdmin from "./pages/admin/OfertasAdmin";
+import CampanhaOferta from "./pages/publico/CampanhaOferta";
+import CampanhasAdmin from "./pages/admin/CampanhasAdmin";
 import TabelaPrecosPushDagger from "./pages/publico/TabelaPrecosPushDagger";
 
 const queryClient = new QueryClient();
@@ -104,7 +106,9 @@ const App = () => (
             <Route path="/descubra/resultado" element={<Resultado />} />
             <Route path="/vitrine" element={<Vitrine />} />
             <Route path="/kits-pater" element={<KitsPater />} />
+            <Route path="/ofertas/:slug" element={<CampanhaOferta />} />
             <Route path="/ofertas" element={<Ofertas />} />
+            <Route path="/admin/campanhas" element={<ProtectedRoute requireAdmin><Layout><CampanhasAdmin /></Layout></ProtectedRoute>} />
             <Route path="/tabela-push-dagger" element={<TabelaPrecosPushDagger />} />
             <Route
               path="/admin/ofertas"

@@ -260,16 +260,17 @@ export function AppSidebar() {
   const { profile, signOut } = useAuth();
   const { pathname } = useLocation();
   const isAdmin = profile?.cargo === "admin" || profile?.cargo === "vendedor";
+  const adminItems = profile?.cargo === 'admin' ? [...ADMIN.slice(0, 3), { title: 'Campanhas', url: '/admin/campanhas', icon: Tag }, ...ADMIN.slice(3)] : ADMIN;
   const [open, setOpen] = useState(false);
 
   const defaultOpen = useMemo(() => {
     for (const g of GRUPOS) {
       if (g.items.some((i) => match(pathname, i.url))) return g.label;
     }
-    if (isAdmin && ADMIN.some((i) => match(pathname, i.url)))
+    if (isAdmin && adminItems.some((i) => match(pathname, i.url)))
       return "Administração";
     return GRUPOS[0].label;
-  }, [pathname, isAdmin]);
+  }, [pathname, isAdmin, profile?.cargo]);
 
   return (
     <>
@@ -412,7 +413,7 @@ export function AppSidebar() {
                       </AccordionTrigger>
                       <AccordionContent className="pb-2">
                         <div className="space-y-0.5">
-                          {ADMIN.map((item) => (
+                          {adminItems.map((item) => (
                             <NavLink
                               key={item.url}
                               to={item.url}

@@ -1,5 +1,8 @@
 # Architecture rules
 
+- Campaigns and Novidades share OfertaVisual for identical cards/media/detail rendering; campaign defaults are adapted at the page boundary and Shopify refresh updates only source-owned price/media/link fields.
+- Campaign writes use the existing server-side is_admin check and public reads require both campaign and item active, so private drafts never leak through direct item queries.
+
 - Home chart calendar aggregation uses Sao Paulo's current date and UTC calendar arithmetic in a pure helper; keep its period and drill-down totals sourced solely from the existing sales rows.
 
 - Manage simulator customization options within the existing simulator price configuration and its shared save action; this keeps all sellers on the same values without a separate catalog.
