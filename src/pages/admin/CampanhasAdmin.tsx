@@ -5,6 +5,7 @@ import { type Campanha, type CampanhaItem, type ProdutoCampanha, moeda, linkCamp
 import CampanhaItemEditor from '@/components/ofertas/CampanhaItemEditor';
 import { CampanhaExtrasBiblioteca } from '@/components/ofertas/CampanhaExtrasBiblioteca';
 import { atualizacaoExtraDoSite } from '@/lib/campanhaExtras';
+import { limparDescricao } from '@/lib/campanhaCombos';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -72,7 +73,7 @@ export default function CampanhasAdmin() {
     setBusy(true);
     const novos = produtos.filter(p => selecionados.includes(p.produtoId) && !itens.some(i => i.shopify_produto_id === p.produtoId));
     const ordem = Math.max(-1, ...itens.map(i => i.ordem)) + 1;
-    const { error } = await supabase.from('campanha_itens').insert(novos.map((p, i) => ({ campanha_id: campanha.id, shopify_produto_id: p.produtoId, titulo: p.titulo, descricao: p.descricao, ...atualizacaoDoSite(p), ordem: ordem + i })));
+    const { error } = await supabase.from('campanha_itens').insert(novos.map((p, i) => ({ campanha_id: campanha.id, shopify_produto_id: p.produtoId, titulo: p.titulo, descricao: limparDescricao(p.descricao), ...atualizacaoDoSite(p), ordem: ordem + i })));
     setBusy(false);
     if (error) { toast.error('Não foi possível adicionar os produtos; atualize a lista e tente novamente'); void carregarItens(campanha.id); return; }
     toast.success(`${novos.length} produtos adicionados`); setBuscar(false); setSelecionados([]); void carregarItens(campanha.id);
@@ -94,14 +95,14 @@ export default function CampanhasAdmin() {
       for (const item of itens) {
         const p = encontrados.find(x => x.produtoId === item.shopify_produto_id);
         if (!p) continue;
-        const { error } = await supabase.from('campanha_itens').update(atualizacaoDoSite(p)).eq('id', item.id);
+        const { error } = await supabase.from('campanha_itens').update({ ...atualizacaoDoSite(p), descricao: limparDescricao(item.descricao) }).eq('id', item.id);
         if (error) throw new Error(); total++;
       }
       let totalExtras = 0;
       for (const extra of extras ?? []) {
         const p = encontrados.find(x => x.produtoId === extra.shopify_produto_id);
         if (!p) continue;
-        const { error } = await supabase.from('campanha_extras').update(atualizacaoExtraDoSite(p)).eq('id', extra.id);
+        const { error } = await supabase.from('campanha_extras').update({ ...atualizacaoExtraDoSite(p), descricao: limparDescricao(extra.descricao) }).eq('id', extra.id);
         if (error) throw error;
         totalExtras++;
       }

@@ -1,5 +1,11 @@
 # Pronta Entrega — painel e notas
 
+## Redesenho de campanhas e combos
+- [x] Criar combos, descrições curtas e campos de apresentação com permissões de campanha.
+- [x] Implementar cartões/modal exclusivos, seleção e cálculo de preços sem alterar Novidades.
+- [x] Adicionar edição de combos e limpeza de descrições na importação/atualização.
+- [x] Conferir 19 testes, compilação e telas em 375px/1280px; cadastro, edição, ordenação e leitura de combos com sessão admin real, seleção e WhatsApp conferidos. Dados temporários removidos.
+
 ## Brindes e upsells de campanhas
 - [x] Criar biblioteca e vínculos com acesso público seguro e escrita admin; estrutura aplicada e conferida.
 - [x] Implementar cadastro, seleção, edição, ordenação e atualização do Shopify.

@@ -1,0 +1,15 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { valoresCombo, opcoesCombos, comboDestaque, descricaoCurta, limparDescricao, mensagemCombo, type ComboCompleto } from './campanhaCombos';
+import type { Extra, ItemExtra } from './campanhaExtras';
+const extra = (preco: number | null, nome = 'Patola') => ({ id: nome, preco, nome }) as Extra;
+test('combo reference price uses knife compare-at plus priced gifts', () => assert.deepEqual(valoresCombo({ valor: 500, valor_de: 600 }, { preco: 550, brindes: [extra(150),extra(null)] }), { valorBrindes:150,valorDe:750,economia:200 }));
+test('combo reference price falls back to knife price', () => assert.equal(valoresCombo({ valor:500,valor_de:null },{ preco:450,brindes:[extra(100)] }).valorDe,600));
+test('no negative savings shown', () => assert.equal(valoresCombo({ valor:100,valor_de:null },{ preco:120,brindes:[] }).economia,0));
+test('implicit combo keeps item price and fixed gifts', () => { const c=opcoesCombos({ id:'faca',valor:500 },[],[{ campanha_item_id:'faca',tipo:'brinde',ordem:1,campanha_extras:extra(100) } as ItemExtra]); assert.equal(c[0].preco,500); assert.equal(c[0].brindes[0].nome,'Patola'); });
+test('highlighted combo precedes first for default selection', () => { const combos = [{id:'a',campanha_item_id:'faca',ordem:0,created_at:'2026',destaque:false,campanha_combo_extras:[]},{id:'b',campanha_item_id:'faca',ordem:1,created_at:'2026',destaque:true,campanha_combo_extras:[]}] as ComboCompleto[]; assert.equal(comboDestaque(opcoesCombos({id:'faca',valor:100},combos,[]))?.id,'b'); });
+test('first combo used when no highlight', () => assert.equal(comboDestaque([{id:'a',destaque:false},{id:'b',destaque:false}] as ReturnType<typeof opcoesCombos>)?.id,'a'));
+test('extra short description wins and is limited to 80 characters', () => assert.equal(descricaoCurta({descricao_curta:'X'.repeat(90),descricao:'longa'}),'X'.repeat(80)));
+test('extra fallback uses first line only', () => assert.equal(descricaoCurta({descricao_curta:null,descricao:'Descrição do produto\nPreto ou coyote\nTexto longo'}),'Preto ou coyote'));
+test('description heading cleanup tolerates whitespace and accents', () => { assert.equal(limparDescricao(' \nDescrição \n do   produto:\nAço Sandvik'),'Aço Sandvik'); assert.equal(limparDescricao('Descricao do produto - Teste'),'Teste'); });
+test('WhatsApp follows selected combo price and gifts', () => { const c=opcoesCombos({id:'faca',valor:500},[],[{campanha_item_id:'faca',tipo:'brinde',ordem:0,campanha_extras:extra(100)} as ItemExtra])[0]; assert.equal(mensagemCombo('EDC',c,'SLS').replace(/\u00a0/g,' '),'Olá! Tenho interesse na EDC – Kit completo (Patola) por R$ 500,00 (campanha SLS)'); });

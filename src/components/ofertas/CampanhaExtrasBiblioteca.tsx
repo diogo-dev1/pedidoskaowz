@@ -12,9 +12,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { Pencil, Trash2, Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { limparDescricao } from '@/lib/campanhaCombos';
 
 export function ExtraFormulario({ extra, onSaved, onClose }: { extra?: Extra; onSaved: (e: Extra) => void; onClose?: () => void }) {
-  const [form, setForm] = useState({ nome: extra?.nome ?? '', descricao: extra?.descricao ?? '', imagem_url: extra?.imagem_url ?? '', preco: extra?.preco == null ? '' : String(extra.preco), link: extra?.link ?? '' });
+  const [form, setForm] = useState({ nome: extra?.nome ?? '', descricao: limparDescricao(extra?.descricao), descricao_curta: extra?.descricao_curta ?? '', imagem_url: extra?.imagem_url ?? '', preco: extra?.preco == null ? '' : String(extra.preco), link: extra?.link ?? '' });
   const [busy, setBusy] = useState(false);
   async function upload(file?: File) {
     if (!file) return;
@@ -32,13 +33,13 @@ export function ExtraFormulario({ extra, onSaved, onClose }: { extra?: Extra; on
     if (form.preco && (!Number.isFinite(Number(form.preco)) || Number(form.preco) < 0)) { toast.error('Informe um preço válido'); return; }
     if (form.link && !/^https?:\/\//i.test(form.link)) { toast.error('Informe um link http ou https'); return; }
     setBusy(true);
-    const payload = { ...form, nome: form.nome.trim(), preco: form.preco === '' ? null : Number(form.preco), link: form.link.trim() || null };
+    const payload = { ...form, descricao: limparDescricao(form.descricao), descricao_curta: form.descricao_curta.replace(/[\r\n]+/g, ' ').slice(0,80), nome: form.nome.trim(), preco: form.preco === '' ? null : Number(form.preco), link: form.link.trim() || null };
     const result = extra ? await supabase.from('campanha_extras').update(payload).eq('id', extra.id).select().single() : await supabase.from('campanha_extras').insert({ ...payload, origem: 'manual' }).select().single();
     setBusy(false);
     if (result.error) { toast.error('Não foi possível salvar'); return; }
     toast.success('Item cadastrado'); onSaved(result.data);
   }
-  return <div className="space-y-3">{(['nome', 'descricao', 'preco', 'link'] as const).map(key => <div className="space-y-1" key={key}><Label htmlFor={`extra-${key}`}>{({ nome: 'Nome', descricao: 'Descrição curta', preco: 'Preço normal (opcional)', link: 'Link (opcional)' })[key]}</Label>{key === 'descricao' ? <Textarea id={`extra-${key}`} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}/> : <Input id={`extra-${key}`} type={key === 'preco' ? 'number' : 'text'} min={0} step="0.01" value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}/>}</div>)}<Label htmlFor="extra-foto">Foto</Label><Input id="extra-foto" type="file" accept="image/*" disabled={busy} onChange={e => void upload(e.target.files?.[0])}/>{form.imagem_url && <img src={form.imagem_url} alt={form.nome || 'Foto do item'} className="h-20 w-20 object-cover rounded"/>}<div className="flex justify-end gap-2">{onClose && <Button variant="outline" onClick={onClose}>Cancelar</Button>}<Button disabled={busy} onClick={() => void salvar()}>{busy && <Loader2 className="h-4 w-4 mr-2 animate-spin"/>}Salvar item</Button></div></div>;
+  return <div className="space-y-3">{(['nome', 'descricao_curta', 'descricao', 'preco', 'link'] as const).map(key => <div className="space-y-1" key={key}><Label htmlFor={`extra-${key}`}>{({ nome: 'Nome', descricao_curta: 'Descrição curta', descricao: 'Descrição completa (interna)', preco: 'Preço normal (opcional)', link: 'Link (opcional)' })[key]}</Label>{key === 'descricao' ? <Textarea id={`extra-${key}`} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}/> : <Input id={`extra-${key}`} type={key === 'preco' ? 'number' : 'text'} maxLength={key === 'descricao_curta' ? 80 : undefined} min={0} step="0.01" value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}/>}</div>)}<Label htmlFor="extra-foto">Foto</Label><Input id="extra-foto" type="file" accept="image/*" disabled={busy} onChange={e => void upload(e.target.files?.[0])}/>{form.imagem_url && <img src={form.imagem_url} alt={form.nome || 'Foto do item'} className="h-20 w-20 object-cover rounded"/>}<div className="flex justify-end gap-2">{onClose && <Button variant="outline" onClick={onClose}>Cancelar</Button>}<Button disabled={busy} onClick={() => void salvar()}>{busy && <Loader2 className="h-4 w-4 mr-2 animate-spin"/>}Salvar item</Button></div></div>;
 }
 
 export function AdicionarExtras({ itemId, tipo, onClose, onSaved }: { itemId: string; tipo: TipoExtra; onClose: () => void; onSaved: () => void }) {
@@ -62,7 +63,7 @@ export function AdicionarExtras({ itemId, tipo, onClose, onSaved }: { itemId: st
     setBusy(true);
     const { data: existente, error: consultaErro } = await supabase.from('campanha_extras').select('*').eq('shopify_produto_id', p.produtoId).maybeSingle();
     if (consultaErro) { setBusy(false); toast.error('Não foi possível consultar a biblioteca'); return; }
-    const { data, error } = existente ? { data: existente, error: null } : await supabase.from('campanha_extras').insert({ nome: p.titulo, descricao: p.descricao, ...atualizacaoExtraDoSite(p), shopify_produto_id: p.produtoId, origem: 'shopify' }).select().single();
+    const { data, error } = existente ? { data: existente, error: null } : await supabase.from('campanha_extras').insert({ nome: p.titulo, descricao: limparDescricao(p.descricao), ...atualizacaoExtraDoSite(p), shopify_produto_id: p.produtoId, origem: 'shopify' }).select().single();
     setBusy(false);
     if (error) { toast.error('Não foi possível cadastrar o item do site'); return; }
     setLista(l => [...l.filter(e => e.id !== data.id), data]); setSelecionados(s => [...new Set([...s, data.id])]); setTermo(''); setAba('biblioteca'); toast.success('Item selecionado');
@@ -86,9 +87,9 @@ export function CampanhaExtrasBiblioteca({ versao = 0 }: { versao?: number }) {
   const [excluir, setExcluir] = useState<Extra | null>(null);
   const [busca, setBusca] = useState('');
   async function carregar() {
-    const [a, b] = await Promise.all([supabase.from('campanha_extras').select('*').order('nome'), supabase.from('campanha_item_extras').select('extra_id')]);
-    if (a.error || b.error) { toast.error('Não foi possível carregar a biblioteca'); return; }
-    setLista(a.data ?? []); setUsos((b.data ?? []).reduce<Record<string, number>>((r, v) => ({ ...r, [v.extra_id]: (r[v.extra_id] ?? 0) + 1 }), {}));
+    const [a, b, c] = await Promise.all([supabase.from('campanha_extras').select('*').order('nome'), supabase.from('campanha_item_extras').select('extra_id'), supabase.from('campanha_combo_extras').select('extra_id')]);
+    if (a.error || b.error || c.error) { toast.error('Não foi possível carregar a biblioteca'); return; }
+    setLista(a.data ?? []); setUsos([...(b.data ?? []), ...(c.data ?? [])].reduce<Record<string, number>>((r, v) => ({ ...r, [v.extra_id]: (r[v.extra_id] ?? 0) + 1 }), {}));
   }
   useEffect(() => { void carregar(); }, [versao]);
   async function remover() {
