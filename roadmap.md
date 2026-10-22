@@ -1,5 +1,10 @@
 # Pronta Entrega — painel e notas
 
+## Campanhas de oferta
+- [ ] Compartilhar visual das Novidades sem alterar a página atual.
+- [ ] Criar campanhas públicas, administração e seleção/atualização Shopify.
+- [ ] Aplicar permissões, campanha inicial e validar celular/desktop.
+
 ## Gráfico da tela inicial
 - [x] Substituir somente o gráfico por Dia/Semana/Mês com totais e detalhamento diário.
 - [x] Validar oito cenários de cálculo e abas/detalhamento em 390px e 1280px com vendas simuladas, sem rolagem horizontal.
