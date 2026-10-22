@@ -54,7 +54,7 @@ export default function CampanhasAdmin() {
     const result = criar ? await supabase.from('campanhas_oferta').insert(payload).select().single() : await supabase.from('campanhas_oferta').update(payload).eq('id', campanha?.id ?? '').select().single();
     setBusy(false);
     if (result.error) { toast.error(result.error.code === '23505' ? 'Este link já está em uso' : 'Não foi possível salvar a campanha'); return; }
-    setCampanha(result.data); setForm(dados(result.data)); setNova(false); toast.success('Campanha salva'); void carregarCampanhas();
+    setCampanha(result.data); setForm(dados(result.data)); if (criar) setItens([]); setNova(false); toast.success('Campanha salva'); void carregarCampanhas();
   }
   async function pesquisar() {
     setBuscando(true); setPesquisou(false);
