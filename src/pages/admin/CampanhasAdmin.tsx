@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { type Campanha, type CampanhaItem, type ProdutoCampanha, moeda, linkCampanha, atualizacaoDoSite } from '@/lib/campanhas';
 import CampanhaItemEditor from '@/components/ofertas/CampanhaItemEditor';
+import { CampanhaExtrasBiblioteca } from '@/components/ofertas/CampanhaExtrasBiblioteca';
+import { atualizacaoExtraDoSite } from '@/lib/campanhaExtras';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +37,7 @@ export default function CampanhasAdmin() {
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [pesquisou, setPesquisou] = useState(false);
+  const [bibliotecaVersao, setBibliotecaVersao] = useState(0);
   const admin = profile?.cargo === 'admin';
   async function carregarCampanhas() {
     const { data, error } = await supabase.from('campanhas_oferta').select('*').order('created_at', { ascending: false });
@@ -75,12 +78,15 @@ export default function CampanhasAdmin() {
     toast.success(`${novos.length} produtos adicionados`); setBuscar(false); setSelecionados([]); void carregarItens(campanha.id);
   }
   async function atualizarSite() {
-    if (!campanha || !itens.length) return;
+    if (!campanha) return;
     setBusy(true);
     try {
       const encontrados: ProdutoCampanha[] = [];
-      for (let i = 0; i < itens.length; i += 250) {
-        const { data, error } = await supabase.functions.invoke('buscar-produtos-shopify', { body: { modo: 'produtos', ids: itens.slice(i, i + 250).map(x => x.shopify_produto_id) } });
+      const { data: extras, error: extrasErro } = await supabase.from('campanha_extras').select('*').eq('origem', 'shopify');
+      if (extrasErro) throw extrasErro;
+      const ids = [...new Set([...itens.map(x => x.shopify_produto_id), ...(extras ?? []).map(x => x.shopify_produto_id)].filter((id): id is string => !!id))];
+      for (let i = 0; i < ids.length; i += 250) {
+        const { data, error } = await supabase.functions.invoke('buscar-produtos-shopify', { body: { modo: 'produtos', ids: ids.slice(i, i + 250) } });
         if (error || !data?.sucesso) throw new Error();
         encontrados.push(...data.produtos);
       }
@@ -91,10 +97,18 @@ export default function CampanhasAdmin() {
         const { error } = await supabase.from('campanha_itens').update(atualizacaoDoSite(p)).eq('id', item.id);
         if (error) throw new Error(); total++;
       }
-      toast.success(`${total} produtos atualizados do site`);
+      let totalExtras = 0;
+      for (const extra of extras ?? []) {
+        const p = encontrados.find(x => x.produtoId === extra.shopify_produto_id);
+        if (!p) continue;
+        const { error } = await supabase.from('campanha_extras').update(atualizacaoExtraDoSite(p)).eq('id', extra.id);
+        if (error) throw error;
+        totalExtras++;
+      }
+      toast.success(`${total} produtos e ${totalExtras} extras atualizados do site`);
       if (total < itens.length) toast.warning('Alguns produtos não estão mais disponíveis no site');
     } catch { toast.error('Não foi possível concluir a atualização de todos os produtos'); }
-    finally { setBusy(false); void carregarItens(campanha.id); }
+    finally { setBusy(false); setBibliotecaVersao(v => v + 1); void carregarItens(campanha.id); }
   }
   async function mover(index: number, direcao: number) {
     if (!campanha || index + direcao < 0 || index + direcao >= itens.length) return;
@@ -128,10 +142,11 @@ export default function CampanhasAdmin() {
         {!itens.length && <p className="text-sm text-muted-foreground py-6">Nenhum produto nesta campanha. Use Buscar no site para escolher os primeiros.</p>}
       </section>
     </>}
+    <CampanhaExtrasBiblioteca versao={bibliotecaVersao}/>
     <Dialog open={nova} onOpenChange={setNova}><DialogContent className="w-[calc(100%-1rem)] max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>Nova campanha</DialogTitle></DialogHeader>{campos}<DialogFooter><Button variant="outline" onClick={() => setNova(false)}>Cancelar</Button><Button disabled={busy} onClick={() => void salvar(true)}>Criar campanha</Button></DialogFooter></DialogContent></Dialog>
     <Dialog open={buscar} onOpenChange={setBuscar}><DialogContent className="w-[calc(100%-1rem)] max-w-3xl max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>Buscar produtos no site</DialogTitle></DialogHeader><p className="text-xs text-muted-foreground">Pesquise e marque os produtos que deseja incluir. Cada produto aparece uma vez, pelo menor preço.</p><form className="flex gap-2" onSubmit={e => { e.preventDefault(); void pesquisar(); }}><Input aria-label="Termo de busca no site" placeholder="Ex.: SLS" value={termo} onChange={e => setTermo(e.target.value)}/><Button disabled={buscando} type="submit">{buscando ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="h-4 w-4 mr-1"/>}Buscar</Button></form>
       <div className="space-y-2">{produtos.map(p => { const existe = itens.some(i => i.shopify_produto_id === p.produtoId); return <label key={p.produtoId} className="flex items-center gap-3 border rounded-lg p-2 min-w-0 cursor-pointer"><Checkbox aria-label={`Selecionar ${p.titulo}`} disabled={existe || busy} checked={existe || selecionados.includes(p.produtoId)} onCheckedChange={v => setSelecionados(ids => v ? [...ids, p.produtoId] : ids.filter(id => id !== p.produtoId))}/>{p.imagens[0] && <img src={p.imagens[0]} alt={p.titulo} className="w-12 h-14 object-cover shrink-0"/>}<div className="flex-1 min-w-0"><p className="text-sm font-medium break-words">{p.titulo}</p><p className="text-xs text-muted-foreground">{moeda(p.preco)}</p>{existe && <Badge variant="secondary" className="text-xs">Já na campanha</Badge>}</div></label>; })}{pesquisou && !produtos.length && <p className="text-sm text-muted-foreground py-4">Nenhum produto encontrado. Tente outro termo.</p>}</div><DialogFooter><Button variant="outline" onClick={() => setBuscar(false)}>Fechar</Button><Button disabled={busy || !selecionados.length} onClick={() => void adicionar()}>{busy && <Loader2 className="h-4 w-4 mr-2 animate-spin"/>}Adicionar selecionados ({selecionados.length})</Button></DialogFooter>
     </DialogContent></Dialog>
-    {editando && <CampanhaItemEditor item={editando} onClose={() => setEditando(null)} onSaved={() => { if (campanha) void carregarItens(campanha.id); }}/>}<AlertDialog open={!!excluir} onOpenChange={o => !o && setExcluir(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Remover produto da campanha?</AlertDialogTitle><AlertDialogDescription>{excluir?.titulo} será removido apenas desta campanha. O produto no Shopify não será alterado.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => void remover()}>Remover</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+    {editando && <CampanhaItemEditor item={editando} onClose={() => { setEditando(null); setBibliotecaVersao(v => v + 1); }} onSaved={() => { if (campanha) void carregarItens(campanha.id); }}/>}<AlertDialog open={!!excluir} onOpenChange={o => !o && setExcluir(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Remover produto da campanha?</AlertDialogTitle><AlertDialogDescription>{excluir?.titulo} será removido apenas desta campanha. O produto no Shopify não será alterado.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => void remover()}>Remover</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </div>;
 }

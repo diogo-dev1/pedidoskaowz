@@ -367,6 +367,90 @@ export type Database = {
         }
         Relationships: []
       }
+      campanha_extras: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          imagem_url: string | null
+          link: string | null
+          nome: string
+          origem: string
+          preco: number | null
+          shopify_produto_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          imagem_url?: string | null
+          link?: string | null
+          nome: string
+          origem?: string
+          preco?: number | null
+          shopify_produto_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          imagem_url?: string | null
+          link?: string | null
+          nome?: string
+          origem?: string
+          preco?: number | null
+          shopify_produto_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      campanha_item_extras: {
+        Row: {
+          campanha_item_id: string
+          created_at: string
+          extra_id: string
+          id: string
+          ordem: number
+          preco_campanha: number | null
+          tipo: string
+        }
+        Insert: {
+          campanha_item_id: string
+          created_at?: string
+          extra_id: string
+          id?: string
+          ordem?: number
+          preco_campanha?: number | null
+          tipo: string
+        }
+        Update: {
+          campanha_item_id?: string
+          created_at?: string
+          extra_id?: string
+          id?: string
+          ordem?: number
+          preco_campanha?: number | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campanha_item_extras_campanha_item_id_fkey"
+            columns: ["campanha_item_id"]
+            isOneToOne: false
+            referencedRelation: "campanha_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campanha_item_extras_extra_id_fkey"
+            columns: ["extra_id"]
+            isOneToOne: false
+            referencedRelation: "campanha_extras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campanha_itens: {
         Row: {
           ativo: boolean

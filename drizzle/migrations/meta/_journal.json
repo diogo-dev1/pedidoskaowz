@@ -43,6 +43,13 @@
       "when": 1792670788267,
       "tag": "0005_campanhas_oferta",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792673242174,
+      "tag": "0006_campanha_brindes_upsells",
+      "breakpoints": true
     }
   ]
 }

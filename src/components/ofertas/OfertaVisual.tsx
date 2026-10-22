@@ -54,7 +54,7 @@ export function Midia({ item, titulo, ativa, className = '' }: { item: MidiaOfer
   );
 }
 
-export function OfertaCard({ o, onOpen, mensagemWhatsApp }: { o: Oferta; onOpen: () => void; mensagemWhatsApp?: (oferta: Oferta) => string }) {
+export function OfertaCard({ o, onOpen, mensagemWhatsApp, abaixoDoPreco }: { o: Oferta; onOpen: () => void; mensagemWhatsApp?: (oferta: Oferta) => string; abaixoDoPreco?: React.ReactNode }) {
   const midias = midiasDaOferta(o);
   const [idx, setIdx] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -166,6 +166,7 @@ export function OfertaCard({ o, onOpen, mensagemWhatsApp }: { o: Oferta; onOpen:
                 </p>
               </>
             )}
+            {abaixoDoPreco}
             {o.texto_pix && (
               <p className="truncate text-[10px] font-bold text-[hsl(var(--oferta-pix))] md:text-sm">{o.texto_pix}</p>
             )}
@@ -208,7 +209,7 @@ export function OfertaCard({ o, onOpen, mensagemWhatsApp }: { o: Oferta; onOpen:
   );
 }
 
-export function OfertaDetalheModal({ oferta, onClose, mensagemWhatsApp }: { oferta: Oferta | null; onClose: () => void; mensagemWhatsApp?: (oferta: Oferta) => string }) {
+export function OfertaDetalheModal({ oferta, onClose, mensagemWhatsApp, extras }: { oferta: Oferta | null; onClose: () => void; mensagemWhatsApp?: (oferta: Oferta) => string; extras?: React.ReactNode }) {
   const [idx, setIdx] = useState(0);
   const midias = oferta ? midiasDaOferta(oferta) : [];
 
@@ -263,6 +264,7 @@ export function OfertaDetalheModal({ oferta, onClose, mensagemWhatsApp }: { ofer
               {oferta.texto_pix && <p className="mt-1 font-bold text-[hsl(var(--oferta-pix))]">{oferta.texto_pix}</p>}
               {oferta.texto_parcelamento && <p className="text-sm text-[hsl(var(--oferta-muted))]">{oferta.texto_parcelamento}</p>}
             </div>
+            {extras}
             <div className={`grid gap-2 ${oferta.link_produto ? 'grid-cols-2' : 'grid-cols-1'}`}>
               <Button asChild className="bg-[hsl(var(--oferta-whatsapp)/0.9)] text-[hsl(var(--oferta-texto))] hover:bg-[hsl(var(--oferta-whatsapp))]">
                 <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer"><MessageCircle className="mr-1 h-4 w-4" /> WhatsApp</a>
