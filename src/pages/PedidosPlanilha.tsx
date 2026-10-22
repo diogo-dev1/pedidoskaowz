@@ -130,15 +130,51 @@ function linhasParaTSV(linhas: Linha[]): string {
   return linhas.map((l) => COLUNAS.map((c) => (l[c] ?? '').replace(/\t|\n/g, ' ')).join('\t')).join('\n');
 }
 
+const normTermo = (s: string) => (s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+function itemCasa(item: ItemPedido, t: string): boolean {
+  return [item.titulo, item.variante ?? '', ...item.propriedades.flatMap((p) => [p.nome, p.valor])]
+    .some((v) => normTermo(v ?? '').includes(t));
+}
+
+/** Linhas do pedido filtradas pelo termo (sem termo: todas). */
+export function linhasFiltradas(pedido: PedidoShopify, prazo: string, termo: string): Linha[] {
+  const todas = montarLinhas(pedido, prazo);
+  const t = normTermo(termo);
+  if (!t) return todas;
+  const casa = pedido.itens.map((i) => itemCasa(i, t));
+  if (!casa.some(Boolean)) return normTermo(pedido.nota).includes(t) ? todas : [];
+  const facas = pedido.itens.map((i, k) => ({ i, k })).filter(({ i }) => ehFaca(i));
+  if (!facas.length) return todas; // só acessórios, e algum casou
+  const out: Linha[] = [];
+  let pos = 0;
+  for (const { i, k } of facas) {
+    const n = Math.max(1, i.quantidade);
+    if (casa[k]) out.push(...todas.slice(pos, pos + n));
+    pos += n;
+  }
+  return out;
+}
+
+const TERMO_KEY = 'pedidos-planilha-termo';
+
 /* ═════════════ página ═════════════ */
 
 export default function PedidosPlanilha() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [dias, setDias] = useState<7 | 30 | 90>(30);
+  const [dias, setDias] = useState<7 | 30 | 90 | 180>(30);
   const [mostrarTodos, setMostrarTodos] = useState(false);
   const [prazo, setPrazo] = useState(() => prazoDiasUteis(65));
   const [aberto, setAberto] = useState<string | null>(null);
+  const [termo, setTermoState] = useState(() => {
+    try { return localStorage.getItem(TERMO_KEY) ?? ''; } catch { return ''; }
+  });
+  const [confirmarMarcar, setConfirmarMarcar] = useState(false);
+  function setTermo(v: string) {
+    setTermoState(v);
+    try { localStorage.setItem(TERMO_KEY, v); } catch { /* ignore */ }
+  }
 
   const pedidosQuery = useQuery({
     queryKey: ['pedidos-planilha', dias],
@@ -165,10 +201,43 @@ export default function PedidosPlanilha() {
     [lancadosQuery.data],
   );
 
+  const temTermo = !!normTermo(termo);
+
   const pedidos = useMemo(() => {
     const todos = pedidosQuery.data ?? [];
-    return mostrarTodos ? todos : todos.filter((p) => !lancados.has(p.id));
-  }, [pedidosQuery.data, mostrarTodos, lancados]);
+    const base = mostrarTodos ? todos : todos.filter((p) => !lancados.has(p.id));
+    if (!temTermo) return base;
+    return base.filter((p) => linhasFiltradas(p, prazo, termo).length > 0);
+  }, [pedidosQuery.data, mostrarTodos, lancados, termo, temTermo, prazo]);
+
+  const totalPecas = useMemo(
+    () => (temTermo ? pedidos.reduce((s, p) => s + linhasFiltradas(p, prazo, termo).length, 0) : 0),
+    [pedidos, prazo, termo, temTermo],
+  );
+  const pendentesFiltrados = pedidos.filter((p) => !lancados.has(p.id));
+
+  async function copiarTodas() {
+    const ordenados = [...pedidos].sort((a, b) => a.criado_em.localeCompare(b.criado_em));
+    const linhas = ordenados.flatMap((p) => linhasFiltradas(p, prazo, termo));
+    if (!linhas.length) { toast.error('Nenhuma linha para copiar.'); return; }
+    try {
+      await navigator.clipboard.writeText(linhasParaTSV(linhas));
+      toast.success(`${linhas.length} ${linhas.length === 1 ? 'linha copiada' : 'linhas copiadas'} — cole com Ctrl+Shift+V`);
+    } catch {
+      toast.error('Não foi possível copiar');
+    }
+  }
+
+  async function marcarTodos() {
+    setConfirmarMarcar(false);
+    if (!pendentesFiltrados.length) return;
+    const { error } = await supabase.from('pedidos_lancados_planilha').insert(
+      pendentesFiltrados.map((p) => ({ shopify_order_id: p.id, shopify_order_name: p.numero, marcado_por: user?.id ?? null })),
+    );
+    if (error) { toast.error('Erro ao marcar: ' + error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ['pedidos-lancados-planilha'] });
+    toast.success(`${pendentesFiltrados.length} pedidos marcados como lançados`);
+  }
 
   async function marcar(p: PedidoShopify) {
     const { error } = await supabase.from('pedidos_lancados_planilha').insert({
@@ -188,7 +257,7 @@ export default function PedidosPlanilha() {
   }
 
   async function copiar(p: PedidoShopify) {
-    const linhas = montarLinhas(p, prazo);
+    const linhas = linhasFiltradas(p, prazo, termo);
     if (!linhas.length) { toast.error('Este pedido não tem linhas para copiar.'); return; }
     try {
       await navigator.clipboard.writeText(linhasParaTSV(linhas));
