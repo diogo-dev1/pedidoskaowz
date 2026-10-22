@@ -2,7 +2,7 @@
 
 - Campaigns use CampanhaVisual cards/modal with shared OfertaVisual media primitives; Novidades keeps its own unmodified presentation, and campaign defaults are adapted at the page boundary.
 - Campaign writes use the existing server-side is_admin check and public reads require both campaign and item active, so private drafts never leak through direct item queries.
-- Campaign extras use a reusable library, ordered fixed links and selectable combos with an implicit fallback; price and description helpers stay pure and Shopify refresh preserves short descriptions and special prices.
+- Campaign extras use a reusable library, ordered fixed links and selectable combos with an implicit fallback; keep short-name fallback, price and description helpers pure, and preserve manually edited short names, short descriptions and special prices during Shopify refresh to prevent overwriting campaign presentation.
 - Save campaign combos and ordered gift links atomically through an admin-validated invoker function, locking the parent item to serialize highlight selection and avoid partial combos.
 
 - Home chart calendar aggregation uses Sao Paulo's current date and UTC calendar arithmetic in a pure helper; keep its period and drill-down totals sourced solely from the existing sales rows.
