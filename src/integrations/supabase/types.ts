@@ -3335,6 +3335,18 @@ export type Database = {
           total_clientes: number
         }[]
       }
+      salvar_campanha_combo: {
+        Args: {
+          p_descricao_curta: string
+          p_destaque: boolean
+          p_extras: string[]
+          p_id?: string
+          p_item_id: string
+          p_nome: string
+          p_preco: number
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

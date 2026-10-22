@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowUp, ArrowDown, Trash2, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import CampanhaItemExtrasEditor from './CampanhaItemExtrasEditor';
+import CampanhaCombosEditor from './CampanhaCombosEditor';
+import { limparDescricao } from '@/lib/campanhaCombos';
 
 export default function CampanhaItemEditor({ item, onClose, onSaved }: { item: CampanhaItem; onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ titulo: item.titulo, descricao: item.descricao ?? '', bordao_modal: item.bordao_modal ?? '', valor: item.valor == null ? '' : String(item.valor), valor_de: item.valor_de == null ? '' : String(item.valor_de), texto_pix: item.texto_pix ?? '', texto_parcelamento: item.texto_parcelamento ?? '', link_produto: item.link_produto ?? '', selos: item.selos.join('\n') });
+  const [form, setForm] = useState({ titulo: item.titulo, titulo_curto: item.titulo_curto ?? '', categoria_linha: item.categoria_linha ?? '', descricao: limparDescricao(item.descricao), bordao_modal: item.bordao_modal ?? '', valor: item.valor == null ? '' : String(item.valor), valor_de: item.valor_de == null ? '' : String(item.valor_de), texto_pix: item.texto_pix ?? '', texto_parcelamento: item.texto_parcelamento ?? '', link_produto: item.link_produto ?? '', selos: item.selos.join('\n') });
   const [midias, setMidias] = useState<MidiaOferta[]>(item.midias as unknown as MidiaOferta[]);
   const [url, setUrl] = useState('');
   const [tipo, setTipo] = useState<'imagem' | 'video'>('imagem');
@@ -45,18 +47,18 @@ export default function CampanhaItemEditor({ item, onClose, onSaved }: { item: C
     if ([form.valor, form.valor_de].some(v => v && (!Number.isFinite(Number(v)) || Number(v) < 0))) { toast.error('Informe valores válidos'); return; }
     if (form.link_produto && !/^https?:\/\//i.test(form.link_produto)) { toast.error('Informe um link http ou https válido'); return; }
     setBusy(true);
-    const { error } = await supabase.from('campanha_itens').update({ ...form, titulo: form.titulo.trim(), valor: form.valor ? Number(form.valor) : null, valor_de: form.valor_de ? Number(form.valor_de) : null, selos: form.selos.split('\n').map(s => s.trim()).filter(Boolean), midias }).eq('id', item.id);
+    const { error } = await supabase.from('campanha_itens').update({ ...form, descricao: limparDescricao(form.descricao), titulo: form.titulo.trim(), valor: form.valor ? Number(form.valor) : null, valor_de: form.valor_de ? Number(form.valor_de) : null, selos: form.selos.split('\n').map(s => s.trim()).filter(Boolean), midias }).eq('id', item.id);
     setBusy(false);
     if (error) { toast.error('Não foi possível salvar o produto'); return; }
     toast.success('Produto atualizado'); onSaved(); onClose();
   }
   return <Dialog open onOpenChange={o => !o && onClose()}><DialogContent className="w-[calc(100%-1rem)] max-w-3xl max-h-[90dvh] grid-cols-[minmax(0,1fr)] overflow-y-auto"><DialogHeader><DialogTitle>Editar produto</DialogTitle></DialogHeader>
-    <div className="grid gap-4 sm:grid-cols-2">{field('titulo', 'Título')}{field('link_produto', 'Link na loja')}{field('valor', 'Valor (R$)', false, true)}{field('valor_de', 'Valor de (R$)', false, true)}{field('texto_pix', 'Pix (vazio usa padrão)')}{field('texto_parcelamento', 'Parcelamento (vazio usa padrão)')}</div>
+    <div className="grid gap-4 sm:grid-cols-2">{field('titulo', 'Título')}{field('link_produto', 'Link na loja')}{field('titulo_curto', 'Nome curto')}{field('categoria_linha', 'Linha de categoria')}{field('valor', 'Valor (R$)', false, true)}{field('valor_de', 'Valor de (R$)', false, true)}{field('texto_pix', 'Pix (vazio usa padrão)')}{field('texto_parcelamento', 'Parcelamento (vazio usa padrão)')}</div>
     {field('descricao', 'Descrição', true)}{field('bordao_modal', 'Bordão de apresentação (só no detalhe)', true)}{field('selos', 'Selos (um por linha)', true)}
     <section className="space-y-3"><h3 className="font-medium">Mídias</h3><p className="text-xs text-muted-foreground">A primeira mídia é a capa. Adicione imagens ou vídeos e ajuste a ordem pelas setas.</p>
       <Input aria-label="Enviar mídias" type="file" accept="image/*,video/*" multiple disabled={upload} onChange={e => void arquivos(e.target.files)}/>{upload && <Loader2 className="h-4 w-4 animate-spin"/>}
       <div className="flex gap-2 flex-wrap"><Input className="flex-1 min-w-0" aria-label="URL da mídia" placeholder="https://…" value={url} onChange={e => setUrl(e.target.value)}/><Select value={tipo} onValueChange={v => setTipo(v as 'imagem' | 'video')}><SelectTrigger className="w-28"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="imagem">Imagem</SelectItem><SelectItem value="video">Vídeo</SelectItem></SelectContent></Select><Button variant="outline" size="icon" title="Adicionar mídia" aria-label="Adicionar mídia" onClick={adicionar}><Plus className="h-4 w-4"/></Button></div>
       {midias.map((m, i) => <div key={`${i}-${m.url}`} className="flex items-center gap-2 border rounded-md p-2 min-w-0">{m.tipo === 'video' ? <video src={m.url} muted preload="metadata" className="w-12 h-16 object-cover shrink-0"/> : <img src={m.url} alt={`Mídia ${i + 1}`} className="w-12 h-16 object-cover shrink-0"/>}<div className="flex-1 min-w-0"><p className="text-xs">{i === 0 ? 'Capa · ' : ''}{m.tipo === 'video' ? 'Vídeo' : 'Imagem'}</p><p className="truncate text-xs text-muted-foreground">{m.url}</p></div><Button size="icon" variant="ghost" disabled={i === 0} aria-label={`Subir mídia ${i + 1}`} onClick={() => mover(i, -1)}><ArrowUp className="h-4 w-4"/></Button><Button size="icon" variant="ghost" disabled={i === midias.length - 1} aria-label={`Descer mídia ${i + 1}`} onClick={() => mover(i, 1)}><ArrowDown className="h-4 w-4"/></Button><Button size="icon" variant="ghost" aria-label={`Remover mídia ${i + 1}`} onClick={() => setMidias(m => m.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4 text-destructive"/></Button></div>)}
-    </section><CampanhaItemExtrasEditor itemId={item.id}/><DialogFooter><Button variant="outline" onClick={onClose}>Cancelar</Button><Button onClick={() => void salvar()} disabled={busy || upload}>{busy && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Salvar produto</Button></DialogFooter>
+    </section><CampanhaCombosEditor item={{ ...item, valor: form.valor ? Number(form.valor) : null, valor_de: form.valor_de ? Number(form.valor_de) : null }}/><CampanhaItemExtrasEditor itemId={item.id}/><DialogFooter><Button variant="outline" onClick={onClose}>Cancelar</Button><Button onClick={() => void salvar()} disabled={busy || upload}>{busy && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Salvar produto</Button></DialogFooter>
   </DialogContent></Dialog>;
 }
