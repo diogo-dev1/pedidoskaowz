@@ -1,0 +1,2 @@
+ALTER TABLE public.campanha_extras ADD COLUMN nome_curto text;
+COMMENT ON COLUMN public.campanha_extras.nome_curto IS 'Nome opcional para exibição compacta nos cartões de campanhas; vazio usa as primeiras duas palavras do nome.';

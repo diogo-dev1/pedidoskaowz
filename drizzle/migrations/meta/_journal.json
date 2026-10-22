@@ -64,6 +64,13 @@
       "when": 1792674424096,
       "tag": "0008_salvar_campanha_combo_atomico",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792678331551,
+      "tag": "0009_campanha_extras_nome_curto",
+      "breakpoints": true
     }
   ]
 }

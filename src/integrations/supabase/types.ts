@@ -453,6 +453,7 @@ export type Database = {
           imagem_url: string | null
           link: string | null
           nome: string
+          nome_curto: string | null
           origem: string
           preco: number | null
           shopify_produto_id: string | null
@@ -466,6 +467,7 @@ export type Database = {
           imagem_url?: string | null
           link?: string | null
           nome: string
+          nome_curto?: string | null
           origem?: string
           preco?: number | null
           shopify_produto_id?: string | null
@@ -479,6 +481,7 @@ export type Database = {
           imagem_url?: string | null
           link?: string | null
           nome?: string
+          nome_curto?: string | null
           origem?: string
           preco?: number | null
           shopify_produto_id?: string | null
