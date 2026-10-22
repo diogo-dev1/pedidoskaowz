@@ -60,7 +60,7 @@ export function CampanhaCard({ item, oferta, opcoes, campanha, onOpen }: { item:
           <p className="mt-1 line-clamp-1 break-all text-[10px] leading-relaxed text-[hsl(var(--oferta-muted))] md:text-[11px]">{nomeCurtoExtra(e)}</p>
         </div>)}</div>
       </section>}
-      <div className="min-w-0"><div className="flex min-w-0 items-baseline gap-1 md:gap-2"><strong className="text-[18px] md:text-[28px] font-black whitespace-nowrap">{moeda(combo.preco)}</strong>{valorDe > combo.preco && <span className="min-w-0 text-[9px] leading-snug line-through text-[hsl(var(--oferta-suporte))] md:text-xs">de {moeda(valorDe)}</span>}</div>
+      <div className="min-w-0"><div className="flex min-w-0 items-baseline gap-1 md:gap-2"><strong className="text-[22px] md:text-[28px] font-black whitespace-nowrap">{moeda(combo.preco)}</strong>{valorDe > combo.preco && <span className="min-w-0 break-words text-[9px] leading-snug line-through text-[hsl(var(--oferta-suporte))] md:text-xs">de {moeda(valorDe)}</span>}</div>
       <p className="mt-2 text-xs leading-relaxed break-words text-[hsl(var(--oferta-muted))] md:mt-2.5">{[oferta.texto_parcelamento, economia > 0 ? `economize ${moeda(economia)}` : ''].filter(Boolean).join(' · ')}{oferta.texto_pix && <span className="block">{oferta.texto_pix}</span>}</p></div>
       <div className="mt-auto space-y-2.5 pt-1.5"><AcaoCampanha item={item} combo={combo} campanha={campanha}/><LinkLoja link={oferta.link_produto}/></div>
     </div>
