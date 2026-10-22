@@ -2649,6 +2649,90 @@ export type Database = {
         }
         Relationships: []
       }
+      push_dagger_sls: {
+        Row: {
+          acabamento: string | null
+          aco: string | null
+          bainha: string | null
+          certificado: string | null
+          cliente: string
+          cor_bainha: string | null
+          created_at: string | null
+          embalagem: string | null
+          empunhadura: string | null
+          id: string
+          item: string
+          observacoes: string | null
+          pedido_shopify: string | null
+          personalizacao: string | null
+          prazo: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          acabamento?: string | null
+          aco?: string | null
+          bainha?: string | null
+          certificado?: string | null
+          cliente: string
+          cor_bainha?: string | null
+          created_at?: string | null
+          embalagem?: string | null
+          empunhadura?: string | null
+          id?: string
+          item: string
+          observacoes?: string | null
+          pedido_shopify?: string | null
+          personalizacao?: string | null
+          prazo?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          acabamento?: string | null
+          aco?: string | null
+          bainha?: string | null
+          certificado?: string | null
+          cliente?: string
+          cor_bainha?: string | null
+          created_at?: string | null
+          embalagem?: string | null
+          empunhadura?: string | null
+          id?: string
+          item?: string
+          observacoes?: string | null
+          pedido_shopify?: string | null
+          personalizacao?: string | null
+          prazo?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      push_dagger_sls_opcoes: {
+        Row: {
+          ativo: boolean | null
+          campo: string
+          id: string
+          ordem: number | null
+          valor: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          campo: string
+          id?: string
+          ordem?: number | null
+          valor: string
+        }
+        Update: {
+          ativo?: boolean | null
+          campo?: string
+          id?: string
+          ordem?: number | null
+          valor?: string
+        }
+        Relationships: []
+      }
       shopify_orders_sync: {
         Row: {
           exportado_em: string | null
