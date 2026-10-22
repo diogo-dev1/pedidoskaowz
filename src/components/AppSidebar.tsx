@@ -36,6 +36,7 @@ import {
   X,
   Sparkles,
   Tag,
+  Swords,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -99,6 +100,7 @@ const GRUPOS: NavGroup[] = [
     items: [
       { title: "Pronta Entrega", url: "/pronta-entrega", icon: Truck },
       { title: "Expedição", url: "/expedicao", icon: Truck },
+      { title: "Push Dagger SLS", url: "/producao/push-dagger-sls", icon: Swords },
       { title: "Lote (legado)", url: "/lote", icon: Package },
     ],
   },
