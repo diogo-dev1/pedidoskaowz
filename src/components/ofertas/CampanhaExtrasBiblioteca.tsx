@@ -60,10 +60,12 @@ export function AdicionarExtras({ itemId, tipo, onClose, onSaved }: { itemId: st
   }
   async function cadastrarSite(p: ProdutoCampanha) {
     setBusy(true);
-    const { data, error } = await supabase.from('campanha_extras').upsert({ nome: p.titulo, descricao: p.descricao, ...atualizacaoExtraDoSite(p), shopify_produto_id: p.produtoId, origem: 'shopify' }, { onConflict: 'shopify_produto_id' }).select().single();
+    const { data: existente, error: consultaErro } = await supabase.from('campanha_extras').select('*').eq('shopify_produto_id', p.produtoId).maybeSingle();
+    if (consultaErro) { setBusy(false); toast.error('Não foi possível consultar a biblioteca'); return; }
+    const { data, error } = existente ? { data: existente, error: null } : await supabase.from('campanha_extras').insert({ nome: p.titulo, descricao: p.descricao, ...atualizacaoExtraDoSite(p), shopify_produto_id: p.produtoId, origem: 'shopify' }).select().single();
     setBusy(false);
     if (error) { toast.error('Não foi possível cadastrar o item do site'); return; }
-    setLista(l => [...l.filter(e => e.id !== data.id), data]); setSelecionados(s => [...new Set([...s, data.id])]); setAba('biblioteca'); toast.success('Item selecionado');
+    setLista(l => [...l.filter(e => e.id !== data.id), data]); setSelecionados(s => [...new Set([...s, data.id])]); setTermo(''); setAba('biblioteca'); toast.success('Item selecionado');
   }
   async function adicionar() {
     setBusy(true);
