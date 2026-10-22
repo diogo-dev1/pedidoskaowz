@@ -13,6 +13,10 @@ import {
 import {
   Loader2, RefreshCw, Copy, Check, Undo2, AlertTriangle, ClipboardList, ChevronDown, ChevronUp,
 } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 /* ═════════════ tipos ═════════════ */
 
@@ -330,20 +334,50 @@ export default function PedidosPlanilha() {
         <p className="text-sm text-destructive">Erro ao carregar os pedidos da loja.</p>
       )}
 
+      {temTermo && pedidos.length > 0 && (
+        <div className="rounded-xl border bg-card p-3 flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium flex-1 min-w-[10rem]">
+            {pedidos.length} {pedidos.length === 1 ? 'pedido' : 'pedidos'} · {totalPecas} {totalPecas === 1 ? 'peça' : 'peças'} com {termo.trim()}
+          </p>
+          <Button size="sm" className="gap-1.5" onClick={copiarTodas}>
+            <Copy className="h-3.5 w-3.5" /> Copiar todas as linhas
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1.5" disabled={!pendentesFiltrados.length}
+            onClick={() => setConfirmarMarcar(true)}>
+            <Check className="h-3.5 w-3.5" /> Marcar todos como lançados
+          </Button>
+        </div>
+      )}
+
+      <AlertDialog open={confirmarMarcar} onOpenChange={setConfirmarMarcar}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Marcar como lançados?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendentesFiltrados.length} {pendentesFiltrados.length === 1 ? 'pedido pendente será marcado' : 'pedidos pendentes serão marcados'} como lançado{pendentesFiltrados.length === 1 ? '' : 's'}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={marcarTodos}>Marcar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {pedidosQuery.isLoading ? (
         <div className="flex items-center justify-center py-16 text-muted-foreground gap-2 text-sm">
           <Loader2 className="h-4 w-4 animate-spin" /> Carregando pedidos...
         </div>
       ) : !pedidos.length ? (
         <p className="py-16 text-center text-sm text-muted-foreground">
-          Nenhum pedido {mostrarTodos ? '' : 'pendente '}no período selecionado.
+          Nenhum pedido {mostrarTodos ? '' : 'pendente '}{temTermo ? `com "${termo.trim()}" ` : ''}no período selecionado.
         </p>
       ) : (
         <div className="space-y-2">
           {pedidos.map((p) => {
             const jaLancado = lancados.has(p.id);
             const expandido = aberto === p.id;
-            const linhas = expandido ? montarLinhas(p, prazo) : [];
+            const linhas = expandido ? linhasFiltradas(p, prazo, termo) : [];
             return (
               <div key={p.id} className="rounded-xl border bg-card overflow-hidden">
                 <button type="button" onClick={() => setAberto(expandido ? null : p.id)}
