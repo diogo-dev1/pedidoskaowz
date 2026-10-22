@@ -1,5 +1,10 @@
 # Pronta Entrega — painel e notas
 
+## Brindes e upsells de campanhas
+- [ ] Criar biblioteca e vínculos com acesso público seguro e escrita admin.
+- [ ] Implementar cadastro, seleção, edição, ordenação e atualização do Shopify.
+- [ ] Exibir brindes e upsells apenas nas campanhas públicas e validar celular/desktop e regras.
+
 ## Campanhas de oferta
 - [x] Compartilhar visual das Novidades sem alterar a página atual.
 - [x] Criar campanhas públicas, administração e seleção/atualização Shopify.
