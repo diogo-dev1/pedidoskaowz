@@ -50,7 +50,7 @@ export default function CampanhaItemEditor({ item, onClose, onSaved }: { item: C
     if (error) { toast.error('Não foi possível salvar o produto'); return; }
     toast.success('Produto atualizado'); onSaved(); onClose();
   }
-  return <Dialog open onOpenChange={o => !o && onClose()}><DialogContent className="w-[calc(100%-1rem)] max-w-3xl max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>Editar produto</DialogTitle></DialogHeader>
+  return <Dialog open onOpenChange={o => !o && onClose()}><DialogContent className="w-[calc(100%-1rem)] max-w-3xl max-h-[90dvh] grid-cols-[minmax(0,1fr)] overflow-y-auto"><DialogHeader><DialogTitle>Editar produto</DialogTitle></DialogHeader>
     <div className="grid gap-4 sm:grid-cols-2">{field('titulo', 'Título')}{field('link_produto', 'Link na loja')}{field('valor', 'Valor (R$)', false, true)}{field('valor_de', 'Valor de (R$)', false, true)}{field('texto_pix', 'Pix (vazio usa padrão)')}{field('texto_parcelamento', 'Parcelamento (vazio usa padrão)')}</div>
     {field('descricao', 'Descrição', true)}{field('bordao_modal', 'Bordão de apresentação (só no detalhe)', true)}{field('selos', 'Selos (um por linha)', true)}
     <section className="space-y-3"><h3 className="font-medium">Mídias</h3><p className="text-xs text-muted-foreground">A primeira mídia é a capa. Adicione imagens ou vídeos e ajuste a ordem pelas setas.</p>
