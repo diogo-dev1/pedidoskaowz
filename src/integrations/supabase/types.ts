@@ -367,6 +367,113 @@ export type Database = {
         }
         Relationships: []
       }
+      campanha_itens: {
+        Row: {
+          ativo: boolean
+          bordao_modal: string | null
+          campanha_id: string
+          created_at: string
+          descricao: string | null
+          id: string
+          link_produto: string | null
+          midias: Json
+          ordem: number
+          selos: string[]
+          shopify_produto_id: string
+          texto_parcelamento: string | null
+          texto_pix: string | null
+          titulo: string
+          updated_at: string
+          valor: number | null
+          valor_de: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          bordao_modal?: string | null
+          campanha_id: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          link_produto?: string | null
+          midias?: Json
+          ordem?: number
+          selos?: string[]
+          shopify_produto_id: string
+          texto_parcelamento?: string | null
+          texto_pix?: string | null
+          titulo: string
+          updated_at?: string
+          valor?: number | null
+          valor_de?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          bordao_modal?: string | null
+          campanha_id?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          link_produto?: string | null
+          midias?: Json
+          ordem?: number
+          selos?: string[]
+          shopify_produto_id?: string
+          texto_parcelamento?: string | null
+          texto_pix?: string | null
+          titulo?: string
+          updated_at?: string
+          valor?: number | null
+          valor_de?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campanha_itens_campanha_id_fkey"
+            columns: ["campanha_id"]
+            isOneToOne: false
+            referencedRelation: "campanhas_oferta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campanhas_oferta: {
+        Row: {
+          ativo: boolean
+          aviso_prazo: string | null
+          created_at: string
+          id: string
+          slug: string
+          subtitulo: string | null
+          texto_parcelamento_padrao: string | null
+          texto_pix_padrao: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          aviso_prazo?: string | null
+          created_at?: string
+          id?: string
+          slug: string
+          subtitulo?: string | null
+          texto_parcelamento_padrao?: string | null
+          texto_pix_padrao?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          aviso_prazo?: string | null
+          created_at?: string
+          id?: string
+          slug?: string
+          subtitulo?: string | null
+          texto_parcelamento_padrao?: string | null
+          texto_pix_padrao?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       carrinhos_notificados: {
         Row: {
           aparelhos: number

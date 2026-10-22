@@ -1,10 +1,9 @@
 // Busca produtos ATIVOS e PUBLICADOS na vitrine (online store) via Admin API GraphQL.
 // Mesmo fluxo de autenticação client_credentials usado em criar-draft-order-shopify.
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { authenticatedRequest } from '../_shared/auth.ts';
+import { mapearProduto, type ProdutoNode } from './produtos.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 const API_VERSION = '2024-10';
 
@@ -85,6 +84,24 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
+    if (body.modo === 'produtos') {
+      if (!await authenticatedRequest(req)) return new Response(JSON.stringify({ erro: 'Não autorizado' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      if (body.ids !== undefined && (!Array.isArray(body.ids) || body.ids.length > 250 || body.ids.some((id: unknown) => typeof id !== 'string' || !/^gid:\/\/shopify\/Product\/\d+$/.test(id)))) {
+        return new Response(JSON.stringify({ erro: 'IDs de produtos inválidos (máximo 250)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const fields = 'id title status descriptionHtml handle onlineStoreUrl images(first:10){nodes{url}} variants(first:250){nodes{price compareAtPrice availableForSale}}';
+      let nodes: ProdutoNode[];
+      if (body.ids) {
+        const data = await shopify(`query($ids:[ID!]!){nodes(ids:$ids){... on Product{${fields}}}}`, { ids: body.ids });
+        nodes = (data?.nodes ?? []).filter(Boolean);
+      } else {
+        const termo = String(body.termo ?? '').trim().slice(0, 200).replace(/["\\()]/g, '');
+        const q = `status:active published_status:published${termo ? ` (title:*${termo}* OR tag:*${termo}* OR sku:*${termo}*)` : ''}`;
+        const data = await shopify(`query($q:String!,$n:Int!){products(first:$n,query:$q,sortKey:RELEVANCE){nodes{${fields}}}}`, { q, n: Math.min(50, Math.max(1, Number(body.limite) || 30)) });
+        nodes = data?.products?.nodes ?? [];
+      }
+      return new Response(JSON.stringify({ sucesso: true, produtos: nodes.map(mapearProduto) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     const termo = String(body?.termo ?? body?.q ?? '').trim();
     const limite = Math.min(50, Math.max(1, Number(body?.limite) || 20));
 

@@ -5,6 +5,7 @@ import {
   ShoppingBag, MessageSquare, BookOpen, Image, DollarSign, Factory,
   CheckSquare, Store, Layers, Package, Settings, Info, Link2, LogOut, User, Globe, Truck,
   ClipboardList, Boxes, Download, ShoppingCart, Briefcase, Send, Compass, Sliders, Wand2, Eye,
+  Tag,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ABRIR_MENU_EVENTO } from '@/components/TopNav';
@@ -121,11 +122,12 @@ export function BottomNav() {
   const location = useLocation();
 
   const isAdmin = profile?.cargo === 'admin' || profile?.cargo === 'vendedor';
+  const adminItems = profile?.cargo === 'admin' ? [{ title: 'Novidades e Ofertas', url: '/admin/ofertas', icon: Tag }, { title: 'Campanhas', url: '/admin/campanhas', icon: Tag }, ...adminMoreItems] : adminMoreItems;
 
   // Check if current route is in the "more" menu
   const moreRoutes = [
     ...moreItems.flatMap(g => g.items.map(i => i.url)),
-    ...(isAdmin ? adminMoreItems.map(i => i.url) : []),
+    ...(isAdmin ? adminItems.map(i => i.url) : []),
   ];
   const isMoreActive = moreRoutes.some(url => location.pathname === url || location.pathname.startsWith(url + '/'));
 
@@ -136,11 +138,11 @@ export function BottomNav() {
         return g.label;
       }
     }
-    if (isAdmin && adminMoreItems.some(i => location.pathname === i.url || location.pathname.startsWith(i.url + '/'))) {
+    if (isAdmin && adminItems.some(i => location.pathname === i.url || location.pathname.startsWith(i.url + '/'))) {
       return 'Administração';
     }
     return moreItems[0]?.label;
-  }, [location.pathname, isAdmin]);
+  }, [location.pathname, isAdmin, profile?.cargo]);
 
   // Abre o menu quando o botão do cabeçalho dispara o evento global
   useEffect(() => {
@@ -208,7 +210,7 @@ export function BottomNav() {
                   </AccordionTrigger>
                   <AccordionContent className="pb-2">
                     <div className="space-y-0.5">
-                      {adminMoreItems.map((item) => (
+                      {adminItems.map((item) => (
                         <NavLink
                           key={item.url}
                           to={item.url}
