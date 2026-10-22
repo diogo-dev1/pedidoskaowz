@@ -1,5 +1,9 @@
 # Pronta Entrega — painel e notas
 
+## Campanhas minimalistas
+- [x] Redesenhar cartão/modal e upsells com preços brancos, brindes na foto e ações discretas, sem alterar Novidades ou regras.
+- [x] Conferir 19 testes, compilação e cartão/modal públicos com dados reais em 375px e desktop, sem rolagem horizontal.
+
 ## Redesenho de campanhas e combos
 - [x] Criar combos, descrições curtas e campos de apresentação com permissões de campanha.
 - [x] Implementar cartões/modal exclusivos, seleção e cálculo de preços sem alterar Novidades.
