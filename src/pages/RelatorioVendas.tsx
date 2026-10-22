@@ -1,5 +1,5 @@
 import { useSales } from '@/hooks/useSales';
-import { MetricsCards, TodaySalesList, RecentSalesList, WeeklySalesList, PaymentMethodChart, SellerChart, ChannelChart } from '@/components/relatorio-vendas/dashboard';
+import { MetricsCards, SalesTrendChart, PaymentMethodChart, SalesListCard, PerformanceCard, InsightBanner } from '@/components/relatorio-vendas/dashboard';
 import { AddSaleDialog } from '@/components/relatorio-vendas/AddSaleDialog';
 import { RelatorioVendasNav } from '@/components/relatorio-vendas/RelatorioVendasNav';
 import { Button } from '@/components/ui/button';
@@ -23,19 +23,18 @@ export default function RelatorioVendas() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Header with refresh button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="space-y-2">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight">Relatório de Vendas</h2>
-          <RelatorioVendasNav />
+    <div className="space-y-4 md:space-y-5">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">Relatório de Vendas</p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard de Vendas</h2>
+          <p className="text-sm text-muted-foreground">
+            {lastUpdated ? `Atualizado em ${formatDate(lastUpdated)}` : 'Acompanhe faturamento, vendedores e canais em tempo real.'}
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          {lastUpdated && (
-            <span className="text-xs text-muted-foreground hidden md:block">
-              Atualizado em {formatDate(lastUpdated)}
-            </span>
-          )}
+        <div className="flex flex-wrap items-center gap-2">
+          <RelatorioVendasNav />
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
             Atualizar
@@ -55,32 +54,33 @@ export default function RelatorioVendas() {
       {/* Loading state */}
       {isLoading ? (
         <div className="space-y-4">
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-lg" />)}
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-36 rounded-xl" />)}
           </div>
-          <Skeleton className="h-[300px] rounded-lg" />
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-[280px] rounded-lg" />)}
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+            <Skeleton className="h-[340px] rounded-xl lg:col-span-2" />
+            <Skeleton className="h-[340px] rounded-xl" />
+          </div>
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+            <Skeleton className="h-[420px] rounded-xl lg:col-span-2" />
+            <Skeleton className="h-[420px] rounded-xl" />
           </div>
         </div>
       ) : (
         <>
-          {/* Metrics Cards */}
-          <MetricsCards totalSales={metrics.totalSales} totalCount={metrics.totalCount} averageTicket={metrics.averageTicket} />
+          <MetricsCards sales={sales} totalSales={metrics.totalSales} totalCount={metrics.totalCount} averageTicket={metrics.averageTicket} />
 
-          {/* Sales Lists Grid */}
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-            <TodaySalesList sales={sales} />
-            <RecentSalesList sales={sales} />
-            <WeeklySalesList sales={sales} />
-          </div>
-
-          {/* Charts Grid */}
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+            <SalesTrendChart sales={sales} />
             <PaymentMethodChart data={metrics.salesByPaymentMethod} />
-            <SellerChart data={metrics.salesBySeller} />
-            <ChannelChart data={metrics.salesByChannel} />
           </div>
+
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+            <SalesListCard sales={sales} />
+            <PerformanceCard sales={sales} />
+          </div>
+
+          <InsightBanner sales={sales} totalSales={metrics.totalSales} />
         </>
       )}
     </div>
