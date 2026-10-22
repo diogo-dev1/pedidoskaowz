@@ -1,0 +1,12 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { precoExtra, extrasDoItem, atualizacaoExtraDoSite, type ItemExtra } from './campanhaExtras';
+import type { ProdutoCampanha } from './campanhas';
+const vinculo = (tipo = 'upsell', especial: number | null = null, normal: number | null = 100) => ({ tipo, preco_campanha: especial, campanha_extras: { preco: normal }, campanha_item_id: 'faca', ordem: 0, created_at: '2026-10-22' }) as ItemExtra;
+test('brinde is free even with normal price', () => assert.equal(precoExtra(vinculo('brinde', null, 150)), 0));
+test('empty campaign price uses normal price', () => assert.equal(precoExtra(vinculo()), 100));
+test('lower campaign price applies', () => assert.equal(precoExtra(vinculo('upsell', 75)), 75));
+test('higher campaign price does not replace normal price', () => assert.equal(precoExtra(vinculo('upsell', 120)), 100));
+test('zero campaign price remains valid', () => assert.equal(precoExtra(vinculo('upsell', 0)), 0));
+test('extras retain configured order per product and type', () => { const a = { ...vinculo('brinde'), id: 'a', ordem: 2 }; const b = { ...vinculo('brinde'), id: 'b', ordem: 0 }; assert.deepEqual(extrasDoItem([a, vinculo(), b, { ...a, campanha_item_id: 'outra' }], 'faca', 'brinde').map(v => v.id), ['b', 'a']); });
+test('Shopify extras refresh only source price photo and link', () => { const p = { preco: 50, imagens: ['foto'], link: 'loja' } as ProdutoCampanha; const patch = atualizacaoExtraDoSite(p); assert.deepEqual(patch, { preco: 50, imagem_url: 'foto', link: 'loja' }); assert.equal({ preco_campanha: 25, nome: 'manual', ...patch }.preco_campanha, 25); });
