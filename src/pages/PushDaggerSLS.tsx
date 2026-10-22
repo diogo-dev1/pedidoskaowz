@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Swords, Plus, Settings, Copy, Search, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Swords, Plus, Settings, Copy, Search, Trash2, ArrowUp, ArrowDown, Download, Loader2 } from 'lucide-react';
+import { linhasFiltradas } from '@/pages/PedidosPlanilha';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,8 +26,19 @@ type Pedido = {
   empunhadura: string | null; bainha: string | null; cor_bainha: string | null; prazo: string | null;
   observacoes: string | null; embalagem: string | null; personalizacao: string | null;
   certificado: string | null; pedido_shopify: string | null; status: string; created_at: string | null;
+  origem_chave?: string | null;
 };
 type Opcao = { id: string; campo: string; valor: string; ordem: number | null; ativo: boolean | null };
+type PedidoShopifyPlan = Parameters<typeof linhasFiltradas>[0];
+
+function OrigemSelo({ p }: { p: Pedido }) {
+  return (
+    <Badge variant="outline" className="h-4 px-1.5 text-[10px] font-normal text-muted-foreground shrink-0">
+      {p.origem_chave ? 'Shopify' : 'Manual'}
+    </Badge>
+  );
+}
+
 
 const CAMPOS_OPCAO: { campo: string; label: string }[] = [
   { campo: 'item', label: 'Item' }, { campo: 'aco', label: 'Aço' }, { campo: 'acabamento', label: 'Acabamento' },
@@ -86,6 +98,9 @@ export default function PushDaggerSLS() {
   const [excluir, setExcluir] = useState<Pedido | null>(null);
   const [opcoesOpen, setOpcoesOpen] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [importando, setImportando] = useState(false);
+  const importandoRef = useRef(false);
+  const autoImportou = useRef(false);
 
   const { data: pedidos = [] } = useQuery({
     queryKey: ['push-dagger-sls'],
@@ -94,21 +109,21 @@ export default function PushDaggerSLS() {
       if (error) throw error; return data as Pedido[];
     },
   });
-  const { data: opcoes = [] } = useQuery({
+  const { data: opcoes = [], isSuccess: opcoesOk } = useQuery({
     queryKey: ['push-dagger-sls-opcoes'],
     queryFn: async () => {
       const { data, error } = await supabase.from('push_dagger_sls_opcoes').select('*').order('ordem').order('valor');
       if (error) throw error; return data as Opcao[];
     },
   });
-  const { data: prazoDias = 30 } = useQuery({
+  const { data: prazoDias = 30, isSuccess: prazoOk } = useQuery({
     queryKey: ['push-dagger-sls-prazo'],
     queryFn: async () => {
       const { data } = await supabase.from('config_expedicao').select('valor').eq('chave', CHAVE_PRAZO).maybeSingle();
       return Number(data?.valor) || 30;
     },
   });
-  const { data: feriados = new Set<string>() } = useQuery({
+  const { data: feriados = new Set<string>(), isSuccess: feriadosOk } = useQuery({
     queryKey: ['feriados-set'],
     queryFn: async () => {
       const { data } = await supabase.from('feriados').select('data');
@@ -164,10 +179,63 @@ export default function PushDaggerSLS() {
 
   const confirmarExclusao = async () => {
     if (!excluir) return;
+    if (excluir.origem_chave) {
+      const { error: e1 } = await supabase.from('push_dagger_sls_ignorados').upsert({ origem_chave: excluir.origem_chave });
+      if (e1) { toast.error('Não foi possível excluir'); setExcluir(null); return; }
+    }
     const { error } = await supabase.from('push_dagger_sls').delete().eq('id', excluir.id);
     if (error) toast.error('Não foi possível excluir'); else { toast.success('Pedido excluído'); recarregar(); setForm(null); }
     setExcluir(null);
   };
+
+  const importar = async (manual: boolean) => {
+    if (importandoRef.current) return;
+    importandoRef.current = true; setImportando(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('pedidos-planilha', { body: { dias: 180 } });
+      if (error) throw error;
+      const lista = (data?.pedidos ?? []) as PedidoShopifyPlan[];
+      const [{ data: existentes }, { data: ignorados }] = await Promise.all([
+        supabase.from('push_dagger_sls').select('origem_chave').not('origem_chave', 'is', null),
+        supabase.from('push_dagger_sls_ignorados').select('origem_chave'),
+      ]);
+      const conhecidas = new Set([...(existentes ?? []), ...(ignorados ?? [])].map((r) => r.origem_chave as string));
+      const status = statusList[0] || 'Aguardando';
+      const novos = lista.flatMap((p) => {
+        const prazo = somarDiasUteis(ymdBR(new Date(p.criado_em)), prazoDias, feriados);
+        return linhasFiltradas(p, '', 'SLS').map((l, idx) => ({
+          origem_chave: `${p.id}:${idx}`,
+          pedido_shopify: p.numero,
+          cliente: l['Nome'] || p.nome,
+          item: l['Item'] || '—',
+          aco: l['Aço'] || null, acabamento: l['Acabamento'] || null, empunhadura: l['Empunhadura'] || null,
+          bainha: l['Bainha'] || null, cor_bainha: l['Cor bainha'] || null, observacoes: l['Observações'] || null,
+          embalagem: l['Embalagem'] || null, personalizacao: l['Personalização'] || null,
+          certificado: l['Certificado'] || l['Nome'] || p.nome,
+          prazo, status,
+        }));
+      }).filter((r) => !conhecidas.has(r.origem_chave));
+      if (novos.length) {
+        const { error: e2 } = await supabase.from('push_dagger_sls')
+          .upsert(novos, { onConflict: 'origem_chave', ignoreDuplicates: true });
+        if (e2) throw e2;
+        recarregar();
+        toast.success(`${novos.length} ${novos.length === 1 ? 'peça nova importada' : 'peças novas importadas'}`);
+      } else if (manual) toast('Nenhum pedido SLS novo');
+    } catch (e) {
+      if (manual) toast.error('Não foi possível importar do Shopify');
+      console.error(e);
+    } finally {
+      importandoRef.current = false; setImportando(false);
+    }
+  };
+
+  useEffect(() => {
+    if (autoImportou.current || !opcoesOk || !prazoOk || !feriadosOk) return;
+    autoImportou.current = true;
+    importar(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opcoesOk, prazoOk, feriadosOk]);
 
   const copiar = async () => {
     if (!visiveis.length) { toast.error('Nenhuma linha para copiar'); return; }
@@ -202,10 +270,13 @@ export default function PushDaggerSLS() {
             {Array.from(porStatus.entries()).map(([s, n]) => <Badge key={s} variant="secondary">{s}: {n}</Badge>)}
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2 sm:flex">
+        <div className="grid grid-cols-2 gap-2 sm:flex">
           <Button onClick={abrirNovo} size="sm"><Plus className="h-4 w-4 mr-1" />Novo<span className="hidden sm:inline">&nbsp;pedido</span></Button>
           <Button onClick={() => setOpcoesOpen(true)} size="sm" variant="outline"><Settings className="h-4 w-4 mr-1" />Opções</Button>
           <Button onClick={copiar} size="sm" variant="outline"><Copy className="h-4 w-4 mr-1" />Copiar<span className="hidden sm:inline">&nbsp;para planilha</span></Button>
+          <Button onClick={() => importar(true)} size="sm" variant="outline" disabled={importando}>
+            {importando ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}Importar<span className="hidden sm:inline">&nbsp;do Shopify</span>
+          </Button>
         </div>
       </div>
 
@@ -244,6 +315,7 @@ export default function PushDaggerSLS() {
                     {COLS.map((c) => (
                       <td key={c.key} className={`px-3 py-2 whitespace-nowrap max-w-[220px] truncate ${c.key === 'cliente' ? 'font-medium' : ''}`}>
                         {c.key === 'prazo' ? fmtData(p.prazo) : (p[c.key] as string) ?? ''}
+                        {c.key === 'cliente' && <span className="ml-1.5"><OrigemSelo p={p} /></span>}
                       </td>
                     ))}
                     <td className="px-3 py-1.5"><StatusSelect p={p} /></td>
@@ -258,7 +330,7 @@ export default function PushDaggerSLS() {
               <div key={p.id} onClick={() => abrirEdicao(p)} className="rounded-lg border bg-card p-3 cursor-pointer">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="font-medium truncate">{p.cliente}</div>
+                    <div className="font-medium truncate flex items-center gap-1.5"><span className="truncate">{p.cliente}</span><OrigemSelo p={p} /></div>
                     <div className="text-sm truncate">{p.item}</div>
                     {p.pedido_shopify && <div className="text-xs text-muted-foreground">{p.pedido_shopify}</div>}
                   </div>
