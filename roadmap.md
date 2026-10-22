@@ -1,6 +1,7 @@
 # Pronta Entrega — painel e notas
 
 ## Campanhas minimalistas
+- [x] Mostrar a foto inteira no cartão (object-contain, fundo branco, 8px celular / 12px desktop, bolinhas inativas zinc-300); conferir 375px e 1280px com itens reais, modal intacto, 23 testes e compilação OK.
 - [x] Adicionar nome curto opcional na biblioteca/cadastro/importação, reorganizar brindes em grade de três e espaçar preço/parcelamento/botão; gravação e releitura reais conferidas, valores restaurados, 375px/desktop sem rolagem lateral, 23 testes e compilação OK.
 - [x] Redesenhar cartão/modal e upsells com preços brancos, brindes na foto e ações discretas, sem alterar Novidades ou regras.
 - [x] Conferir 19 testes, compilação e cartão/modal públicos com dados reais em 375px e desktop, sem rolagem horizontal.
