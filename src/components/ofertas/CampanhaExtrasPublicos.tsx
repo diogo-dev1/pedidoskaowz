@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { ExternalLink, MessageCircle } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { type ItemExtra, precoExtra, nomesBrindes } from '@/lib/campanhaExtras';
 import { moeda } from '@/lib/campanhas';
 import { descricaoCurta } from '@/lib/campanhaCombos';
