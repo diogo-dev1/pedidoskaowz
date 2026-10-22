@@ -2663,6 +2663,7 @@ export type Database = {
           id: string
           item: string
           observacoes: string | null
+          origem_chave: string | null
           pedido_shopify: string | null
           personalizacao: string | null
           prazo: string | null
@@ -2682,6 +2683,7 @@ export type Database = {
           id?: string
           item: string
           observacoes?: string | null
+          origem_chave?: string | null
           pedido_shopify?: string | null
           personalizacao?: string | null
           prazo?: string | null
@@ -2701,11 +2703,27 @@ export type Database = {
           id?: string
           item?: string
           observacoes?: string | null
+          origem_chave?: string | null
           pedido_shopify?: string | null
           personalizacao?: string | null
           prazo?: string | null
           status?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      push_dagger_sls_ignorados: {
+        Row: {
+          created_at: string
+          origem_chave: string
+        }
+        Insert: {
+          created_at?: string
+          origem_chave: string
+        }
+        Update: {
+          created_at?: string
+          origem_chave?: string
         }
         Relationships: []
       }
