@@ -62,6 +62,7 @@ import UpsellListaAvulsa from "./pages/UpsellListaAvulsa";
 import PedidosPlanilha from "./pages/PedidosPlanilha";
 import ShopifyOrders from "./pages/ShopifyOrders";
 import ProntaEntrega from "./pages/ProntaEntrega";
+import PushDaggerSLS from "./pages/PushDaggerSLS";
 import Triagem from "./pages/Triagem";
 import Pedidos from "./pages/Pedidos";
 import PushDaggerConfigurador from "./pages/PushDaggerConfigurador";
@@ -138,6 +139,17 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/producao/push-dagger-sls"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PushDaggerSLS />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
             <Route
               path="/novo-pedido"
               element={
