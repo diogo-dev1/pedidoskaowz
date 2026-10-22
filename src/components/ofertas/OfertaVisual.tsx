@@ -186,7 +186,7 @@ export function OfertaCard({ o, onOpen, mensagemWhatsApp }: { o: Oferta; onOpen:
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
               >
-                <MessageCircle className="mr-1 h-3 w-3" /> Falar no WhatsApp
+                <MessageCircle className="mr-1 h-3 w-3 shrink-0" /> <span className={temLink ? 'hidden md:inline' : ''}>Falar no WhatsApp</span>{temLink && <span className="md:hidden">WhatsApp</span>}
               </a>
             </Button>
             {temLink && (
@@ -197,7 +197,7 @@ export function OfertaCard({ o, onOpen, mensagemWhatsApp }: { o: Oferta; onOpen:
                 className="h-8 border-[hsl(var(--oferta-borda-suave))] bg-transparent text-[10px] font-semibold text-[hsl(var(--oferta-detalhe))] hover:border-accent hover:bg-transparent hover:text-accent md:h-9 md:text-xs"
               >
                 <a href={o.link_produto} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                  <ExternalLink className="mr-1 h-3 w-3" /> Ver na loja
+                  <ExternalLink className="mr-1 h-3 w-3 shrink-0" /> Ver na loja
                 </a>
               </Button>
             )}
