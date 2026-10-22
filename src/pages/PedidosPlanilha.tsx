@@ -284,21 +284,34 @@ export default function PedidosPlanilha() {
         </Button>
       </header>
 
-      <div className="rounded-xl border bg-card p-3 sm:p-4 grid gap-3 sm:grid-cols-3">
+      <div className="rounded-xl border bg-card p-3 sm:p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1">
           <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">Período</Label>
-          <Select value={String(dias)} onValueChange={(v) => setDias(Number(v) as 7 | 30 | 90)}>
+          <Select value={String(dias)} onValueChange={(v) => setDias(Number(v) as 7 | 30 | 90 | 180)}>
             <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="7">Últimos 7 dias</SelectItem>
               <SelectItem value="30">Últimos 30 dias</SelectItem>
               <SelectItem value="90">Últimos 90 dias</SelectItem>
+              <SelectItem value="180">Últimos 180 dias</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1">
-          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">Prazo atual (65 dias úteis)</Label>
+          <Label htmlFor="termo" className="text-[11px] uppercase tracking-wide text-muted-foreground">Filtrar por termo</Label>
+          <Input id="termo" value={termo} onChange={(e) => setTermo(e.target.value)} placeholder="Ex.: SLS" className="h-9" />
+        </div>
+        <div className="space-y-1 min-w-0">
+          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">Prazo</Label>
           <Input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} className="h-9" />
+          <div className="flex flex-wrap gap-1">
+            {[15, 30, 65].map((d) => (
+              <Button key={d} type="button" size="sm" variant={prazo === prazoDiasUteis(d) ? 'secondary' : 'outline'}
+                className="h-7 px-2 text-[11px]" onClick={() => setPrazo(prazoDiasUteis(d))}>
+                {d} dias úteis
+              </Button>
+            ))}
+          </div>
         </div>
         <div className="flex items-end gap-2">
           <div className="flex items-center gap-2 h-9">
