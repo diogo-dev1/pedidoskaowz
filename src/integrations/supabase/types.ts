@@ -367,10 +367,88 @@ export type Database = {
         }
         Relationships: []
       }
+      campanha_combo_extras: {
+        Row: {
+          combo_id: string
+          extra_id: string
+          ordem: number
+        }
+        Insert: {
+          combo_id: string
+          extra_id: string
+          ordem?: number
+        }
+        Update: {
+          combo_id?: string
+          extra_id?: string
+          ordem?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campanha_combo_extras_combo_id_fkey"
+            columns: ["combo_id"]
+            isOneToOne: false
+            referencedRelation: "campanha_combos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campanha_combo_extras_extra_id_fkey"
+            columns: ["extra_id"]
+            isOneToOne: false
+            referencedRelation: "campanha_extras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campanha_combos: {
+        Row: {
+          campanha_item_id: string
+          created_at: string
+          descricao_curta: string | null
+          destaque: boolean
+          id: string
+          nome: string
+          ordem: number
+          preco: number
+          updated_at: string
+        }
+        Insert: {
+          campanha_item_id: string
+          created_at?: string
+          descricao_curta?: string | null
+          destaque?: boolean
+          id?: string
+          nome: string
+          ordem?: number
+          preco?: number
+          updated_at?: string
+        }
+        Update: {
+          campanha_item_id?: string
+          created_at?: string
+          descricao_curta?: string | null
+          destaque?: boolean
+          id?: string
+          nome?: string
+          ordem?: number
+          preco?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campanha_combos_campanha_item_id_fkey"
+            columns: ["campanha_item_id"]
+            isOneToOne: false
+            referencedRelation: "campanha_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campanha_extras: {
         Row: {
           created_at: string
           descricao: string | null
+          descricao_curta: string | null
           id: string
           imagem_url: string | null
           link: string | null
@@ -383,6 +461,7 @@ export type Database = {
         Insert: {
           created_at?: string
           descricao?: string | null
+          descricao_curta?: string | null
           id?: string
           imagem_url?: string | null
           link?: string | null
@@ -395,6 +474,7 @@ export type Database = {
         Update: {
           created_at?: string
           descricao?: string | null
+          descricao_curta?: string | null
           id?: string
           imagem_url?: string | null
           link?: string | null
@@ -456,6 +536,7 @@ export type Database = {
           ativo: boolean
           bordao_modal: string | null
           campanha_id: string
+          categoria_linha: string | null
           created_at: string
           descricao: string | null
           id: string
@@ -467,6 +548,7 @@ export type Database = {
           texto_parcelamento: string | null
           texto_pix: string | null
           titulo: string
+          titulo_curto: string | null
           updated_at: string
           valor: number | null
           valor_de: number | null
@@ -475,6 +557,7 @@ export type Database = {
           ativo?: boolean
           bordao_modal?: string | null
           campanha_id: string
+          categoria_linha?: string | null
           created_at?: string
           descricao?: string | null
           id?: string
@@ -486,6 +569,7 @@ export type Database = {
           texto_parcelamento?: string | null
           texto_pix?: string | null
           titulo: string
+          titulo_curto?: string | null
           updated_at?: string
           valor?: number | null
           valor_de?: number | null
@@ -494,6 +578,7 @@ export type Database = {
           ativo?: boolean
           bordao_modal?: string | null
           campanha_id?: string
+          categoria_linha?: string | null
           created_at?: string
           descricao?: string | null
           id?: string
@@ -505,6 +590,7 @@ export type Database = {
           texto_parcelamento?: string | null
           texto_pix?: string | null
           titulo?: string
+          titulo_curto?: string | null
           updated_at?: string
           valor?: number | null
           valor_de?: number | null
