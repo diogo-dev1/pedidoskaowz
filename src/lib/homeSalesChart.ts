@@ -30,13 +30,17 @@ const monthStart = (date: Date, offset = 0) => calendar(date.getUTCFullYear(), d
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 // Calendar dates are represented at UTC midnight, avoiding browser-zone and DST shifts.
+function parseSaleDate(text: string): Date | null {
+  const [day, month, year] = text.split('/').map(Number);
+  if (!day || !month || !year) return null;
+  const date = calendar(year, month - 1, day);
+  return date.getUTCDate() === day && date.getUTCMonth() === month - 1 ? date : null;
+}
 export function aggregateSales(sales: Sale[]) {
   const days = new Map<string, { value: number; count: number }>();
   for (const sale of sales) {
-    const [day, month, year] = sale.date.split('/').map(Number);
-    if (!day || !month || !year) continue;
-    const date = calendar(year, month - 1, day);
-    if (date.getUTCDate() !== day || date.getUTCMonth() !== month - 1) continue;
+    const date = parseSaleDate(sale.date);
+    if (!date) continue;
     const key = dateKey(date);
     const previous = days.get(key) ?? { value: 0, count: 0 };
     days.set(key, { value: previous.value + sale.value, count: previous.count + 1 });
@@ -51,6 +55,26 @@ export function rangeTotal(days: ReturnType<typeof aggregateSales>, start: Date,
     count += sales?.count ?? 0;
   }
   return { value, count };
+}
+export interface SellerRank { seller: string; value: number; count: number }
+/** Ranking de vendedores (maior → menor valor) para hoje, semana atual e mês atual. */
+export function periodRankings(sales: Sale[], today: Date): Record<SalesPeriod, SellerRank[]> {
+  const starts = { day: today, week: monday(today), month: monthStart(today) };
+  const totals = { day: new Map<string, SellerRank>(), week: new Map<string, SellerRank>(), month: new Map<string, SellerRank>() };
+  for (const sale of sales) {
+    const date = parseSaleDate(sale.date);
+    if (!date || date > today) continue;
+    const seller = sale.seller?.trim() || 'Sem vendedor';
+    for (const type of ['day', 'week', 'month'] as const) {
+      if (date < starts[type]) continue;
+      const current = totals[type].get(seller) ?? { seller, value: 0, count: 0 };
+      current.value += sale.value;
+      current.count += 1;
+      totals[type].set(seller, current);
+    }
+  }
+  const sorted = (map: Map<string, SellerRank>) => [...map.values()].sort((a, b) => b.value - a.value);
+  return { day: sorted(totals.day), week: sorted(totals.week), month: sorted(totals.month) };
 }
 export function periodSummaries(days: ReturnType<typeof aggregateSales>, today: Date) {
   const startWeek = monday(today);

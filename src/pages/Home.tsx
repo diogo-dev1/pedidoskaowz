@@ -174,7 +174,7 @@ export default function Home() {
         )}
       </div>
 
-      <HomeSalesChart sales={sales} dailyGoal={META_DIARIA} />
+      <HomeSalesChart sales={sales} />
 
       {/* ── Modal: sincronizar pedidos do site ─────────────────── */}
       <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
