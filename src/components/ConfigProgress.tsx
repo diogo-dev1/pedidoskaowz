@@ -1,7 +1,7 @@
 import { CheckCircle2, Circle, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type StepId = 'whatsapp' | 'texts' | 'finishes' | 'prices' | 'discounts' | 'bainha' | 'images';
+export type StepId = 'whatsapp' | 'texts' | 'finishes' | 'prices' | 'discounts' | 'bainha' | 'specs' | 'images';
 
 interface Step {
   id: StepId;

@@ -11,6 +11,8 @@ import Descubra from "./pages/publico/Descubra";
 import Resultado from "./pages/publico/Resultado";
 import Vitrine from "./pages/publico/Vitrine";
 import KitsPater from "./pages/publico/KitsPater";
+import PushDaggerLanding from "./pages/publico/PushDaggerLanding";
+import PushDaggerSlsVendas from "./pages/publico/PushDaggerSlsVendas";
 import Montar from "./pages/publico/Montar";
 import ArsenalPublico from "./pages/publico/Arsenal";
 import Home from "./pages/Home";
@@ -110,6 +112,8 @@ const App = () => (
             <Route path="/ofertas" element={<Ofertas />} />
             <Route path="/admin/campanhas" element={<ProtectedRoute requireAdmin><Layout><CampanhasAdmin /></Layout></ProtectedRoute>} />
             <Route path="/tabela-push-dagger" element={<TabelaPrecosPushDagger />} />
+            <Route path="/push-daggers" element={<PushDaggerLanding />} />
+            <Route path="/sls" element={<PushDaggerSlsVendas />} />
             <Route
               path="/admin/ofertas"
               element={

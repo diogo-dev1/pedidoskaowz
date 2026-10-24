@@ -18,7 +18,10 @@ import {
   ACO_NAMES,
   EMPUNHADURA_KEYS,
   EMPUNHADURA_NAMES,
+  BAINHA_EXTRA_KEYS,
+  BAINHA_EXTRA_NAMES,
 } from './ConfiguradorKit';
+import type { OptionSpecs } from './ConfiguradorKit';
 import type { AcoEmpunhaduraImages } from './ConfiguradorKit';
 
 const IMAGE_BUCKET = 'modelo-imagens';
@@ -36,6 +39,17 @@ const SIZES: { key: SizeKey; name: string }[] = [
   { key: 'standard', name: 'Standard' },
   { key: 'compact', name: 'Compact' },
   { key: 'micro', name: 'Micro' },
+];
+
+/** Grupos da etapa "Especificações": cada opção ganha um campo de texto. */
+type GrupoSpec = Exclude<keyof OptionSpecs, 'legendaAco'>;
+const SPEC_GROUPS: { key: GrupoSpec; titulo: string; exemplo: string; opcoes: { key: string; nome: string }[] }[] = [
+  { key: 'versao', titulo: 'Versão', exemplo: 'Ex.: Aço', opcoes: VERSION_LIST.map((v) => ({ key: v.key, nome: v.label })) },
+  { key: 'aco', titulo: 'Aço', exemplo: 'Ex.: 60 HRC', opcoes: ACO_KEYS.map((k) => ({ key: k, nome: ACO_NAMES[k] })) },
+  { key: 'tamanho', titulo: 'Tamanho', exemplo: 'Ex.: Lâmina 62,5 mm', opcoes: SIZES.map((s) => ({ key: s.key, nome: s.name })) },
+  { key: 'acabamento', titulo: 'Acabamento', exemplo: 'Ex.: Esconde riscos', opcoes: FINISHES.map((f) => ({ key: f.key, nome: f.name })) },
+  { key: 'empunhadura', titulo: 'Empunhadura', exemplo: "Ex.: À prova d'água", opcoes: EMPUNHADURA_KEYS.map((k) => ({ key: k, nome: EMPUNHADURA_NAMES[k] })) },
+  { key: 'bainhaExtra', titulo: 'Bainha extra', exemplo: 'Ex.: Porte discreto', opcoes: BAINHA_EXTRA_KEYS.map((k) => ({ key: k, nome: BAINHA_EXTRA_NAMES[k] })) },
 ];
 
 const fileToDataUrl = (file: File | Blob): Promise<string> =>
@@ -290,12 +304,22 @@ export default function ConfiguradorKitConfig() {
       help: 'Configure o valor cobrado pela bainha extra customizada nessa versão.',
     },
     {
+      id: 'specs' as StepId,
+      label: 'Especificações',
+      description: 'Dado de cada opção',
+      help: 'Dado técnico que aparece embaixo do nome de cada opção na página (ex.: 60 HRC, À prova d’água). Vale para todas as versões. Deixe vazio para não exibir.',
+    },
+    {
       id: 'images' as StepId,
       label: 'Imagens',
       description: 'Envie as imagens',
       help: 'Adicione imagens de produto para cada tamanho e acabamento. As imagens serão compactadas automaticamente.',
     },
   ];
+
+  /** Atualiza o dado técnico de uma opção (etapa "Especificações"). */
+  const setSpec = (grupo: GrupoSpec, opcao: string, valor: string) =>
+    setCfg((c) => ({ ...c, specs: { ...c.specs, [grupo]: { ...c.specs[grupo], [opcao]: valor } } }));
 
   const handleStepClick = (stepId: StepId) => {
     setCurrentStep(stepId);
@@ -727,6 +751,47 @@ export default function ConfiguradorKitConfig() {
               className="w-full sm:max-w-xs h-10 px-3 rounded border border-border bg-background"
             />
           </label>
+        </CollapsibleSection>
+
+        {/* ETAPA: Especificações (todas as versões) */}
+        <CollapsibleSection
+          id="specs"
+          currentStep={currentStep}
+          title="Especificações das opções"
+          subtitle="Todas as versões · aparece embaixo do nome de cada opção"
+        >
+          <div className="space-y-6">
+            {SPEC_GROUPS.map((g) => (
+              <div key={g.key}>
+                <h3 className="text-sm font-semibold mb-2">{g.titulo}</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {g.opcoes.map((o) => (
+                    <label key={o.key} className="text-xs text-muted-foreground">
+                      {o.nome}
+                      <input
+                        type="text"
+                        value={(cfg.specs[g.key] as Record<string, string>)[o.key] ?? ''}
+                        onChange={(e) => setSpec(g.key, o.key, e.target.value)}
+                        placeholder={g.exemplo}
+                        className="mt-1 w-full h-10 px-3 rounded border border-border bg-background text-sm text-foreground"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <label className="block text-xs text-muted-foreground">
+              Legenda embaixo do grupo Aço
+              <input
+                type="text"
+                value={cfg.specs.legendaAco}
+                onChange={(e) => setCfg((c) => ({ ...c, specs: { ...c.specs, legendaAco: e.target.value } }))}
+                placeholder="Ex.: HRC = dureza do aço"
+                className="mt-1 w-full sm:max-w-md h-10 px-3 rounded border border-border bg-background text-sm text-foreground"
+              />
+            </label>
+            <p className="text-xs text-muted-foreground">Campo vazio não aparece na página. Salve para publicar.</p>
+          </div>
         </CollapsibleSection>
 
         {/* ETAPA 7: Imagens por versão × tamanho × acabamento */}

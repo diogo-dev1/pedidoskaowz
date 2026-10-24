@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { supabase } from '@/integrations/supabase/client';
+import { BarraMontagem } from '@/components/push-dagger/BarraMontagem';
+import { CarrosselReceitas } from '@/components/push-dagger/CarrosselReceitas';
 import kaowzLogo from '@/assets/kaowz-logo.png';
 import kitCard from '@/assets/push-dagger-kit-card.jpeg';
 import imgAcetinada from '@/assets/push-dagger-acetinada.jpeg';
@@ -130,7 +132,35 @@ export interface VersionConfig {
   bainhaExtraPrice: number;
 }
 
+/**
+ * Dado técnico de cada opção, mostrado embaixo do nome (ex.: "60 HRC").
+ * Valores validados pela Kaowz — ver docs/ideas/push-dagger-escolha-consciente.md.
+ * Editável no admin (etapa "Especificações"); texto vazio = não exibe.
+ */
+export interface OptionSpecs {
+  versao: Record<VersionKey, string>;
+  aco: Record<AcoKey, string>;
+  tamanho: Record<SizeKey, string>;
+  acabamento: Record<FinishKey, string>;
+  empunhadura: Record<EmpunhaduraKey, string>;
+  bainhaExtra: Record<BainhaExtraKey, string>;
+  /** Legenda mínima embaixo do grupo Aço. */
+  legendaAco: string;
+}
+
+export const DEFAULT_SPECS: OptionSpecs = {
+  versao: { standard: 'Aço', nonmetallic: 'G10', blue: 'Para treino' },
+  aco: { sandvik: '60 HRC', inox: '58 HRC' },
+  tamanho: { standard: 'Lâmina 62,5 mm', compact: 'Lâmina 52,7 mm', micro: 'Lâmina 37,2 mm' },
+  acabamento: { satin: 'Brilho clássico', sw: 'Esconde riscos', tac: 'Não reflete' },
+  empunhadura: { g10: 'À prova d\'água', micarta: 'Toque natural' },
+  bainhaExtra: { velada: 'Porte discreto', multi: 'Várias posições' },
+  legendaAco: 'HRC = dureza do aço',
+};
+
 export interface KitConfig {
+  /** Dado técnico de cada opção (escolha consciente). */
+  specs: OptionSpecs;
   whatsappPhone: string;
   /** Descontos globais (%) aplicados a todo o pedido por quantidade total de unidades */
   discountByQty: Record<QtyKey, number>;
@@ -199,6 +229,7 @@ const buildVersion = (over: Partial<VersionConfig> & { texts: VersionTexts }): V
 });
 
 export const DEFAULT_CONFIG: KitConfig = {
+  specs: DEFAULT_SPECS,
   whatsappPhone: WHATSAPP_PHONE_DEFAULT,
   discountByQty: { 1: 0, 2: 0, 3: 0 },
   cupomMessage: DEFAULT_CUPOM_MESSAGE,
@@ -268,6 +299,7 @@ export async function loadKitConfig(): Promise<KitConfig> {
       }
     };
     return mergeConfig({
+      specs: parseJson('option_specs'),
       whatsappPhone: map.whatsapp_phone,
       cupomMessage: map.cupom_message,
       discountByQty: parseJson('discount_by_qty'),
@@ -333,6 +365,7 @@ export async function saveKitConfig(cfg: KitConfig): Promise<void> {
     { chave: 'version_standard', valor: JSON.stringify(sanitizeVersionForSave(cfg.versions.standard)) },
     { chave: 'version_nonmetallic', valor: JSON.stringify(sanitizeVersionForSave(cfg.versions.nonmetallic)) },
     { chave: 'version_blue', valor: JSON.stringify(sanitizeVersionForSave(cfg.versions.blue)) },
+    { chave: 'option_specs', valor: JSON.stringify(cfg.specs) },
   ];
   const { error } = await supabase.from(CONFIG_TABLE).upsert(rows, { onConflict: 'chave' });
   if (error) throw error;
@@ -430,10 +463,24 @@ function mergeVersion(base: VersionConfig, p: any): VersionConfig {
   };
 }
 
+/** Mescla as especificações salvas com os padrões. Texto vazio salvo no admin é mantido (= não exibir). */
+function mergeSpecs(p: any): OptionSpecs {
+  return {
+    versao: { ...DEFAULT_SPECS.versao, ...(p?.versao || {}) },
+    aco: { ...DEFAULT_SPECS.aco, ...(p?.aco || {}) },
+    tamanho: { ...DEFAULT_SPECS.tamanho, ...(p?.tamanho || {}) },
+    acabamento: { ...DEFAULT_SPECS.acabamento, ...(p?.acabamento || {}) },
+    empunhadura: { ...DEFAULT_SPECS.empunhadura, ...(p?.empunhadura || {}) },
+    bainhaExtra: { ...DEFAULT_SPECS.bainhaExtra, ...(p?.bainhaExtra || {}) },
+    legendaAco: typeof p?.legendaAco === 'string' ? p.legendaAco : DEFAULT_SPECS.legendaAco,
+  };
+}
+
 function mergeConfig(p: any): KitConfig {
   // Migra desconto antigo (que estava por versão) para o global, usando o do "standard" se existir
   const legacyDisc = p?.versions?.standard?.discountByQty;
   return {
+    specs: mergeSpecs(p?.specs),
     whatsappPhone: p?.whatsappPhone || WHATSAPP_PHONE_DEFAULT,
     discountByQty: {
       ...DEFAULT_CONFIG.discountByQty,
@@ -471,6 +518,49 @@ const newUnit = (): UnitConfig => ({
   aco: 'sandvik',
   empunhadura: 'g10',
 });
+
+/**
+ * Receitas: pontos de partida guiados pelo uso ("Para que você vai usar?").
+ * O cliente escolhe uma e ajusta o resto nas opções abaixo.
+ * Edite títulos, textos e combinações aqui — as chaves precisam existir nas listas acima.
+ */
+interface Receita {
+  id: string;
+  titulo: string;
+  unidade: Partial<UnitConfig>;
+}
+
+const RECEITAS: Receita[] = [
+  {
+    id: 'diario',
+    titulo: 'Porte diário',
+    unidade: { version: 'standard', size: 'micro', aco: 'sandvik', empunhadura: 'g10', finish: 'sw' },
+  },
+  {
+    id: 'equilibrio',
+    titulo: 'Equilíbrio',
+    unidade: { version: 'standard', size: 'compact', aco: 'sandvik', empunhadura: 'g10', finish: 'sw' },
+  },
+  {
+    id: 'alcance',
+    titulo: 'Alcance máximo',
+    unidade: { version: 'standard', size: 'standard', aco: 'sandvik', empunhadura: 'g10', finish: 'tac' },
+  },
+  {
+    id: 'non-metallic',
+    titulo: 'Non Metallic',
+    unidade: { version: 'nonmetallic', size: 'standard' },
+  },
+];
+
+/** A unidade bate com a receita? (só compara os campos que a receita define) */
+const segueReceita =(u: UnitConfig, r: Receita) =>
+  (Object.keys(r.unidade) as (keyof UnitConfig)[]).every((k) => u[k] === r.unidade[k]);
+
+/** Dado técnico embaixo do nome da opção (some quando o texto está vazio). */
+function OptSpec({ texto }: { texto?: string }) {
+  return texto ? <span className="opt-spec">{texto}</span> : null;
+}
 
 /** Renderiza heroTitle: trecho entre {chaves} fica destacado em amarelo itálico */
 function renderHeroTitle(t: string) {
@@ -590,6 +680,85 @@ export default function ConfiguradorKit() {
   };
   const unitExtraPrice = (u: UnitConfig) => cfg.versions[u.version].bainhaExtraPrice;
 
+  /** Foto da combinação (a mesma matriz que o admin preenche). */
+  const unitImage = (u: UnitConfig) => {
+    const ver = cfg.versions[u.version];
+    return ver.hasAcoEmpunhadura && ver.imagesByConfig
+      ? ver.imagesByConfig[u.size][u.aco][u.empunhadura][u.finish]
+      : ver.imagesBySize[u.size][u.finish];
+  };
+
+  const configRef = useRef<HTMLDivElement>(null);
+
+  // ── Barra de montagem: navegação entre unidades com o mínimo de movimentos ──
+  /** Card de cada unidade — tocar na miniatura da barra rola até ele. */
+  const unitRefs = useRef<(HTMLElement | null)[]>([]);
+  const verUnidade = (i: number) => unitRefs.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Ao adicionar uma unidade o card dela só existe depois do render: guardamos o destino e rolamos aqui.
+  const [rolarPara, setRolarPara] = useState<number | null>(null);
+  useEffect(() => {
+    if (rolarPara === null) return;
+    verUnidade(rolarPara);
+    setRolarPara(null);
+  }, [rolarPara, qty]);
+
+  const adicionarUnidade = () => {
+    if (qty >= 3) return;
+    setQty((qty + 1) as QtyKey);
+    setRolarPara(qty); // índice da unidade nova
+  };
+
+  const removerUnidade = (idx: number) => {
+    if (qty <= 1) return;
+    setUnits((arr) => [...arr.filter((_, i) => i !== idx), newUnit()]);
+    setQty((qty - 1) as QtyKey);
+  };
+
+  /** "STANDARD" → "Standard" (os nomes estão em maiúsculas na lista, usados também no WhatsApp). */
+  const nomeTamanho = (size: SizeKey) => {
+    const nome = SIZE_LIST.find((s) => s.key === size)!.name.toLowerCase();
+    return nome.charAt(0).toUpperCase() + nome.slice(1);
+  };
+
+  /** Escolhas que mudam o visual, em uma linha curta (para a barra do topo). */
+  const resumoCurto = (u: UnitConfig) => {
+    const ver = cfg.versions[u.version];
+    const partes: string[] = [];
+    if (u.version !== 'standard') partes.push(ver.texts.tabLabel);
+    if (ver.hasFinishes) partes.push(FINISH_NAMES[u.finish]);
+    if (ver.hasAcoEmpunhadura) partes.push(EMPUNHADURA_NAMES[u.empunhadura]);
+    if (u.bainhaExtra) partes.push('+ bainha extra');
+    return partes.join(' · ');
+  };
+
+  const aplicarReceita = (r: Receita) => {
+    updateUnit(0, r.unidade);
+    configRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  /** Preço das 3 (Standard + Compact + Micro, configuração padrão), já com o desconto de 3 unidades. */
+  const precoLinhaCompleta = (['standard', 'compact', 'micro'] as SizeKey[]).reduce((soma, size) => {
+    const preco = unitPrice({ ...newUnit(), size });
+    const desconto = size === 'standard' ? 0 : Math.round(preco * ((cfg.discountByQty[3] || 0) / 100));
+    return soma + preco - desconto;
+  }, 0);
+
+  /** Monta o kit com os três tamanhos (o upsell do fim da página). */
+  const montarLinhaCompleta = () => {
+    setUnits([
+      { ...newUnit(), size: 'standard' },
+      { ...newUnit(), size: 'compact' },
+      { ...newUnit(), size: 'micro' },
+    ]);
+    setQty(3);
+    setRolarPara(0);
+  };
+
+  // Primeira linha do rodapé vira a linha de garantias junto do botão de compra.
+  const [linhaGarantias, ...restoRodape] = baseV.texts.footerNote.split('\n');
+  const garantias = linhaGarantias.split('·').map((t) => t.trim()).filter(Boolean);
+
   const subtotal = useMemo(
     () => activeUnits.reduce((s, u) => s + unitPrice(u), 0),
     [activeUnits, cfg],
@@ -645,32 +814,41 @@ export default function ConfiguradorKit() {
         </a>
       </header>
 
+      {/* Sempre visível: a(s) Push Dagger(s) montada(s) à esquerda, o total à direita */}
+      <BarraMontagem
+        itens={activeUnits.map((u) => ({
+          chave: unitImage(u),
+          imagem: unitImage(u),
+          nome: nomeTamanho(u.size),
+          resumo: resumoCurto(u),
+        }))}
+        totalValor={total}
+        totalTexto={money(total)}
+        totalAntigoTexto={discountPct > 0 ? money(beforeDiscount) : undefined}
+        podeAdicionar={qty < 3}
+        descontoAoAdicionar={qty < 3 ? cfg.discountByQty[(qty + 1) as QtyKey] || 0 : 0}
+        onAdicionar={adicionarUnidade}
+        onVerItem={verUnidade}
+        linkCompra={waUrl}
+        textoCompra={baseV.texts.ctaText}
+      />
+
       {/* Versão é selecionada por unidade abaixo */}
 
       <section className="hero">
         <div className="eyebrow">{baseV.texts.eyebrow}</div>
         <h1 className="hero-title">{renderHeroTitle(baseV.texts.heroTitle)}</h1>
         <p className="hero-desc">{baseV.texts.heroDesc}</p>
-        <button type="button" className="see-prices-btn" onClick={() => setShowTable(true)}>
-          Ver tabela completa de preços
-        </button>
-        {galleryItems.length > 0 && (
-          <button
-            type="button"
-            className="see-prices-btn see-gallery-btn"
-            onClick={() => setShowGallery(true)}
-          >
-            Conhecer todas as configurações
-          </button>
-        )}
       </section>
 
+      {/* Quantidade: 1, 2 ou 3 unidades (o "+" e o "Remover" da barra são atalhos para o mesmo estado) */}
       <div className="qty-tabs" role="tablist" aria-label="Quantidade">
         {([1, 2, 3] as QtyKey[]).map((q) => {
           const d = cfg.discountByQty[q] || 0;
           return (
             <button
               key={q}
+              type="button"
               role="tab"
               aria-selected={qty === q}
               className={`qty-tab ${qty === q ? 'active' : ''}`}
@@ -684,40 +862,47 @@ export default function ConfiguradorKit() {
         })}
       </div>
 
-      {qty > 1 && (
-        <div className="qty-hint" role="status" aria-live="polite">
-          <span className="qty-hint-line" />
-          <span className="qty-hint-text">
-            Monte seu Kit com <strong>{qty}</strong> Configurações da Push Dagger
-          </span>
-          <span className="qty-hint-line" />
-        </div>
+      {/* Guiado pelo uso: só com 1 unidade (num kit, cada unidade é diferente) */}
+      {qty === 1 && (
+        <section className="recipes" aria-labelledby="recipes-title">
+          <h2 id="recipes-title" className="recipes-title">Para que você vai usar?</h2>
+          <CarrosselReceitas
+            itens={RECEITAS.map((r) => {
+              const preview: UnitConfig = { ...units[0], ...r.unidade };
+              return {
+                id: r.id,
+                titulo: r.titulo,
+                preco: money(unitPrice(preview)),
+                imagem: unitImage(preview),
+                ativa: segueReceita(units[0], r),
+              };
+            })}
+            onEscolher={(i) => aplicarReceita(RECEITAS[i])}
+          />
+        </section>
       )}
 
-      <div className={`config-grid grid-${qty}`}>
+      <div ref={configRef} className={`config-grid grid-${qty}`}>
         {activeUnits.map((u, idx) => {
           const ver = cfg.versions[u.version];
           const sizeMeta = SIZE_LIST.find((s) => s.key === u.size)!;
           const totalMm = sizeMeta.bladeMm + sizeMeta.gripMm;
-          const img = ver.hasAcoEmpunhadura && ver.imagesByConfig
-            ? ver.imagesByConfig[u.size][u.aco][u.empunhadura][u.finish]
-            : ver.imagesBySize[u.size][u.finish];
+          const img = unitImage(u);
           return (
-            <article className="col" key={idx}>
-              <div className="col-head">
-                <div className="col-index">0{idx + 1}</div>
-                <div className="col-head-text">
-                  <div className="col-model">{sizeMeta.name}</div>
-                  <div className="col-dims">Total {totalMm.toFixed(1).replace('.', ',')} mm</div>
-                </div>
-              </div>
-
+            <article
+              className={`col ${qty === 1 ? 'col-wide' : ''}`}
+              key={idx}
+              ref={(el) => { unitRefs.current[idx] = el; }}
+            >
+              <div className="col-media">
               <div className="product-stage">
                 <div className="product-card">
+                  {/* key={img}: a foto remonta a cada troca e entra com um fade curto */}
                   <img
+                    key={img}
                     src={img}
                     alt={`${sizeMeta.name} ${FINISH_NAMES[u.finish]}`}
-                    className="product-img is-active"
+                    className="product-img is-active ck-swap"
                     loading="eager" decoding="sync" fetchPriority="high"
                     onError={(e) => {
                       const fallback = defaultImgsForSize()[u.finish];
@@ -725,9 +910,34 @@ export default function ConfiguradorKit() {
                     }}
                   />
                   <div className="product-card-overlay" />
-                  {ver.hasFinishes && <div className="product-card-tag">{FINISH_NAMES[u.finish]}</div>}
-                  <div className="product-card-price">{money(unitPrice(u))}</div>
+                  {/* Num kit, cada unidade mostra o próprio preço; com 1 unidade o total fica logo abaixo */}
+                  {qty > 1 && (
+                    <div key={unitPrice(u)} className="product-card-price ck-pop">{money(unitPrice(u))}</div>
+                  )}
                 </div>
+              </div>
+
+              </div>
+
+              <div className="col-body">
+              <div className="col-head">
+                {/* Número da unidade só faz sentido num kit */}
+                {qty > 1 && <div className="col-index">0{idx + 1}</div>}
+                <div className="col-head-text">
+                  <div className="col-model">{sizeMeta.name}</div>
+                  <div className="col-dims">Total {totalMm.toFixed(1).replace('.', ',')} mm</div>
+                </div>
+                {/* Num kit, cada unidade pode sair com um toque */}
+                {qty > 1 && (
+                  <button
+                    type="button"
+                    className="col-remove"
+                    onClick={() => removerUnidade(idx)}
+                    aria-label={`Remover unidade ${idx + 1} do kit`}
+                  >
+                    Remover
+                  </button>
+                )}
               </div>
 
               <div className="opt-section">
@@ -737,10 +947,12 @@ export default function ConfiguradorKit() {
                     <button
                       key={vl.key}
                       type="button"
+                      aria-pressed={u.version === vl.key}
                       className={`finish-btn ${u.version === vl.key ? 'active' : ''}`}
                       onClick={() => updateUnit(idx, { version: vl.key })}
                     >
                       <span className="finish-name">{cfg.versions[vl.key].texts.tabLabel || vl.label}</span>
+                      <OptSpec texto={cfg.specs.versao[vl.key]} />
                     </button>
                   ))}
                 </div>
@@ -754,13 +966,16 @@ export default function ConfiguradorKit() {
                       <button
                         key={ak}
                         type="button"
+                        aria-pressed={u.aco === ak}
                         className={`finish-btn ${u.aco === ak ? 'active' : ''}`}
                         onClick={() => updateUnit(idx, { aco: ak })}
                       >
                         <span className="finish-name">{ACO_NAMES[ak]}</span>
+                        <OptSpec texto={cfg.specs.aco[ak]} />
                       </button>
                     ))}
                   </div>
+                  {cfg.specs.legendaAco && <p className="opt-legend">{cfg.specs.legendaAco}</p>}
                 </div>
               )}
 
@@ -771,10 +986,12 @@ export default function ConfiguradorKit() {
                     <button
                       key={s.key}
                       type="button"
+                      aria-pressed={u.size === s.key}
                       className={`finish-btn ${u.size === s.key ? 'active' : ''}`}
                       onClick={() => updateUnit(idx, { size: s.key })}
                     >
                       <span className="finish-name">{s.name}</span>
+                      <OptSpec texto={cfg.specs.tamanho[s.key]} />
                     </button>
                   ))}
                 </div>
@@ -788,10 +1005,14 @@ export default function ConfiguradorKit() {
                       <button
                         key={fk}
                         type="button"
-                        className={`finish-btn ${u.finish === fk ? 'active' : ''}`}
+                        aria-pressed={u.finish === fk}
+                        className={`finish-btn finish-swatch ${u.finish === fk ? 'active' : ''}`}
                         onClick={() => updateUnit(idx, { finish: fk })}
                       >
+                        {/* Amostra: a foto real desta combinação com o acabamento trocado */}
+                        <img className="swatch-img" src={unitImage({ ...u, finish: fk })} alt="" loading="lazy" />
                         <span className="finish-name">{FINISH_NAMES[fk]}</span>
+                        <OptSpec texto={cfg.specs.acabamento[fk]} />
                       </button>
                     ))}
                   </div>
@@ -806,10 +1027,12 @@ export default function ConfiguradorKit() {
                       <button
                         key={ek}
                         type="button"
+                        aria-pressed={u.empunhadura === ek}
                         className={`finish-btn ${u.empunhadura === ek ? 'active' : ''}`}
                         onClick={() => updateUnit(idx, { empunhadura: ek })}
                       >
                         <span className="finish-name">{EMPUNHADURA_NAMES[ek]}</span>
+                        <OptSpec texto={cfg.specs.empunhadura[ek]} />
                       </button>
                     ))}
                   </div>
@@ -838,30 +1061,20 @@ export default function ConfiguradorKit() {
                         onClick={() => updateUnit(idx, { bainhaExtraTipo: bk })}
                       >
                         <span className="finish-name">{BAINHA_EXTRA_NAMES[bk]}</span>
+                        <OptSpec texto={cfg.specs.bainhaExtra[bk]} />
                       </button>
                     ))}
                   </div>
                 )}
+              </div>
               </div>
             </article>
           );
         })}
       </div>
 
-      <div className="cta-block">
-        <div className="total-row">
-          <span className="total-label">{qty === 1 ? 'Total' : `Total do Kit (${qty} un.)`}</span>
-          {discountPct > 0 && (
-            <div className="total-de">
-              <span className="total-de-label">De</span>
-              <span className="total-old">{money(beforeDiscount)}</span>
-            </div>
-          )}
-          <div className="total-por">
-            {discountPct > 0 && <span className="total-por-label">Por</span>}
-            <span className="total-val">{money(total)}</span>
-          </div>
-        </div>
+      {/* Fim da montagem: total e compra já estão na barra fixa; aqui só o que dá segurança */}
+      <div className="cta-block cta-block--fim">
         {discountPct > 0 && (
           <div
             className="cupom-msg"
@@ -870,49 +1083,46 @@ export default function ConfiguradorKit() {
             }}
           />
         )}
-        <a className="btn-cta" href={waUrl} target="_blank" rel="noopener noreferrer">
-          {baseV.texts.ctaText}
-        </a>
-        <div className="cta-note">Atendimento via WhatsApp</div>
+        {garantias.length > 0 && <p className="guarantees">{garantias.join(' · ')}</p>}
+        <button type="button" className="cta-link" onClick={() => setShowTable(true)}>
+          Ver tabela de preços
+        </button>
       </div>
 
-      <section className="ref-section">
-        <div className="ref-section-head">
-          <div className="eyebrow">{baseV.texts.refEyebrow}</div>
-          <h2>{baseV.texts.refTitle}</h2>
-        </div>
-        <figure className="ref-card">
-          <div className="ref-img-wrap">
-            <img src={baseV.kitImage} alt={baseV.texts.refTitle} />
+      {/* Upsell: um único bloco de desejo no fim, para aumentar o ticket */}
+      {qty === 1 && (
+        <section className="upsell" aria-labelledby="upsell-title">
+          <figure className="upsell-img">
+            <img src={baseV.kitImage} alt={baseV.texts.refTitle} loading="lazy" />
+          </figure>
+          <div className="upsell-body">
+            <h2 id="upsell-title">Leve a linha completa</h2>
+            <p>{baseV.texts.refLabel}. Os três tamanhos, um para cada ocasião.</p>
+            <div className="upsell-price">{money(precoLinhaCompleta)}</div>
+            <button type="button" className="btn-cta upsell-cta" onClick={montarLinhaCompleta}>
+              Montar kit com as 3
+              {(cfg.discountByQty[3] || 0) > 0 && ` · ${cfg.discountByQty[3]}% off`}
+            </button>
+            {galleryItems.length > 0 && (
+              <button type="button" className="cta-link" onClick={() => setShowGallery(true)}>
+                Ver galeria
+              </button>
+            )}
           </div>
-          <figcaption>
-            <span className="ref-label">{baseV.texts.refLabel}</span>
-            <span className="ref-sub">{baseV.texts.refSub}</span>
-          </figcaption>
-        </figure>
-        {(cfg.discountByQty[3] || 0) > 0 && (
-          <button
-            type="button"
-            className="btn-cta ref-cta"
-            onClick={() => {
-              setUnits([
-                { ...newUnit(), size: 'standard' },
-                { ...newUnit(), size: 'compact' },
-                { ...newUnit(), size: 'micro' },
-              ]);
-              setQty(3);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          >
-            Monte o Kit Completo com {cfg.discountByQty[3]}% de desconto
-          </button>
-        )}
-      </section>
+        </section>
+      )}
 
       <div className="footer-note">
-        {baseV.texts.footerNote.split('\n').map((l, i) => (
+        {restoRodape.map((l, i) => (
           <span key={i}>{l}<br /></span>
         ))}
+      </div>
+
+      {/* Celular: compra sempre a um toque (o valor está na barra de montagem, no topo) */}
+      <div className="sticky-buy">
+        <a className="btn-cta sticky-buy-btn" href={waUrl} target="_blank" rel="noopener noreferrer">
+          {baseV.texts.ctaText}
+        </a>
       </div>
 
       {showTable && (
@@ -1106,8 +1316,7 @@ const css = `
 .ck-root .ck-header {
   display: flex; align-items: center; justify-content: center;
   padding: 1rem 1.75rem; border-bottom: 1px solid var(--border);
-  background: rgba(5,5,5,0.9); backdrop-filter: blur(12px);
-  position: sticky; top: 0; z-index: 40;
+  background: var(--bg);
 }
 .ck-root .logo { display: inline-flex; align-items: center; }
 .ck-root .logo-img { height: 38px; width: auto; display: block; }
@@ -1125,7 +1334,11 @@ const css = `
 
 .ck-root .qty-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 720px; margin: 0 auto 1.75rem; padding: 0 1.5rem; animation: fadeInUp 0.6s 0.15s ease-out both; }
 .ck-root .qty-tab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 12px; background: var(--s1); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); cursor: pointer; transition: all .25s ease; }
-.ck-root .qty-tab:hover { border-color: var(--border-m); color: var(--text); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+/* Hover só com mouse (no toque ele gruda); no toque o feedback é o :active */
+@media (hover: hover) and (pointer: fine) { .ck-root .qty-tab:hover { border-color: var(--border-m); color: var(--text); } }
+.ck-root .qty-tab { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+.ck-root .qty-tab:active { transform: scale(0.97); }
+.ck-root .qty-tab:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
 .ck-root .qty-tab.active { border-color: var(--yellow); background: rgba(255,193,7,0.07); color: var(--text); box-shadow: 0 0 16px rgba(255,193,7,0.12); }
 .ck-root .qty-num { font-family: 'Bebas Neue', sans-serif; font-size: 36px; line-height: 1; color: var(--yellow); }
 .ck-root .qty-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
@@ -1138,14 +1351,22 @@ const css = `
 
 .ck-root .config-grid { display: grid; max-width: 1100px; margin: 0 auto; gap: 18px; padding: 0 1.75rem; }
 .ck-root .config-grid.grid-1 { grid-template-columns: minmax(0, 480px); justify-content: center; }
+/* 1 unidade no PC: foto grande fixa à esquerda, opções à direita */
+@media (min-width: 960px) {
+  .ck-root .config-grid.grid-1 { grid-template-columns: minmax(0, 1040px); }
+  .ck-root .col.col-wide { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 2rem; align-items: start; padding: 1.5rem; }
+  .ck-root .col.col-wide .col-media { position: sticky; top: 104px; }
+}
+.ck-root .col-body { display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
 .ck-root .config-grid.grid-2 { grid-template-columns: repeat(2, 1fr); }
 .ck-root .config-grid.grid-3 { grid-template-columns: repeat(3, 1fr); }
-.ck-root .col { background: linear-gradient(180deg, var(--s1) 0%, #070707 100%); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; transition: all .3s ease; animation: fadeInUp 0.5s ease-out both; }
+.ck-root .col { background: linear-gradient(180deg, var(--s1) 0%, #070707 100%); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; transition: border-color .3s ease; animation: fadeInUp 0.5s ease-out both; }
 .ck-root .col:nth-child(1) { animation-delay: 0.1s; }
 .ck-root .col:nth-child(2) { animation-delay: 0.2s; }
 .ck-root .col:nth-child(3) { animation-delay: 0.3s; }
-.ck-root .col:hover { border-color: rgba(255,193,7,0.3); transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-.ck-root .col-head { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+/* O card do configurador não "pula" no hover: ele é a área de trabalho, não um link. */
+.ck-root .col:hover { border-color: rgba(255,193,7,0.3); }
+.ck-root .col-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
 .ck-root .col-index { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--yellow); line-height: 1; opacity: 0.85; }
 .ck-root .col-model { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 4px; line-height: 1; }
 .ck-root .col-dims { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; color: var(--muted); letter-spacing: 1.2px; margin-top: 4px; text-transform: uppercase; }
@@ -1160,14 +1381,26 @@ const css = `
 .ck-root .product-card-price { position: absolute; right: 8px; top: 8px; background: var(--yellow); color: #000; font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 1.5px; padding: 3px 8px; border-radius: 3px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
 .ck-root .finish-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-.ck-root .finish-btn { padding: 11px 4px; border: 1px solid var(--border); border-radius: 4px; background: transparent; cursor: pointer; transition: all .2s ease; color: inherit; font-family: inherit; }
-.ck-root .finish-btn:hover { border-color: var(--border-m); background: rgba(255,255,255,0.03); transform: translateY(-1px); }
-.ck-root .finish-btn.active { border-color: var(--yellow); background: rgba(255,193,7,0.07); box-shadow: 0 0 10px rgba(255,193,7,0.1); }
-.ck-root .finish-name { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--muted); letter-spacing: 1.4px; text-transform: uppercase; line-height: 1; display: block; transition: color .2s ease; }
+.ck-root .finish-btn { min-height: 48px; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--border-m); border-radius: 4px; background: transparent; cursor: pointer; transition: border-color .2s ease, background-color .2s ease, transform .15s cubic-bezier(0.23, 1, 0.32, 1); color: inherit; font-family: inherit; }
+@media (hover: hover) { .ck-root .finish-btn:hover { border-color: rgba(255,255,255,0.28); background: rgba(255,255,255,0.03); } }
+.ck-root .finish-btn:active { transform: scale(0.97); }
+.ck-root .finish-btn:focus-visible, .ck-root .recipe-card:focus-visible, .ck-root .btn-cta:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.ck-root .finish-btn.active { border-color: var(--yellow); background: rgba(255,193,7,0.08); }
+.ck-root .finish-name { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; color: #C9C9C7; letter-spacing: 1.2px; text-transform: uppercase; line-height: 1.1; display: block; transition: color .2s ease; }
 .ck-root .finish-btn.active .finish-name { color: var(--yellow); font-weight: 600; }
 
-.ck-root .opt-section { display: flex; flex-direction: column; gap: 6px; }
-.ck-root .opt-label { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+
+/* Acabamento com amostra: foto real da combinação */
+.ck-root .finish-swatch { padding: 8px 4px 10px; }
+.ck-root .swatch-img { width: 100%; max-width: 72px; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 3px; border: 1px solid var(--border); opacity: 0.75; transition: opacity .2s ease; }
+.ck-root .finish-swatch.active .swatch-img, .ck-root .finish-swatch:hover .swatch-img { opacity: 1; }
+
+.ck-root .opt-section { display: flex; flex-direction: column; gap: 8px; }
+/* Escolha consciente: dado técnico embaixo do nome de cada opção */
+.ck-root .opt-spec { font-family: 'Barlow', sans-serif; font-size: 12px; line-height: 1.2; color: #9A9A98; font-variant-numeric: tabular-nums; }
+.ck-root .finish-btn.active .opt-spec { color: #E8E8E6; }
+.ck-root .opt-legend { margin: 2px 0 0; font-size: 12px; color: #8A8A88; }
+.ck-root .opt-label { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1.5px; color: #B5B5B3; text-transform: uppercase; }
 .ck-root .bainha-options { grid-template-columns: 1fr 1fr; }
 .ck-root .bainha-included { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 1.5px; color: var(--text); text-transform: uppercase; padding: 11px 4px; border: 1px solid var(--border); border-radius: 4px; background: rgba(255,255,255,0.02); }
 
@@ -1195,7 +1428,8 @@ const css = `
 .ck-root .btn-cta { display: inline-block; background: var(--yellow); color: #000; border: none; border-radius: 6px; padding: 16px 48px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 3px; cursor: pointer; text-decoration: none; text-transform: uppercase; transition: all .25s ease; box-shadow: 0 4px 0 var(--yellow-dim), 0 8px 24px rgba(255,193,7,0.2); }
 .ck-root .btn-cta:hover { background: var(--yellow-l); transform: translateY(-2px); box-shadow: 0 6px 0 var(--yellow-dim), 0 12px 28px rgba(255,193,7,0.3); }
 .ck-root .btn-cta:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--yellow-dim); }
-.ck-root .cta-note { margin-top: 14px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: var(--dim); text-transform: uppercase; }
+.ck-root .cta-note { max-width: 420px; margin: 14px auto 0; font-size: 13px; line-height: 1.5; color: #B5B5B3; }
+
 .ck-root .cupom-msg { margin: 1.25rem auto 1rem; padding: 10px 18px; display: inline-block; background: rgba(255,193,7,0.1); border: 1px dashed var(--yellow); color: var(--yellow-l); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 4px; }
 .ck-root .cupom-msg strong { color: #fff; font-weight: 700; }
 
@@ -1212,7 +1446,142 @@ const css = `
 .ck-root .ref-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
 .ck-root .ref-cta { display: block; width: 100%; max-width: 560px; margin: 1.75rem auto 0; text-align: center; }
 
-.ck-root .footer-note { text-align: center; padding: 2rem 1.5rem 4rem; font-size: 11px; color: var(--dim); line-height: 1.9; letter-spacing: 0.5px; animation: fadeInUp 0.5s 0.35s ease-out both; }
+/* ── Receitas: "Para que você vai usar?" ── */
+.ck-root .recipes { max-width: 1040px; margin: 0 auto 2rem; padding: 0 1.75rem; animation: fadeInUp 0.6s 0.2s ease-out both; }
+.ck-root .recipes-title { text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: clamp(26px, 4vw, 34px); letter-spacing: 3px; margin: 0 0 1rem; }
+/* ── Carrossel de receitas: o card da frente em foco, os demais desfocados ── */
+.ck-root .carousel { position: relative; --card-w: min(300px, 64vw); }
+.ck-root .carousel-track { position: relative; display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; padding: 6px calc(50% - var(--card-w) / 2) 14px; }
+.ck-root .carousel-track::-webkit-scrollbar { display: none; }
+.ck-root .carousel-card { flex: 0 0 var(--card-w); scroll-snap-align: center; display: flex; flex-direction: column; padding: 0; overflow: hidden; text-align: left; background: var(--s1); border: 1px solid var(--border-m); border-radius: 8px; color: inherit; font-family: inherit; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none;
+  transform: scale(0.88); opacity: 0.55; filter: blur(1.5px);
+  transition: transform .3s cubic-bezier(0.23, 1, 0.32, 1), opacity .3s cubic-bezier(0.23, 1, 0.32, 1), filter .3s cubic-bezier(0.23, 1, 0.32, 1), border-color .2s ease; }
+.ck-root .carousel-card.is-front { transform: none; opacity: 1; filter: none; }
+.ck-root .carousel-card.is-active { border-color: var(--yellow); }
+.ck-root .carousel-card:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.ck-root .carousel-card.is-front:active { transform: scale(0.98); }
+/* A foto fica posicionada dentro da caixa: assim o tamanho dela não estica o card (o aspect-ratio manda) */
+.ck-root .carousel-img { position: relative; display: block; aspect-ratio: 1 / 1; overflow: hidden; background: var(--s2); }
+.ck-root .carousel-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.ck-root .carousel-body { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 14px 16px 16px; }
+.ck-root .carousel-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; line-height: 1; }
+.ck-root .carousel-card.is-active .carousel-title { color: var(--yellow); }
+.ck-root .carousel-price { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 1px; color: var(--yellow); font-variant-numeric: tabular-nums; }
+.ck-root .carousel-dots { display: flex; justify-content: center; gap: 6px; margin-top: 4px; }
+.ck-root .carousel-dots span { width: 6px; height: 6px; border-radius: 999px; background: var(--border-m); transition: width .25s cubic-bezier(0.23, 1, 0.32, 1), background-color .25s ease; }
+.ck-root .carousel-dots span.is-front { width: 22px; background: var(--yellow); }
+/* Setas só para mouse */
+.ck-root .carousel-arrow { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .ck-root .carousel-arrow { position: absolute; top: calc(50% - 30px); z-index: 2; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 999px; background: #0d0d0d; border: 1px solid var(--border-m); color: #fff; cursor: pointer; transition: border-color .2s ease, opacity .2s ease; }
+  .ck-root .carousel-arrow:hover { border-color: var(--yellow); }
+  .ck-root .carousel-arrow:disabled { opacity: 0.25; cursor: default; }
+  .ck-root .carousel-arrow:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+  .ck-root .carousel-arrow.is-prev { left: calc(50% - var(--card-w) / 2 - 64px); }
+  .ck-root .carousel-arrow.is-next { right: calc(50% - var(--card-w) / 2 - 64px); }
+  .ck-root .carousel-arrow svg { width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ck-root .carousel-card, .ck-root .carousel-dots span { transition: none; }
+  .ck-root .carousel-card.is-front:active { transform: none; }
+}
+@media (max-width: 760px) {
+  .ck-root .recipes { padding: 0; }
+  .ck-root .carousel-title { font-size: 23px; }
+  /* Card mais baixo no celular: menos rolagem até as opções */
+  .ck-root .carousel-img { aspect-ratio: 4 / 3; }
+  .ck-root .carousel-price { font-size: 22px; }
+}
+
+/* ── Garantias: uma linha discreta abaixo do botão ── */
+.ck-root .guarantees { margin: 10px auto 0; max-width: 460px; font-size: 13px; line-height: 1.5; color: #9A9A98; }
+.ck-root .cta-link { min-height: 44px; margin-top: 6px; padding: 0 4px; background: none; border: none; color: #C9C9C7; font-family: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: rgba(255,193,7,0.5); cursor: pointer; }
+@media (hover: hover) { .ck-root .cta-link:hover { color: var(--yellow); } }
+.ck-root .cta-link:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+
+
+/* ── Upsell: linha completa ── */
+.ck-root .upsell { max-width: 1040px; margin: 4rem auto 0; padding: 0 1.75rem; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 2rem; align-items: center; }
+.ck-root .upsell-img { margin: 0; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-m); aspect-ratio: 16 / 10; background: #000; }
+.ck-root .upsell-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ck-root .upsell-body h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px, 4.5vw, 48px); letter-spacing: 3px; line-height: 0.95; margin: 0; }
+.ck-root .upsell-body p { margin: 10px 0 0; font-size: 15px; line-height: 1.5; color: #B5B5B3; }
+.ck-root .upsell-price { margin-top: 14px; font-family: 'Bebas Neue', sans-serif; font-size: 40px; letter-spacing: 1px; color: var(--yellow); line-height: 1; font-variant-numeric: tabular-nums; }
+.ck-root .upsell-cta { margin-top: 16px; }
+.ck-root .upsell-body .cta-link { display: block; margin-top: 8px; }
+@media (max-width: 760px) {
+  .ck-root .upsell { grid-template-columns: 1fr; gap: 1.25rem; padding: 0 1rem; margin-top: 3rem; text-align: center; }
+  .ck-root .upsell-body .cta-link { margin-left: auto; margin-right: auto; }
+}
+
+/* ── Barra de montagem: sempre visível. Item(ns) à esquerda, valor à direita, na mesma linha ── */
+.ck-root .build-bar { position: sticky; top: 0; z-index: 45; background: #080808; border-bottom: 1px solid var(--border-m); padding-top: env(safe-area-inset-top, 0px); }
+.ck-root .build-bar-inner { max-width: 1040px; margin: 0 auto; padding: 10px 1.75rem; display: flex; align-items: center; gap: 16px; }
+.ck-root .build-items { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+.ck-root .build-item, .ck-root .build-add { position: relative; flex-shrink: 0; width: 64px; height: 64px; padding: 0; border-radius: 6px; overflow: hidden; background: var(--s2); border: 1px solid var(--border-m); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; transition: border-color .2s ease, transform .12s cubic-bezier(0.23, 1, 0.32, 1); }
+.ck-root .build-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ck-root .build-item-tag { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 0; background: rgba(0,0,0,0.72); font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 0.5px; color: #fff; text-align: center; text-transform: uppercase; }
+.ck-root .build-add { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 2px; border-style: dashed; color: var(--yellow); background: transparent; }
+.ck-root .build-add svg { width: 22px; height: 22px; }
+.ck-root .build-add-disc { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600; }
+@media (hover: hover) and (pointer: fine) { .ck-root .build-item:hover, .ck-root .build-add:hover { border-color: var(--yellow); } }
+.ck-root .build-item:active, .ck-root .build-add:active { transform: scale(0.96); }
+.ck-root .build-item:focus-visible, .ck-root .build-add:focus-visible, .ck-root .build-buy:focus-visible, .ck-root .col-remove:focus-visible, .ck-root .sticky-buy-btn:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.ck-root .build-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ck-root .build-name { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 2px; line-height: 1; }
+.ck-root .build-cfg { font-size: 13px; color: #C9C9C7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ck-root .build-price { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; line-height: 1; margin-left: auto; }
+.ck-root .build-old { font-size: 13px; color: var(--muted); text-decoration: line-through; margin-bottom: 2px; }
+.ck-root .build-total { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 1px; color: var(--yellow); font-variant-numeric: tabular-nums; }
+.ck-root .build-qty { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 1px; color: #B5B5B3; text-transform: uppercase; margin-top: 3px; }
+.ck-root .build-buy { flex-shrink: 0; padding: 14px 26px; font-size: 15px; }
+@media (max-width: 959px) {
+  .ck-root .build-bar-inner { padding: 8px 16px; gap: 10px; }
+  .ck-root .build-items { gap: 6px; }
+  .ck-root .build-item, .ck-root .build-add { width: 56px; height: 56px; }
+  .ck-root .build-name { font-size: 20px; }
+  .ck-root .build-total { font-size: 30px; }
+  .ck-root .build-buy { display: none; } /* no celular a compra fica na barra de baixo */
+}
+@media (max-width: 380px) {
+  .ck-root .build-item, .ck-root .build-add { width: 50px; height: 50px; }
+  .ck-root .build-total { font-size: 26px; }
+}
+
+/* Rolagem até uma unidade para logo abaixo da barra de montagem */
+.ck-root .col, .ck-root .config-grid { scroll-margin-top: 92px; }
+
+/* Remover unidade do kit */
+.ck-root .col-remove { min-height: 44px; padding: 0 8px; background: none; border: none; color: #B5B5B3; font-family: inherit; font-size: 13px; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; touch-action: manipulation; }
+@media (hover: hover) and (pointer: fine) { .ck-root .col-remove:hover { color: var(--yellow); } }
+
+/* Celular: foto menor no card (a barra já mostra a faca), menos rolagem até as opções */
+@media (max-width: 959px) { .ck-root .product-card { aspect-ratio: 4 / 3; } }
+
+/* Fim da montagem: só desconto e garantias */
+.ck-root .cta-block--fim { margin-top: 2rem; padding: 1.25rem 1.5rem; }
+
+/* ── "Monte seu lanche": produto e preço reagem a cada escolha ── */
+/* Foto trocada entra com fade curto; preço que muda dá um pulso. */
+@keyframes ck-swap { from { opacity: 0.35; } to { opacity: 1; } }
+@keyframes ck-pop { 0% { transform: scale(1.08); } 100% { transform: scale(1); } }
+.ck-root .ck-swap { animation: ck-swap .22s cubic-bezier(0.23, 1, 0.32, 1); }
+.ck-root .ck-pop { display: inline-block; animation: ck-pop .2s cubic-bezier(0.23, 1, 0.32, 1); transform-origin: right center; }
+
+/* ── Barra de baixo (só celular): compra a um toque ── */
+.ck-root .sticky-buy { display: none; }
+@media (max-width: 959px) {
+  .ck-root { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+  .ck-root .sticky-buy { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: block; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: #080808; border-top: 1px solid var(--border-m); }
+  .ck-root .sticky-buy-btn { display: block; width: 100%; text-align: center; padding: 15px 16px; font-size: 16px; touch-action: manipulation; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ck-root .ck-swap, .ck-root .ck-pop { animation: none; }
+  .ck-root .finish-btn:active, .ck-root .recipe-card:active, .ck-root .build-item:active, .ck-root .build-add:active { transform: none; }
+}
+
+.ck-root .footer-note { text-align: center; padding: 2rem 1.5rem 4rem; font-size: 12px; color: var(--muted); line-height: 1.9; letter-spacing: 0.5px; animation: fadeInUp 0.5s 0.35s ease-out both; }
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(18px); }
