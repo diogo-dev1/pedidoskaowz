@@ -71,7 +71,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-1 w-full">
         {!hideNavigation && <AppSidebar />}
-        <main className="flex-1 bg-background overflow-x-hidden min-w-0">
+        {/* overflow-x-hidden quebra o position: sticky; no painel usamos clip (barra de urgência fixa). */}
+        <main className={`flex-1 bg-background min-w-0 ${isPanel ? 'overflow-x-clip' : 'overflow-x-hidden'}`}>
           <div className={isPanel ? 'w-full pb-20 md:pb-0' : 'w-full max-w-6xl mx-auto p-3 sm:p-6 pb-24 md:pb-6'}>
             {children}
           </div>

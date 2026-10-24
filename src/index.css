@@ -12,6 +12,78 @@
 }
 .pe-panel-fullscreen { position: fixed; inset: 0; z-index: 40; padding: 20px; overflow-y: auto; background: hsl(var(--background)); max-width: none !important; }
 
+/* ── Login: forja animada (src/components/auth/ForjaAnimada.tsx) ──────────
+   Ciclo de 2,4s. O golpe acontece aos 70%:
+   - martelo: descansa, sobe devagar (antecipação), segura, desce acelerando e repica 2x;
+   - no impacto: bigorna dá tranco de 1px, clarão, brasa mais viva e faíscas em rastro.
+   Só transform e opacity (não pesa). */
+.forja { --forja-ciclo: 2.4s; }
+
+.forja-martelo   { transform-origin: 183px 47.5px; animation: forja-martelo var(--forja-ciclo) infinite; }
+.forja-bigorna   { animation: forja-bigorna var(--forja-ciclo) infinite; }
+.forja-halo      { transform-box: fill-box; transform-origin: center; animation: forja-halo var(--forja-ciclo) infinite; }
+.forja-brasa     { animation: forja-brasa var(--forja-ciclo) infinite; }
+.forja-reflexo   { transform-box: fill-box; transform-origin: center; animation: forja-reflexo var(--forja-ciclo) infinite; }
+.forja-clarao    { transform-box: fill-box; transform-origin: center; opacity: 0; animation: forja-clarao var(--forja-ciclo) infinite; }
+.forja-faisca    { opacity: 0; animation: forja-faisca var(--forja-ciclo) infinite; }
+
+@keyframes forja-martelo {
+  0%, 12% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.77, 0, 0.175, 1); } /* descanso */
+  54%  { transform: rotate(44deg); animation-timing-function: ease-out; }                          /* sobe devagar */
+  60%  { transform: rotate(47deg); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }    /* segura no alto */
+  70%  { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); }     /* golpe */
+  74%  { transform: rotate(7deg); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }     /* repique */
+  78%  { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); }
+  81%  { transform: rotate(2deg); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }     /* repique menor */
+  84%, 100% { transform: rotate(0deg); }
+}
+
+@keyframes forja-bigorna {
+  0%, 69.9%, 73%, 100% { transform: translateY(0); }
+  70%  { transform: translateY(1px); }
+}
+
+@keyframes forja-halo {
+  0%, 69.9% { opacity: 0.18; transform: scale(1); }
+  70%  { opacity: 0.65; transform: scale(1.12, 1.5); animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); }
+  100% { opacity: 0.18; transform: scale(1); }
+}
+
+@keyframes forja-brasa {
+  0%, 69.9% { opacity: 0.55; }
+  70%  { opacity: 1; animation-timing-function: ease-out; }
+  100% { opacity: 0.55; }
+}
+
+@keyframes forja-reflexo {
+  0%, 69.9% { opacity: 0.08; transform: scaleX(1); }
+  70%  { opacity: 0.3; transform: scaleX(1.25); animation-timing-function: ease-out; }
+  100% { opacity: 0.08; transform: scaleX(1); }
+}
+
+@keyframes forja-clarao {
+  0%, 69.9% { opacity: 0; transform: scale(0.4); }
+  70%  { opacity: 0.75; transform: scale(0.4); animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); }
+  80%  { opacity: 0; transform: scale(1.6); }
+  100% { opacity: 0; transform: scale(0.4); }
+}
+
+@keyframes forja-faisca {
+  0%, 69.9% { opacity: 0; transform: translate(0, 0) scale(1); }
+  70%  { opacity: 1; transform: translate(0, 0) scale(1); animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); }
+  82%  { opacity: 1; transform: translate(calc(var(--dx) * 0.7), var(--dy)) scale(0.9); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  95%  { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 26px)) scale(0.4); }
+  100% { opacity: 0; transform: translate(0, 0); }
+}
+
+/* Reduzir movimento: fica parado no impacto, com a brasa acesa. */
+@media (prefers-reduced-motion: reduce) {
+  .forja-martelo, .forja-bigorna, .forja-clarao, .forja-faisca, .forja-reflexo { animation: none; }
+  .forja-halo  { animation: none; opacity: 0.35; }
+  .forja-brasa { animation: none; opacity: 0.9; }
+}
+
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
