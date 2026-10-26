@@ -90,6 +90,7 @@ interface ShopifyOrder {
       province_code?: string;
       zip?: string;
       country?: string;
+      name?: string;
     };
   };
   line_items: { title: string; quantity: number; price: string }[];
@@ -283,13 +284,13 @@ Deno.serve(async (req) => {
     let url: string | null = `${baseUrl}/orders.json?status=any&created_at_min=${encodeURIComponent(createdAtMin)}&created_at_max=${encodeURIComponent(createdAtMax)}&limit=250`;
 
     while (url) {
-      const res = await fetch(url, { headers: shopifyHeaders });
+      const res: Response = await fetch(url, { headers: shopifyHeaders });
       if (!res.ok) throw new Error(`Shopify orders error [${res.status}]: ${await res.text()}`);
       const data = await res.json();
       allOrders.push(...(data.orders || []));
-      const link = res.headers.get('link') ?? '';
-      const next = link.split(',').find((p: string) => p.includes('rel="next"'));
-      const match = next?.match(/<([^>]+)>/);
+      const link: string = res.headers.get('link') ?? '';
+      const next: string | undefined = link.split(',').find((p: string) => p.includes('rel="next"'));
+      const match: RegExpMatchArray | null = next?.match(/<([^>]+)>/);
       url = match ? match[1] : null;
     }
 
@@ -552,7 +553,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Erro sync-shopify-orders:', error);
     return new Response(
-      JSON.stringify({ sucesso: false, erro: error.message }),
+      JSON.stringify({ sucesso: false, erro: error instanceof Error ? error.message : String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
