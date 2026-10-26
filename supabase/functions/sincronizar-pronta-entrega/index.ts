@@ -6,7 +6,10 @@ import {
   classificarItemPE, calcularPrazoLimite, prazoDoPedido, type ItemPE, TZ_BR,
 } from '../_shared/prontaEntrega.ts';
 
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+};
 import { z } from 'npm:zod@3';
 
 const API_VERSION = '2026-07';

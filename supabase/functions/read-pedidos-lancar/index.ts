@@ -262,7 +262,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Erro read-pedidos-lancar:', error);
     return new Response(
-      JSON.stringify({ erro: error.message }),
+      JSON.stringify({ erro: error instanceof Error ? error.message : String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
