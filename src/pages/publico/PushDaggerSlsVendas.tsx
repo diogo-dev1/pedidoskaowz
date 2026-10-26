@@ -68,13 +68,27 @@ function Videos({ titulo, videos }: { titulo: string; videos: VideoPagina[] }) {
 
 interface HeroProps { c: ConteudoSls; video: VideoPagina | null; carregando: boolean; imagem: string | null; aPartirDe: number | null; parcelamento: string | null; brindesAte: number; brindes: Extra[] }
 function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAte, brindes }: HeroProps) {
-  return <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pt-6 pb-12 md:grid-cols-[1.1fr_1fr] md:gap-14 md:pt-14 md:pb-20">
-    <div className="min-w-0">
+  return <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pt-6 pb-12 md:grid-cols-[1.1fr_1fr] md:gap-x-14 md:gap-y-0 md:pt-14 md:pb-20">
+    <div className="order-1 min-w-0 md:col-start-1 md:row-start-1">
       <img src={kaowzLogo} alt="Kaowz" className="mb-8 h-7 w-auto opacity-90"/>
       <h1 className="font-bebas text-6xl leading-[0.9] tracking-wide md:text-8xl">
         {c.heroTitulo} <span className="text-primary">{c.prazoSls} dias úteis.</span>
       </h1>
-      <p className={cn('mt-5 max-w-lg text-lg leading-snug md:text-xl', APOIO)}>
+    </div>
+    {video ? <div className="order-2 mx-auto aspect-[9/16] max-h-[46vh] w-full max-w-sm overflow-hidden rounded-lg md:col-start-2 md:row-start-1 md:row-span-2 md:max-h-[640px]"><Video v={video} topo/></div> : (carregando || imagem) && <div className={cn('order-2 aspect-square overflow-hidden rounded-lg md:col-start-2 md:row-start-1 md:row-span-2', imagem ? 'bg-[hsl(var(--campanha-selo-fundo))]' : 'animate-pulse bg-[hsl(var(--oferta-superficie))]')}>
+      {imagem && <img
+        src={naLargura(imagem, 800)}
+        srcSet={[400, 800, 1200].map(w => `${naLargura(imagem, w)} ${w}w`).join(', ')}
+        sizes="(min-width: 768px) 50vw, 100vw"
+        width={800}
+        height={800}
+        alt="Push Dagger SLS"
+        className="h-full w-full object-contain p-4"
+        fetchPriority="high"
+      />}
+    </div>}
+    <div className="order-3 min-w-0 md:col-start-1 md:row-start-2">
+      <p className={cn('max-w-lg text-lg leading-snug md:mt-5 md:text-xl', APOIO)}>
         {preencher(c.heroTexto, c, parcelamento)}
       </p>
       {brindes.length > 0 && <div className="mt-6 border-l-2 border-accent pl-4">
@@ -95,18 +109,6 @@ function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAt
       </div>
       <p className={cn('mt-4 flex items-center gap-2 text-xs', MUTED)}><ShieldCheck className="h-4 w-4 shrink-0"/>Garantia vitalícia de qualidade e afiação</p>
     </div>
-    {video ? <div className="mx-auto aspect-[9/16] w-full max-w-sm overflow-hidden rounded-lg md:max-h-[640px]"><Video v={video} topo/></div> : (carregando || imagem) && <div className={cn('aspect-square overflow-hidden rounded-lg', imagem ? 'bg-[hsl(var(--campanha-selo-fundo))]' : 'animate-pulse bg-[hsl(var(--oferta-superficie))]')}>
-      {imagem && <img
-        src={naLargura(imagem, 800)}
-        srcSet={[400, 800, 1200].map(w => `${naLargura(imagem, w)} ${w}w`).join(', ')}
-        sizes="(min-width: 768px) 50vw, 100vw"
-        width={800}
-        height={800}
-        alt="Push Dagger SLS"
-        className="h-full w-full object-contain p-4"
-        fetchPriority="high"
-      />}
-    </div>}
   </section>;
 }
 
