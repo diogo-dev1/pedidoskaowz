@@ -9,7 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { useCampanhaOferta } from '@/hooks/useCampanhaOferta';
 import { type CampanhaItem, moeda, ofertaDoItem } from '@/lib/campanhas';
 import { type OpcaoCombo, comboDestaque, mensagemCombo, opcoesCombos, valoresCombo } from '@/lib/campanhaCombos';
-import { conteudoDoItem, inclusosDoItem, ehKitCompletoSls, ehCoin, textoIncluso, mensagemKitSls, fichaDaCampanha, nomesDistintos } from '@/lib/campanhaConteudo';
+import { conteudoDoItem, inclusosDoItem, ehKitCompletoSls, ehCoin, textoIncluso, mensagemKitSls, fichaDaCampanha, nomesDistintos, ordenarOpcoesSls, opcaoInicialSls } from '@/lib/campanhaConteudo';
 import { fonteVideo } from '@/lib/pushDaggerLanding';
 import { type ConteudoSls, type VideoPagina, type BlocoSls, PADRAO_SLS, SLUG_PAGINA_SLS, mesclarConteudoSls, preencher, PAGAMENTO_SLS, pilaresSls, imagemDaPagina } from '@/lib/paginaSls';
 import { type Extra, nomeCurtoExtra } from '@/lib/campanhaExtras';
@@ -190,24 +190,58 @@ function DestaqueBrindes({ brindes }: { brindes: Extra[] }) {
 
 interface ItemPagina { item: CampanhaItem; oferta: Oferta; combo: OpcaoCombo; inclusos: string[] }
 
-function KitCompleto({ kit, imagem, escolher }: { kit: ItemPagina; imagem: string | null; escolher: () => void }) {
-  const { valorDe } = valoresCombo(kit.item, kit.combo);
-  return <Secao id="kit-completo"><div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
-    {imagem && <img src={naLargura(imagem, 1200)} alt="Kit Completo Push Dagger SLS" loading="lazy" className="aspect-[4/3] max-h-[480px] w-full rounded-lg object-contain"/>}
-    <div className="min-w-0"><p className="mb-3 text-xs font-bold uppercase text-accent">Kit Completo · Melhor oferta</p><h2 className="font-bebas text-4xl leading-none md:text-5xl">Leve as três. Ganhe a coleção.</h2>
-      <p className={cn('mt-5 text-base leading-relaxed', APOIO)}>Micro, Compact e Standard com bainhas Kydex, Case Rígida Collector Kit personalizada com o seu nome, cinto tático e multitool — e a Challenge Coin Kaowz, conquistada por quem completa a coleção.</p>
-      <div className="mt-6 flex flex-wrap items-baseline gap-2"><span className={cn('text-sm line-through', MUTED)}>de {moeda(valorDe)}</span><strong className="text-3xl font-black md:text-4xl">por {moeda(kit.combo.preco)}</strong></div>
-      <p className={cn('mt-2 text-sm', APOIO)}>em até 10x sem juros</p>
-      <Button size="lg" onClick={escolher} className={cn(BOTAO, 'mt-6 w-full sm:w-auto')}>Quero o Kit Completo<ArrowDown className="ml-2 h-4 w-4"/></Button>
+function CarrosselOpcoes({ itens, nomes, escolhido, setId }: { itens: ItemPagina[]; nomes: Record<string, string>; escolhido: string | null; setId: (id: string) => void }) {
+  const trilho = useRef<HTMLDivElement>(null);
+  const cartoes = useRef<(HTMLButtonElement | null)[]>([]);
+  const [visivel, setVisivel] = useState(1);
+  const id = opcaoInicialSls(itens, escolhido);
+  const centralizar = (index: number) => {
+    const el = trilho.current;
+    const card = cartoes.current[index];
+    if (!el || !card || window.matchMedia('(min-width: 768px)').matches) return;
+    const caixa = el.getBoundingClientRect();
+    const foto = card.getBoundingClientRect();
+    el.scrollTo({ left: el.scrollLeft + foto.left - caixa.left - (el.clientWidth - foto.width) / 2, behavior: 'instant' });
+  };
+  useEffect(() => {
+    const index = itens.findIndex(i => i.item.id === id);
+    if (index < 0) return;
+    centralizar(index);
+    setVisivel(index);
+  }, [id, itens]);
+  const acompanhar = () => {
+    const el = trilho.current;
+    if (!el) return;
+    const centro = el.getBoundingClientRect().left + el.clientWidth / 2;
+    let menor = Infinity; let index = 0;
+    cartoes.current.forEach((card, i) => {
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      const distancia = Math.abs(r.left + r.width / 2 - centro);
+      if (distancia < menor) { menor = distancia; index = i; }
+    });
+    setVisivel(index);
+  };
+  return <Secao id="opcoes-sls">
+    <TituloSecao apoio="Toque para ver tudo o que vem com cada opção.">Escolha a sua SLS</TituloSecao>
+    <div ref={trilho} onScroll={acompanhar} aria-label="Opções SLS" className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
+      {itens.map((i, n) => {
+        const midia = midiasDaOferta(i.oferta)[0];
+        const { valorBrindes } = valoresCombo(i.item, i.combo);
+        return <Button key={i.item.id} ref={el => { cartoes.current[n] = el; }} variant="ghost" aria-label={`Escolher ${nomes[i.item.id]}`} aria-pressed={i.item.id === id} onClick={() => { setId(i.item.id); irPara('oferta'); }} className={cn('relative block h-auto w-[78%] min-w-0 shrink-0 snap-center overflow-hidden rounded-lg border-2 p-0 text-left whitespace-normal bg-[hsl(var(--campanha-barra))] text-[hsl(var(--oferta-texto))] hover:bg-[hsl(var(--campanha-barra))] hover:text-[hsl(var(--oferta-texto))] md:w-full', i.item.id === id ? 'border-accent' : 'border-transparent')}>
+          {midia?.tipo === 'video' ? <video src={midia.url} muted playsInline preload="metadata" className="aspect-[4/5] w-full object-cover"/> : midia ? <img src={naLargura(midia.url, 800)} alt={i.item.titulo} loading="lazy" className="aspect-[4/5] w-full object-cover"/> : <span aria-hidden className="block aspect-[4/5] bg-[hsl(var(--oferta-superficie))]"/>}
+          {ehKitCompletoSls(i.item) && <span className="absolute left-3 top-3 rounded bg-accent px-2 py-1 text-[10px] font-bold text-accent-foreground">Melhor oferta</span>}
+          <span className="block p-4"><span className="block font-bebas text-3xl leading-none uppercase">{nomes[i.item.id]}</span><strong className="mt-3 block text-xl font-black tabular-nums">{moeda(i.combo.preco)}</strong><span className="mt-1 block text-sm text-[hsl(var(--campanha-economia))]">+ {moeda(valorBrindes)} em brindes</span></span>
+        </Button>;
+      })}
     </div>
-  </div></Secao>;
+    <div className="mt-4 flex justify-center gap-1 md:hidden" aria-label="Posição no carrossel">{itens.map((i, n) => <Button key={i.item.id} variant="ghost" size="icon" aria-label={`Mostrar ${nomes[i.item.id]}`} aria-current={visivel === n ? 'true' : undefined} onClick={() => centralizar(n)} className="h-6 w-6 rounded-full hover:bg-transparent"><span className={cn('h-1.5 w-1.5 rounded-full', visivel === n ? 'bg-accent' : 'bg-[hsl(var(--oferta-muted))]')}/></Button>)}</div>
+  </Secao>;
 }
 
 interface OfertaProps { itens: ItemPagina[]; nomes: Record<string, string>; campanha: string; parcelamento: string | null; origem: string; escolhido: string | null; setId: (id: string) => void }
 function Oferta({ itens, nomes, campanha, parcelamento, origem, escolhido, setId }: OfertaProps) {
-  const padrao = itens.filter(i => !ehKitCompletoSls(i.item)).at(-1) ?? itens[0];
-  // Se a campanha for editada e o item sumir, volta para o último (maior) tamanho.
-  const id = itens.some(i => i.item.id === escolhido) ? escolhido : padrao.item.id;
+  const id = opcaoInicialSls(itens, escolhido);
   const atual = itens.find(i => i.item.id === id) ?? itens[0];
   const kit = ehKitCompletoSls(atual.item);
   const { valorDe, economia } = valoresCombo(atual.item, atual.combo);
@@ -262,7 +296,6 @@ function Oferta({ itens, nomes, campanha, parcelamento, origem, escolhido, setId
             {parcelas > 0 ? <>ou {parcelas}x de <span className="tabular-nums">{moeda(atual.combo.preco / Number(parcelas))}</span> sem juros</> : parcelamento}
             {economia > 0 && <span className="block text-[hsl(var(--campanha-economia))]">Você economiza {moeda(economia)}</span>}
           </p>
-          {kit && <p className="mt-5 rounded-lg border border-accent/50 bg-accent/10 p-3 text-sm font-semibold">✍️ Sua case vem personalizada com o seu nome</p>}
           <Button asChild size="lg" className={cn(BOTAO_WHATS, 'mt-6 w-full px-3 text-sm sm:text-base')}>
             <a href={wa(mensagem)} target="_blank" rel="noopener noreferrer"><WhatsAppIcon/>{kit ? 'Garantir meu Kit Completo SLS' : `Garantir minha SLS ${nomes[atual.item.id]}`}</a>
           </Button>
@@ -380,12 +413,12 @@ export default function PushDaggerSlsVendas() {
 
   const pagina = useMemo(() => {
     if (!campanha || !ofertas.length) return null;
-    const itens = ofertas.flatMap(item => {
+    const itens = ordenarOpcoesSls(ofertas.flatMap(item => {
       const oferta = ofertaDoItem(item, campanha);
       const combo = comboDestaque(opcoesCombos(item, combos, extras));
       // Item sem preço cadastrado não entra na oferta (evita "R$ 0,00").
       return combo && combo.preco > 0 ? [{ item, oferta, combo, conteudo: conteudoDoItem(item.descricao) }] : [];
-    });
+    }));
     if (!itens.length) return null;
     const nomes = nomesDistintos(ofertas);
     const individuais = itens.filter(i => !ehKitCompletoSls(i.item));
@@ -426,9 +459,7 @@ export default function PushDaggerSlsVendas() {
       case 'mecanismo': return <>{pagina.pilares.length > 0 && <Mecanismo pilares={pagina.pilares} prazo={c.prazoSls}/>} {campanha.video_teste_url?.trim() && <Teste url={campanha.video_teste_url.trim()} ofertaDisponivel={c.blocos.some(bloco => bloco.tipo === 'oferta')}/>}</>;
       case 'porte': return <Porte imagem={imagemDaPagina(c, 'porte', campanha.imagem_porte_url)}/>;
       case 'oferta': {
-        const kit = pagina.itens.find(i => ehKitCompletoSls(i.item));
-        const banner = campanha.imagem_kit_url?.trim() || (kit ? midiasDaOferta(kit.oferta).find(m => m.tipo === 'imagem')?.url : null) || null;
-        return <>{kit && <KitCompleto kit={kit} imagem={banner} escolher={() => { setEscolhido(kit.item.id); irPara('oferta'); }}/>}<Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem} escolhido={escolhido} setId={setEscolhido}/></>;
+        return <><CarrosselOpcoes itens={pagina.itens} nomes={pagina.nomes} escolhido={escolhido} setId={setEscolhido}/><Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem} escolhido={escolhido} setId={setEscolhido}/></>;
       }
       case 'ficha': return <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.filter(i => !ehKitCompletoSls(i.item)).map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>;
       case 'paraQuem': return <ParaQuem c={c}/>;
