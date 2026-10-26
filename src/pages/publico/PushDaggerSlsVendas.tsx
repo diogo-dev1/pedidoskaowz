@@ -37,19 +37,16 @@ const naLargura = (url: string, w: number) => url.includes('cdn.shopify.com') ? 
 
 const irPara = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-/** Foto da faca acima dos brindes no hero ("a faca + os brindes"); skeleton enquanto carrega, nada se não houver foto. */
+/** Foto da faca acima dos brindes no hero ("a faca + os brindes"); sem moldura, do tamanho da tela. */
 function FotoHero({ imagem, carregando }: { imagem: string | null; carregando: boolean }) {
-  const area = 'aspect-[4/3] w-full max-w-[420px] max-h-[240px] md:max-h-none rounded-lg bg-[hsl(var(--campanha-selo-fundo))]';
-  if (carregando && !imagem) return <div aria-hidden className={cn(area, 'animate-pulse bg-[hsl(var(--oferta-superficie))]')}/>;
+  if (carregando && !imagem) return <div aria-hidden className="mx-auto aspect-[2/3] h-[46vh] max-w-full animate-pulse rounded-lg bg-[hsl(var(--oferta-superficie))]"/>;
   if (!imagem) return null;
   return <img
     src={naLargura(imagem, 800)}
     srcSet={[400, 800, 1200].map(w => `${naLargura(imagem, w)} ${w}w`).join(', ')}
     sizes="(min-width: 768px) 420px, 100vw"
-    width={800}
-    height={600}
     alt="Push Dagger SLS"
-    className={cn(area, 'object-contain p-2 md:p-3')}
+    className="mx-auto block max-h-[46vh] w-auto max-w-full rounded-lg object-contain md:max-h-[440px]"
   />;
 }
 
@@ -92,17 +89,15 @@ function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAt
         {c.heroTitulo} <span className="text-primary">{c.prazoSls} dias úteis.</span>
       </h1>
     </div>
-    {video ? <div className="order-2 mx-auto aspect-[9/16] max-h-[46vh] w-full max-w-sm overflow-hidden rounded-lg md:col-start-2 md:row-start-1 md:row-span-2 md:max-h-[640px]"><Video v={video} topo/></div> : (carregando || imagem) && <div className={cn('order-2 aspect-square overflow-hidden rounded-lg md:col-start-2 md:row-start-1 md:row-span-2', imagem ? 'bg-[hsl(var(--campanha-selo-fundo))]' : 'animate-pulse bg-[hsl(var(--oferta-superficie))]')}>
-      {imagem && <img
+    {video ? <div className="order-2 mx-auto aspect-[9/16] max-h-[46vh] w-full max-w-sm overflow-hidden rounded-lg md:col-start-2 md:row-start-1 md:row-span-2 md:max-h-[640px]"><Video v={video} topo/></div> : (carregando || imagem) && <div className="order-2 mx-auto w-full max-w-sm md:col-start-2 md:row-start-1 md:row-span-2 md:max-w-none">
+      {imagem ? <img
         src={naLargura(imagem, 800)}
         srcSet={[400, 800, 1200].map(w => `${naLargura(imagem, w)} ${w}w`).join(', ')}
         sizes="(min-width: 768px) 50vw, 100vw"
-        width={800}
-        height={800}
         alt="Push Dagger SLS"
-        className="h-full w-full object-contain p-4"
+        className="mx-auto block max-h-[46vh] w-auto max-w-full rounded-lg object-contain md:max-h-[640px]"
         fetchPriority="high"
-      />}
+      /> : <div aria-hidden className="aspect-square w-full animate-pulse rounded-lg bg-[hsl(var(--oferta-superficie))]"/>}
     </div>}
     <div className="order-3 min-w-0 md:col-start-1 md:row-start-2">
       <p className={cn('max-w-lg text-lg leading-snug md:mt-5 md:text-xl', APOIO)}>

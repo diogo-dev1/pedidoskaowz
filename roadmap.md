@@ -13,6 +13,7 @@
 - [x] Corrigir textos e regras de prazo/pagamento, destacar brindes reais e adicionar seção de porte.
 - [x] Adicionar foto de porte editável na campanha com upload e prévia; gravação, releitura e exibição pública conferidas, foto original restaurada.
 - [x] Validar dados reais em 375px/1280px sem rolagem horizontal, datas ou Pix parcelado; brindes Micro R$175, Compact R$325 e Standard R$450; 28 testes e compilação OK. Prévia social específica por rota não implementada: hospedagem atual entrega o mesmo HTML estático.
+- [x] Retirar a moldura branca da foto da faca no hero: foto em proporção natural, inteira e do tamanho da tela (46vh no celular / 440px no computador); conferido em 375px e 1280px sem rolagem lateral, 9 testes e compilação OK.
 
 ## Campanhas minimalistas
 - [x] Mostrar a foto inteira no cartão (object-contain, fundo branco, 8px celular / 12px desktop, bolinhas inativas zinc-300); conferir 375px e 1280px com itens reais, modal intacto, 23 testes e compilação OK.
