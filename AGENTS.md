@@ -1,5 +1,7 @@
 # Architecture rules
 
+- SLS campaign test video is attached immediately after the mechanism block, independent of page JSON; its isolated player defers source loading until nearby and gates playback on visibility and visitor pause intent.
+
 - SLS page images and ordered built-in/custom blocks live in the existing page JSON configuration; absent values retain legacy defaults, explicit null images and empty block lists remove content without modifying campaign media.
 
 - SLS sales copy is normalized at its page configuration boundary to retire legacy promises without changing other campaign pages; production pillars use a pure exclusion helper, and the optional carry photo belongs to the campaign and its existing media bucket.

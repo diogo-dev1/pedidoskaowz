@@ -621,6 +621,7 @@ export type Database = {
           texto_pix_padrao: string | null
           titulo: string
           updated_at: string
+          video_teste_url: string | null
         }
         Insert: {
           ativo?: boolean
@@ -634,6 +635,7 @@ export type Database = {
           texto_pix_padrao?: string | null
           titulo: string
           updated_at?: string
+          video_teste_url?: string | null
         }
         Update: {
           ativo?: boolean
@@ -647,6 +649,7 @@ export type Database = {
           texto_pix_padrao?: string | null
           titulo?: string
           updated_at?: string
+          video_teste_url?: string | null
         }
         Relationships: []
       }

@@ -17,6 +17,7 @@ import { type Oferta, midiasDaOferta } from '@/components/ofertas/OfertaVisual';
 import { GaleriaCampanha, MiniaturasBrindes, WhatsAppIcon, wa } from '@/components/ofertas/CampanhaVisual';
 import { FichaComparativa, TituloSecao } from '@/components/ofertas/CampanhaLanding';
 import { cn } from '@/lib/utils';
+import { SlsVideoTeste } from '@/components/ofertas/SlsVideoTeste';
 import kaowzLogo from '@/assets/kaowz-logo.png';
 import imgAcetinada from '@/assets/sls/push-dagger-acetinada-thumb.webp';
 import imgStoneWashed from '@/assets/sls/push-dagger-stone-washed-thumb.webp';
@@ -142,6 +143,18 @@ function Porte({ imagem }: { imagem: string | null }) {
       <ul className="mt-6 space-y-3">{[{ Icon: Layers, texto: 'Bainha Kydex' }, { Icon: Link2, texto: 'Clipe inox temperado' }, { Icon: EyeOff, texto: 'Porte velado discreto' }].map(({ Icon, texto }) => <li key={texto} className="flex items-center gap-3"><Icon className="h-5 w-5 shrink-0 text-accent"/>{texto}</li>)}</ul>
     </div>
     {imagem ? <img src={imagem} alt="Bainha em Kydex com clipe em aço inox temperado" loading="lazy" className="mx-auto aspect-[4/5] w-full max-w-md rounded-lg object-contain"/> : <div className={cn('mx-auto flex aspect-[4/5] w-full max-w-md items-center justify-center rounded-lg border border-dashed px-6 text-center text-sm', BORDA, MUTED)}>Foto da bainha com clipe em breve</div>}
+  </div></Secao>;
+}
+
+function Teste({ url, ofertaDisponivel }: { url: string; ofertaDisponivel: boolean }) {
+  return <Secao id="video-teste"><div className="grid items-center gap-8 md:grid-cols-[380px_1fr] md:gap-14">
+    <SlsVideoTeste key={url} url={url}/>
+    <div className="min-w-0">
+      <h2 className="font-bebas text-4xl leading-none tracking-wide md:text-5xl">Não é só tecnologia. É resistência.</h2>
+      <p className={cn('mt-5 text-lg leading-relaxed', APOIO)}>Teste real com a Push Dagger SLS.</p>
+      <ul className="mt-6 space-y-3">{['Teste em chapa de aço', 'Teste em boneco de impacto', 'Empunhadura SLS firme na mão'].map(texto => <li key={texto} className="flex items-center gap-3"><Check className="h-5 w-5 shrink-0 text-[hsl(var(--campanha-economia))]"/>{texto}</li>)}</ul>
+      {ofertaDisponivel && <Button size="lg" onClick={() => irPara('oferta')} className={cn(BOTAO, 'mt-8 w-full sm:w-auto')}>Quero a minha SLS<ArrowDown className="ml-2 h-4 w-4"/></Button>}
+    </div>
   </div></Secao>;
 }
 
@@ -372,7 +385,7 @@ export default function PushDaggerSlsVendas() {
     switch (b.tipo) {
       case 'videos': return c.videos.length > 1 ? <Videos titulo={c.videosTitulo} videos={c.videos.slice(1)}/> : null;
       case 'dor': return <Dor c={c}/>;
-      case 'mecanismo': return pagina.pilares.length ? <Mecanismo pilares={pagina.pilares} prazo={c.prazoSls}/> : null;
+      case 'mecanismo': return <>{pagina.pilares.length > 0 && <Mecanismo pilares={pagina.pilares} prazo={c.prazoSls}/>} {campanha.video_teste_url?.trim() && <Teste url={campanha.video_teste_url.trim()} ofertaDisponivel={c.blocos.some(bloco => bloco.tipo === 'oferta')}/>}</>;
       case 'porte': return <Porte imagem={imagemDaPagina(c, 'porte', campanha.imagem_porte_url)}/>;
       case 'oferta': return <Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem}/>;
       case 'ficha': return <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>;

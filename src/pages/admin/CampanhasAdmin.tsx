@@ -17,9 +17,9 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 import { ArrowLeft, ArrowUp, ArrowDown, Copy, ExternalLink, Plus, Search, RefreshCw, Pencil, Trash2, Loader2, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 
-const vazio = { titulo: '', slug: '', subtitulo: '', aviso_prazo: '', texto_pix_padrao: '', texto_parcelamento_padrao: '', imagem_porte_url: '', ativo: true };
+const vazio = { titulo: '', slug: '', subtitulo: '', aviso_prazo: '', texto_pix_padrao: '', texto_parcelamento_padrao: '', imagem_porte_url: '', video_teste_url: '', ativo: true };
 type Form = typeof vazio;
-function dados(c: Campanha): Form { return { titulo: c.titulo, slug: c.slug, subtitulo: c.subtitulo ?? '', aviso_prazo: c.aviso_prazo ?? '', texto_pix_padrao: c.texto_pix_padrao ?? '', texto_parcelamento_padrao: c.texto_parcelamento_padrao ?? '', imagem_porte_url: c.imagem_porte_url ?? '', ativo: c.ativo }; }
+function dados(c: Campanha): Form { return { titulo: c.titulo, slug: c.slug, subtitulo: c.subtitulo ?? '', aviso_prazo: c.aviso_prazo ?? '', texto_pix_padrao: c.texto_pix_padrao ?? '', texto_parcelamento_padrao: c.texto_parcelamento_padrao ?? '', imagem_porte_url: c.imagem_porte_url ?? '', video_teste_url: c.video_teste_url ?? '', ativo: c.ativo }; }
 
 export default function CampanhasAdmin() {
   const { profile } = useAuth();
@@ -30,6 +30,7 @@ export default function CampanhasAdmin() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [uploadPorte, setUploadPorte] = useState(false);
+  const [uploadVideo, setUploadVideo] = useState(false);
   const [nova, setNova] = useState(false);
   const [editando, setEditando] = useState<CampanhaItem | null>(null);
   const [excluir, setExcluir] = useState<CampanhaItem | null>(null);
@@ -53,8 +54,12 @@ export default function CampanhasAdmin() {
   useEffect(() => { if (admin) void carregarCampanhas(); }, [admin]);
   async function abrir(c: Campanha) { setCampanha(c); setForm(dados(c)); setItens([]); await carregarItens(c.id); }
   async function salvar(criar = false) {
-    const payload = { ...form, titulo: form.titulo.trim(), slug: form.slug.trim().toLowerCase() };
+    const payload = { ...form, titulo: form.titulo.trim(), slug: form.slug.trim().toLowerCase(), video_teste_url: form.video_teste_url.trim() || null };
     if (!payload.titulo || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(payload.slug)) { toast.error('Informe título e link com letras minúsculas, números e hífens'); return; }
+    if (payload.video_teste_url) {
+      try { if (!['https:', 'http:'].includes(new URL(payload.video_teste_url).protocol)) throw new Error(); }
+      catch { toast.error('Informe uma URL válida de vídeo (http ou https)'); return; }
+    }
     setBusy(true);
     const result = criar ? await supabase.from('campanhas_oferta').insert(payload).select().single() : await supabase.from('campanhas_oferta').update(payload).eq('id', campanha?.id ?? '').select().single();
     setBusy(false);
@@ -74,6 +79,20 @@ export default function CampanhasAdmin() {
       toast.success('Foto enviada. Salve a campanha para publicar a alteração.');
     } catch { toast.error('Não foi possível enviar a foto'); }
     finally { setUploadPorte(false); }
+  }
+  async function enviarVideo(file: File | undefined) {
+    if (!file) return;
+    if (!/\.(mp4|webm|mov)$/i.test(file.name)) { toast.error('Escolha um vídeo mp4, webm ou mov'); return; }
+    setUploadVideo(true);
+    try {
+      const path = `campanhas/${campanha?.id ?? 'nova'}/teste-${crypto.randomUUID()}-${file.name.replace(/[^\w.-]/g, '_')}`;
+      const tipo = file.type || (/\.webm$/i.test(file.name) ? 'video/webm' : /\.mov$/i.test(file.name) ? 'video/quicktime' : 'video/mp4');
+      const { error } = await supabase.storage.from('catalogo-midias').upload(path, file, { contentType: tipo });
+      if (error) throw error;
+      setForm(f => ({ ...f, video_teste_url: supabase.storage.from('catalogo-midias').getPublicUrl(path).data.publicUrl }));
+      toast.success('Vídeo enviado. Salve a campanha para publicar a alteração.');
+    } catch { toast.error('Não foi possível enviar o vídeo'); }
+    finally { setUploadVideo(false); }
   }
   async function pesquisar() {
     setBuscando(true); setPesquisou(false);
@@ -155,7 +174,15 @@ export default function CampanhasAdmin() {
         <div className="space-y-2"><Label htmlFor="foto-porte">Foto do porte (bainha + clipe)</Label><Input id="foto-porte" type="file" accept="image/*" disabled={uploadPorte} onChange={e => { void enviarPorte(e.target.files?.[0]); e.target.value = ''; }}/>{uploadPorte && <Loader2 className="h-4 w-4 animate-spin"/>}
           {form.imagem_porte_url && <div className="space-y-2"><img src={form.imagem_porte_url} alt="Prévia da foto do porte" className="aspect-[4/5] w-40 rounded-lg border bg-muted object-contain"/><Button size="sm" variant="outline" onClick={() => setForm(f => ({ ...f, imagem_porte_url: '' }))}><Trash2 className="mr-2 h-4 w-4"/>Remover foto</Button></div>}
         </div>
-        <p className="text-xs text-muted-foreground">Pix e parcelamento padrão aparecem quando o produto não tiver um texto próprio. Salve antes de compartilhar.</p><Button disabled={busy || uploadPorte} onClick={() => void salvar()}>{busy && <Loader2 className="h-4 w-4 mr-2 animate-spin"/>}Salvar campanha</Button></section>
+        <div className="space-y-2"><Label htmlFor="video-teste-arquivo">Vídeo de teste (formato reels/vertical)</Label>
+          <Input id="video-teste-arquivo" type="file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" disabled={uploadVideo || busy} onChange={e => { void enviarVideo(e.target.files?.[0]); e.target.value = ''; }}/>
+          <Label htmlFor="video-teste-url" className="text-xs text-muted-foreground">Ou cole a URL do vídeo</Label>
+          <Input id="video-teste-url" type="url" placeholder="https://…/video.mp4" value={form.video_teste_url} disabled={uploadVideo || busy} onChange={e => setForm(f => ({ ...f, video_teste_url: e.target.value }))}/>
+          <p className="text-xs text-muted-foreground">Aparece na página /sls depois de 'Como chegamos a 15 dias úteis'. Vazio = seção escondida.</p>
+          {uploadVideo && <Loader2 className="h-4 w-4 animate-spin" aria-label="Enviando vídeo"/>}
+          {form.video_teste_url && <div className="space-y-2"><video key={form.video_teste_url} src={form.video_teste_url} muted playsInline controls preload="metadata" aria-label="Prévia do vídeo de teste" className="aspect-[9/16] w-48 rounded-lg border bg-[hsl(var(--oferta-preto))] object-contain"/><Button size="sm" variant="outline" disabled={uploadVideo || busy} onClick={() => setForm(f => ({ ...f, video_teste_url: '' }))}><Trash2 className="mr-2 h-4 w-4"/>Remover vídeo</Button></div>}
+        </div>
+        <p className="text-xs text-muted-foreground">Pix e parcelamento padrão aparecem quando o produto não tiver um texto próprio. Salve antes de compartilhar.</p><Button disabled={busy || uploadPorte || uploadVideo} onClick={() => void salvar()}>{busy && <Loader2 className="h-4 w-4 mr-2 animate-spin"/>}Salvar campanha</Button></section>
       <section className="space-y-3"><div className="flex justify-between gap-3 flex-wrap"><div><h2 className="font-semibold">Produtos ({itens.length})</h2><p className="text-xs text-muted-foreground mt-1">Busque no site para adicionar produtos. Editar permite personalizar cada oferta.</p></div><div className="flex gap-2 flex-wrap"><Button onClick={() => { setTermo(campanha.slug === 'push-dagger-sls' ? 'SLS' : ''); setProdutos([]); setPesquisou(false); setSelecionados([]); setBuscar(true); }}><Search className="h-4 w-4 mr-2"/>Buscar no site</Button><Button variant="outline" disabled={busy || !itens.length} onClick={() => void atualizarSite()}><RefreshCw className={`h-4 w-4 mr-2 ${busy ? 'animate-spin' : ''}`}/>Atualizar do site</Button></div></div>
         <p className="text-xs text-muted-foreground">Atualizar do site troca apenas preços, imagens e link. Seus títulos, descrições e condições permanecem.</p>
         {itens.map((item, i) => { const midias = item.midias as unknown as {url: string; tipo: string}[]; const foto = midias.find(m => m.tipo === 'imagem'); return <article key={item.id} className="flex flex-wrap sm:flex-nowrap items-center gap-3 border bg-card rounded-lg p-3 min-w-0">{foto && <img src={foto.url} alt={item.titulo} className="w-14 h-16 object-cover rounded shrink-0"/>}<div className="flex-1 min-w-0"><h3 className="text-sm font-medium truncate">{item.titulo}</h3><p className="text-xs text-muted-foreground">{item.valor != null ? moeda(item.valor) : 'Sem valor'}</p></div><div className="flex gap-1 items-center flex-wrap"><Switch aria-label={`Ativar ${item.titulo}`} checked={item.ativo} onCheckedChange={ativo => void alternar(item, ativo)}/><Button size="icon" variant="ghost" disabled={busy || i === 0} title="Subir produto" aria-label={`Subir ${item.titulo}`} onClick={() => void mover(i, -1)}><ArrowUp className="h-4 w-4"/></Button><Button size="icon" variant="ghost" disabled={busy || i === itens.length - 1} title="Descer produto" aria-label={`Descer ${item.titulo}`} onClick={() => void mover(i, 1)}><ArrowDown className="h-4 w-4"/></Button><Button size="icon" variant="ghost" title="Editar produto" aria-label={`Editar ${item.titulo}`} onClick={() => setEditando(item)}><Pencil className="h-4 w-4"/></Button><Button size="icon" variant="ghost" title="Remover produto" aria-label={`Remover ${item.titulo}`} onClick={() => setExcluir(item)}><Trash2 className="h-4 w-4 text-destructive"/></Button></div></article>; })}
