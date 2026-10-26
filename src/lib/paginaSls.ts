@@ -3,6 +3,25 @@ export const SLUG_PAGINA_SLS = 'sls';
 
 export interface VideoPagina { url: string; legenda?: string }
 export interface PerguntaPagina { p: string; r: string }
+export const BLOCOS_SLS = { hero: 'Topo', videos: 'Vídeos', dor: 'Uma nova linha de fabricação', mecanismo: 'Processo de fabricação', porte: 'Porte', oferta: 'Tudo o que você leva', ficha: 'Ficha técnica', paraQuem: 'Para quem é', customizar: 'Configurador', garantia: 'Garantia', perguntas: 'Perguntas frequentes', fechamento: 'Fechamento' } as const;
+export type TipoBlocoSls = keyof typeof BLOCOS_SLS | 'livre';
+export interface BlocoSls { id: string; tipo: TipoBlocoSls; titulo?: string; texto?: string; imagem?: string }
+export type ImagemSls = 'hero' | 'porte' | 'ac etinada' | 'stoneWashed' | 'tactical';
+export function normalizarBlocosSls(valor: unknown): BlocoSls[] {
+  if (!Array.isArray(valor)) return Object.keys(BLOCOS_SLS).map(tipo => ({ id: tipo, tipo: tipo as TipoBlocoSls }));
+  const ids = new Set<string>(); const tipos = new Set<string>();
+  return valor.filter((b): b is BlocoSls => {
+    if (!b || typeof b !== 'object' || typeof b.id !== 'string' || !b.id || ids.has(b.id) || !(b.tipo === 'livre' || Object.hasOwn(BLOCOS_SLS, b.tipo)) || (b.tipo !== 'livre' && tipos.has(b.tipo))) return false;
+    ids.add(b.id); tipos.add(b.tipo); return true;
+  }).map(b => ({ id: b.id, tipo: b.tipo, titulo: typeof b.titulo === 'string' ? b.titulo : '', texto: typeof b.texto === 'string' ? b.texto : '', imagem: urlImagemSls(b.imagem) ?? '' }));
+}
+function urlImagemSls(v: unknown): string | null {
+  if (typeof v !== 'string' || !v.trim()) return null;
+  try { return /^https?:$/.test(new URL(v).protocol) ? v.trim() : null; } catch { return null; }
+}
+export function imagemDaPagina(c: ConteudoSls, chave: ImagemSls, padrao: string | null): string | null {
+  return Object.hasOwn(c.imagens, chave) ? c.imagens[chave] ?? null : padrao;
+}
 
 export interface ConteudoSls {
   prazoSls: number;
@@ -22,6 +41,8 @@ export interface ConteudoSls {
   garantiaTexto: string;
   perguntas: PerguntaPagina[];
   ps: string;
+  blocos: BlocoSls[];
+  imagens: Partial<Record<ImagemSls, string | null>>;
 }
 
 /** Marcadores aceitos nos textos: {prazo} {prazo_encomenda} {parcelamento} */
@@ -53,6 +74,8 @@ export const PADRAO_SLS: ConteudoSls = {
     { p: 'Posso mudar a cor ou o acabamento da SLS?', r: 'A SLS tem configuração fixa, é isso que permite o prazo curto. Para escolher cada detalhe, use o configurador.' },
   ],
   ps: 'Pela primeira vez na Kaowz, uma Push Dagger com produção em até {prazo} dias úteis — e com os brindes desta campanha, válidos enquanto ela estiver no ar.',
+  blocos: normalizarBlocosSls(undefined),
+  imagens: {},
 };
 
 /** Junta o que foi salvo com os padrões; campos ausentes ou de tipo errado usam o padrão. */
@@ -68,6 +91,13 @@ export function mesclarConteudoSls(salvo: unknown): ConteudoSls {
   // Retire legacy campaign promises even when an older editor configuration was saved.
   out.prazoSls = 15;
   out.prazoSobEncomenda = 65;
+  out.blocos = normalizarBlocosSls(s.blocos);
+  out.imagens = {};
+  if (s.imagens && typeof s.imagens === 'object') {
+    for (const chave of ['hero', 'porte', 'ac etinada', 'stoneWashed', 'tactical'] as const) {
+      if (Object.hasOwn(s.imagens, chave)) (out.imagens as ConteudoSls['imagens'])[chave] = urlImagemSls((s.imagens as Record<string, unknown>)[chave]);
+    }
+  }
   const legado = /pix parcelado|some no bolso|sem esperar|não quer esperar|três meses de espera|resolver exatamente isso|pronta até|feche hoje|\d{2}\/\d{2}\/\d{4}/i;
   for (const k of ['heroTitulo', 'heroTexto', 'dorTitulo', 'ps'] as const) {
     const texto = out[k] as string;
