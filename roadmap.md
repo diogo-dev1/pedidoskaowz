@@ -1,5 +1,10 @@
 # Pronta Entrega — painel e notas
 
+## Vídeo de teste /sls
+- [ ] Adicionar campo de vídeo, upload/URL, prévia e remoção no painel de campanhas.
+- [ ] Mostrar vídeo vertical após o mecanismo, com carregamento próximo da tela, reprodução por visibilidade e controles de som/pausa.
+- [ ] Validar gravação real, estado vazio e reprodução em 375px/1280px; restaurar dados temporários e conferir compilação.
+
 ## Editor visual /sls
 - [x] Permitir trocar imagens e adicionar, retirar e ordenar blocos sem alterar outras campanhas.
 - [x] Gravação, upload, releitura e remoção conferidos com sessão admin real; bloco de teste retirado e imagens/blocos originais restaurados. Nove testes passaram e compilação OK.
