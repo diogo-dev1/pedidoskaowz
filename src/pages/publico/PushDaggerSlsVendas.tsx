@@ -68,8 +68,8 @@ function Videos({ titulo, videos }: { titulo: string; videos: VideoPagina[] }) {
 
 interface HeroProps { c: ConteudoSls; video: VideoPagina | null; carregando: boolean; imagem: string | null; aPartirDe: number | null; parcelamento: string | null; brindesAte: number; brindes: Extra[] }
 function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAte, brindes }: HeroProps) {
-  return <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pt-6 pb-12 md:grid-cols-[1.1fr_1fr] md:gap-14 md:pt-14 md:pb-20">
-    <div className="min-w-0">
+  return <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pt-6 pb-12 md:grid-cols-[1.1fr_1fr] md:gap-x-14 md:gap-y-0 md:pt-14 md:pb-20">
+    <div className="order-1 min-w-0 md:col-start-1 md:row-start-1">
       <img src={kaowzLogo} alt="Kaowz" className="mb-8 h-7 w-auto opacity-90"/>
       <h1 className="font-bebas text-6xl leading-[0.9] tracking-wide md:text-8xl">
         {c.heroTitulo} <span className="text-primary">{c.prazoSls} dias úteis.</span>
