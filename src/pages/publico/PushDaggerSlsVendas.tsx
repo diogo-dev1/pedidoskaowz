@@ -266,12 +266,15 @@ function Oferta({ c, itens, nomes, campanha, parcelamento, origem, escolhido, se
     <TituloSecao apoio="Escolha sua opção e veja tudo o que vai na caixa.">Tudo o que você leva</TituloSecao>
     <div className="grid gap-8 md:grid-cols-2 md:gap-14">
       <div className="min-w-0 overflow-hidden rounded-lg">
-        <GaleriaCampanha key={atual.item.id} oferta={atual.oferta} detalhe/>
+        <GaleriaCampanha key={atual.item.id} oferta={{ ...atual.oferta, midias: midiasDaOpcaoSls(c, atual) }} detalhe/>
       </div>
       <div className="min-w-0">
         <h3 className="mb-3 text-sm font-semibold">Escolha sua opção</h3>
         <div role="radiogroup" aria-label="Escolha sua opção" className="grid grid-cols-2 gap-x-2 gap-y-3 pt-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
-          {itens.map((i, n) => <div key={i.item.id} className="relative min-w-0">{ehKitCompletoSls(i.item) && <span className="pointer-events-none absolute -top-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-accent px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none text-accent-foreground">Melhor oferta</span>}<Button variant="outline" ref={el => { tamanhos.current[n] = el; }} type="button" role="radio" aria-checked={i.item.id === id} tabIndex={i.item.id === id ? 0 : -1} onKeyDown={e => setas(e, n)} onClick={() => setId(i.item.id)} className={cn('h-auto min-h-12 w-full min-w-0 whitespace-normal rounded-lg border-2 px-2 py-2 font-bebas text-lg leading-none tracking-wide sm:text-xl transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', i.item.id === id ? 'border-accent bg-accent/10' : cn(BORDA, 'bg-[hsl(var(--campanha-barra))]'))}>{nomes[i.item.id]}</Button></div>)}
+          {itens.map((i, n) => { const sel = i.item.id === id; return <Button key={i.item.id} variant="ghost" ref={el => { tamanhos.current[n] = el; }} type="button" role="radio" aria-checked={sel} tabIndex={sel ? 0 : -1} onKeyDown={e => setas(e, n)} onClick={() => setId(i.item.id)} className={cn('relative h-auto min-h-12 w-full min-w-0 whitespace-normal rounded-lg border-2 px-2 py-2 font-bebas text-lg leading-none tracking-wide sm:text-xl transition-colors duration-150 hover:bg-accent hover:text-accent-foreground hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background', sel ? 'border-accent bg-accent text-accent-foreground' : cn(BORDA, 'bg-[hsl(var(--campanha-barra))] text-[hsl(var(--oferta-texto))]'))}>
+            {ehKitCompletoSls(i.item) && <span className="pointer-events-none absolute -top-2 right-2 z-10 whitespace-nowrap rounded border border-accent bg-background px-1.5 py-0.5 font-sans text-[10px] font-bold uppercase leading-none tracking-normal text-accent">Melhor oferta</span>}
+            {nomes[i.item.id]}
+          </Button>; })}
         </div>
 
         <DestaqueBrindes brindes={atual.combo.brindes}/>
