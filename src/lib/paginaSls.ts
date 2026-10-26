@@ -68,7 +68,17 @@ export function mesclarConteudoSls(salvo: unknown): ConteudoSls {
   // Retire legacy campaign promises even when an older editor configuration was saved.
   out.prazoSls = 15;
   out.prazoSobEncomenda = 65;
-  for (const k of ['heroTitulo', 'heroTexto', 'dorTitulo', 'dorParagrafos', 'paraQuemSim', 'perguntas', 'ps'] as const) out[k] = PADRAO_SLS[k];
+  const legado = /pix parcelado|some no bolso|sem esperar|não quer esperar|três meses de espera|resolver exatamente isso|pronta até|feche hoje|\d{2}\/\d{2}\/\d{4}/i;
+  for (const k of ['heroTitulo', 'heroTexto', 'dorTitulo', 'ps'] as const) {
+    const texto = out[k] as string;
+    if (legado.test(texto) || texto === 'Uma lâmina feita à mão leva tempo.' || texto === 'Lâmina em aço sueco usinada em CNC, empunhadura em Nylon 12 sinterizada a laser.' || texto.startsWith('Pela primeira vez na história da Kaowz')) out[k] = PADRAO_SLS[k];
+  }
+  if ((out.dorParagrafos as string[]).some(t => legado.test(t) || t.startsWith('Toda Kaowz sob encomenda passa'))) out.dorParagrafos = PADRAO_SLS.dorParagrafos;
+  out.paraQuemSim = (out.paraQuemSim as string[]).map(t => legado.test(t) ? PADRAO_SLS.paraQuemSim[1] : t);
+  out.perguntas = (out.perguntas as PerguntaPagina[]).map(q => {
+    const padrao = PADRAO_SLS.perguntas.find(p => p.p === q.p);
+    return padrao && (legado.test(q.r) || (q.p === 'Quando ela fica pronta?' && q.r.startsWith('Em até'))) ? { ...padrao } : q;
+  });
   return out as unknown as ConteudoSls;
 }
 
