@@ -2,7 +2,7 @@
 // Preços, brindes e ficha técnica vêm ao vivo da campanha "push-dagger-sls" (admin de campanhas).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowDown, ArrowRight, Check, Gift, Loader2, ShieldCheck, X, Layers, Link2, EyeOff } from 'lucide-react';
+import { ArrowDown, ArrowRight, Check, Gift, Loader2, Plus, ShieldCheck, X, Layers, Link2, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -36,6 +36,22 @@ const BOTAO_WHATS = cn(BOTAO, 'gap-2 bg-[hsl(var(--oferta-whatsapp))] text-[hsl(
 const naLargura = (url: string, w: number) => url.includes('cdn.shopify.com') ? `${url}${url.includes('?') ? '&' : '?'}width=${w}` : url;
 
 const irPara = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+/** Foto da faca acima dos brindes no hero ("a faca + os brindes"); skeleton enquanto carrega, nada se não houver foto. */
+function FotoHero({ imagem, carregando }: { imagem: string | null; carregando: boolean }) {
+  const area = 'aspect-[4/3] w-full max-w-[420px] max-h-[240px] md:max-h-none rounded-lg bg-[hsl(var(--campanha-selo-fundo))]';
+  if (carregando && !imagem) return <div aria-hidden className={cn(area, 'animate-pulse bg-[hsl(var(--oferta-superficie))]')}/>;
+  if (!imagem) return null;
+  return <img
+    src={naLargura(imagem, 800)}
+    srcSet={[400, 800, 1200].map(w => `${naLargura(imagem, w)} ${w}w`).join(', ')}
+    sizes="(min-width: 768px) 420px, 100vw"
+    width={800}
+    height={600}
+    alt="Push Dagger SLS"
+    className={cn(area, 'object-contain p-2 md:p-3')}
+  />;
+}
 
 function Secao({ id, children, className }: { id?: string; children: React.ReactNode; className?: string }) {
   return <section id={id} className={cn('scroll-mt-14 border-t', BORDA)}>
@@ -92,11 +108,13 @@ function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAt
       <p className={cn('max-w-lg text-lg leading-snug md:mt-5 md:text-xl', APOIO)}>
         {preencher(c.heroTexto, c, parcelamento)}
       </p>
-      {brindes.length > 0 && <div className="mt-6 border-l-2 border-accent pl-4">
+      {brindes.length > 0 ? <div className="mt-6 border-l-2 border-accent pl-4">
+        <FotoHero imagem={imagem} carregando={carregando}/>
+        {imagem && <Plus className="mt-2 h-4 w-4 text-accent" aria-hidden/>}
         <MiniaturasBrindes brindes={brindes} variante="cartao"/>
         <p className="mt-3 text-2xl font-bold leading-tight md:text-3xl">Até {moeda(brindesAte)} em brindes</p>
         <p className={cn('mt-2 text-sm', APOIO)}>Cinto tático, multitool e case Patola, conforme o tamanho</p>
-      </div>}
+      </div> : (imagem || carregando) && <div className="mt-6"><FotoHero imagem={imagem} carregando={carregando}/></div>}
       {carregando && <div aria-hidden className="mt-6 h-9 w-56 animate-pulse rounded bg-[hsl(var(--oferta-superficie))]"/>}
       {aPartirDe != null && <p className={cn('mt-6 text-sm', MUTED)}>
         a partir de <strong className="text-3xl font-black tabular-nums text-[hsl(var(--oferta-texto))]">{moeda(aPartirDe)}</strong>
