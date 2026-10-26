@@ -1,5 +1,9 @@
 # Pronta Entrega — painel e notas
 
+## Editor visual /sls
+- [ ] Permitir trocar imagens e adicionar, retirar e ordenar blocos sem alterar outras campanhas.
+- [ ] Verificar gravação e releitura no editor e página pública.
+
 ## Ajustes da página /sls
 - [x] Corrigir textos e regras de prazo/pagamento, destacar brindes reais e adicionar seção de porte.
 - [x] Adicionar foto de porte editável na campanha com upload e prévia; gravação, releitura e exibição pública conferidas, foto original restaurada.
