@@ -469,7 +469,7 @@ export default function PushDaggerSlsVendas() {
       case 'mecanismo': return <>{pagina.pilares.length > 0 && <Mecanismo pilares={pagina.pilares} prazo={c.prazoSls}/>} {campanha.video_teste_url?.trim() && <Teste url={campanha.video_teste_url.trim()} ofertaDisponivel={c.blocos.some(bloco => bloco.tipo === 'oferta')}/>}</>;
       case 'porte': return <Porte imagem={imagemDaPagina(c, 'porte', campanha.imagem_porte_url)}/>;
       case 'oferta': {
-        return <><CarrosselOpcoes c={c} itens={pagina.itens} nomes={pagina.nomes} escolhido={escolhido} setId={setEscolhido}/><Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem} escolhido={escolhido} setId={setEscolhido}/></>;
+        return <><CarrosselOpcoes c={c} itens={pagina.itens} nomes={pagina.nomes} escolhido={escolhido} setId={setEscolhido}/><Oferta c={c} itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem} escolhido={escolhido} setId={setEscolhido}/></>;
       }
       case 'ficha': return <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.filter(i => !ehKitCompletoSls(i.item)).map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>;
       case 'paraQuem': return <ParaQuem c={c}/>;
