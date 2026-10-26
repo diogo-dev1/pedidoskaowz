@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, Search } from 'lucide-react';
 import { extrasDoItem } from '@/lib/campanhaExtras';
 import { comboDestaque, opcoesCombos } from '@/lib/campanhaCombos';
-import { conteudoDoItem, fichaDaCampanha, medidaChave, nomesDistintos } from '@/lib/campanhaConteudo';
+import { conteudoDoItem, inclusosDoItem, ehKitCompletoSls, fichaDaCampanha, medidaChave, nomesDistintos } from '@/lib/campanhaConteudo';
 import { midiasDaOferta } from '@/components/ofertas/OfertaVisual';
 import { CampanhaCard, CampanhaModal } from '@/components/ofertas/CampanhaVisual';
 import { BarraFixaCampanha, FechamentoCampanha, FichaComparativa, HeroCampanha, PilaresCampanha, TituloSecao } from '@/components/ofertas/CampanhaLanding';
@@ -32,10 +32,12 @@ export default function CampanhaOferta() {
     const itens = ofertas.map(item => {
       const oferta = ofertaDoItem(item, campanha);
       const opcoes = opcoesCombos(item, combos, extras);
-      return { item, oferta, opcoes, combo: comboDestaque(opcoes), conteudo: conteudoDoItem(item.descricao) };
+      const conteudo = conteudoDoItem(item.descricao);
+      return { item, oferta, opcoes, combo: comboDestaque(opcoes), conteudo: { ...conteudo, inclusos: inclusosDoItem(item, conteudo.inclusos) } };
     });
     const nomes = nomesDistintos(ofertas);
-    const ficha = fichaDaCampanha(itens.map(i => ({ id: i.item.id, specs: i.conteudo.specs })));
+    const individuais = itens.filter(i => !ehKitCompletoSls(i.item));
+    const ficha = fichaDaCampanha(individuais.map(i => ({ id: i.item.id, specs: i.conteudo.specs })));
     const medida = medidaChave(ficha.comparar);
     const base = itens.find(i => i.conteudo.pilares.length) ?? itens[0];
     const precos = itens.flatMap(i => i.combo ? [i.combo.preco] : []);
@@ -45,7 +47,7 @@ export default function CampanhaOferta() {
       aPartirDe: precos.length ? Math.min(...precos) : null,
       brindesAte: Math.max(0, ...itens.map(i => i.combo?.brindes.reduce((t, e) => t + (e.preco ?? 0), 0) ?? 0)),
       imagem: midiasDaOferta(destaque.oferta).find(m => m.tipo === 'imagem')?.url ?? null,
-      inclusos: [...new Set(itens.flatMap(i => i.conteudo.inclusos))],
+      inclusos: [...new Set(individuais.flatMap(i => i.conteudo.inclusos))],
     };
   }, [campanha, ofertas, combos, extras]);
 
@@ -111,7 +113,7 @@ export default function CampanhaOferta() {
       </section>
 
       <PilaresCampanha titulo={pagina.base.conteudo.manchete} pilares={pagina.base.conteudo.pilares}/>
-      <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>
+      <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.filter(i => !ehKitCompletoSls(i.item)).map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>
       <FechamentoCampanha campanha={campanha.titulo}/>
       <div className="h-20 md:hidden" aria-hidden/>
       <BarraFixaCampanha visivel={!heroVisivel && !modelosVisiveis && !selecionada} aPartirDe={pagina.aPartirDe}/>
