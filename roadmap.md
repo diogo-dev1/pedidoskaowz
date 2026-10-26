@@ -1,8 +1,8 @@
 # Pronta Entrega — painel e notas
 
 ## Editor visual /sls
-- [ ] Permitir trocar imagens e adicionar, retirar e ordenar blocos sem alterar outras campanhas.
-- [ ] Verificar gravação e releitura no editor e página pública.
+- [x] Permitir trocar imagens e adicionar, retirar e ordenar blocos sem alterar outras campanhas.
+- [x] Gravação, upload, releitura e remoção conferidos com sessão admin real; bloco de teste retirado e imagens/blocos originais restaurados. Nove testes passaram e compilação OK.
 
 ## Ajustes da página /sls
 - [x] Corrigir textos e regras de prazo/pagamento, destacar brindes reais e adicionar seção de porte.
