@@ -187,7 +187,7 @@ function DestaqueBrindes({ brindes }: { brindes: Extra[] }) {
 
 interface ItemPagina { item: CampanhaItem; oferta: Oferta; combo: OpcaoCombo; inclusos: string[] }
 
-function CarrosselOpcoes({ itens, nomes, escolhido, setId }: { itens: ItemPagina[]; nomes: Record<string, string>; escolhido: string | null; setId: (id: string) => void }) {
+function CarrosselOpcoes({ c, itens, nomes, escolhido, setId }: { c: ConteudoSls; itens: ItemPagina[]; nomes: Record<string, string>; escolhido: string | null; setId: (id: string) => void }) {
   const trilho = useRef<HTMLDivElement>(null);
   const cartoes = useRef<(HTMLButtonElement | null)[]>([]);
   const [visivel, setVisivel] = useState(1);
@@ -223,7 +223,10 @@ function CarrosselOpcoes({ itens, nomes, escolhido, setId }: { itens: ItemPagina
     <TituloSecao apoio="Toque para ver tudo o que vem com cada opção.">Escolha a sua SLS</TituloSecao>
     <div ref={trilho} onScroll={acompanhar} aria-label="Opções SLS" className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
       {itens.map((i, n) => {
-        const midia = midiasDaOferta(i.oferta)[0];
+        const chave = chaveTamanhoSls(i.item.titulo);
+        const original = midiasDaOferta(i.oferta)[0];
+        const foto = chave ? imagemDaPagina(c, chave, null) : null;
+        const midia = foto ? { url: foto, tipo: 'imagem' as const } : chave && Object.prototype.hasOwnProperty.call(c.imagens, chave) ? undefined : original;
         const { valorBrindes } = valoresCombo(i.item, i.combo);
         return <Button key={i.item.id} ref={el => { cartoes.current[n] = el; }} variant="ghost" aria-label={`Escolher ${nomes[i.item.id]}`} aria-pressed={i.item.id === id} onClick={() => { setId(i.item.id); irPara('oferta'); }} className={cn('relative block h-auto w-[78%] min-w-0 shrink-0 snap-center overflow-hidden rounded-lg border-2 p-0 text-left whitespace-normal bg-[hsl(var(--campanha-barra))] text-[hsl(var(--oferta-texto))] hover:bg-[hsl(var(--campanha-barra))] hover:text-[hsl(var(--oferta-texto))] md:w-full', i.item.id === id ? 'border-accent' : 'border-transparent')}>
           {midia?.tipo === 'video' ? <video src={midia.url} muted playsInline preload="metadata" className="aspect-[4/5] w-full object-cover"/> : midia ? <img src={naLargura(midia.url, 800)} alt={i.item.titulo} loading="lazy" className="aspect-[4/5] w-full object-cover"/> : <span aria-hidden className="block aspect-[4/5] bg-[hsl(var(--oferta-superficie))]"/>}
@@ -457,7 +460,7 @@ export default function PushDaggerSlsVendas() {
       case 'mecanismo': return <>{pagina.pilares.length > 0 && <Mecanismo pilares={pagina.pilares} prazo={c.prazoSls}/>} {campanha.video_teste_url?.trim() && <Teste url={campanha.video_teste_url.trim()} ofertaDisponivel={c.blocos.some(bloco => bloco.tipo === 'oferta')}/>}</>;
       case 'porte': return <Porte imagem={imagemDaPagina(c, 'porte', campanha.imagem_porte_url)}/>;
       case 'oferta': {
-        return <><CarrosselOpcoes itens={pagina.itens} nomes={pagina.nomes} escolhido={escolhido} setId={setEscolhido}/><Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem} escolhido={escolhido} setId={setEscolhido}/></>;
+        return <><CarrosselOpcoes c={c} itens={pagina.itens} nomes={pagina.nomes} escolhido={escolhido} setId={setEscolhido}/><Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem} escolhido={escolhido} setId={setEscolhido}/></>;
       }
       case 'ficha': return <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.filter(i => !ehKitCompletoSls(i.item)).map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>;
       case 'paraQuem': return <ParaQuem c={c}/>;
