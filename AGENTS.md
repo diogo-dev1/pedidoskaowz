@@ -1,6 +1,6 @@
 # Architecture rules
 
-- Campaign items may override description-derived inclusions with a nullable list; keep the SLS kit selection shared with its banner, and treat its collection coin as an unpriced inclusion, never an extra.
+- Campaign items may override description-derived inclusions with a nullable list; keep SLS carousel and offer selection shared, sourcing cards from item media, and treat its collection coin as an unpriced inclusion, never an extra.
 
 - SLS campaign test video is attached immediately after the mechanism block, independent of page JSON; its isolated player defers source loading until nearby and gates playback on visibility and visitor pause intent.
 
