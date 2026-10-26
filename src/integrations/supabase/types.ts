@@ -2185,6 +2185,24 @@ export type Database = {
           },
         ]
       }
+      paginas_venda_config: {
+        Row: {
+          conteudo: Json
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          conteudo?: Json
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          conteudo?: Json
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parcelamento_orcamentos: {
         Row: {
           ativo: boolean

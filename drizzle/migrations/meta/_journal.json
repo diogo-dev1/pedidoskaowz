@@ -71,6 +71,13 @@
       "when": 1792678331551,
       "tag": "0009_campanha_extras_nome_curto",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793020526021,
+      "tag": "0010_paginas_venda_config",
+      "breakpoints": true
     }
   ]
 }
