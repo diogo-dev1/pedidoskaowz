@@ -1,0 +1,1 @@
+ALTER TABLE public.campanhas_oferta ADD COLUMN IF NOT EXISTS video_teste_url text;

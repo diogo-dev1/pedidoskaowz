@@ -85,6 +85,13 @@
       "when": 1793023486244,
       "tag": "0011_campanha_imagem_porte",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793026102548,
+      "tag": "0012_campanha_video_teste",
+      "breakpoints": true
     }
   ]
 }
