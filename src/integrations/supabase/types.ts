@@ -543,6 +543,7 @@ export type Database = {
           created_at: string
           descricao: string | null
           id: string
+          inclusos: string[] | null
           link_produto: string | null
           midias: Json
           ordem: number
@@ -564,6 +565,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          inclusos?: string[] | null
           link_produto?: string | null
           midias?: Json
           ordem?: number
@@ -585,6 +587,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          inclusos?: string[] | null
           link_produto?: string | null
           midias?: Json
           ordem?: number
@@ -614,6 +617,7 @@ export type Database = {
           aviso_prazo: string | null
           created_at: string
           id: string
+          imagem_kit_url: string | null
           imagem_porte_url: string | null
           slug: string
           subtitulo: string | null
@@ -628,6 +632,7 @@ export type Database = {
           aviso_prazo?: string | null
           created_at?: string
           id?: string
+          imagem_kit_url?: string | null
           imagem_porte_url?: string | null
           slug: string
           subtitulo?: string | null
@@ -642,6 +647,7 @@ export type Database = {
           aviso_prazo?: string | null
           created_at?: string
           id?: string
+          imagem_kit_url?: string | null
           imagem_porte_url?: string | null
           slug?: string
           subtitulo?: string | null
