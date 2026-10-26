@@ -207,22 +207,24 @@ Deno.serve(async (req) => {
 
       console.log(`[bling-sync] ${contatos.length} contatos (${incremental ? "incremental" : "full"})`);
 
-      for (const contato of contatos) {
-        const row = {
-          bling_id: contato.id,
-          nome: contato.nome || null,
-          fantasia: contato.fantasia || null,
-          tipo: contato.tipo || contato.tipoPessoa || null,
-          numero_documento: contato.numeroDocumento || null,
-          email: contato.email || null,
-          telefone: contato.telefone || null,
-          celular: contato.celular || null,
-          endereco: contato.endereco || {},
-          dados_completos: contato,
-        };
-        await supabase.from("bling_contatos").upsert(row, { onConflict: "bling_id" });
-        contatosTocados.add(Number(contato.id));
+      // Upsert em blocos: um por um estoura o tempo da função com milhares de contatos.
+      const linhas = contatos.map((contato: any) => ({
+        bling_id: contato.id,
+        nome: contato.nome || null,
+        fantasia: contato.fantasia || null,
+        tipo: contato.tipo || contato.tipoPessoa || null,
+        numero_documento: contato.numeroDocumento || null,
+        email: contato.email || null,
+        telefone: contato.telefone || null,
+        celular: contato.celular || null,
+        endereco: contato.endereco || {},
+        dados_completos: contato,
+      }));
+      for (let i = 0; i < linhas.length; i += 500) {
+        const { error } = await supabase.from("bling_contatos").upsert(linhas.slice(i, i + 500), { onConflict: "bling_id" });
+        if (error) throw new Error(`Falha ao salvar contatos: ${error.message}`);
       }
+      for (const contato of contatos) contatosTocados.add(Number(contato.id));
       totalRegistros += contatos.length;
       await gravarWatermark(supabase, "contatos", inicioExecucao);
       await atualizarProgresso({ contatos_concluido: true, contatos_total: contatos.length });
