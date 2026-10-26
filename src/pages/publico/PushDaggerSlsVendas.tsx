@@ -11,7 +11,7 @@ import { type CampanhaItem, moeda, ofertaDoItem } from '@/lib/campanhas';
 import { type OpcaoCombo, comboDestaque, mensagemCombo, opcoesCombos, valoresCombo } from '@/lib/campanhaCombos';
 import { conteudoDoItem, inclusosDoItem, ehKitCompletoSls, ehCoin, textoIncluso, mensagemKitSls, fichaDaCampanha, nomesDistintos, ordenarOpcoesSls, opcaoInicialSls } from '@/lib/campanhaConteudo';
 import { fonteVideo } from '@/lib/pushDaggerLanding';
-import { type ConteudoSls, type VideoPagina, type BlocoSls, PADRAO_SLS, SLUG_PAGINA_SLS, mesclarConteudoSls, preencher, PAGAMENTO_SLS, pilaresSls, imagemDaPagina } from '@/lib/paginaSls';
+import { type ConteudoSls, type VideoPagina, type BlocoSls, PADRAO_SLS, SLUG_PAGINA_SLS, mesclarConteudoSls, preencher, PAGAMENTO_SLS, pilaresSls, imagemDaPagina, chaveTamanhoSls } from '@/lib/paginaSls';
 import { type Extra, nomeCurtoExtra } from '@/lib/campanhaExtras';
 import { type Oferta, midiasDaOferta } from '@/components/ofertas/OfertaVisual';
 import { GaleriaCampanha, MiniaturasBrindes, WhatsAppIcon, wa } from '@/components/ofertas/CampanhaVisual';
@@ -19,9 +19,6 @@ import { FichaComparativa, TituloSecao } from '@/components/ofertas/CampanhaLand
 import { cn } from '@/lib/utils';
 import { SlsVideoTeste } from '@/components/ofertas/SlsVideoTeste';
 import kaowzLogo from '@/assets/kaowz-logo.png';
-import imgAcetinada from '@/assets/sls/push-dagger-acetinada-thumb.webp';
-import imgStoneWashed from '@/assets/sls/push-dagger-stone-washed-thumb.webp';
-import imgTactical from '@/assets/sls/push-dagger-tactical-thumb.webp';
 
 const SLUG = 'push-dagger-sls';
 const LINK_CONFIGURADOR = '/push-dagger-kaowz';
@@ -190,7 +187,7 @@ function DestaqueBrindes({ brindes }: { brindes: Extra[] }) {
 
 interface ItemPagina { item: CampanhaItem; oferta: Oferta; combo: OpcaoCombo; inclusos: string[] }
 
-function CarrosselOpcoes({ itens, nomes, escolhido, setId }: { itens: ItemPagina[]; nomes: Record<string, string>; escolhido: string | null; setId: (id: string) => void }) {
+function CarrosselOpcoes({ c, itens, nomes, escolhido, setId }: { c: ConteudoSls; itens: ItemPagina[]; nomes: Record<string, string>; escolhido: string | null; setId: (id: string) => void }) {
   const trilho = useRef<HTMLDivElement>(null);
   const cartoes = useRef<(HTMLButtonElement | null)[]>([]);
   const [visivel, setVisivel] = useState(1);
@@ -226,7 +223,10 @@ function CarrosselOpcoes({ itens, nomes, escolhido, setId }: { itens: ItemPagina
     <TituloSecao apoio="Toque para ver tudo o que vem com cada opção.">Escolha a sua SLS</TituloSecao>
     <div ref={trilho} onScroll={acompanhar} aria-label="Opções SLS" className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
       {itens.map((i, n) => {
-        const midia = midiasDaOferta(i.oferta)[0];
+        const chave = chaveTamanhoSls(i.item.titulo);
+        const original = midiasDaOferta(i.oferta)[0];
+        const foto = chave ? imagemDaPagina(c, chave, null) : null;
+        const midia = foto ? { url: foto, tipo: 'imagem' as const } : chave && Object.prototype.hasOwnProperty.call(c.imagens, chave) ? undefined : original;
         const { valorBrindes } = valoresCombo(i.item, i.combo);
         return <Button key={i.item.id} ref={el => { cartoes.current[n] = el; }} variant="ghost" aria-label={`Escolher ${nomes[i.item.id]}`} aria-pressed={i.item.id === id} onClick={() => { setId(i.item.id); irPara('oferta'); }} className={cn('relative block h-auto w-[78%] min-w-0 shrink-0 snap-center overflow-hidden rounded-lg border-2 p-0 text-left whitespace-normal bg-[hsl(var(--campanha-barra))] text-[hsl(var(--oferta-texto))] hover:bg-[hsl(var(--campanha-barra))] hover:text-[hsl(var(--oferta-texto))] md:w-full', i.item.id === id ? 'border-accent' : 'border-transparent')}>
           {midia?.tipo === 'video' ? <video src={midia.url} muted playsInline preload="metadata" className="aspect-[4/5] w-full object-cover"/> : midia ? <img src={naLargura(midia.url, 800)} alt={i.item.titulo} loading="lazy" className="aspect-[4/5] w-full object-cover"/> : <span aria-hidden className="block aspect-[4/5] bg-[hsl(var(--oferta-superficie))]"/>}
@@ -325,8 +325,9 @@ function ParaQuem({ c }: { c: ConteudoSls }) {
   </Secao>;
 }
 
-function Customizar({ c }: { c: ConteudoSls }) {
-  const fotos = [{ src: imagemDaPagina(c, 'acetinada', imgAcetinada), nome: 'Acetinada' }, { src: imagemDaPagina(c, 'stoneWashed', imgStoneWashed), nome: 'Stone Washed' }, { src: imagemDaPagina(c, 'tactical', imgTactical), nome: 'Tactical' }].filter(f => f.src);
+function Customizar({ c, opcoes }: { c: ConteudoSls; opcoes: { nome: string; titulo: string; capa: string | null }[] }) {
+  // Uma foto por tamanho/kit: a do editor da página tem prioridade; senão, a capa do produto.
+  const fotos = opcoes.map(o => { const chave = chaveTamanhoSls(o.titulo); return { nome: o.nome, src: chave ? imagemDaPagina(c, chave, o.capa) : o.capa }; }).filter(f => f.src);
   return <Secao id="customizar">
     <div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
       <div className="min-w-0">
@@ -336,7 +337,7 @@ function Customizar({ c }: { c: ConteudoSls }) {
           <Link to={LINK_CONFIGURADOR}>Montar minha Push Dagger<ArrowRight className="ml-2 h-4 w-4"/></Link>
         </Button>
       </div>
-      {fotos.length > 0 && <ul className="grid grid-cols-3 gap-2">
+      {fotos.length > 0 && <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {fotos.map(f => <li key={f.nome} className="min-w-0">
           <img src={f.src ?? undefined} alt={`Push Dagger ${f.nome}`} loading="lazy" className="aspect-[3/4] w-full rounded-lg object-contain"/>
           <p className={cn('mt-2 text-center text-xs', MUTED)}>{f.nome}</p>
@@ -459,11 +460,11 @@ export default function PushDaggerSlsVendas() {
       case 'mecanismo': return <>{pagina.pilares.length > 0 && <Mecanismo pilares={pagina.pilares} prazo={c.prazoSls}/>} {campanha.video_teste_url?.trim() && <Teste url={campanha.video_teste_url.trim()} ofertaDisponivel={c.blocos.some(bloco => bloco.tipo === 'oferta')}/>}</>;
       case 'porte': return <Porte imagem={imagemDaPagina(c, 'porte', campanha.imagem_porte_url)}/>;
       case 'oferta': {
-        return <><CarrosselOpcoes itens={pagina.itens} nomes={pagina.nomes} escolhido={escolhido} setId={setEscolhido}/><Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem} escolhido={escolhido} setId={setEscolhido}/></>;
+        return <><CarrosselOpcoes c={c} itens={pagina.itens} nomes={pagina.nomes} escolhido={escolhido} setId={setEscolhido}/><Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem} escolhido={escolhido} setId={setEscolhido}/></>;
       }
       case 'ficha': return <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.filter(i => !ehKitCompletoSls(i.item)).map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>;
       case 'paraQuem': return <ParaQuem c={c}/>;
-      case 'customizar': return <Customizar c={c}/>;
+      case 'customizar': return <Customizar c={c} opcoes={(pagina?.itens ?? []).map(i => ({ nome: pagina?.nomes[i.item.id] ?? i.item.titulo, titulo: i.item.titulo, capa: midiasDaOferta(i.oferta).find(m => m.tipo === 'imagem')?.url ?? null }))}/>;
       case 'garantia': return <Garantia c={c}/>;
       case 'perguntas': return <Perguntas c={c} prazo={null} parcelamento="em até 10x sem juros"/>;
       case 'fechamento': return <Fechamento c={c} origem={origem}/>;
