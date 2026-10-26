@@ -89,17 +89,15 @@ function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAt
         {c.heroTitulo} <span className="text-primary">{c.prazoSls} dias úteis.</span>
       </h1>
     </div>
-    {video ? <div className="order-2 mx-auto aspect-[9/16] max-h-[46vh] w-full max-w-sm overflow-hidden rounded-lg md:col-start-2 md:row-start-1 md:row-span-2 md:max-h-[640px]"><Video v={video} topo/></div> : (carregando || imagem) && <div className={cn('order-2 aspect-square overflow-hidden rounded-lg md:col-start-2 md:row-start-1 md:row-span-2', imagem ? 'bg-[hsl(var(--campanha-selo-fundo))]' : 'animate-pulse bg-[hsl(var(--oferta-superficie))]')}>
-      {imagem && <img
+    {video ? <div className="order-2 mx-auto aspect-[9/16] max-h-[46vh] w-full max-w-sm overflow-hidden rounded-lg md:col-start-2 md:row-start-1 md:row-span-2 md:max-h-[640px]"><Video v={video} topo/></div> : (carregando || imagem) && <div className="order-2 mx-auto w-full max-w-sm md:col-start-2 md:row-start-1 md:row-span-2 md:max-w-none">
+      {imagem ? <img
         src={naLargura(imagem, 800)}
         srcSet={[400, 800, 1200].map(w => `${naLargura(imagem, w)} ${w}w`).join(', ')}
         sizes="(min-width: 768px) 50vw, 100vw"
-        width={800}
-        height={800}
         alt="Push Dagger SLS"
-        className="h-full w-full object-contain p-4"
+        className="mx-auto block max-h-[46vh] w-auto max-w-full rounded-lg object-contain md:max-h-[640px]"
         fetchPriority="high"
-      />}
+      /> : <div aria-hidden className="aspect-square w-full animate-pulse rounded-lg bg-[hsl(var(--oferta-superficie))]"/>}
     </div>}
     <div className="order-3 min-w-0 md:col-start-1 md:row-start-2">
       <p className={cn('max-w-lg text-lg leading-snug md:mt-5 md:text-xl', APOIO)}>
