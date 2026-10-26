@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PADRAO_SLS, mesclarConteudoSls, preencher, PAGAMENTO_SLS, pilaresSls } from './paginaSls.ts';
+import { PADRAO_SLS, mesclarConteudoSls, preencher, PAGAMENTO_SLS, pilaresSls, imagemDaPagina, normalizarBlocosSls } from './paginaSls.ts';
 
 test('usa 15 e 65 dias úteis quando nada foi salvo', () => {
   const c = mesclarConteudoSls(null);
@@ -27,4 +27,18 @@ test('troca os marcadores de prazo', () => {
 });
 test('remove o parêntese de parcelamento quando não há parcelamento', () => {
   assert.equal(preencher('cartão ({parcelamento}) ou pix', PADRAO_SLS, null), 'cartão ou pix');
+});
+
+ test('blocos podem ser retirados, restaurados e ordenados', () => {
+  assert.deepEqual(mesclarConteudoSls({ blocos: [] }).blocos, []);
+  const blocos = [{ id: 'p', tipo: 'porte' }, { id: 'novo', tipo: 'livre', titulo: 'Detalhe' }, { id: 'h', tipo: 'hero' }];
+  assert.deepEqual(normalizarBlocosSls(blocos).map(b => b.tipo), ['porte', 'livre', 'hero']);
+  assert.ok(mesclarConteudoSls({}).blocos.some(b => b.tipo === 'oferta'));
+  assert.equal(normalizarBlocosSls([{ id: 'a', tipo: 'porte' }, { id: 'b', tipo: 'porte' }]).length, 1);
+});
+test('imagens admitem troca, retirada explícita e retorno ao padrão', () => {
+  assert.equal(imagemDaPagina(mesclarConteudoSls({}), 'hero', 'original'), 'original');
+  assert.equal(imagemDaPagina(mesclarConteudoSls({ imagens: { hero: null } }), 'hero', 'original'), null);
+  assert.equal(imagemDaPagina(mesclarConteudoSls({ imagens: { hero: 'https://example.org/foto.jpg' } }), 'hero', 'original'), 'https://example.org/foto.jpg');
+  assert.equal(imagemDaPagina(mesclarConteudoSls({ imagens: { hero: 'javascript:alert(1)' } }), 'hero', 'original'), null);
 });

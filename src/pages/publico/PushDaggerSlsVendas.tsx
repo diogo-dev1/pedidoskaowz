@@ -11,7 +11,7 @@ import { type CampanhaItem, moeda, ofertaDoItem } from '@/lib/campanhas';
 import { type OpcaoCombo, comboDestaque, mensagemCombo, opcoesCombos, valoresCombo } from '@/lib/campanhaCombos';
 import { conteudoDoItem, fichaDaCampanha, nomesDistintos } from '@/lib/campanhaConteudo';
 import { fonteVideo } from '@/lib/pushDaggerLanding';
-import { type ConteudoSls, type VideoPagina, PADRAO_SLS, SLUG_PAGINA_SLS, mesclarConteudoSls, preencher, PAGAMENTO_SLS, pilaresSls } from '@/lib/paginaSls';
+import { type ConteudoSls, type VideoPagina, type BlocoSls, PADRAO_SLS, SLUG_PAGINA_SLS, mesclarConteudoSls, preencher, PAGAMENTO_SLS, pilaresSls, imagemDaPagina } from '@/lib/paginaSls';
 import { type Extra, nomeCurtoExtra } from '@/lib/campanhaExtras';
 import { type Oferta, midiasDaOferta } from '@/components/ofertas/OfertaVisual';
 import { GaleriaCampanha, MiniaturasBrindes, WhatsAppIcon, wa } from '@/components/ofertas/CampanhaVisual';
@@ -88,7 +88,7 @@ function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAt
         <span className="ml-2">· em até 10x sem juros</span>
       </p>}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Button size="lg" onClick={() => irPara('oferta')} className={BOTAO}>Quero a minha SLS<ArrowDown className="ml-2 h-4 w-4"/></Button>
+        {c.blocos.some(b => b.tipo === 'oferta') && <Button size="lg" onClick={() => irPara('oferta')} className={BOTAO}>Quero a minha SLS<ArrowDown className="ml-2 h-4 w-4"/></Button>}
         <Button asChild size="lg" variant="outline" className={cn(BOTAO, BORDA, 'bg-transparent text-[hsl(var(--oferta-texto))] hover:bg-[hsl(var(--oferta-superficie))] hover:text-[hsl(var(--oferta-texto))]')}>
           <Link to={LINK_CONFIGURADOR}>Montar do meu jeito</Link>
         </Button>
@@ -242,7 +242,7 @@ function ParaQuem({ c }: { c: ConteudoSls }) {
 }
 
 function Customizar({ c }: { c: ConteudoSls }) {
-  const fotos = [{ src: imgAcetinada, nome: 'Acetinada' }, { src: imgStoneWashed, nome: 'Stone Washed' }, { src: imgTactical, nome: 'Tactical' }];
+  const fotos = [{ src: imagemDaPagina(c, 'acetinada', imgAcetinada), nome: 'Acetinada' }, { src: imagemDaPagina(c, 'stoneWashed', imgStoneWashed), nome: 'Stone Washed' }, { src: imagemDaPagina(c, 'tactical', imgTactical), nome: 'Tactical' }].filter(f => f.src);
   return <Secao id="customizar">
     <div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
       <div className="min-w-0">
@@ -252,12 +252,12 @@ function Customizar({ c }: { c: ConteudoSls }) {
           <Link to={LINK_CONFIGURADOR}>Montar minha Push Dagger<ArrowRight className="ml-2 h-4 w-4"/></Link>
         </Button>
       </div>
-      <ul className="grid grid-cols-3 gap-2">
+      {fotos.length > 0 && <ul className="grid grid-cols-3 gap-2">
         {fotos.map(f => <li key={f.nome} className="min-w-0">
-          <img src={f.src} alt={`Push Dagger ${f.nome}`} loading="lazy" className="aspect-[3/4] w-full rounded-lg object-cover"/>
+          <img src={f.src ?? undefined} alt={`Push Dagger ${f.nome}`} loading="lazy" className="aspect-[3/4] w-full rounded-lg object-contain"/>
           <p className={cn('mt-2 text-center text-xs', MUTED)}>{f.nome}</p>
         </li>)}
-      </ul>
+      </ul>}
     </div>
   </Secao>;
 }
@@ -290,7 +290,7 @@ function Fechamento({ c, origem }: { c: ConteudoSls; origem: string }) {
     <h2 className="font-bebas text-5xl leading-none tracking-wide md:text-6xl">Sua SLS em até 15 dias úteis.</h2>
     <p className={cn('mt-4 text-base', APOIO)}>Os brindes valem enquanto a campanha estiver no ar.</p>
     <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-      <Button size="lg" onClick={() => irPara('oferta')} className={BOTAO}>Escolher meu tamanho</Button>
+      {c.blocos.some(b => b.tipo === 'oferta') && <Button size="lg" onClick={() => irPara('oferta')} className={BOTAO}>Escolher meu tamanho</Button>}
       <Button asChild size="lg" className={BOTAO_WHATS}>
         <a href={wa(`Olá! Tenho uma dúvida sobre a Push Dagger SLS [${origem}]`)} target="_blank" rel="noopener noreferrer"><WhatsAppIcon/>Tirar dúvida</a>
       </Button>
@@ -362,7 +362,26 @@ export default function PushDaggerSlsVendas() {
     }), { threshold: 0.1 });
     obs.observe(heroRef.current); obs.observe(oferta);
     return () => obs.disconnect();
-  }, [pagina]);
+  }, [pagina, c.blocos]);
+
+  function renderBloco(b: BlocoSls) {
+    if (b.tipo === 'hero') return <div ref={heroRef}><Hero c={c} video={c.videos[0] ?? null} carregando={loading} imagem={imagemDaPagina(c, 'hero', pagina?.imagem ?? null)} aPartirDe={pagina?.aPartirDe ?? null} parcelamento="em até 10x sem juros" brindesAte={pagina?.brindesAte ?? 0} brindes={pagina?.brindes ?? []}/></div>;
+    if (!campanha || !pagina) return null;
+    switch (b.tipo) {
+      case 'videos': return c.videos.length > 1 ? <Videos titulo={c.videosTitulo} videos={c.videos.slice(1)}/> : null;
+      case 'dor': return <Dor c={c}/>;
+      case 'mecanismo': return pagina.pilares.length ? <Mecanismo pilares={pagina.pilares} prazo={c.prazoSls}/> : null;
+      case 'porte': return <Porte imagem={imagemDaPagina(c, 'porte', campanha.imagem_porte_url)}/>;
+      case 'oferta': return <Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem}/>;
+      case 'ficha': return <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>;
+      case 'paraQuem': return <ParaQuem c={c}/>;
+      case 'customizar': return <Customizar c={c}/>;
+      case 'garantia': return <Garantia c={c}/>;
+      case 'perguntas': return <Perguntas c={c} prazo={null} parcelamento="em até 10x sem juros"/>;
+      case 'fechamento': return <Fechamento c={c} origem={origem}/>;
+      case 'livre': return <Secao id={`bloco-${b.id}`}><div className={cn('grid items-center gap-8', b.imagem && 'md:grid-cols-2')}><div className="min-w-0">{b.titulo && <TituloSecao>{preencher(b.titulo, c)}</TituloSecao>}{b.texto && <p className={cn('whitespace-pre-line break-words text-base leading-relaxed', APOIO)}>{preencher(b.texto, c)}</p>}</div>{b.imagem && <img src={b.imagem} alt={b.titulo || 'Push Dagger SLS'} loading="lazy" className="mx-auto max-h-[600px] w-full rounded-lg object-contain"/>}</div></Secao>;
+    }
+  }
 
   return <div className="oferta-publica min-h-dvh overflow-x-clip bg-[hsl(var(--oferta-fundo))] text-[hsl(var(--oferta-texto))]">
     {!loading && (erro || !campanha || !pagina) ? <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-4 text-center">
@@ -374,23 +393,10 @@ export default function PushDaggerSlsVendas() {
       </div>
     : <>
       <BarraPrazo brindesAte={pagina?.brindesAte ?? 0}/>
-      <div ref={heroRef}>
-        <Hero c={c} video={c.videos[0] ?? null} carregando={loading} imagem={pagina?.imagem ?? null} aPartirDe={pagina?.aPartirDe ?? null} parcelamento="em até 10x sem juros" brindesAte={pagina?.brindesAte ?? 0} brindes={pagina?.brindes ?? []}/>
-      </div>
+      {c.blocos.map(b => <div key={b.id} data-bloco-sls={b.tipo}>{renderBloco(b)}</div>)}
       {loading || !campanha || !pagina ? <div className={cn('flex justify-center py-16', MUTED)}><Loader2 className="h-5 w-5 animate-spin" aria-label="Carregando oferta"/></div> : <>
-      {c.videos.length > 1 && <Videos titulo={c.videosTitulo} videos={c.videos.slice(1)}/>}
-      <Dor c={c}/>
-      {pagina.pilares.length > 0 && <Mecanismo pilares={pagina.pilares} prazo={c.prazoSls}/>}
-      <Porte imagem={campanha.imagem_porte_url}/>
-      <Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem}/>
-      <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>
-      <ParaQuem c={c}/>
-      <Customizar c={c}/>
-      <Garantia c={c}/>
-      <Perguntas c={c} prazo={null} parcelamento="em até 10x sem juros"/>
-      <Fechamento c={c} origem={origem}/>
       <div className="h-20 md:hidden" aria-hidden/>
-      <BarraFixa visivel={!heroVisivel && !ofertaVisivel} aPartirDe={pagina.aPartirDe}/>
+      {c.blocos.some(b => b.tipo === 'oferta') && <BarraFixa visivel={(!c.blocos.some(b => b.tipo === 'hero') || !heroVisivel) && !ofertaVisivel} aPartirDe={pagina.aPartirDe}/>}
       </>}
     </>}
   </div>;

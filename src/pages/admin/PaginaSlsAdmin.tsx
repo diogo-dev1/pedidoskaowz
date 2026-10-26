@@ -7,7 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { ArrowDown, ArrowUp, ExternalLink, Loader2, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { type ConteudoSls, PADRAO_SLS, SLUG_PAGINA_SLS, mesclarConteudoSls } from '@/lib/paginaSls';
+import { type ConteudoSls, SLUG_PAGINA_SLS, mesclarConteudoSls } from '@/lib/paginaSls';
+import { SlsBlocosEditor, SlsImagemEditor } from '@/components/ofertas/SlsConteudoEditor';
+import type { ImagemSls } from '@/lib/paginaSls';
 
 function mover<T>(arr: T[], i: number, d: number) {
   const j = i + d; if (j < 0 || j >= arr.length) return arr;
@@ -23,6 +25,8 @@ export default function PaginaSlsAdmin() {
   const [busy, setBusy] = useState(false);
   const [upload, setUpload] = useState(false);
   const [url, setUrl] = useState('');
+  const [imageUploads, setImageUploads] = useState(0);
+  const imagemBusy = (v: boolean) => setImageUploads(n => Math.max(0, n + (v ? 1 : -1)));
 
   useEffect(() => {
     void supabase.from('paginas_venda_config').select('conteudo').eq('slug', SLUG_PAGINA_SLS).maybeSingle()
@@ -57,17 +61,20 @@ export default function PaginaSlsAdmin() {
   }
 
   function addUrl() {
+    if (!c) return;
     try { if (!/^https?:$/.test(new URL(url).protocol)) throw 0; } catch { toast.error('Informe um link http ou https válido'); return; }
-    set('videos', [...c!.videos, { url: url.trim(), legenda: '' }]); setUrl('');
+    set('videos', [...c.videos, { url: url.trim(), legenda: '' }]); setUrl('');
   }
 
   async function salvar() {
     if (!c) return;
-    const limpo: ConteudoSls = {
+    const urls = [...Object.values(c.imagens), ...c.blocos.map(b => b.imagem)].filter(Boolean);
+    if (urls.some(u => { try { return !/^https?:$/.test(new URL(u as string).protocol); } catch { return true; } })) { toast.error('Informe links de imagem http ou https válidos'); return; }
+    const limpo: ConteudoSls = mesclarConteudoSls({
       ...c,
       ...Object.fromEntries((['dorParagrafos', 'inclusosExtras', 'paraQuemSim', 'paraQuemNao'] as const).map(k => [k, c[k].map(s => s.trim()).filter(Boolean)])),
       perguntas: c.perguntas.filter(q => q.p.trim() && q.r.trim()),
-    };
+    });
     setBusy(true);
     const { error } = await supabase.from('paginas_venda_config').upsert({ slug: SLUG_PAGINA_SLS, conteudo: limpo as never });
     setBusy(false);
@@ -81,6 +88,10 @@ export default function PaginaSlsAdmin() {
       <Button variant="outline" asChild><a href="/sls" target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4"/>Ver página</a></Button>
     </div>
 
+    <Secao titulo="Blocos da página"><SlsBlocosEditor blocos={c.blocos} onChange={b => set('blocos', b)} onBusy={imagemBusy}/></Secao>
+    <Secao titulo="Imagens da página">
+      <div className="grid gap-6 sm:grid-cols-2">{([['hero', 'Foto do topo'], ['porte', 'Foto do porte'], ['acetinada', 'Foto Acetinada'], ['stoneWashed', 'Foto Stone Washed'], ['tactical', 'Foto Tactical']] as [ImagemSls, string][]).map(([chave, titulo]) => <SlsImagemEditor key={chave} id={`foto-${chave}`} titulo={titulo} valor={c.imagens[chave]} onBusy={imagemBusy} onChange={v => setC(prev => { if (!prev) return prev; const imagens = { ...prev.imagens }; if (v === undefined) delete imagens[chave]; else imagens[chave] = v; return { ...prev, imagens }; })}/>)}</div>
+    </Secao>
     <Secao titulo="Prazos">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5"><Label htmlFor="prazoSls">Prazo SLS (dias úteis)</Label><Input id="prazoSls" type="number" min={1} value={c.prazoSls} onChange={e => set('prazoSls', Number(e.target.value))}/></div>
@@ -110,7 +121,7 @@ export default function PaginaSlsAdmin() {
       </div>)}
     </Secao>
 
-    <Secao titulo="Por que esperar">
+    <Secao titulo="Uma nova linha de fabricação">
       {texto('dorTitulo', 'Título')}
       {linhas('dorParagrafos', 'Parágrafos')}
     </Secao>
@@ -148,8 +159,8 @@ export default function PaginaSlsAdmin() {
 
     <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 p-3 md:static md:border-0 md:bg-transparent md:p-0">
       <div className="mx-auto flex max-w-3xl justify-end gap-2">
-        <Button variant="ghost" onClick={() => { if (confirm('Voltar todos os textos ao padrão? (só vale depois de salvar)')) setC({ ...PADRAO_SLS }); }}>Restaurar padrão</Button>
-        <Button onClick={() => void salvar()} disabled={busy || upload}>{busy && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Salvar página</Button>
+        <Button variant="ghost" disabled={busy || upload || imageUploads > 0} onClick={() => { if (confirm('Voltar textos, imagens e blocos ao padrão? (só vale depois de salvar)')) setC(mesclarConteudoSls(null)); }}>Restaurar padrão</Button>
+        <Button onClick={() => void salvar()} disabled={busy || upload || imageUploads > 0}>{busy && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Salvar página</Button>
       </div>
     </div>
   </div>;

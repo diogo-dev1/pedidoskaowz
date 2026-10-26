@@ -1,5 +1,7 @@
 # Architecture rules
 
+- SLS page images and ordered built-in/custom blocks live in the existing page JSON configuration; absent values retain legacy defaults, explicit null images and empty block lists remove content without modifying campaign media.
+
 - SLS sales copy is normalized at its page configuration boundary to retire legacy promises without changing other campaign pages; production pillars use a pure exclusion helper, and the optional carry photo belongs to the campaign and its existing media bucket.
 
 - Campaigns use CampanhaVisual cards/modal with shared OfertaVisual media primitives; Novidades keeps its own unmodified presentation, and campaign defaults are adapted at the page boundary.
