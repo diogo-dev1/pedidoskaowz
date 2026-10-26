@@ -17,6 +17,7 @@ import { limparDescricao } from '@/lib/campanhaCombos';
 export default function CampanhaItemEditor({ item, onClose, onSaved }: { item: CampanhaItem; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({ titulo: item.titulo, titulo_curto: item.titulo_curto ?? '', categoria_linha: item.categoria_linha ?? '', descricao: limparDescricao(item.descricao), bordao_modal: item.bordao_modal ?? '', valor: item.valor == null ? '' : String(item.valor), valor_de: item.valor_de == null ? '' : String(item.valor_de), texto_pix: item.texto_pix ?? '', texto_parcelamento: item.texto_parcelamento ?? '', link_produto: item.link_produto ?? '', selos: item.selos.join('\n') });
   const [midias, setMidias] = useState<MidiaOferta[]>(item.midias as unknown as MidiaOferta[]);
+  const [inclusos, setInclusos] = useState(item.inclusos?.join('\n') ?? '');
   const [url, setUrl] = useState('');
   const [tipo, setTipo] = useState<'imagem' | 'video'>('imagem');
   const [busy, setBusy] = useState(false);
@@ -47,7 +48,7 @@ export default function CampanhaItemEditor({ item, onClose, onSaved }: { item: C
     if ([form.valor, form.valor_de].some(v => v && (!Number.isFinite(Number(v)) || Number(v) < 0))) { toast.error('Informe valores válidos'); return; }
     if (form.link_produto && !/^https?:\/\//i.test(form.link_produto)) { toast.error('Informe um link http ou https válido'); return; }
     setBusy(true);
-    const { error } = await supabase.from('campanha_itens').update({ ...form, descricao: limparDescricao(form.descricao), titulo: form.titulo.trim(), valor: form.valor ? Number(form.valor) : null, valor_de: form.valor_de ? Number(form.valor_de) : null, selos: form.selos.split('\n').map(s => s.trim()).filter(Boolean), midias }).eq('id', item.id);
+    const { error } = await supabase.from('campanha_itens').update({ ...form, inclusos: inclusos.trim() ? inclusos.split('\n').map(s => s.trim()).filter(Boolean) : null, descricao: limparDescricao(form.descricao), titulo: form.titulo.trim(), valor: form.valor ? Number(form.valor) : null, valor_de: form.valor_de ? Number(form.valor_de) : null, selos: form.selos.split('\n').map(s => s.trim()).filter(Boolean), midias }).eq('id', item.id);
     setBusy(false);
     if (error) { toast.error('Não foi possível salvar o produto'); return; }
     toast.success('Produto atualizado'); onSaved(); onClose();
@@ -55,6 +56,7 @@ export default function CampanhaItemEditor({ item, onClose, onSaved }: { item: C
   return <Dialog open onOpenChange={o => !o && onClose()}><DialogContent className="w-[calc(100%-1rem)] max-w-3xl max-h-[90dvh] grid-cols-[minmax(0,1fr)] overflow-y-auto"><DialogHeader><DialogTitle>Editar produto</DialogTitle></DialogHeader>
     <div className="grid gap-4 sm:grid-cols-2">{field('titulo', 'Título')}{field('link_produto', 'Link na loja')}{field('titulo_curto', 'Nome curto')}{field('categoria_linha', 'Linha de categoria')}{field('valor', 'Valor (R$)', false, true)}{field('valor_de', 'Valor de (R$)', false, true)}{field('texto_pix', 'Pix (vazio usa padrão)')}{field('texto_parcelamento', 'Parcelamento (vazio usa padrão)')}</div>
     {field('descricao', 'Descrição', true)}{field('bordao_modal', 'Bordão de apresentação (só no detalhe)', true)}{field('selos', 'Selos (um por linha)', true)}
+    <div className="space-y-1.5"><Label htmlFor="item-inclusos">Inclusos (um por linha; vazio usa a descrição)</Label><Textarea id="item-inclusos" value={inclusos} onChange={e => setInclusos(e.target.value)}/></div>
     <section className="space-y-3"><h3 className="font-medium">Mídias</h3><p className="text-xs text-muted-foreground">A primeira mídia é a capa. Adicione imagens ou vídeos e ajuste a ordem pelas setas.</p>
       <Input aria-label="Enviar mídias" type="file" accept="image/*,video/*" multiple disabled={upload} onChange={e => void arquivos(e.target.files)}/>{upload && <Loader2 className="h-4 w-4 animate-spin"/>}
       <div className="flex gap-2 flex-wrap"><Input className="flex-1 min-w-0" aria-label="URL da mídia" placeholder="https://…" value={url} onChange={e => setUrl(e.target.value)}/><Select value={tipo} onValueChange={v => setTipo(v as 'imagem' | 'video')}><SelectTrigger className="w-28"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="imagem">Imagem</SelectItem><SelectItem value="video">Vídeo</SelectItem></SelectContent></Select><Button variant="outline" size="icon" title="Adicionar mídia" aria-label="Adicionar mídia" onClick={adicionar}><Plus className="h-4 w-4"/></Button></div>

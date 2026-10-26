@@ -6,6 +6,14 @@ export interface Pilar { titulo: string; texto: string }
 export interface Spec { rotulo: string; valor: string }
 export interface ConteudoItem { manchete: string | null; chamada: string | null; pilares: Pilar[]; specs: Spec[]; inclusos: string[] }
 
+export const ehKitCompletoSls = (item: { titulo: string }) => /^kit completo push dagger sls$/i.test(item.titulo.trim());
+export const ehCoin = (texto: string) => /challenge coin kaowz/i.test(texto);
+export const textoIncluso = (texto: string) => ehCoin(texto) ? 'Challenge Coin Kaowz — conquistada por quem completa a coleção' : texto;
+export function inclusosDoItem(item: { inclusos?: string[] | null }, derivados: string[], extras: string[] = []): string[] {
+  return item.inclusos != null ? [...item.inclusos] : [...new Set([...derivados, ...extras])];
+}
+export const mensagemKitSls = (preco: number, origem: string) => `Olá! Quero o Kit Completo Push Dagger SLS (Micro + Compact + Standard) com Cinto tático, Multitool e Case Rígida personalizada — R$ ${preco.toLocaleString('pt-BR')}. Nome para personalizar a case: ____ [${origem}]`;
+
 const MARCADOR = /^\s*(?:📌\s*|•\s*|✅\s*|✔️?\s*|[-*]\s+)/u;
 const limpar = (t: string) => t.replace(/\u00a0/g, ' ').replace(/[ \t]+/g, ' ').trim();
 const ehTitulo = (b: string) => !b.includes('\n') && b.length <= 80 && /\p{L}/u.test(b) && b === b.toLocaleUpperCase('pt-BR') && !MARCADOR.test(b);
