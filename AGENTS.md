@@ -1,5 +1,7 @@
 # Architecture rules
 
+- SLS sales copy is normalized at its page configuration boundary to retire legacy promises without changing other campaign pages; production pillars use a pure exclusion helper, and the optional carry photo belongs to the campaign and its existing media bucket.
+
 - Campaigns use CampanhaVisual cards/modal with shared OfertaVisual media primitives; Novidades keeps its own unmodified presentation, and campaign defaults are adapted at the page boundary.
 - Campaign writes use the existing server-side is_admin check and public reads require both campaign and item active, so private drafts never leak through direct item queries.
 - Campaign extras use a reusable library, ordered fixed links and selectable combos with an implicit fallback; keep short-name fallback, price and description helpers pure, and preserve manually edited short names, short descriptions and special prices during Shopify refresh to prevent overwriting campaign presentation.

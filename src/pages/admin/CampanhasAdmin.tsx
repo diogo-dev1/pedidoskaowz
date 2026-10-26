@@ -17,9 +17,9 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 import { ArrowLeft, ArrowUp, ArrowDown, Copy, ExternalLink, Plus, Search, RefreshCw, Pencil, Trash2, Loader2, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 
-const vazio = { titulo: '', slug: '', subtitulo: '', aviso_prazo: '', texto_pix_padrao: '', texto_parcelamento_padrao: '', ativo: true };
+const vazio = { titulo: '', slug: '', subtitulo: '', aviso_prazo: '', texto_pix_padrao: '', texto_parcelamento_padrao: '', imagem_porte_url: '', ativo: true };
 type Form = typeof vazio;
-function dados(c: Campanha): Form { return { titulo: c.titulo, slug: c.slug, subtitulo: c.subtitulo ?? '', aviso_prazo: c.aviso_prazo ?? '', texto_pix_padrao: c.texto_pix_padrao ?? '', texto_parcelamento_padrao: c.texto_parcelamento_padrao ?? '', ativo: c.ativo }; }
+function dados(c: Campanha): Form { return { titulo: c.titulo, slug: c.slug, subtitulo: c.subtitulo ?? '', aviso_prazo: c.aviso_prazo ?? '', texto_pix_padrao: c.texto_pix_padrao ?? '', texto_parcelamento_padrao: c.texto_parcelamento_padrao ?? '', imagem_porte_url: c.imagem_porte_url ?? '', ativo: c.ativo }; }
 
 export default function CampanhasAdmin() {
   const { profile } = useAuth();
@@ -29,6 +29,7 @@ export default function CampanhasAdmin() {
   const [itens, setItens] = useState<CampanhaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [uploadPorte, setUploadPorte] = useState(false);
   const [nova, setNova] = useState(false);
   const [editando, setEditando] = useState<CampanhaItem | null>(null);
   const [excluir, setExcluir] = useState<CampanhaItem | null>(null);
@@ -59,6 +60,20 @@ export default function CampanhasAdmin() {
     setBusy(false);
     if (result.error) { toast.error(result.error.code === '23505' ? 'Este link já está em uso' : 'Não foi possível salvar a campanha'); return; }
     setCampanha(result.data); setForm(dados(result.data)); if (criar) setItens([]); setNova(false); toast.success('Campanha salva'); void carregarCampanhas();
+  }
+  async function enviarPorte(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Escolha uma imagem'); return; }
+    setUploadPorte(true);
+    try {
+      const path = `campanhas/${campanha?.id ?? 'nova'}/porte-${crypto.randomUUID()}-${file.name.replace(/[^\w.-]/g, '_')}`;
+      const { error } = await supabase.storage.from('catalogo-midias').upload(path, file, { contentType: file.type });
+      if (error) throw error;
+      const url = supabase.storage.from('catalogo-midias').getPublicUrl(path).data.publicUrl;
+      setForm(f => ({ ...f, imagem_porte_url: url }));
+      toast.success('Foto enviada. Salve a campanha para publicar a alteração.');
+    } catch { toast.error('Não foi possível enviar a foto'); }
+    finally { setUploadPorte(false); }
   }
   async function pesquisar() {
     setBuscando(true); setPesquisou(false);
@@ -136,7 +151,11 @@ export default function CampanhasAdmin() {
     <header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-xl font-semibold flex items-center gap-2"><Tag className="h-5 w-5 text-accent"/>Campanhas de oferta</h1><p className="text-xs text-muted-foreground mt-1">Escolha os produtos, ajuste a oferta e compartilhe o link com seus clientes.</p></div>{!campanha && <Button onClick={() => { setForm(vazio); setNova(true); }}><Plus className="h-4 w-4 mr-2"/>Nova campanha</Button>}</header>
     {!campanha ? loading ? <Loader2 className="h-5 w-5 animate-spin"/> : <div className="grid gap-3 sm:grid-cols-2">{campanhas.map(c => <article key={c.id} className="border bg-card rounded-lg p-4 space-y-3 min-w-0"><div className="flex justify-between gap-2"><h2 className="font-medium break-words">{c.titulo}</h2><Badge variant={c.ativo ? 'default' : 'secondary'}>{c.ativo ? 'Ativa' : 'Inativa'}</Badge></div><p className="truncate text-xs text-muted-foreground">/ofertas/{c.slug}</p><div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => void abrir(c)}><Pencil className="h-3.5 w-3.5 mr-1"/>Gerenciar</Button><Button size="sm" variant="outline" onClick={() => void copiar(c)}><Copy className="h-3.5 w-3.5 mr-1"/>Copiar link</Button><Button size="sm" variant="outline" asChild><a href={linkCampanha(c.slug)} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-3.5 w-3.5 mr-1"/>Abrir página</a></Button></div></article>)}{!campanhas.length && <p className="text-sm text-muted-foreground">Nenhuma campanha cadastrada. Comece em Nova campanha.</p>}</div> : <>
       <div className="flex flex-wrap gap-2"><Button variant="ghost" onClick={() => setCampanha(null)}><ArrowLeft className="h-4 w-4 mr-2"/>Campanhas</Button><Button variant="outline" onClick={() => void copiar(campanha)}><Copy className="h-4 w-4 mr-2"/>Copiar link</Button><Button variant="outline" asChild><a href={linkCampanha(campanha.slug)} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4 mr-2"/>Abrir página</a></Button></div>
-      <section className="space-y-4 border-b pb-6"><h2 className="font-semibold">Dados da campanha</h2>{campos}<p className="text-xs text-muted-foreground">Pix e parcelamento padrão aparecem quando o produto não tiver um texto próprio. Salve antes de compartilhar.</p><Button disabled={busy} onClick={() => void salvar()}>{busy && <Loader2 className="h-4 w-4 mr-2 animate-spin"/>}Salvar campanha</Button></section>
+      <section className="space-y-4 border-b pb-6"><h2 className="font-semibold">Dados da campanha</h2>{campos}
+        <div className="space-y-2"><Label htmlFor="foto-porte">Foto do porte (bainha + clipe)</Label><Input id="foto-porte" type="file" accept="image/*" disabled={uploadPorte} onChange={e => { void enviarPorte(e.target.files?.[0]); e.target.value = ''; }}/>{uploadPorte && <Loader2 className="h-4 w-4 animate-spin"/>}
+          {form.imagem_porte_url && <div className="space-y-2"><img src={form.imagem_porte_url} alt="Prévia da foto do porte" className="aspect-[4/5] w-40 rounded-lg border bg-muted object-contain"/><Button size="sm" variant="outline" onClick={() => setForm(f => ({ ...f, imagem_porte_url: '' }))}><Trash2 className="mr-2 h-4 w-4"/>Remover foto</Button></div>}
+        </div>
+        <p className="text-xs text-muted-foreground">Pix e parcelamento padrão aparecem quando o produto não tiver um texto próprio. Salve antes de compartilhar.</p><Button disabled={busy || uploadPorte} onClick={() => void salvar()}>{busy && <Loader2 className="h-4 w-4 mr-2 animate-spin"/>}Salvar campanha</Button></section>
       <section className="space-y-3"><div className="flex justify-between gap-3 flex-wrap"><div><h2 className="font-semibold">Produtos ({itens.length})</h2><p className="text-xs text-muted-foreground mt-1">Busque no site para adicionar produtos. Editar permite personalizar cada oferta.</p></div><div className="flex gap-2 flex-wrap"><Button onClick={() => { setTermo(campanha.slug === 'push-dagger-sls' ? 'SLS' : ''); setProdutos([]); setPesquisou(false); setSelecionados([]); setBuscar(true); }}><Search className="h-4 w-4 mr-2"/>Buscar no site</Button><Button variant="outline" disabled={busy || !itens.length} onClick={() => void atualizarSite()}><RefreshCw className={`h-4 w-4 mr-2 ${busy ? 'animate-spin' : ''}`}/>Atualizar do site</Button></div></div>
         <p className="text-xs text-muted-foreground">Atualizar do site troca apenas preços, imagens e link. Seus títulos, descrições e condições permanecem.</p>
         {itens.map((item, i) => { const midias = item.midias as unknown as {url: string; tipo: string}[]; const foto = midias.find(m => m.tipo === 'imagem'); return <article key={item.id} className="flex flex-wrap sm:flex-nowrap items-center gap-3 border bg-card rounded-lg p-3 min-w-0">{foto && <img src={foto.url} alt={item.titulo} className="w-14 h-16 object-cover rounded shrink-0"/>}<div className="flex-1 min-w-0"><h3 className="text-sm font-medium truncate">{item.titulo}</h3><p className="text-xs text-muted-foreground">{item.valor != null ? moeda(item.valor) : 'Sem valor'}</p></div><div className="flex gap-1 items-center flex-wrap"><Switch aria-label={`Ativar ${item.titulo}`} checked={item.ativo} onCheckedChange={ativo => void alternar(item, ativo)}/><Button size="icon" variant="ghost" disabled={busy || i === 0} title="Subir produto" aria-label={`Subir ${item.titulo}`} onClick={() => void mover(i, -1)}><ArrowUp className="h-4 w-4"/></Button><Button size="icon" variant="ghost" disabled={busy || i === itens.length - 1} title="Descer produto" aria-label={`Descer ${item.titulo}`} onClick={() => void mover(i, 1)}><ArrowDown className="h-4 w-4"/></Button><Button size="icon" variant="ghost" title="Editar produto" aria-label={`Editar ${item.titulo}`} onClick={() => setEditando(item)}><Pencil className="h-4 w-4"/></Button><Button size="icon" variant="ghost" title="Remover produto" aria-label={`Remover ${item.titulo}`} onClick={() => setExcluir(item)}><Trash2 className="h-4 w-4 text-destructive"/></Button></div></article>; })}
