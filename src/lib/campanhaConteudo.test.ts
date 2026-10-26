@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { inclusosDoItem, ehCoin, ehKitCompletoSls, nomesDistintos } from './campanhaConteudo';
+import { inclusosDoItem, ehCoin, ehKitCompletoSls, nomesDistintos, ordenarOpcoesSls, opcaoInicialSls } from './campanhaConteudo';
 import { valoresCombo } from './campanhaCombos';
 
 const inclusos = ['Push Dagger SLS Micro', 'Push Dagger SLS Compact', 'Push Dagger SLS Standard', '3 bainhas em Kydex + clipes em aço inox', 'Challenge Coin Kaowz'];
@@ -24,4 +24,21 @@ test('kit é identificado sem confundir opções individuais', () => {
 });
 test('nova opção de kit preserva os nomes individuais Micro Compact Standard', () => {
   assert.deepEqual(nomesDistintos(['Micro', 'Compact', 'Standard'].map((t, n) => ({ id: String(n), titulo: `Push Dagger ${t} Sandvik - SLS`, titulo_curto: null })).concat([{ id: 'kit', titulo: 'Kit Completo Push Dagger SLS', titulo_curto: 'Kit Completo' }])), { 0: 'Micro', 1: 'Compact', 2: 'Standard', kit: 'Kit Completo' });
+});
+const opcoes = [
+  { item: { id: 'kit', titulo: 'Kit Completo Push Dagger SLS', ordem: -1 } },
+  { item: { id: 'standard', titulo: 'Push Dagger Standard Sandvik - SLS', ordem: 2 } },
+  { item: { id: 'micro', titulo: 'Push Dagger Micro Sandvik - SLS', ordem: 0 } },
+  { item: { id: 'compact', titulo: 'Push Dagger Compact Sandvik - SLS', ordem: 1 } },
+];
+test('ordena pela campanha com Kit Completo sempre por último', () => {
+  assert.deepEqual(ordenarOpcoesSls(opcoes).map(i => i.item.id), ['micro', 'compact', 'standard', 'kit']);
+});
+test('Compact é opção inicial e fallback quando a seleção deixa de existir', () => {
+  assert.equal(opcaoInicialSls(opcoes, null), 'compact');
+  assert.equal(opcaoInicialSls(opcoes, 'removido'), 'compact');
+});
+test('escolha compartilhada preserva kit e outras opções depois da seleção', () => {
+  assert.equal(opcaoInicialSls(opcoes, 'kit'), 'kit');
+  assert.equal(opcaoInicialSls(opcoes, 'micro'), 'micro');
 });

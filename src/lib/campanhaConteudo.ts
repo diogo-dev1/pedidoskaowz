@@ -7,6 +7,14 @@ export interface Spec { rotulo: string; valor: string }
 export interface ConteudoItem { manchete: string | null; chamada: string | null; pilares: Pilar[]; specs: Spec[]; inclusos: string[] }
 
 export const ehKitCompletoSls = (item: { titulo: string }) => /^kit completo push dagger sls$/i.test(item.titulo.trim());
+export function ordenarOpcoesSls<T extends { item: { titulo: string; ordem: number } }>(itens: T[]): T[] {
+  return [...itens].sort((a, b) => Number(ehKitCompletoSls(a.item)) - Number(ehKitCompletoSls(b.item)) || a.item.ordem - b.item.ordem);
+}
+export function opcaoInicialSls<T extends { item: { id: string; titulo: string } }>(itens: T[], escolhido: string | null): string | null {
+  return itens.find(i => i.item.id === escolhido)?.item.id
+    ?? itens.find(i => !ehKitCompletoSls(i.item) && /\bCompact\b/i.test(i.item.titulo))?.item.id
+    ?? itens[0]?.item.id ?? null;
+}
 export const ehCoin = (texto: string) => /challenge coin kaowz/i.test(texto);
 export const textoIncluso = (texto: string) => ehCoin(texto) ? 'Challenge Coin Kaowz — conquistada por quem completa a coleção' : texto;
 export function inclusosDoItem(item: { inclusos?: string[] | null }, derivados: string[], extras: string[] = []): string[] {

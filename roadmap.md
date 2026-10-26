@@ -1,6 +1,8 @@
 # Pronta Entrega — painel e notas
 
 ## Kit Completo SLS
+- [ ] Substituir banner por carrossel de opções com Compact inicial e seleção compartilhada; retirar aviso e campo de banner.
+- [ ] Conferir carrossel e seletor com dados reais em 375px/1280px e testes.
 - [x] Incluir kit, case personalizada e inclusos próprios na campanha com valores reais.
 - [x] Mostrar cartão, selo, seleção 2x2, banner editável, moeda conquistada, FAQ e WhatsApp na /sls.
 - [x] Validar valores e seleção reais em 375px/1280px sem rolagem lateral, cartão/modal, FAQ e WhatsApp; upload do banner salvo/relido/exibido e retirado, editor da case conferido; 38 testes e compilação OK.
