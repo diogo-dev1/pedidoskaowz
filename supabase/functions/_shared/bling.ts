@@ -9,12 +9,8 @@ export async function tokenRequest(body: URLSearchParams): Promise<Response> {
   const secret = Deno.env.get('BLING_CLIENT_SECRET');
   if (!id || !secret) throw new Error('Credenciais Bling não configuradas');
   const init = { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Authorization: `Basic ${btoa(`${id}:${secret}`)}` }, body };
-  const response = await fetch(`${BLING_API_BASE}/oauth/token`, init);
-  if (response.status === 403 || response.status === 404) {
-    await response.body?.cancel();
-    return fetch('https://www.bling.com.br/Api/v3/oauth/token', init);
-  }
-  return response;
+  // Only api.bling.com.br: Bling blocks API calls through www.bling.com.br.
+  return fetch(`${BLING_API_BASE}/oauth/token`, init);
 }
 export async function getValidToken(db: any): Promise<string> {
   const latest = async () => {

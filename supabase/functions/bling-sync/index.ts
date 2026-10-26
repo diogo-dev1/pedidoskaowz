@@ -1,4 +1,4 @@
-import { authenticatedRequest } from "../_shared/auth.ts";
+import { authenticatedRequest, cronRequest } from "../_shared/auth.ts";
 import { getValidToken, blingFetch } from "../_shared/bling.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
@@ -143,20 +143,24 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  if (!await authenticatedRequest(req)) return new Response(JSON.stringify({ error: 'Faça login para continuar' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  if (!await cronRequest(req, supabase) && !await authenticatedRequest(req)) return new Response(JSON.stringify({ error: 'Faça login para continuar' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   let logId: string | undefined;
 
   try {
     const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
-    const syncType = body?.type || "full"; // "full" | "incremental" | "contatos" | "pedidos"
+    const dataValida = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+    const dataInicial = dataValida(body?.dataInicial);
+    const dataFinal = dataValida(body?.dataFinal);
+    // "backfill" = pedidos de um intervalo de datas (sem mexer no watermark)
+    const syncType = dataInicial && dataFinal ? "backfill" : (body?.type || "full"); // "full" | "incremental" | "contatos" | "pedidos" | "backfill"
     const incremental = syncType === "incremental";
     const fazerContatos = ["full", "incremental", "contatos"].includes(syncType);
-    const fazerPedidos = ["full", "incremental", "pedidos"].includes(syncType);
+    const fazerPedidos = ["full", "incremental", "pedidos", "backfill"].includes(syncType);
     const inicioExecucao = new Date();
 
     const { data: logEntry } = await supabase
@@ -203,22 +207,24 @@ Deno.serve(async (req) => {
 
       console.log(`[bling-sync] ${contatos.length} contatos (${incremental ? "incremental" : "full"})`);
 
-      for (const contato of contatos) {
-        const row = {
-          bling_id: contato.id,
-          nome: contato.nome || null,
-          fantasia: contato.fantasia || null,
-          tipo: contato.tipo || contato.tipoPessoa || null,
-          numero_documento: contato.numeroDocumento || null,
-          email: contato.email || null,
-          telefone: contato.telefone || null,
-          celular: contato.celular || null,
-          endereco: contato.endereco || {},
-          dados_completos: contato,
-        };
-        await supabase.from("bling_contatos").upsert(row, { onConflict: "bling_id" });
-        contatosTocados.add(Number(contato.id));
+      // Upsert em blocos: um por um estoura o tempo da função com milhares de contatos.
+      const linhas = contatos.map((contato: any) => ({
+        bling_id: contato.id,
+        nome: contato.nome || null,
+        fantasia: contato.fantasia || null,
+        tipo: contato.tipo || contato.tipoPessoa || null,
+        numero_documento: contato.numeroDocumento || null,
+        email: contato.email || null,
+        telefone: contato.telefone || null,
+        celular: contato.celular || null,
+        endereco: contato.endereco || {},
+        dados_completos: contato,
+      }));
+      for (let i = 0; i < linhas.length; i += 500) {
+        const { error } = await supabase.from("bling_contatos").upsert(linhas.slice(i, i + 500), { onConflict: "bling_id" });
+        if (error) throw new Error(`Falha ao salvar contatos: ${error.message}`);
       }
+      for (const contato of contatos) contatosTocados.add(Number(contato.id));
       totalRegistros += contatos.length;
       await gravarWatermark(supabase, "contatos", inicioExecucao);
       await atualizarProgresso({ contatos_concluido: true, contatos_total: contatos.length });
@@ -230,6 +236,7 @@ Deno.serve(async (req) => {
       const desde = wm ? new Date(wm.getTime() - 3600_000) : null;
       const params: Record<string, string> = {};
       if (desde) params.dataAlteracaoInicial = formatarDataBling(desde);
+      if (syncType === "backfill") { params.dataInicial = dataInicial!; params.dataFinal = dataFinal!; }
 
       let pedidos: any[] = [];
       try {
@@ -274,6 +281,14 @@ Deno.serve(async (req) => {
           };
 
           await supabase.from("bling_pedidos").upsert(row, { onConflict: "bling_id" });
+          // Garante o contato para as métricas, sem sobrescrever dados completos já sincronizados.
+          const ct = detail?.contato;
+          if (contatoId && ct) {
+            await supabase.from("bling_contatos").upsert({
+              bling_id: contatoId, nome: ct.nome || null, numero_documento: ct.numeroDocumento || null,
+              telefone: ct.telefone || null, celular: ct.celular || null, email: ct.email || null, dados_completos: ct,
+            }, { onConflict: "bling_id", ignoreDuplicates: true });
+          }
           if (contatoId) contatosTocados.add(Number(contatoId));
         }
 
@@ -282,7 +297,7 @@ Deno.serve(async (req) => {
         if (i + batchSize < pedidos.length) await sleep(1200);
       }
       totalRegistros += pedidos.length;
-      await gravarWatermark(supabase, "pedidos", inicioExecucao);
+      if (syncType !== "backfill") await gravarWatermark(supabase, "pedidos", inicioExecucao);
       await atualizarProgresso({ pedidos_concluido: true, pedidos_total: pedidos.length });
     }
 

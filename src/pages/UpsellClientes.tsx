@@ -16,6 +16,9 @@ import {
   Settings2, Copy, Plus, Trash2, Bookmark, BookmarkPlus, ClipboardList,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { brl, dataHora, rotuloDias, STATUS_META, VARIAVEIS_MENSAGEM, montarMensagem } from '@/lib/upsellMensagem';
+import UpsellSite from '@/components/upsell/UpsellSite';
+import BlingSyncStatus from '@/components/upsell/BlingSyncStatus';
 import {
   FiltrosUpsellSheet, FILTROS_PADRAO, contarFiltrosAtivos, type FiltrosUpsell,
 } from '@/components/upsell/FiltrosUpsell';
@@ -46,63 +49,6 @@ interface ClienteRow {
 }
 interface Template { id: string; nome: string; mensagem: string; ordem: number; ativo: boolean }
 interface Segmento { id: string; nome: string; filtros: FiltrosUpsell }
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-const brl = (v: number | null | undefined) =>
-  typeof v === 'number' && !isNaN(v) ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
-
-const dataHora = (iso: string) =>
-  new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-const diasDesde = (data: string | null): number | null => {
-  if (!data) return null;
-  return Math.floor((Date.now() - new Date(`${data}T00:00:00`).getTime()) / 86400_000);
-};
-
-const rotuloDias = (data: string | null) => {
-  const d = diasDesde(data);
-  if (d === null) return 'sem pedidos';
-  if (d < 1) return 'hoje';
-  if (d === 1) return 'ontem';
-  return `há ${d}d`;
-};
-
-const STATUS_META: Record<string, { label: string; className: string }> = {
-  pendente: { label: 'Pendente', className: 'bg-amber-500/15 text-amber-600 border-amber-500/30' },
-  contatado: { label: 'Contatado', className: 'bg-blue-500/15 text-blue-600 border-blue-500/30' },
-  vendeu: { label: 'Vendeu', className: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30' },
-  sem_interesse: { label: 'Sem interesse', className: 'bg-muted text-muted-foreground border-border' },
-};
-
-export const VARIAVEIS_MENSAGEM = [
-  '{nome}', '{nome_completo}', '{vendedor}', '{cidade}', '{total_gasto}',
-  '{qtd_pedidos}', '{ultimo_produto}', '{produtos}', '{dias_sem_comprar}',
-];
-
-function montarMensagem(tpl: string, c: ClienteRow, vendedor: string): string {
-  const nomeCompleto = c.nome ?? 'cliente';
-  const produtos = (c.produtos ?? []).slice(0, 4).join(', ');
-  const dias = diasDesde(c.ultimo_pedido_em);
-  const vars: Record<string, string> = {
-    '{nome_completo}': nomeCompleto,
-    '{nome}': nomeCompleto.split(' ')[0] || 'tudo bem',
-    '{vendedor}': vendedor,
-    '{cidade}': c.cidade ?? '',
-    '{total_gasto}': brl(c.total_gasto),
-    '{qtd_pedidos}': String(c.qtd_pedidos ?? 0),
-    '{ultimo_produto}': (c.produtos ?? [])[0] ?? 'sua última compra',
-    '{produtos}': produtos || 'sua última compra',
-    '{dias_sem_comprar}': dias === null ? '' : String(dias),
-    // compatibilidade com modelos antigos (por pedido)
-    '{itens}': produtos || 'sua última compra',
-    '{total}': brl(c.total_gasto),
-    '{data}': c.ultimo_pedido_em ? new Date(`${c.ultimo_pedido_em}T00:00:00`).toLocaleDateString('pt-BR') : '',
-    '{pedido}': '',
-  };
-  let out = tpl;
-  for (const [k, v] of Object.entries(vars)) out = out.split(k).join(v);
-  return out;
-}
 
 const numero = (v: string) => {
   const n = parseFloat(v.replace(',', '.'));
@@ -138,6 +84,7 @@ export default function UpsellClientes() {
   const [buscaInput, setBuscaInput] = useState('');
   const [status, setStatus] = useState('todos');
   const [pagina, setPagina] = useState(0);
+  const [origem, setOrigem] = useState<'bling' | 'site'>('bling');
 
   const [selecionado, setSelecionado] = useState<ClienteRow | null>(null);
   const [mensagem, setMensagem] = useState('');
@@ -283,6 +230,7 @@ export default function UpsellClientes() {
             <p className="text-[11px] sm:text-xs text-muted-foreground">
               Segmentação sobre a base unificada do Bling (site + manual)
             </p>
+            <div className="mt-1.5"><BlingSyncStatus /></div>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 shrink-0">
@@ -309,6 +257,17 @@ export default function UpsellClientes() {
         </div>
       )}
 
+      {/* Origem da lista */}
+      <Tabs value={origem} onValueChange={(v) => setOrigem(v as 'bling' | 'site')}>
+        <TabsList className="w-full grid grid-cols-2 h-auto gap-1 p-1">
+          <TabsTrigger value="bling" className="text-xs py-1.5">Base Bling</TabsTrigger>
+          <TabsTrigger value="site" className="text-xs py-1.5">Site — últimos dias</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {origem === 'site' ? (
+        <UpsellSite templates={(templates ?? []).filter((t) => t.ativo)} vendedorNome={vendedorNome} />
+      ) : (<>
       {/* Resumo do segmento */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
@@ -472,6 +431,8 @@ export default function UpsellClientes() {
           </div>
         </div>
       )}
+
+      </>)}
 
       {/* Modal de contato */}
       <Dialog open={!!selecionado} onOpenChange={(v) => !v && setSelecionado(null)}>
