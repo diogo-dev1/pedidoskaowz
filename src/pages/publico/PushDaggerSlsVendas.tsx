@@ -223,10 +223,7 @@ function CarrosselOpcoes({ c, itens, nomes, escolhido, setId }: { c: ConteudoSls
     <TituloSecao apoio="Toque para ver tudo o que vem com cada opção.">Escolha a sua SLS</TituloSecao>
     <div ref={trilho} onScroll={acompanhar} aria-label="Opções SLS" className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
       {itens.map((i, n) => {
-        const chave = chaveTamanhoSls(i.item.titulo);
-        const original = midiasDaOferta(i.oferta)[0];
-        const foto = chave ? imagemDaPagina(c, chave, null) : null;
-        const midia = foto ? { url: foto, tipo: 'imagem' as const } : chave && Object.prototype.hasOwnProperty.call(c.imagens, chave) ? undefined : original;
+        const midia = midiasDaOpcaoSls(c, i)[0];
         const { valorBrindes } = valoresCombo(i.item, i.combo);
         return <Button key={i.item.id} ref={el => { cartoes.current[n] = el; }} variant="ghost" aria-label={`Escolher ${nomes[i.item.id]}`} aria-pressed={i.item.id === id} onClick={() => { setId(i.item.id); irPara('oferta'); }} className={cn('relative block h-auto w-[78%] min-w-0 shrink-0 snap-center overflow-hidden rounded-lg border-2 p-0 text-left whitespace-normal bg-[hsl(var(--campanha-barra))] text-[hsl(var(--oferta-texto))] hover:bg-[hsl(var(--campanha-barra))] hover:text-[hsl(var(--oferta-texto))] md:w-full', i.item.id === id ? 'border-accent' : 'border-transparent')}>
           {midia?.tipo === 'video' ? <video src={midia.url} muted playsInline preload="metadata" className="aspect-[4/5] w-full object-cover"/> : midia ? <img src={naLargura(midia.url, 800)} alt={i.item.titulo} loading="lazy" className="aspect-[4/5] w-full object-cover"/> : <span aria-hidden className="block aspect-[4/5] bg-[hsl(var(--oferta-superficie))]"/>}
@@ -239,8 +236,17 @@ function CarrosselOpcoes({ c, itens, nomes, escolhido, setId }: { c: ConteudoSls
   </Secao>;
 }
 
-interface OfertaProps { itens: ItemPagina[]; nomes: Record<string, string>; campanha: string; parcelamento: string | null; origem: string; escolhido: string | null; setId: (id: string) => void }
-function Oferta({ itens, nomes, campanha, parcelamento, origem, escolhido, setId }: OfertaProps) {
+/** Fonte única das mídias de uma opção: a 1ª é a mesma do cartão do carrossel, depois as do próprio item. */
+function midiasDaOpcaoSls(c: ConteudoSls, i: ItemPagina) {
+  const doItem = midiasDaOferta(i.oferta);
+  const chave = chaveTamanhoSls(i.item.titulo);
+  const foto = chave ? imagemDaPagina(c, chave, null) : null;
+  if (foto) return [{ url: foto, tipo: 'imagem' as const }, ...doItem.filter(m => m.url !== foto)];
+  return doItem;
+}
+
+interface OfertaProps { c: ConteudoSls; itens: ItemPagina[]; nomes: Record<string, string>; campanha: string; parcelamento: string | null; origem: string; escolhido: string | null; setId: (id: string) => void }
+function Oferta({ c, itens, nomes, campanha, parcelamento, origem, escolhido, setId }: OfertaProps) {
   const id = opcaoInicialSls(itens, escolhido);
   const atual = itens.find(i => i.item.id === id) ?? itens[0];
   const kit = ehKitCompletoSls(atual.item);
@@ -260,12 +266,15 @@ function Oferta({ itens, nomes, campanha, parcelamento, origem, escolhido, setId
     <TituloSecao apoio="Escolha sua opção e veja tudo o que vai na caixa.">Tudo o que você leva</TituloSecao>
     <div className="grid gap-8 md:grid-cols-2 md:gap-14">
       <div className="min-w-0 overflow-hidden rounded-lg">
-        <GaleriaCampanha key={atual.item.id} oferta={atual.oferta} detalhe/>
+        <GaleriaCampanha key={atual.item.id} oferta={{ ...atual.oferta, midias: midiasDaOpcaoSls(c, atual) }} detalhe/>
       </div>
       <div className="min-w-0">
         <h3 className="mb-3 text-sm font-semibold">Escolha sua opção</h3>
         <div role="radiogroup" aria-label="Escolha sua opção" className="grid grid-cols-2 gap-x-2 gap-y-3 pt-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
-          {itens.map((i, n) => <div key={i.item.id} className="relative min-w-0">{ehKitCompletoSls(i.item) && <span className="pointer-events-none absolute -top-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-accent px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none text-accent-foreground">Melhor oferta</span>}<Button variant="outline" ref={el => { tamanhos.current[n] = el; }} type="button" role="radio" aria-checked={i.item.id === id} tabIndex={i.item.id === id ? 0 : -1} onKeyDown={e => setas(e, n)} onClick={() => setId(i.item.id)} className={cn('h-auto min-h-12 w-full min-w-0 whitespace-normal rounded-lg border-2 px-2 py-2 font-bebas text-lg leading-none tracking-wide sm:text-xl transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', i.item.id === id ? 'border-accent bg-accent/10' : cn(BORDA, 'bg-[hsl(var(--campanha-barra))]'))}>{nomes[i.item.id]}</Button></div>)}
+          {itens.map((i, n) => { const sel = i.item.id === id; return <Button key={i.item.id} variant="ghost" ref={el => { tamanhos.current[n] = el; }} type="button" role="radio" aria-checked={sel} tabIndex={sel ? 0 : -1} onKeyDown={e => setas(e, n)} onClick={() => setId(i.item.id)} className={cn('relative h-auto min-h-12 w-full min-w-0 whitespace-normal rounded-lg border-2 px-2 py-2 font-bebas text-lg leading-none tracking-wide sm:text-xl transition-colors duration-150 hover:bg-accent hover:text-[hsl(var(--oferta-preto))] hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background', sel ? 'border-accent bg-accent text-[hsl(var(--oferta-preto))]' : cn(BORDA, 'bg-[hsl(var(--campanha-barra))] text-[hsl(var(--oferta-texto))]'))}>
+            {ehKitCompletoSls(i.item) && <span className="pointer-events-none absolute -top-2 right-2 z-10 whitespace-nowrap rounded border border-accent bg-[hsl(var(--oferta-fundo))] px-1.5 py-0.5 font-sans text-[10px] font-bold uppercase leading-none tracking-normal text-accent">Melhor oferta</span>}
+            {nomes[i.item.id]}
+          </Button>; })}
         </div>
 
         <DestaqueBrindes brindes={atual.combo.brindes}/>
@@ -460,7 +469,7 @@ export default function PushDaggerSlsVendas() {
       case 'mecanismo': return <>{pagina.pilares.length > 0 && <Mecanismo pilares={pagina.pilares} prazo={c.prazoSls}/>} {campanha.video_teste_url?.trim() && <Teste url={campanha.video_teste_url.trim()} ofertaDisponivel={c.blocos.some(bloco => bloco.tipo === 'oferta')}/>}</>;
       case 'porte': return <Porte imagem={imagemDaPagina(c, 'porte', campanha.imagem_porte_url)}/>;
       case 'oferta': {
-        return <><CarrosselOpcoes c={c} itens={pagina.itens} nomes={pagina.nomes} escolhido={escolhido} setId={setEscolhido}/><Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem} escolhido={escolhido} setId={setEscolhido}/></>;
+        return <><CarrosselOpcoes c={c} itens={pagina.itens} nomes={pagina.nomes} escolhido={escolhido} setId={setEscolhido}/><Oferta c={c} itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem} escolhido={escolhido} setId={setEscolhido}/></>;
       }
       case 'ficha': return <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.filter(i => !ehKitCompletoSls(i.item)).map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>;
       case 'paraQuem': return <ParaQuem c={c}/>;
