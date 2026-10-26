@@ -1,15 +1,26 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PADRAO_SLS, mesclarConteudoSls, preencher } from './paginaSls.ts';
+import { PADRAO_SLS, mesclarConteudoSls, preencher, PAGAMENTO_SLS, pilaresSls } from './paginaSls.ts';
 
 test('usa 15 e 65 dias úteis quando nada foi salvo', () => {
   const c = mesclarConteudoSls(null);
   assert.equal(c.prazoSls, 15);
   assert.equal(c.prazoSobEncomenda, 65);
 });
-test('mantém prazo salvo e ignora prazo inválido', () => {
-  assert.equal(mesclarConteudoSls({ prazoSls: 20 }).prazoSls, 20);
+test('página SLS mantém produção em 15 dias úteis mesmo com configuração antiga', () => {
+  assert.equal(mesclarConteudoSls({ prazoSls: 20 }).prazoSls, 15);
   assert.equal(mesclarConteudoSls({ prazoSls: 0 }).prazoSls, 15);
+});
+test('pagamento permite PIX e cartão, não PIX parcelado', () => {
+  assert.equal(PAGAMENTO_SLS.pix, true);
+  assert.equal(PAGAMENTO_SLS.cartao, true);
+  assert.equal(PAGAMENTO_SLS.pixParcelado, false);
+});
+test('cartão oferece até 10 parcelas sem juros', () => {
+  assert.equal(PAGAMENTO_SLS.maxParcelasSemJuros, 10);
+});
+test('tratamento térmico não é pilar de produção SLS', () => {
+  assert.deepEqual(pilaresSls([{ titulo: 'Usinagem CNC' }, { titulo: 'Tratamento térmico especial' }]), [{ titulo: 'Usinagem CNC' }]);
 });
 test('troca os marcadores de prazo', () => {
   assert.equal(preencher('em {prazo} e {prazo_encomenda}', { ...PADRAO_SLS, prazoSls: 12 }), 'em 12 e 65');
