@@ -6,7 +6,7 @@ export interface PerguntaPagina { p: string; r: string }
 export const BLOCOS_SLS = { hero: 'Topo', videos: 'Vídeos', dor: 'Uma nova linha de fabricação', mecanismo: 'Processo de fabricação', porte: 'Porte', oferta: 'Tudo o que você leva', ficha: 'Ficha técnica', paraQuem: 'Para quem é', customizar: 'Configurador', garantia: 'Garantia', perguntas: 'Perguntas frequentes', fechamento: 'Fechamento' } as const;
 export type TipoBlocoSls = keyof typeof BLOCOS_SLS | 'livre';
 export interface BlocoSls { id: string; tipo: TipoBlocoSls; titulo?: string; texto?: string; imagem?: string }
-export type ImagemSls = 'hero' | 'porte' | 'ac etinada' | 'stoneWashed' | 'tactical';
+export type ImagemSls = 'hero' | 'porte' | 'acetinada' | 'stoneWashed' | 'tactical';
 export function normalizarBlocosSls(valor: unknown): BlocoSls[] {
   if (!Array.isArray(valor)) return Object.keys(BLOCOS_SLS).map(tipo => ({ id: tipo, tipo: tipo as TipoBlocoSls }));
   const ids = new Set<string>(); const tipos = new Set<string>();
@@ -94,7 +94,7 @@ export function mesclarConteudoSls(salvo: unknown): ConteudoSls {
   out.blocos = normalizarBlocosSls(s.blocos);
   out.imagens = {};
   if (s.imagens && typeof s.imagens === 'object') {
-    for (const chave of ['hero', 'porte', 'ac etinada', 'stoneWashed', 'tactical'] as const) {
+    for (const chave of ['hero', 'porte', 'acetinada', 'stoneWashed', 'tactical'] as const) {
       if (Object.hasOwn(s.imagens, chave)) (out.imagens as ConteudoSls['imagens'])[chave] = urlImagemSls((s.imagens as Record<string, unknown>)[chave]);
     }
   }
