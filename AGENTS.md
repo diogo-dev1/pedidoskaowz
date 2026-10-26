@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Campaign items may override description-derived inclusions with a nullable list; keep the SLS kit selection shared with its banner, and treat its collection coin as an unpriced inclusion, never an extra.
+
 - SLS campaign test video is attached immediately after the mechanism block, independent of page JSON; its isolated player defers source loading until nearby and gates playback on visibility and visitor pause intent.
 
 - SLS page images and ordered built-in/custom blocks live in the existing page JSON configuration; absent values retain legacy defaults, explicit null images and empty block lists remove content without modifying campaign media.

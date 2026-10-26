@@ -3,12 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Gift } from 'lucide-react';
+import { Award, Check, ChevronDown, ChevronLeft, ChevronRight, Gift } from 'lucide-react';
 import { Midia, midiasDaOferta, type Oferta } from './OfertaVisual';
 import { type CampanhaItem, moeda } from '@/lib/campanhas';
 import { comboDestaque, limparDescricao, mensagemCombo, valoresCombo, type OpcaoCombo } from '@/lib/campanhaCombos';
 import { nomeCurtoExtra, type Extra, type ItemExtra } from '@/lib/campanhaExtras';
-import type { ConteudoItem } from '@/lib/campanhaConteudo';
+import { ehCoin, textoIncluso, type ConteudoItem } from '@/lib/campanhaConteudo';
 import { CampanhaExtrasPublicos } from './CampanhaExtrasPublicos';
 
 export const wa = (msg: string) => `https://wa.me/5528999025695?text=${encodeURIComponent(msg)}`;
@@ -69,8 +69,9 @@ export function CampanhaCard({ item, oferta, opcoes, campanha, nome, medida, onO
   const combo = comboDestaque(opcoes);
   if (!combo) return null;
   return <article className="min-w-0 flex flex-col overflow-hidden rounded-lg border border-[hsl(var(--oferta-borda))] bg-[hsl(var(--campanha-barra))] text-[hsl(var(--oferta-texto))] transition-colors duration-200 [@media(hover:hover)]:hover:border-accent">
-    <button type="button" aria-label={`Ver detalhes de ${oferta.titulo}`} className="block text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent" onClick={onOpen}>
+    <button type="button" aria-label={`Ver detalhes de ${oferta.titulo}`} className="relative block text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent" onClick={onOpen}>
       <GaleriaCampanha oferta={oferta}/>
+      {item.selos.includes('MELHOR OFERTA') && <span className="absolute left-3 top-3 rounded bg-accent px-2 py-1 text-[10px] font-bold text-accent-foreground">MELHOR OFERTA</span>}
     </button>
     <div className="flex min-w-0 flex-1 flex-col gap-4 p-4 md:p-5">
       <div className="min-w-0">
@@ -134,7 +135,7 @@ export function CampanhaModal({ item, oferta, opcoes, campanha, nome, conteudo, 
             <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-sm">
               {conteudo.specs.map(s => <div key={s.rotulo} className="contents"><dt className="text-[hsl(var(--oferta-muted))]">{s.rotulo}</dt><dd className="text-right tabular-nums break-words">{s.valor}</dd></div>)}
             </dl>
-            {conteudo.inclusos.map(t => <p key={t} className="flex items-start gap-2 text-sm"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--campanha-economia))]"/>{t}</p>)}
+            {conteudo.inclusos.map(t => <p key={t} className="flex items-start gap-2 text-sm">{ehCoin(t) ? <Award className="mt-0.5 h-4 w-4 shrink-0 text-accent"/> : <Check className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--campanha-economia))]"/>}{textoIncluso(t)}</p>)}
           </section>}
 
           {descricao && <details className="group border-t border-[hsl(var(--oferta-borda))] pt-5">

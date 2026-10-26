@@ -66,6 +66,7 @@ export const PADRAO_SLS: ConteudoSls = {
   garantiaTitulo: 'Garantia vitalícia',
   garantiaTexto: 'Garantia vitalícia de qualidade e manutenção de afiação, como em todas as lâminas Kaowz. Você compra uma vez.',
   perguntas: [
+    { p: 'O que vem no Kit Completo?', r: 'As três Push Daggers SLS — Micro, Compact e Standard — com bainhas em Kydex e clipes em aço inox, a Case Rígida Collector Kit personalizada com o seu nome e a Challenge Coin Kaowz. A case é personalizada com o seu nome; você informa o nome no WhatsApp.' },
     { p: 'Como faço o pedido?', r: 'Toque no botão verde, escolha o tamanho e a mensagem já vai pronta para o nosso WhatsApp. A equipe confirma os dados de entrega e envia o link de pagamento.' },
     { p: 'Quando ela fica pronta?', r: 'A produção leva até {prazo} dias úteis a partir da confirmação do pedido. Depois vem o envio, com código de rastreio.' },
     { p: 'Quais as formas de pagamento?', r: 'PIX ou cartão de crédito em até 10x sem juros.' },

@@ -2,14 +2,14 @@
 // Preços, brindes e ficha técnica vêm ao vivo da campanha "push-dagger-sls" (admin de campanhas).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowDown, ArrowRight, Check, Gift, Loader2, ShieldCheck, X, Layers, Link2, EyeOff } from 'lucide-react';
+import { Award, ArrowDown, ArrowRight, Check, Gift, Loader2, ShieldCheck, X, Layers, Link2, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useCampanhaOferta } from '@/hooks/useCampanhaOferta';
 import { type CampanhaItem, moeda, ofertaDoItem } from '@/lib/campanhas';
 import { type OpcaoCombo, comboDestaque, mensagemCombo, opcoesCombos, valoresCombo } from '@/lib/campanhaCombos';
-import { conteudoDoItem, fichaDaCampanha, nomesDistintos } from '@/lib/campanhaConteudo';
+import { conteudoDoItem, inclusosDoItem, ehKitCompletoSls, ehCoin, textoIncluso, mensagemKitSls, fichaDaCampanha, nomesDistintos } from '@/lib/campanhaConteudo';
 import { fonteVideo } from '@/lib/pushDaggerLanding';
 import { type ConteudoSls, type VideoPagina, type BlocoSls, PADRAO_SLS, SLUG_PAGINA_SLS, mesclarConteudoSls, preencher, PAGAMENTO_SLS, pilaresSls, imagemDaPagina } from '@/lib/paginaSls';
 import { type Extra, nomeCurtoExtra } from '@/lib/campanhaExtras';
@@ -58,7 +58,7 @@ function CartaoBrindes({ imagem, carregando, brindes, brindesAte }: { imagem: st
         <MiniaturasBrindes brindes={brindes} variante="cartao"/>
       </div>
       <p className="mt-3 text-[22px] font-bold leading-tight md:text-[26px]">Até {moeda(brindesAte)} em brindes</p>
-      <p className={cn('mt-1 text-sm', APOIO)}>Cinto tático, multitool e case Patola, conforme o tamanho</p>
+      <p className={cn('mt-1 text-sm', APOIO)}>Cinto tático, multitool e case, conforme a opção escolhida</p>
     </div>}
   </div>;
 }
@@ -190,12 +190,26 @@ function DestaqueBrindes({ brindes }: { brindes: Extra[] }) {
 
 interface ItemPagina { item: CampanhaItem; oferta: Oferta; combo: OpcaoCombo; inclusos: string[] }
 
-interface OfertaProps { itens: ItemPagina[]; nomes: Record<string, string>; campanha: string; parcelamento: string | null; origem: string }
-function Oferta({ itens, nomes, campanha, parcelamento, origem }: OfertaProps) {
-  const [escolhido, setId] = useState(itens[itens.length - 1].item.id);
+function KitCompleto({ kit, imagem, escolher }: { kit: ItemPagina; imagem: string | null; escolher: () => void }) {
+  const { valorDe } = valoresCombo(kit.item, kit.combo);
+  return <Secao id="kit-completo"><div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
+    {imagem && <img src={naLargura(imagem, 1200)} alt="Kit Completo Push Dagger SLS" loading="lazy" className="aspect-[4/3] max-h-[480px] w-full rounded-lg object-contain"/>}
+    <div className="min-w-0"><p className="mb-3 text-xs font-bold uppercase text-accent">Kit Completo · Melhor oferta</p><h2 className="font-bebas text-4xl leading-none md:text-5xl">Leve as três. Ganhe a coleção.</h2>
+      <p className={cn('mt-5 text-base leading-relaxed', APOIO)}>Micro, Compact e Standard com bainhas Kydex, Case Rígida Collector Kit personalizada com o seu nome, cinto tático e multitool — e a Challenge Coin Kaowz, conquistada por quem completa a coleção.</p>
+      <div className="mt-6 flex flex-wrap items-baseline gap-2"><span className={cn('text-sm line-through', MUTED)}>de {moeda(valorDe)}</span><strong className="text-3xl font-black md:text-4xl">por {moeda(kit.combo.preco)}</strong></div>
+      <p className={cn('mt-2 text-sm', APOIO)}>em até 10x sem juros</p>
+      <Button size="lg" onClick={escolher} className={cn(BOTAO, 'mt-6 w-full sm:w-auto')}>Quero o Kit Completo<ArrowDown className="ml-2 h-4 w-4"/></Button>
+    </div>
+  </div></Secao>;
+}
+
+interface OfertaProps { itens: ItemPagina[]; nomes: Record<string, string>; campanha: string; parcelamento: string | null; origem: string; escolhido: string | null; setId: (id: string) => void }
+function Oferta({ itens, nomes, campanha, parcelamento, origem, escolhido, setId }: OfertaProps) {
+  const padrao = itens.filter(i => !ehKitCompletoSls(i.item)).at(-1) ?? itens[0];
   // Se a campanha for editada e o item sumir, volta para o último (maior) tamanho.
-  const id = itens.some(i => i.item.id === escolhido) ? escolhido : itens[itens.length - 1].item.id;
+  const id = itens.some(i => i.item.id === escolhido) ? escolhido : padrao.item.id;
   const atual = itens.find(i => i.item.id === id) ?? itens[0];
+  const kit = ehKitCompletoSls(atual.item);
   const { valorDe, economia } = valoresCombo(atual.item, atual.combo);
   const parcelas = PAGAMENTO_SLS.maxParcelasSemJuros;
   const tamanhos = useRef<(HTMLButtonElement | null)[]>([]);
@@ -207,28 +221,29 @@ function Oferta({ itens, nomes, campanha, parcelamento, origem }: OfertaProps) {
     setId(itens[j].item.id);
     tamanhos.current[j]?.focus();
   };
-  const mensagem = `${mensagemCombo(atual.item.titulo, atual.combo, campanha)} [${origem}]`;
+  const mensagem = kit ? mensagemKitSls(atual.combo.preco, origem) : `${mensagemCombo(atual.item.titulo, atual.combo, campanha)} [${origem}]`;
   return <Secao id="oferta">
-    <TituloSecao apoio="Escolha o tamanho e veja tudo o que vai na caixa.">Tudo o que você leva</TituloSecao>
+    <TituloSecao apoio="Escolha sua opção e veja tudo o que vai na caixa.">Tudo o que você leva</TituloSecao>
     <div className="grid gap-8 md:grid-cols-2 md:gap-14">
       <div className="min-w-0 overflow-hidden rounded-lg">
         <GaleriaCampanha key={atual.item.id} oferta={atual.oferta} detalhe/>
       </div>
       <div className="min-w-0">
-        <div role="radiogroup" aria-label="Tamanho" className="grid grid-cols-[repeat(auto-fit,minmax(0,1fr))] gap-2">
-          {itens.map((i, n) => <Button variant="outline" key={i.item.id} ref={el => { tamanhos.current[n] = el; }} type="button" role="radio" aria-checked={i.item.id === id} tabIndex={i.item.id === id ? 0 : -1} onKeyDown={e => setas(e, n)} onClick={() => setId(i.item.id)} className={cn('h-12 rounded-lg border-2 font-bebas text-xl tracking-wide transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', i.item.id === id ? 'border-accent bg-accent/10' : cn(BORDA, 'bg-[hsl(var(--campanha-barra))]'))}>{nomes[i.item.id]}</Button>)}
+        <h3 className="mb-3 text-sm font-semibold">Escolha sua opção</h3>
+        <div role="radiogroup" aria-label="Escolha sua opção" className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
+          {itens.map((i, n) => <div key={i.item.id} className="flex min-w-0 flex-col justify-end gap-1">{ehKitCompletoSls(i.item) && <span className="text-center text-[10px] font-bold text-accent">Melhor oferta</span>}<Button variant="outline" ref={el => { tamanhos.current[n] = el; }} type="button" role="radio" aria-checked={i.item.id === id} tabIndex={i.item.id === id ? 0 : -1} onKeyDown={e => setas(e, n)} onClick={() => setId(i.item.id)} className={cn('h-12 w-full min-w-0 rounded-lg border-2 px-1 font-bebas text-xl tracking-wide transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', i.item.id === id ? 'border-accent bg-accent/10' : cn(BORDA, 'bg-[hsl(var(--campanha-barra))]'))}>{nomes[i.item.id]}</Button></div>)}
         </div>
 
         <DestaqueBrindes brindes={atual.combo.brindes}/>
 
         <ul className={cn('mt-6 divide-y border-y text-sm', BORDA, '[&>li]:border-[hsl(var(--oferta-borda))]')}>
-          <li className="flex items-center justify-between gap-3 py-3">
+          {!kit && <li className="flex items-center justify-between gap-3 py-3">
             <span className="flex items-center gap-2 font-semibold"><Check className="h-4 w-4 shrink-0 text-[hsl(var(--campanha-economia))]"/>{atual.item.titulo}</span>
             <span className="shrink-0 tabular-nums">{moeda(atual.item.valor_de ?? atual.item.valor ?? 0)}</span>
-          </li>
+          </li>}
           {atual.inclusos.map(t => <li key={t} className="flex items-center justify-between gap-3 py-3">
-            <span className="flex items-center gap-2"><Check className="h-4 w-4 shrink-0 text-[hsl(var(--campanha-economia))]"/>{t}</span>
-            <span className={cn('shrink-0', MUTED)}>incluso</span>
+            <span className="flex items-center gap-2">{ehCoin(t) ? <Award className="h-5 w-5 shrink-0 text-accent"/> : <Check className="h-4 w-4 shrink-0 text-[hsl(var(--campanha-economia))]"/>}{textoIncluso(t)}</span>
+            {!ehCoin(t) && <span className={cn('shrink-0', MUTED)}>incluso</span>}
           </li>)}
           {atual.combo.brindes.map(b => <li key={b.id} className="flex items-center justify-between gap-3 py-3">
             <span className="flex min-w-0 items-center gap-2"><MiniaturasBrindes brindes={[b]} variante="pequeno"/><span className="min-w-0 break-words">{b.nome}</span></span>
@@ -247,8 +262,9 @@ function Oferta({ itens, nomes, campanha, parcelamento, origem }: OfertaProps) {
             {parcelas > 0 ? <>ou {parcelas}x de <span className="tabular-nums">{moeda(atual.combo.preco / Number(parcelas))}</span> sem juros</> : parcelamento}
             {economia > 0 && <span className="block text-[hsl(var(--campanha-economia))]">Você economiza {moeda(economia)}</span>}
           </p>
-          <Button asChild size="lg" className={cn(BOTAO_WHATS, 'mt-6 w-full')}>
-            <a href={wa(mensagem)} target="_blank" rel="noopener noreferrer"><WhatsAppIcon/>Garantir minha SLS {nomes[atual.item.id]}</a>
+          {kit && <p className="mt-5 rounded-lg border border-accent/50 bg-accent/10 p-3 text-sm font-semibold">✍️ Sua case vem personalizada com o seu nome</p>}
+          <Button asChild size="lg" className={cn(BOTAO_WHATS, 'mt-6 w-full px-3 text-sm sm:text-base')}>
+            <a href={wa(mensagem)} target="_blank" rel="noopener noreferrer"><WhatsAppIcon/>{kit ? 'Garantir meu Kit Completo SLS' : `Garantir minha SLS ${nomes[atual.item.id]}`}</a>
           </Button>
           <p className={cn('mt-3 text-center text-xs', MUTED)}>Você fala direto com a equipe Kaowz. PIX ou cartão em até 10x sem juros.</p>
         </div>
@@ -351,6 +367,7 @@ export default function PushDaggerSlsVendas() {
   const origem = params.get('utm_source') ?? params.get('origem') ?? 'página SLS';
 
   const [c, setC] = useState<ConteudoSls>(PADRAO_SLS);
+  const [escolhido, setEscolhido] = useState<string | null>(null);
   useEffect(() => {
     void supabase.from('paginas_venda_config').select('conteudo').eq('slug', SLUG_PAGINA_SLS).maybeSingle()
       .then(({ data }) => { if (data) setC(mesclarConteudoSls(data.conteudo)); });
@@ -371,16 +388,17 @@ export default function PushDaggerSlsVendas() {
     });
     if (!itens.length) return null;
     const nomes = nomesDistintos(ofertas);
+    const individuais = itens.filter(i => !ehKitCompletoSls(i.item));
     return {
-      itens: itens.map(i => ({ ...i, inclusos: [...new Set([...i.conteudo.inclusos, ...c.inclusosExtras])] })),
+      itens: itens.map(i => ({ ...i, inclusos: inclusosDoItem(i.item, i.conteudo.inclusos, c.inclusosExtras) })),
       nomes,
-      ficha: fichaDaCampanha(itens.map(i => ({ id: i.item.id, specs: i.conteudo.specs }))),
+      ficha: fichaDaCampanha(individuais.map(i => ({ id: i.item.id, specs: i.conteudo.specs }))),
       pilares: pilaresSls((itens.find(i => i.conteudo.pilares.length) ?? itens[0]).conteudo.pilares),
       aPartirDe: Math.min(...itens.map(i => i.combo.preco)),
       brindesAte: Math.max(0, ...itens.map(i => i.combo.brindes.reduce((t, e) => t + (e.preco ?? 0), 0))),
       brindes: [...itens].sort((a, b) => b.combo.brindes.reduce((t, e) => t + (e.preco ?? 0), 0) - a.combo.brindes.reduce((t, e) => t + (e.preco ?? 0), 0))[0].combo.brindes,
-      imagem: midiasDaOferta(itens[itens.length - 1].oferta).find(m => m.tipo === 'imagem')?.url ?? null,
-      inclusos: [...new Set([...itens.flatMap(i => i.conteudo.inclusos), ...c.inclusosExtras])],
+      imagem: midiasDaOferta((individuais.at(-1) ?? itens[0]).oferta).find(m => m.tipo === 'imagem')?.url ?? null,
+      inclusos: [...new Set([...individuais.flatMap(i => i.conteudo.inclusos), ...c.inclusosExtras])],
     };
   }, [campanha, ofertas, combos, extras, c.inclusosExtras]);
 
@@ -407,8 +425,12 @@ export default function PushDaggerSlsVendas() {
       case 'dor': return <Dor c={c}/>;
       case 'mecanismo': return <>{pagina.pilares.length > 0 && <Mecanismo pilares={pagina.pilares} prazo={c.prazoSls}/>} {campanha.video_teste_url?.trim() && <Teste url={campanha.video_teste_url.trim()} ofertaDisponivel={c.blocos.some(bloco => bloco.tipo === 'oferta')}/>}</>;
       case 'porte': return <Porte imagem={imagemDaPagina(c, 'porte', campanha.imagem_porte_url)}/>;
-      case 'oferta': return <Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem}/>;
-      case 'ficha': return <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>;
+      case 'oferta': {
+        const kit = pagina.itens.find(i => ehKitCompletoSls(i.item));
+        const banner = campanha.imagem_kit_url?.trim() || (kit ? midiasDaOferta(kit.oferta).find(m => m.tipo === 'imagem')?.url : null) || null;
+        return <>{kit && <KitCompleto kit={kit} imagem={banner} escolher={() => { setEscolhido(kit.item.id); irPara('oferta'); }}/>}<Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem} escolhido={escolhido} setId={setEscolhido}/></>;
+      }
+      case 'ficha': return <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.filter(i => !ehKitCompletoSls(i.item)).map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>;
       case 'paraQuem': return <ParaQuem c={c}/>;
       case 'customizar': return <Customizar c={c}/>;
       case 'garantia': return <Garantia c={c}/>;

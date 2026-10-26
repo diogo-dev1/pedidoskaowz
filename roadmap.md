@@ -1,5 +1,10 @@
 # Pronta Entrega — painel e notas
 
+## Kit Completo SLS
+- [x] Incluir kit, case personalizada e inclusos próprios na campanha com valores reais.
+- [x] Mostrar cartão, selo, seleção 2x2, banner editável, moeda conquistada, FAQ e WhatsApp na /sls.
+- [x] Validar valores e seleção reais em 375px/1280px sem rolagem lateral, cartão/modal, FAQ e WhatsApp; upload do banner salvo/relido/exibido e retirado, editor da case conferido; 38 testes e compilação OK.
+
 ## Vídeo de teste /sls
 - [x] Adicionar campo de vídeo, upload/URL, prévia e remoção no painel de campanhas.
 - [x] Mostrar vídeo vertical após o mecanismo, com carregamento próximo da tela, reprodução por visibilidade e controles de som/pausa.
