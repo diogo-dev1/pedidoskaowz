@@ -95,18 +95,6 @@ function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAt
       </div>
       <p className={cn('mt-4 flex items-center gap-2 text-xs', MUTED)}><ShieldCheck className="h-4 w-4 shrink-0"/>Garantia vitalícia de qualidade e afiação</p>
     </div>
-    {video ? <div className="mx-auto aspect-[9/16] w-full max-w-sm overflow-hidden rounded-lg md:max-h-[640px]"><Video v={video} topo/></div> : (carregando || imagem) && <div className={cn('aspect-square overflow-hidden rounded-lg', imagem ? 'bg-[hsl(var(--campanha-selo-fundo))]' : 'animate-pulse bg-[hsl(var(--oferta-superficie))]')}>
-      {imagem && <img
-        src={naLargura(imagem, 800)}
-        srcSet={[400, 800, 1200].map(w => `${naLargura(imagem, w)} ${w}w`).join(', ')}
-        sizes="(min-width: 768px) 50vw, 100vw"
-        width={800}
-        height={800}
-        alt="Push Dagger SLS"
-        className="h-full w-full object-contain p-4"
-        fetchPriority="high"
-      />}
-    </div>}
   </section>;
 }
 
