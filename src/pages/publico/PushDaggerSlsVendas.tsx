@@ -193,7 +193,7 @@ interface ItemPagina { item: CampanhaItem; oferta: Oferta; combo: OpcaoCombo; in
 function KitCompleto({ kit, imagem, escolher }: { kit: ItemPagina; imagem: string | null; escolher: () => void }) {
   const { valorDe } = valoresCombo(kit.item, kit.combo);
   return <Secao id="kit-completo"><div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
-    {imagem && <img src={naLargura(imagem, 1200)} alt="Kit Completo Push Dagger SLS" loading="lazy" className="max-h-[480px] w-full rounded-lg object-contain"/>}
+    {imagem && <img src={naLargura(imagem, 1200)} alt="Kit Completo Push Dagger SLS" loading="lazy" className="aspect-[4/3] max-h-[480px] w-full rounded-lg object-contain"/>}
     <div className="min-w-0"><p className="mb-3 text-xs font-bold uppercase text-accent">Kit Completo · Melhor oferta</p><h2 className="font-bebas text-4xl leading-none md:text-5xl">Leve as três. Ganhe a coleção.</h2>
       <p className={cn('mt-5 text-base leading-relaxed', APOIO)}>Micro, Compact e Standard com bainhas Kydex, Case Rígida Collector Kit personalizada com o seu nome, cinto tático e multitool — e a Challenge Coin Kaowz, conquistada por quem completa a coleção.</p>
       <div className="mt-6 flex flex-wrap items-baseline gap-2"><span className={cn('text-sm line-through', MUTED)}>de {moeda(valorDe)}</span><strong className="text-3xl font-black md:text-4xl">por {moeda(kit.combo.preco)}</strong></div>

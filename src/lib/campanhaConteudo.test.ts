@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { inclusosDoItem, ehCoin, ehKitCompletoSls } from './campanhaConteudo';
+import { inclusosDoItem, ehCoin, ehKitCompletoSls, nomesDistintos } from './campanhaConteudo';
 import { valoresCombo } from './campanhaCombos';
 
 const inclusos = ['Push Dagger SLS Micro', 'Push Dagger SLS Compact', 'Push Dagger SLS Standard', '3 bainhas em Kydex + clipes em aço inox', 'Challenge Coin Kaowz'];
@@ -21,4 +21,7 @@ test('inclusos próprios substituem descrição e extras sem afetar itens sem ov
 test('kit é identificado sem confundir opções individuais', () => {
   assert.equal(ehKitCompletoSls({ titulo: 'Kit Completo Push Dagger SLS' }), true);
   assert.equal(ehKitCompletoSls({ titulo: 'Push Dagger Micro Sandvik - SLS' }), false);
+});
+test('nova opção de kit preserva os nomes individuais Micro Compact Standard', () => {
+  assert.deepEqual(nomesDistintos(['Micro', 'Compact', 'Standard'].map((t, n) => ({ id: String(n), titulo: `Push Dagger ${t} Sandvik - SLS`, titulo_curto: null })).concat([{ id: 'kit', titulo: 'Kit Completo Push Dagger SLS', titulo_curto: 'Kit Completo' }])), { 0: 'Micro', 1: 'Compact', 2: 'Standard', kit: 'Kit Completo' });
 });
