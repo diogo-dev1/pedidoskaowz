@@ -1,0 +1,2 @@
+ALTER TABLE public.campanhas_oferta ADD COLUMN IF NOT EXISTS imagem_porte_url text;
+COMMENT ON COLUMN public.campanhas_oferta.imagem_porte_url IS 'Foto opcional da bainha com clipe para a página de vendas SLS; edição sob as políticas administrativas existentes.';
