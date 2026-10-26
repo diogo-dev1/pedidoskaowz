@@ -1,7 +1,10 @@
 // Cria um Draft Order na Shopify a partir do Simulador de Preços.
 // Autentica via client_credentials (SHOPIFY_CLIENT_ID/SECRET) contra SHOPIFY_STORE_DOMAIN.
 
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+};
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3';
 import { classificarItemPE } from '../_shared/prontaEntrega.ts';
