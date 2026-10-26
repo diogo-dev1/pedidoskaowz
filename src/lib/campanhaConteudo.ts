@@ -58,7 +58,8 @@ export function nomesDistintos(itens: Pick<CampanhaItem, 'id' | 'titulo' | 'titu
   const comuns = new Set(palavras[0]?.filter(p => itens.length > 1 && palavras.every(ps => ps.includes(p))));
   return Object.fromEntries(itens.map((item, i) => {
     const proprio = palavras[i].filter(p => !comuns.has(p)).join(' ');
-    return [item.id, item.titulo_curto?.trim() || proprio || item.titulo];
+    const tamanhoSls = /\bSLS\b/i.test(item.titulo) ? item.titulo.match(/\b(Micro|Compact|Standard)\b/i)?.[1] : undefined;
+    return [item.id, item.titulo_curto?.trim() || tamanhoSls || proprio || item.titulo];
   }));
 }
 
