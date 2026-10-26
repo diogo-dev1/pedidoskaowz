@@ -1248,6 +1248,24 @@ export type Database = {
         }
         Relationships: []
       }
+      config_servidor: {
+        Row: {
+          chave: string
+          created_at: string
+          valor: string
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          valor: string
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          valor?: string
+        }
+        Relationships: []
+      }
       configuracoes_catalogo: {
         Row: {
           chave: string
@@ -3195,6 +3213,30 @@ export type Database = {
           mensagem?: string
           nome?: string
           ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      upsell_contatos_site: {
+        Row: {
+          contatado_em: string | null
+          contatado_por: string | null
+          status: string
+          telefone: string
+          updated_at: string
+        }
+        Insert: {
+          contatado_em?: string | null
+          contatado_por?: string | null
+          status?: string
+          telefone: string
+          updated_at?: string
+        }
+        Update: {
+          contatado_em?: string | null
+          contatado_por?: string | null
+          status?: string
+          telefone?: string
           updated_at?: string
         }
         Relationships: []

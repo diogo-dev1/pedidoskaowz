@@ -99,6 +99,13 @@
       "when": 1793035729760,
       "tag": "0013_kit_completo_sls_campos",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793038477013,
+      "tag": "0014_bling_cron_secret_e_contatos_site",
+      "breakpoints": true
     }
   ]
 }
