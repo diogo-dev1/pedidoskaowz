@@ -2,7 +2,7 @@
 // Preços, brindes e ficha técnica vêm ao vivo da campanha "push-dagger-sls" (admin de campanhas).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowDown, ArrowRight, Check, Clock, Loader2, ShieldCheck, X } from 'lucide-react';
+import { ArrowDown, ArrowRight, Check, Gift, Loader2, ShieldCheck, X, Layers, Link2, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -10,8 +10,9 @@ import { useCampanhaOferta } from '@/hooks/useCampanhaOferta';
 import { type CampanhaItem, moeda, ofertaDoItem } from '@/lib/campanhas';
 import { type OpcaoCombo, comboDestaque, mensagemCombo, opcoesCombos, valoresCombo } from '@/lib/campanhaCombos';
 import { conteudoDoItem, fichaDaCampanha, nomesDistintos } from '@/lib/campanhaConteudo';
-import { dataPorExtenso, fonteVideo, prontaAte } from '@/lib/pushDaggerLanding';
-import { type ConteudoSls, type VideoPagina, PADRAO_SLS, SLUG_PAGINA_SLS, mesclarConteudoSls, preencher } from '@/lib/paginaSls';
+import { fonteVideo } from '@/lib/pushDaggerLanding';
+import { type ConteudoSls, type VideoPagina, PADRAO_SLS, SLUG_PAGINA_SLS, mesclarConteudoSls, preencher, PAGAMENTO_SLS, pilaresSls } from '@/lib/paginaSls';
+import { type Extra, nomeCurtoExtra } from '@/lib/campanhaExtras';
 import { type Oferta, midiasDaOferta } from '@/components/ofertas/OfertaVisual';
 import { GaleriaCampanha, MiniaturasBrindes, WhatsAppIcon, wa } from '@/components/ofertas/CampanhaVisual';
 import { FichaComparativa, TituloSecao } from '@/components/ofertas/CampanhaLanding';
@@ -41,10 +42,9 @@ function Secao({ id, children, className }: { id?: string; children: React.React
   </section>;
 }
 
-function BarraPrazo({ dataPronta }: { dataPronta: string }) {
+function BarraPrazo({ brindesAte }: { brindesAte: number }) {
   return <div className="sticky top-0 z-40 border-b border-accent/30 bg-[hsl(var(--oferta-preto))] px-4 py-2.5 text-center text-xs sm:text-sm">
-    <Clock className="mr-1.5 inline h-3.5 w-3.5 -translate-y-px text-accent"/>
-    Feche hoje e sua SLS fica pronta até <strong className="text-accent">{dataPronta}</strong>
+    {brindesAte > 0 && <><Gift className="mr-1.5 inline h-3.5 w-3.5 -translate-y-px text-accent"/>Até {moeda(brindesAte)} em brindes · </>}Produção em até 15 dias úteis
   </div>;
 }
 
@@ -66,8 +66,8 @@ function Videos({ titulo, videos }: { titulo: string; videos: VideoPagina[] }) {
   </Secao>;
 }
 
-interface HeroProps { c: ConteudoSls; video: VideoPagina | null; carregando: boolean; imagem: string | null; aPartirDe: number | null; parcelamento: string | null; brindesAte: number }
-function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAte }: HeroProps) {
+interface HeroProps { c: ConteudoSls; video: VideoPagina | null; carregando: boolean; imagem: string | null; aPartirDe: number | null; parcelamento: string | null; brindesAte: number; brindes: Extra[] }
+function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAte, brindes }: HeroProps) {
   return <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pt-6 pb-12 md:grid-cols-[1.1fr_1fr] md:gap-14 md:pt-14 md:pb-20">
     <div className="min-w-0">
       <img src={kaowzLogo} alt="Kaowz" className="mb-8 h-7 w-auto opacity-90"/>
@@ -76,13 +76,16 @@ function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAt
       </h1>
       <p className={cn('mt-5 max-w-lg text-lg leading-snug md:text-xl', APOIO)}>
         {preencher(c.heroTexto, c, parcelamento)}
-        {brindesAte > 0 && <> Ganhe <strong className="text-[hsl(var(--oferta-texto))]">até {moeda(brindesAte)} em brindes</strong>.</>}
-        {' '}Sem esperar {c.prazoSobEncomenda} dias úteis.
       </p>
+      {brindes.length > 0 && <div className="mt-6 border-l-2 border-accent pl-4">
+        <MiniaturasBrindes brindes={brindes} variante="cartao"/>
+        <p className="mt-3 text-2xl font-bold leading-tight md:text-3xl">Até {moeda(brindesAte)} em brindes</p>
+        <p className={cn('mt-2 text-sm', APOIO)}>Cinto tático, multitool e case Patola, conforme o tamanho</p>
+      </div>}
       {carregando && <div aria-hidden className="mt-6 h-9 w-56 animate-pulse rounded bg-[hsl(var(--oferta-superficie))]"/>}
       {aPartirDe != null && <p className={cn('mt-6 text-sm', MUTED)}>
         a partir de <strong className="text-3xl font-black tabular-nums text-[hsl(var(--oferta-texto))]">{moeda(aPartirDe)}</strong>
-        {parcelamento && <span className="ml-2">{parcelamento}</span>}
+        <span className="ml-2">· em até 10x sem juros</span>
       </p>}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <Button size="lg" onClick={() => irPara('oferta')} className={BOTAO}>Quero a minha SLS<ArrowDown className="ml-2 h-4 w-4"/></Button>
@@ -130,6 +133,26 @@ function Mecanismo({ pilares, prazo }: { pilares: { titulo: string; texto: strin
   </Secao>;
 }
 
+function Porte({ imagem }: { imagem: string | null }) {
+  return <Secao id="porte"><div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
+    <div className="min-w-0"><h2 className="font-bebas text-4xl leading-none tracking-wide md:text-5xl">Pronta para o porte desde o primeiro dia</h2>
+      <p className={cn('mt-5 text-lg leading-relaxed', APOIO)}>Bainha em Kydex para porte velado e clipe em aço inox temperado inclusos. Abriu a caixa, está pronta para o dia a dia.</p>
+      <ul className="mt-6 space-y-3">{[{ Icon: Layers, texto: 'Bainha Kydex' }, { Icon: Link2, texto: 'Clipe inox temperado' }, { Icon: EyeOff, texto: 'Porte velado discreto' }].map(({ Icon, texto }) => <li key={texto} className="flex items-center gap-3"><Icon className="h-5 w-5 shrink-0 text-accent"/>{texto}</li>)}</ul>
+    </div>
+    {imagem ? <img src={imagem} alt="Bainha em Kydex com clipe em aço inox temperado" loading="lazy" className="mx-auto aspect-[4/5] w-full max-w-md rounded-lg object-contain"/> : <div className={cn('mx-auto flex aspect-[4/5] w-full max-w-md items-center justify-center rounded-lg border border-dashed px-6 text-center text-sm', BORDA, MUTED)}>Foto da bainha com clipe em breve</div>}
+  </div></Secao>;
+}
+
+function DestaqueBrindes({ brindes }: { brindes: Extra[] }) {
+  if (!brindes.length) return null;
+  const total = brindes.reduce((t, b) => t + (b.preco ?? 0), 0);
+  return <div className="mt-5 rounded-lg border border-accent/50 bg-accent/5 p-4">
+    <h3 className="flex items-center gap-2 text-lg font-bold"><Gift className="h-5 w-5 shrink-0 text-accent"/>{total > 0 ? `Você ganha ${moeda(total)} em brindes` : 'Você ganha estes brindes'}</h3>
+    <ul className="mt-4 grid grid-cols-3 gap-3">{brindes.map(b => <li key={b.id} className="flex min-w-0 flex-col items-center gap-2 text-center"><MiniaturasBrindes brindes={[b]} variante="cartao"/><span className={cn('text-xs leading-snug', APOIO)}>{nomeCurtoExtra(b)}</span></li>)}</ul>
+    <p className="mt-4 text-sm">{total > 0 && <span className={cn('mr-2 tabular-nums line-through', MUTED)}>{moeda(total)}</span>}<strong className="text-[hsl(var(--campanha-economia))]">grátis</strong></p>
+  </div>;
+}
+
 interface ItemPagina { item: CampanhaItem; oferta: Oferta; combo: OpcaoCombo; inclusos: string[] }
 
 interface OfertaProps { itens: ItemPagina[]; nomes: Record<string, string>; campanha: string; parcelamento: string | null; origem: string }
@@ -139,7 +162,7 @@ function Oferta({ itens, nomes, campanha, parcelamento, origem }: OfertaProps) {
   const id = itens.some(i => i.item.id === escolhido) ? escolhido : itens[itens.length - 1].item.id;
   const atual = itens.find(i => i.item.id === id) ?? itens[0];
   const { valorDe, economia } = valoresCombo(atual.item, atual.combo);
-  const parcelas = /sem juros/i.test(parcelamento ?? '') ? Number(parcelamento?.match(/(\d+)\s*x/i)?.[1] ?? 0) : 0;
+  const parcelas = PAGAMENTO_SLS.maxParcelasSemJuros;
   const tamanhos = useRef<(HTMLButtonElement | null)[]>([]);
   const setas = (e: React.KeyboardEvent, i: number) => {
     const passo = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
@@ -158,8 +181,10 @@ function Oferta({ itens, nomes, campanha, parcelamento, origem }: OfertaProps) {
       </div>
       <div className="min-w-0">
         <div role="radiogroup" aria-label="Tamanho" className="grid grid-cols-[repeat(auto-fit,minmax(0,1fr))] gap-2">
-          {itens.map((i, n) => <button key={i.item.id} ref={el => { tamanhos.current[n] = el; }} type="button" role="radio" aria-checked={i.item.id === id} tabIndex={i.item.id === id ? 0 : -1} onKeyDown={e => setas(e, n)} onClick={() => setId(i.item.id)} className={cn('h-12 rounded-lg border-2 font-bebas text-xl tracking-wide transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', i.item.id === id ? 'border-accent bg-accent/10' : cn(BORDA, 'bg-[hsl(var(--campanha-barra))]'))}>{nomes[i.item.id]}</button>)}
+          {itens.map((i, n) => <Button variant="outline" key={i.item.id} ref={el => { tamanhos.current[n] = el; }} type="button" role="radio" aria-checked={i.item.id === id} tabIndex={i.item.id === id ? 0 : -1} onKeyDown={e => setas(e, n)} onClick={() => setId(i.item.id)} className={cn('h-12 rounded-lg border-2 font-bebas text-xl tracking-wide transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', i.item.id === id ? 'border-accent bg-accent/10' : cn(BORDA, 'bg-[hsl(var(--campanha-barra))]'))}>{nomes[i.item.id]}</Button>)}
         </div>
+
+        <DestaqueBrindes brindes={atual.combo.brindes}/>
 
         <ul className={cn('mt-6 divide-y border-y text-sm', BORDA, '[&>li]:border-[hsl(var(--oferta-borda))]')}>
           <li className="flex items-center justify-between gap-3 py-3">
@@ -190,7 +215,7 @@ function Oferta({ itens, nomes, campanha, parcelamento, origem }: OfertaProps) {
           <Button asChild size="lg" className={cn(BOTAO_WHATS, 'mt-6 w-full')}>
             <a href={wa(mensagem)} target="_blank" rel="noopener noreferrer"><WhatsAppIcon/>Garantir minha SLS {nomes[atual.item.id]}</a>
           </Button>
-          <p className={cn('mt-3 text-center text-xs', MUTED)}>Você fala direto com a equipe Kaowz. PIX, cartão ou Pix parcelado.</p>
+          <p className={cn('mt-3 text-center text-xs', MUTED)}>Você fala direto com a equipe Kaowz. PIX ou cartão em até 10x sem juros.</p>
         </div>
       </div>
     </div>
@@ -260,10 +285,10 @@ function Perguntas({ c, prazo, parcelamento }: { c: ConteudoSls; prazo: string |
   </Secao>;
 }
 
-function Fechamento({ c, dataPronta, origem }: { c: ConteudoSls; dataPronta: string; origem: string }) {
+function Fechamento({ c, origem }: { c: ConteudoSls; origem: string }) {
   return <Secao className="flex max-w-2xl flex-col items-center text-center">
-    <h2 className="font-bebas text-5xl leading-none tracking-wide md:text-6xl">Pronta até {dataPronta}.</h2>
-    <p className={cn('mt-4 text-base', APOIO)}>Se fechar hoje, essa é a data. Cada dia que passa, ela anda junto.</p>
+    <h2 className="font-bebas text-5xl leading-none tracking-wide md:text-6xl">Sua SLS em até 15 dias úteis.</h2>
+    <p className={cn('mt-4 text-base', APOIO)}>Os brindes valem enquanto a campanha estiver no ar.</p>
     <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
       <Button size="lg" onClick={() => irPara('oferta')} className={BOTAO}>Escolher meu tamanho</Button>
       <Button asChild size="lg" className={BOTAO_WHATS}>
@@ -290,17 +315,16 @@ export default function PushDaggerSlsVendas() {
   const [params] = useSearchParams();
   const origem = params.get('utm_source') ?? params.get('origem') ?? 'página SLS';
 
-  const [feriados, setFeriados] = useState<Set<string>>(new Set());
   const [c, setC] = useState<ConteudoSls>(PADRAO_SLS);
   useEffect(() => {
     void supabase.from('paginas_venda_config').select('conteudo').eq('slug', SLUG_PAGINA_SLS).maybeSingle()
       .then(({ data }) => { if (data) setC(mesclarConteudoSls(data.conteudo)); });
-    void supabase.from('feriados').select('data').then(({ data }) => {
-      if (data?.length) setFeriados(new Set(data.map(f => f.data as string)));
-    });
   }, []);
-  useEffect(() => { document.title = `Push Dagger SLS | Pronta em ${c.prazoSls} dias úteis | Kaowz`; }, [c.prazoSls]);
-  const dataPronta = useMemo(() => dataPorExtenso(prontaAte(c.prazoSls, feriados)), [feriados, c.prazoSls]);
+  useEffect(() => {
+    const anterior = document.title;
+    document.title = 'Push Dagger SLS | Produção em 15 dias úteis | Kaowz';
+    return () => { document.title = anterior; };
+  }, []);
 
   const pagina = useMemo(() => {
     if (!campanha || !ofertas.length) return null;
@@ -316,9 +340,10 @@ export default function PushDaggerSlsVendas() {
       itens: itens.map(i => ({ ...i, inclusos: [...new Set([...i.conteudo.inclusos, ...c.inclusosExtras])] })),
       nomes,
       ficha: fichaDaCampanha(itens.map(i => ({ id: i.item.id, specs: i.conteudo.specs }))),
-      pilares: (itens.find(i => i.conteudo.pilares.length) ?? itens[0]).conteudo.pilares,
+      pilares: pilaresSls((itens.find(i => i.conteudo.pilares.length) ?? itens[0]).conteudo.pilares),
       aPartirDe: Math.min(...itens.map(i => i.combo.preco)),
       brindesAte: Math.max(0, ...itens.map(i => i.combo.brindes.reduce((t, e) => t + (e.preco ?? 0), 0))),
+      brindes: [...itens].sort((a, b) => b.combo.brindes.reduce((t, e) => t + (e.preco ?? 0), 0) - a.combo.brindes.reduce((t, e) => t + (e.preco ?? 0), 0))[0].combo.brindes,
       imagem: midiasDaOferta(itens[itens.length - 1].oferta).find(m => m.tipo === 'imagem')?.url ?? null,
       inclusos: [...new Set([...itens.flatMap(i => i.conteudo.inclusos), ...c.inclusosExtras])],
     };
@@ -348,21 +373,22 @@ export default function PushDaggerSlsVendas() {
         </div>
       </div>
     : <>
-      <BarraPrazo dataPronta={dataPronta}/>
+      <BarraPrazo brindesAte={pagina?.brindesAte ?? 0}/>
       <div ref={heroRef}>
-        <Hero c={c} video={c.videos[0] ?? null} carregando={loading} imagem={pagina?.imagem ?? null} aPartirDe={pagina?.aPartirDe ?? null} parcelamento={campanha?.texto_parcelamento_padrao ?? null} brindesAte={pagina?.brindesAte ?? 0}/>
+        <Hero c={c} video={c.videos[0] ?? null} carregando={loading} imagem={pagina?.imagem ?? null} aPartirDe={pagina?.aPartirDe ?? null} parcelamento="em até 10x sem juros" brindesAte={pagina?.brindesAte ?? 0} brindes={pagina?.brindes ?? []}/>
       </div>
       {loading || !campanha || !pagina ? <div className={cn('flex justify-center py-16', MUTED)}><Loader2 className="h-5 w-5 animate-spin" aria-label="Carregando oferta"/></div> : <>
       {c.videos.length > 1 && <Videos titulo={c.videosTitulo} videos={c.videos.slice(1)}/>}
       <Dor c={c}/>
       {pagina.pilares.length > 0 && <Mecanismo pilares={pagina.pilares} prazo={c.prazoSls}/>}
-      <Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento={campanha.texto_parcelamento_padrao} origem={origem}/>
+      <Porte imagem={campanha.imagem_porte_url}/>
+      <Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento="em até 10x sem juros" origem={origem}/>
       <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>
       <ParaQuem c={c}/>
       <Customizar c={c}/>
       <Garantia c={c}/>
-      <Perguntas c={c} prazo={campanha.aviso_prazo} parcelamento={campanha.texto_parcelamento_padrao}/>
-      <Fechamento c={c} dataPronta={dataPronta} origem={origem}/>
+      <Perguntas c={c} prazo={null} parcelamento="em até 10x sem juros"/>
+      <Fechamento c={c} origem={origem}/>
       <div className="h-20 md:hidden" aria-hidden/>
       <BarraFixa visivel={!heroVisivel && !ofertaVisivel} aPartirDe={pagina.aPartirDe}/>
       </>}

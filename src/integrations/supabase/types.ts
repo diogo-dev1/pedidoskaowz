@@ -614,6 +614,7 @@ export type Database = {
           aviso_prazo: string | null
           created_at: string
           id: string
+          imagem_porte_url: string | null
           slug: string
           subtitulo: string | null
           texto_parcelamento_padrao: string | null
@@ -626,6 +627,7 @@ export type Database = {
           aviso_prazo?: string | null
           created_at?: string
           id?: string
+          imagem_porte_url?: string | null
           slug: string
           subtitulo?: string | null
           texto_parcelamento_padrao?: string | null
@@ -638,6 +640,7 @@ export type Database = {
           aviso_prazo?: string | null
           created_at?: string
           id?: string
+          imagem_porte_url?: string | null
           slug?: string
           subtitulo?: string | null
           texto_parcelamento_padrao?: string | null
