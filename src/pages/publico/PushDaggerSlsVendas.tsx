@@ -2,7 +2,7 @@
 // Preços, brindes e ficha técnica vêm ao vivo da campanha "push-dagger-sls" (admin de campanhas).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowDown, ArrowRight, Check, Gift, Loader2, Plus, ShieldCheck, X, Layers, Link2, EyeOff } from 'lucide-react';
+import { ArrowDown, ArrowRight, Check, Gift, Loader2, ShieldCheck, X, Layers, Link2, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -37,17 +37,30 @@ const naLargura = (url: string, w: number) => url.includes('cdn.shopify.com') ? 
 
 const irPara = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-/** Foto da faca acima dos brindes no hero ("a faca + os brindes"); sem moldura, do tamanho da tela. */
-function FotoHero({ imagem, carregando }: { imagem: string | null; carregando: boolean }) {
-  if (carregando && !imagem) return <div aria-hidden className="mx-auto aspect-[2/3] h-[46vh] max-w-full animate-pulse rounded-lg bg-[hsl(var(--oferta-superficie))]"/>;
-  if (!imagem) return null;
-  return <img
-    src={naLargura(imagem, 800)}
-    srcSet={[400, 800, 1200].map(w => `${naLargura(imagem, w)} ${w}w`).join(', ')}
-    sizes="(min-width: 768px) 420px, 100vw"
-    alt="Push Dagger SLS"
-    className="mx-auto block max-h-[46vh] w-auto max-w-full rounded-lg object-contain md:max-h-[440px]"
-  />;
+/** Cartão único "a faca + os brindes": foto no topo, rodapé com os brindes. */
+function CartaoBrindes({ imagem, carregando, brindes, brindesAte }: { imagem: string | null; carregando: boolean; brindes: Extra[]; brindesAte: number }) {
+  if (!imagem && !carregando && !brindes.length) return null;
+  const foto = 'aspect-[4/3] max-h-[260px] w-full object-cover object-center md:aspect-square md:max-h-none';
+  return <div className="mt-6 w-full max-w-[480px] overflow-hidden rounded-xl border border-[hsl(var(--oferta-borda))] bg-[hsl(var(--campanha-barra))]">
+    {carregando && !imagem
+      ? <div aria-hidden className={cn(foto, 'animate-pulse bg-[hsl(var(--oferta-superficie))]')}/>
+      : imagem && <img
+        src={naLargura(imagem, 800)}
+        srcSet={[400, 800, 1200].map(w => `${naLargura(imagem, w)} ${w}w`).join(', ')}
+        sizes="(min-width: 768px) 480px, 100vw"
+        alt="Push Dagger SLS"
+        fetchPriority="high"
+        className={foto}
+      />}
+    {brindes.length > 0 && <div className={cn('border-t p-3.5 md:p-4', BORDA)}>
+      <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+        <Gift className="h-5 w-5 shrink-0 text-accent" aria-hidden/>
+        <MiniaturasBrindes brindes={brindes} variante="cartao"/>
+      </div>
+      <p className="mt-3 text-[22px] font-bold leading-tight md:text-[26px]">Até {moeda(brindesAte)} em brindes</p>
+      <p className={cn('mt-1 text-sm', APOIO)}>Cinto tático, multitool e case Patola, conforme o tamanho</p>
+    </div>}
+  </div>;
 }
 
 function Secao({ id, children, className }: { id?: string; children: React.ReactNode; className?: string }) {
@@ -103,13 +116,7 @@ function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAt
       <p className={cn('max-w-lg text-lg leading-snug md:mt-5 md:text-xl', APOIO)}>
         {preencher(c.heroTexto, c, parcelamento)}
       </p>
-      {brindes.length > 0 ? <div className="mt-6 border-l-2 border-accent pl-4">
-        <FotoHero imagem={imagem} carregando={carregando}/>
-        {imagem && <Plus className="mt-2 h-4 w-4 text-accent" aria-hidden/>}
-        <MiniaturasBrindes brindes={brindes} variante="cartao"/>
-        <p className="mt-3 text-2xl font-bold leading-tight md:text-3xl">Até {moeda(brindesAte)} em brindes</p>
-        <p className={cn('mt-2 text-sm', APOIO)}>Cinto tático, multitool e case Patola, conforme o tamanho</p>
-      </div> : (imagem || carregando) && <div className="mt-6"><FotoHero imagem={imagem} carregando={carregando}/></div>}
+      <CartaoBrindes imagem={imagem} carregando={carregando} brindes={brindes} brindesAte={brindesAte}/>
       {carregando && <div aria-hidden className="mt-6 h-9 w-56 animate-pulse rounded bg-[hsl(var(--oferta-superficie))]"/>}
       {aPartirDe != null && <p className={cn('mt-6 text-sm', MUTED)}>
         a partir de <strong className="text-3xl font-black tabular-nums text-[hsl(var(--oferta-texto))]">{moeda(aPartirDe)}</strong>
