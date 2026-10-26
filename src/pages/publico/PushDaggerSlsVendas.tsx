@@ -10,7 +10,8 @@ import { useCampanhaOferta } from '@/hooks/useCampanhaOferta';
 import { type CampanhaItem, moeda, ofertaDoItem } from '@/lib/campanhas';
 import { type OpcaoCombo, comboDestaque, mensagemCombo, opcoesCombos, valoresCombo } from '@/lib/campanhaCombos';
 import { conteudoDoItem, fichaDaCampanha, nomesDistintos } from '@/lib/campanhaConteudo';
-import { dataPorExtenso, prontaAte } from '@/lib/pushDaggerLanding';
+import { dataPorExtenso, fonteVideo, prontaAte } from '@/lib/pushDaggerLanding';
+import { type ConteudoSls, type VideoPagina, PADRAO_SLS, SLUG_PAGINA_SLS, mesclarConteudoSls, preencher } from '@/lib/paginaSls';
 import { type Oferta, midiasDaOferta } from '@/components/ofertas/OfertaVisual';
 import { GaleriaCampanha, MiniaturasBrindes, WhatsAppIcon, wa } from '@/components/ofertas/CampanhaVisual';
 import { FichaComparativa, TituloSecao } from '@/components/ofertas/CampanhaLanding';
@@ -21,8 +22,6 @@ import imgStoneWashed from '@/assets/sls/push-dagger-stone-washed-thumb.webp';
 import imgTactical from '@/assets/sls/push-dagger-tactical-thumb.webp';
 
 const SLUG = 'push-dagger-sls';
-const PRAZO_SLS = 15;
-const PRAZO_SOB_ENCOMENDA = 65;
 const LINK_CONFIGURADOR = '/push-dagger-kaowz';
 
 const BORDA = 'border-[hsl(var(--oferta-borda))]';
@@ -49,18 +48,36 @@ function BarraPrazo({ dataPronta }: { dataPronta: string }) {
   </div>;
 }
 
-interface HeroProps { carregando: boolean; imagem: string | null; aPartirDe: number | null; parcelamento: string | null; brindesAte: number }
-function Hero({ carregando, imagem, aPartirDe, parcelamento, brindesAte }: HeroProps) {
+function Video({ v, topo }: { v: VideoPagina; topo?: boolean }) {
+  const f = fonteVideo(v.url);
+  if (f.tipo === 'instagram') return <iframe src={f.embed} title={v.legenda || 'Vídeo Kaowz'} loading={topo ? 'eager' : 'lazy'} allow="autoplay; encrypted-media" className="h-full w-full border-0 bg-[hsl(var(--oferta-superficie))]"/>;
+  return <video src={f.url} autoPlay={topo} muted={topo} loop={topo} playsInline controls={!topo} preload={topo ? 'auto' : 'metadata'} className="h-full w-full object-cover"/>;
+}
+
+function Videos({ titulo, videos }: { titulo: string; videos: VideoPagina[] }) {
+  return <Secao>
+    <TituloSecao>{titulo}</TituloSecao>
+    <ul className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
+      {videos.map((v, i) => <li key={`${i}-${v.url}`} className="w-[70%] shrink-0 snap-start md:w-auto">
+        <div className="aspect-[9/16] overflow-hidden rounded-lg"><Video v={v}/></div>
+        {v.legenda && <p className={cn('mt-2 text-sm', APOIO)}>{v.legenda}</p>}
+      </li>)}
+    </ul>
+  </Secao>;
+}
+
+interface HeroProps { c: ConteudoSls; video: VideoPagina | null; carregando: boolean; imagem: string | null; aPartirDe: number | null; parcelamento: string | null; brindesAte: number }
+function Hero({ c, video, carregando, imagem, aPartirDe, parcelamento, brindesAte }: HeroProps) {
   return <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pt-6 pb-12 md:grid-cols-[1.1fr_1fr] md:gap-14 md:pt-14 md:pb-20">
     <div className="min-w-0">
       <img src={kaowzLogo} alt="Kaowz" className="mb-8 h-7 w-auto opacity-90"/>
       <h1 className="font-bebas text-6xl leading-[0.9] tracking-wide md:text-8xl">
-        A Push Dagger que fica pronta em <span className="text-primary">{PRAZO_SLS} dias úteis.</span>
+        {c.heroTitulo} <span className="text-primary">{c.prazoSls} dias úteis.</span>
       </h1>
       <p className={cn('mt-5 max-w-lg text-lg leading-snug md:text-xl', APOIO)}>
-        Lâmina em aço sueco usinada em CNC, empunhadura em Nylon 12 sinterizada a laser
-        {brindesAte > 0 && <> e <strong className="text-[hsl(var(--oferta-texto))]">até {moeda(brindesAte)} em brindes</strong></>}.
-        Sem esperar {PRAZO_SOB_ENCOMENDA} dias úteis.
+        {preencher(c.heroTexto, c, parcelamento)}
+        {brindesAte > 0 && <> Ganhe <strong className="text-[hsl(var(--oferta-texto))]">até {moeda(brindesAte)} em brindes</strong>.</>}
+        {' '}Sem esperar {c.prazoSobEncomenda} dias úteis.
       </p>
       {carregando && <div aria-hidden className="mt-6 h-9 w-56 animate-pulse rounded bg-[hsl(var(--oferta-superficie))]"/>}
       {aPartirDe != null && <p className={cn('mt-6 text-sm', MUTED)}>
@@ -75,7 +92,7 @@ function Hero({ carregando, imagem, aPartirDe, parcelamento, brindesAte }: HeroP
       </div>
       <p className={cn('mt-4 flex items-center gap-2 text-xs', MUTED)}><ShieldCheck className="h-4 w-4 shrink-0"/>Garantia vitalícia de qualidade e afiação</p>
     </div>
-    {(carregando || imagem) && <div className={cn('aspect-square overflow-hidden rounded-lg', imagem ? 'bg-[hsl(var(--campanha-selo-fundo))]' : 'animate-pulse bg-[hsl(var(--oferta-superficie))]')}>
+    {video ? <div className="mx-auto aspect-[9/16] w-full max-w-sm overflow-hidden rounded-lg md:max-h-[640px]"><Video v={video} topo/></div> : (carregando || imagem) && <div className={cn('aspect-square overflow-hidden rounded-lg', imagem ? 'bg-[hsl(var(--campanha-selo-fundo))]' : 'animate-pulse bg-[hsl(var(--oferta-superficie))]')}>
       {imagem && <img
         src={naLargura(imagem, 800)}
         srcSet={[400, 800, 1200].map(w => `${naLargura(imagem, w)} ${w}w`).join(', ')}
@@ -90,20 +107,19 @@ function Hero({ carregando, imagem, aPartirDe, parcelamento, brindesAte }: HeroP
   </section>;
 }
 
-function Dor() {
+function Dor({ c }: { c: ConteudoSls }) {
+  if (!c.dorTitulo && !c.dorParagrafos.length) return null;
   return <Secao className="max-w-3xl">
-    <h2 className="font-bebas text-4xl leading-none tracking-wide md:text-5xl">Uma lâmina feita à mão leva tempo.</h2>
+    <h2 className="font-bebas text-4xl leading-none tracking-wide md:text-5xl">{c.dorTitulo}</h2>
     <div className={cn('mt-5 space-y-4 text-base leading-relaxed md:text-lg', APOIO)}>
-      <p>Toda Kaowz sob encomenda passa por tratamento térmico, lixamento manual e montagem peça por peça. São <strong className="text-[hsl(var(--oferta-texto))]">{PRAZO_SOB_ENCOMENDA} dias úteis</strong> entre o pedido e a bancada de envio.</p>
-      <p>Para quem precisa da lâmina agora, são três meses de espera.</p>
-      <p className="text-[hsl(var(--oferta-texto))]">A série SLS foi criada para resolver exatamente isso.</p>
+      {c.dorParagrafos.map((t, i) => <p key={i} className={i === c.dorParagrafos.length - 1 ? 'text-[hsl(var(--oferta-texto))]' : undefined}>{preencher(t, c)}</p>)}
     </div>
   </Secao>;
 }
 
-function Mecanismo({ pilares }: { pilares: { titulo: string; texto: string }[] }) {
+function Mecanismo({ pilares, prazo }: { pilares: { titulo: string; texto: string }[]; prazo: number }) {
   return <Secao>
-    <TituloSecao apoio="Não simplificamos o produto para reduzir o prazo. Evoluímos o processo.">Como chegamos a {PRAZO_SLS} dias úteis</TituloSecao>
+    <TituloSecao apoio="Não simplificamos o produto para reduzir o prazo. Evoluímos o processo.">Como chegamos a {prazo} dias úteis</TituloSecao>
     <ol className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
       {pilares.map((p, i) => <li key={p.titulo} className="min-w-0 border-l-2 border-accent pl-4">
         <span className={cn('text-xs tabular-nums', MUTED)}>{String(i + 1).padStart(2, '0')}</span>
@@ -181,9 +197,10 @@ function Oferta({ itens, nomes, campanha, parcelamento, origem }: OfertaProps) {
   </Secao>;
 }
 
-function ParaQuem() {
-  const sim = ['Quer uma lâmina compacta para porte velado no dia a dia', `Não quer esperar ${PRAZO_SOB_ENCOMENDA} dias úteis por uma peça Kaowz`, 'Valoriza aço Sandvik 14C28N com 60 HRC e acabamento Stone Washed'];
-  const nao = ['Quer escolher aço, acabamento e cor da empunhadura', 'Procura uma faca de cozinha ou de campo'];
+function ParaQuem({ c }: { c: ConteudoSls }) {
+  const sim = c.paraQuemSim.map(t => preencher(t, c));
+  const nao = c.paraQuemNao.map(t => preencher(t, c));
+  if (!sim.length && !nao.length) return null;
   return <Secao>
     <div className="grid gap-10 md:grid-cols-2 md:gap-16">
       <div>
@@ -199,13 +216,13 @@ function ParaQuem() {
   </Secao>;
 }
 
-function Customizar() {
+function Customizar({ c }: { c: ConteudoSls }) {
   const fotos = [{ src: imgAcetinada, nome: 'Acetinada' }, { src: imgStoneWashed, nome: 'Stone Washed' }, { src: imgTactical, nome: 'Tactical' }];
   return <Secao id="customizar">
     <div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
       <div className="min-w-0">
-        <h2 className="font-bebas text-5xl leading-none tracking-wide md:text-6xl">Prefere uma Push Dagger com a sua cara?</h2>
-        <p className={cn('mt-4 text-lg leading-snug', APOIO)}>No configurador você escolhe tamanho, aço, acabamento, empunhadura e bainha, e vê o preço mudar na hora. Quando terminar, envia a montagem direto para o nosso WhatsApp.</p>
+        <h2 className="font-bebas text-5xl leading-none tracking-wide md:text-6xl">{c.customizarTitulo}</h2>
+        <p className={cn('mt-4 text-lg leading-snug', APOIO)}>{preencher(c.customizarTexto, c)}</p>
         <Button asChild size="lg" className={cn(BOTAO, 'mt-6 w-full sm:w-auto')}>
           <Link to={LINK_CONFIGURADOR}>Montar minha Push Dagger<ArrowRight className="ml-2 h-4 w-4"/></Link>
         </Button>
@@ -220,23 +237,18 @@ function Customizar() {
   </Secao>;
 }
 
-function Garantia() {
+function Garantia({ c }: { c: ConteudoSls }) {
   return <Secao className="flex max-w-2xl flex-col items-center text-center">
     <ShieldCheck className="h-10 w-10 text-accent"/>
-    <h2 className="mt-4 font-bebas text-5xl leading-none tracking-wide md:text-6xl">Garantia vitalícia</h2>
-    <p className={cn('mt-4 text-base leading-relaxed', APOIO)}>Garantia vitalícia de qualidade e manutenção de afiação, como em todas as lâminas Kaowz. Você compra uma vez.</p>
+    <h2 className="mt-4 font-bebas text-5xl leading-none tracking-wide md:text-6xl">{c.garantiaTitulo}</h2>
+    <p className={cn('mt-4 text-base leading-relaxed', APOIO)}>{preencher(c.garantiaTexto, c)}</p>
   </Secao>;
 }
 
-function Perguntas({ prazo, parcelamento }: { prazo: string | null; parcelamento: string | null }) {
-  const lista = [
-    { p: 'Como faço o pedido?', r: 'Toque no botão verde, escolha o tamanho e a mensagem já vai pronta para o nosso WhatsApp. A equipe confirma os dados de entrega e envia o link de pagamento.' },
-    { p: 'Quando ela fica pronta?', r: `${prazo?.replace(/[.\s]+$/, '') || `Em até ${PRAZO_SLS} dias úteis`}, contados a partir da confirmação do pedido. Depois vem o envio pelos Correios, com código de rastreio.` },
-    { p: 'Quais as formas de pagamento?', r: `PIX, cartão de crédito${parcelamento ? ` (${parcelamento})` : ''} ou Pix parcelado.` },
-    { p: 'Qual tamanho eu escolho?', r: 'A Micro some no bolso, a Compact é o equilíbrio para o dia a dia e a Standard tem a maior pegada e lâmina. Compare as medidas na tabela acima ou pergunte no WhatsApp.' },
-    { p: 'Os brindes valem para todos os tamanhos?', r: 'Sim, cada tamanho tem o seu pacote de brindes, mostrado na seção "Tudo o que você leva". Eles valem enquanto a campanha estiver no ar.' },
-    { p: 'Posso mudar a cor ou o acabamento da SLS?', r: 'A SLS tem configuração fixa, é isso que permite o prazo curto. Para escolher cada detalhe, use o configurador.' },
-  ];
+function Perguntas({ c, prazo, parcelamento }: { c: ConteudoSls; prazo: string | null; parcelamento: string | null }) {
+  const lista = c.perguntas.map(q => ({ p: q.p, r: preencher(q.r, c, parcelamento) }));
+  void prazo;
+  if (!lista.length) return null;
   return <Secao className="max-w-3xl">
     <TituloSecao>Perguntas frequentes</TituloSecao>
     <Accordion type="single" collapsible>
@@ -248,7 +260,7 @@ function Perguntas({ prazo, parcelamento }: { prazo: string | null; parcelamento
   </Secao>;
 }
 
-function Fechamento({ dataPronta, origem }: { dataPronta: string; origem: string }) {
+function Fechamento({ c, dataPronta, origem }: { c: ConteudoSls; dataPronta: string; origem: string }) {
   return <Secao className="flex max-w-2xl flex-col items-center text-center">
     <h2 className="font-bebas text-5xl leading-none tracking-wide md:text-6xl">Pronta até {dataPronta}.</h2>
     <p className={cn('mt-4 text-base', APOIO)}>Se fechar hoje, essa é a data. Cada dia que passa, ela anda junto.</p>
@@ -258,9 +270,9 @@ function Fechamento({ dataPronta, origem }: { dataPronta: string; origem: string
         <a href={wa(`Olá! Tenho uma dúvida sobre a Push Dagger SLS [${origem}]`)} target="_blank" rel="noopener noreferrer"><WhatsAppIcon/>Tirar dúvida</a>
       </Button>
     </div>
-    <p className={cn('mt-12 max-w-xl text-left text-sm leading-relaxed', APOIO)}>
-      <strong className="text-[hsl(var(--oferta-texto))]">P.S.</strong> Pela primeira vez na história da Kaowz uma Push Dagger sai da bancada em {PRAZO_SLS} dias úteis, com os brindes desta campanha. Quando a campanha sair do ar, os brindes saem junto.
-    </p>
+    {c.ps && <p className={cn('mt-12 max-w-xl text-left text-sm leading-relaxed', APOIO)}>
+      <strong className="text-[hsl(var(--oferta-texto))]">P.S.</strong> {preencher(c.ps, c)}
+    </p>}
   </Secao>;
 }
 
@@ -279,13 +291,16 @@ export default function PushDaggerSlsVendas() {
   const origem = params.get('utm_source') ?? params.get('origem') ?? 'página SLS';
 
   const [feriados, setFeriados] = useState<Set<string>>(new Set());
+  const [c, setC] = useState<ConteudoSls>(PADRAO_SLS);
   useEffect(() => {
-    document.title = 'Push Dagger SLS | Pronta em 15 dias úteis | Kaowz';
+    void supabase.from('paginas_venda_config').select('conteudo').eq('slug', SLUG_PAGINA_SLS).maybeSingle()
+      .then(({ data }) => { if (data) setC(mesclarConteudoSls(data.conteudo)); });
     void supabase.from('feriados').select('data').then(({ data }) => {
       if (data?.length) setFeriados(new Set(data.map(f => f.data as string)));
     });
   }, []);
-  const dataPronta = useMemo(() => dataPorExtenso(prontaAte(PRAZO_SLS, feriados)), [feriados]);
+  useEffect(() => { document.title = `Push Dagger SLS | Pronta em ${c.prazoSls} dias úteis | Kaowz`; }, [c.prazoSls]);
+  const dataPronta = useMemo(() => dataPorExtenso(prontaAte(c.prazoSls, feriados)), [feriados, c.prazoSls]);
 
   const pagina = useMemo(() => {
     if (!campanha || !ofertas.length) return null;
@@ -298,16 +313,16 @@ export default function PushDaggerSlsVendas() {
     if (!itens.length) return null;
     const nomes = nomesDistintos(ofertas);
     return {
-      itens: itens.map(i => ({ ...i, inclusos: i.conteudo.inclusos })),
+      itens: itens.map(i => ({ ...i, inclusos: [...new Set([...i.conteudo.inclusos, ...c.inclusosExtras])] })),
       nomes,
       ficha: fichaDaCampanha(itens.map(i => ({ id: i.item.id, specs: i.conteudo.specs }))),
       pilares: (itens.find(i => i.conteudo.pilares.length) ?? itens[0]).conteudo.pilares,
       aPartirDe: Math.min(...itens.map(i => i.combo.preco)),
       brindesAte: Math.max(0, ...itens.map(i => i.combo.brindes.reduce((t, e) => t + (e.preco ?? 0), 0))),
       imagem: midiasDaOferta(itens[itens.length - 1].oferta).find(m => m.tipo === 'imagem')?.url ?? null,
-      inclusos: [...new Set(itens.flatMap(i => i.conteudo.inclusos))],
+      inclusos: [...new Set([...itens.flatMap(i => i.conteudo.inclusos), ...c.inclusosExtras])],
     };
-  }, [campanha, ofertas, combos, extras]);
+  }, [campanha, ofertas, combos, extras, c.inclusosExtras]);
 
   // Barra fixa no celular: aparece depois do topo e some quando a oferta está na tela.
   const heroRef = useRef<HTMLDivElement>(null);
@@ -335,18 +350,19 @@ export default function PushDaggerSlsVendas() {
     : <>
       <BarraPrazo dataPronta={dataPronta}/>
       <div ref={heroRef}>
-        <Hero carregando={loading} imagem={pagina?.imagem ?? null} aPartirDe={pagina?.aPartirDe ?? null} parcelamento={campanha?.texto_parcelamento_padrao ?? null} brindesAte={pagina?.brindesAte ?? 0}/>
+        <Hero c={c} video={c.videos[0] ?? null} carregando={loading} imagem={pagina?.imagem ?? null} aPartirDe={pagina?.aPartirDe ?? null} parcelamento={campanha?.texto_parcelamento_padrao ?? null} brindesAte={pagina?.brindesAte ?? 0}/>
       </div>
       {loading || !campanha || !pagina ? <div className={cn('flex justify-center py-16', MUTED)}><Loader2 className="h-5 w-5 animate-spin" aria-label="Carregando oferta"/></div> : <>
-      <Dor/>
-      {pagina.pilares.length > 0 && <Mecanismo pilares={pagina.pilares}/>}
+      {c.videos.length > 1 && <Videos titulo={c.videosTitulo} videos={c.videos.slice(1)}/>}
+      <Dor c={c}/>
+      {pagina.pilares.length > 0 && <Mecanismo pilares={pagina.pilares} prazo={c.prazoSls}/>}
       <Oferta itens={pagina.itens} nomes={pagina.nomes} campanha={campanha.titulo} parcelamento={campanha.texto_parcelamento_padrao} origem={origem}/>
       <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>
-      <ParaQuem/>
-      <Customizar/>
-      <Garantia/>
-      <Perguntas prazo={campanha.aviso_prazo} parcelamento={campanha.texto_parcelamento_padrao}/>
-      <Fechamento dataPronta={dataPronta} origem={origem}/>
+      <ParaQuem c={c}/>
+      <Customizar c={c}/>
+      <Garantia c={c}/>
+      <Perguntas c={c} prazo={campanha.aviso_prazo} parcelamento={campanha.texto_parcelamento_padrao}/>
+      <Fechamento c={c} dataPronta={dataPronta} origem={origem}/>
       <div className="h-20 md:hidden" aria-hidden/>
       <BarraFixa visivel={!heroVisivel && !ofertaVisivel} aPartirDe={pagina.aPartirDe}/>
       </>}
