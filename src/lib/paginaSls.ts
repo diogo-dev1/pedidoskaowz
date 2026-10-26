@@ -11,7 +11,7 @@ export function normalizarBlocosSls(valor: unknown): BlocoSls[] {
   if (!Array.isArray(valor)) return Object.keys(BLOCOS_SLS).map(tipo => ({ id: tipo, tipo: tipo as TipoBlocoSls }));
   const ids = new Set<string>(); const tipos = new Set<string>();
   return valor.filter((b): b is BlocoSls => {
-    if (!b || typeof b !== 'object' || typeof b.id !== 'string' || !b.id || ids.has(b.id) || !(b.tipo === 'livre' || Object.hasOwn(BLOCOS_SLS, b.tipo)) || (b.tipo !== 'livre' && tipos.has(b.tipo))) return false;
+    if (!b || typeof b !== 'object' || typeof b.id !== 'string' || !b.id || ids.has(b.id) || !(b.tipo === 'livre' || Object.prototype.hasOwnProperty.call(BLOCOS_SLS, b.tipo)) || (b.tipo !== 'livre' && tipos.has(b.tipo))) return false;
     ids.add(b.id); tipos.add(b.tipo); return true;
   }).map(b => ({ id: b.id, tipo: b.tipo, titulo: typeof b.titulo === 'string' ? b.titulo : '', texto: typeof b.texto === 'string' ? b.texto : '', imagem: urlImagemSls(b.imagem) ?? '' }));
 }
@@ -20,7 +20,7 @@ function urlImagemSls(v: unknown): string | null {
   try { return /^https?:$/.test(new URL(v).protocol) ? v.trim() : null; } catch { return null; }
 }
 export function imagemDaPagina(c: ConteudoSls, chave: ImagemSls, padrao: string | null): string | null {
-  return Object.hasOwn(c.imagens, chave) ? c.imagens[chave] ?? null : padrao;
+  return Object.prototype.hasOwnProperty.call(c.imagens, chave) ? c.imagens[chave] ?? null : padrao;
 }
 
 export interface ConteudoSls {
@@ -95,7 +95,7 @@ export function mesclarConteudoSls(salvo: unknown): ConteudoSls {
   out.imagens = {};
   if (s.imagens && typeof s.imagens === 'object') {
     for (const chave of ['hero', 'porte', 'acetinada', 'stoneWashed', 'tactical'] as const) {
-      if (Object.hasOwn(s.imagens, chave)) (out.imagens as ConteudoSls['imagens'])[chave] = urlImagemSls((s.imagens as Record<string, unknown>)[chave]);
+      if (Object.prototype.hasOwnProperty.call(s.imagens, chave)) (out.imagens as ConteudoSls['imagens'])[chave] = urlImagemSls((s.imagens as Record<string, unknown>)[chave]);
     }
   }
   const legado = /pix parcelado|some no bolso|sem esperar|não quer esperar|três meses de espera|resolver exatamente isso|pronta até|feche hoje|\d{2}\/\d{2}\/\d{4}/i;
