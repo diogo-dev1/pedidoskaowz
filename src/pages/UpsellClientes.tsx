@@ -84,6 +84,7 @@ export default function UpsellClientes() {
   const [buscaInput, setBuscaInput] = useState('');
   const [status, setStatus] = useState('todos');
   const [pagina, setPagina] = useState(0);
+  const [origem, setOrigem] = useState<'bling' | 'site'>('bling');
 
   const [selecionado, setSelecionado] = useState<ClienteRow | null>(null);
   const [mensagem, setMensagem] = useState('');
@@ -229,6 +230,7 @@ export default function UpsellClientes() {
             <p className="text-[11px] sm:text-xs text-muted-foreground">
               Segmentação sobre a base unificada do Bling (site + manual)
             </p>
+            <div className="mt-1.5"><BlingSyncStatus /></div>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 shrink-0">
@@ -255,6 +257,17 @@ export default function UpsellClientes() {
         </div>
       )}
 
+      {/* Origem da lista */}
+      <Tabs value={origem} onValueChange={(v) => setOrigem(v as 'bling' | 'site')}>
+        <TabsList className="w-full grid grid-cols-2 h-auto gap-1 p-1">
+          <TabsTrigger value="bling" className="text-xs py-1.5">Base Bling</TabsTrigger>
+          <TabsTrigger value="site" className="text-xs py-1.5">Site — últimos dias</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {origem === 'site' ? (
+        <UpsellSite templates={(templates ?? []).filter((t) => t.ativo)} vendedorNome={vendedorNome} />
+      ) : (<>
       {/* Resumo do segmento */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
@@ -418,6 +431,8 @@ export default function UpsellClientes() {
           </div>
         </div>
       )}
+
+      </>)}
 
       {/* Modal de contato */}
       <Dialog open={!!selecionado} onOpenChange={(v) => !v && setSelecionado(null)}>
