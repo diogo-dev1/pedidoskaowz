@@ -290,7 +290,7 @@ Deno.serve(async (req) => {
       allOrders.push(...(data.orders || []));
       const link: string = res.headers.get('link') ?? '';
       const next: string | undefined = link.split(',').find((p: string) => p.includes('rel="next"'));
-      const match: RegExpMatchArray | null = next?.match(/<([^>]+)>/);
+      const match: RegExpMatchArray | null = next?.match(/<([^>]+)>/) ?? null;
       url = match ? match[1] : null;
     }
 
