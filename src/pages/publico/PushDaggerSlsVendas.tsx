@@ -11,7 +11,7 @@ import { type CampanhaItem, moeda, ofertaDoItem } from '@/lib/campanhas';
 import { type OpcaoCombo, comboDestaque, mensagemCombo, opcoesCombos, valoresCombo } from '@/lib/campanhaCombos';
 import { conteudoDoItem, inclusosDoItem, ehKitCompletoSls, ehCoin, textoIncluso, mensagemKitSls, fichaDaCampanha, nomesDistintos, ordenarOpcoesSls, opcaoInicialSls } from '@/lib/campanhaConteudo';
 import { fonteVideo } from '@/lib/pushDaggerLanding';
-import { type ConteudoSls, type VideoPagina, type BlocoSls, PADRAO_SLS, SLUG_PAGINA_SLS, mesclarConteudoSls, preencher, PAGAMENTO_SLS, pilaresSls, imagemDaPagina } from '@/lib/paginaSls';
+import { type ConteudoSls, type VideoPagina, type BlocoSls, PADRAO_SLS, SLUG_PAGINA_SLS, mesclarConteudoSls, preencher, PAGAMENTO_SLS, pilaresSls, imagemDaPagina, chaveTamanhoSls } from '@/lib/paginaSls';
 import { type Extra, nomeCurtoExtra } from '@/lib/campanhaExtras';
 import { type Oferta, midiasDaOferta } from '@/components/ofertas/OfertaVisual';
 import { GaleriaCampanha, MiniaturasBrindes, WhatsAppIcon, wa } from '@/components/ofertas/CampanhaVisual';
@@ -19,9 +19,6 @@ import { FichaComparativa, TituloSecao } from '@/components/ofertas/CampanhaLand
 import { cn } from '@/lib/utils';
 import { SlsVideoTeste } from '@/components/ofertas/SlsVideoTeste';
 import kaowzLogo from '@/assets/kaowz-logo.png';
-import imgAcetinada from '@/assets/sls/push-dagger-acetinada-thumb.webp';
-import imgStoneWashed from '@/assets/sls/push-dagger-stone-washed-thumb.webp';
-import imgTactical from '@/assets/sls/push-dagger-tactical-thumb.webp';
 
 const SLUG = 'push-dagger-sls';
 const LINK_CONFIGURADOR = '/push-dagger-kaowz';
@@ -325,8 +322,9 @@ function ParaQuem({ c }: { c: ConteudoSls }) {
   </Secao>;
 }
 
-function Customizar({ c }: { c: ConteudoSls }) {
-  const fotos = [{ src: imagemDaPagina(c, 'acetinada', imgAcetinada), nome: 'Acetinada' }, { src: imagemDaPagina(c, 'stoneWashed', imgStoneWashed), nome: 'Stone Washed' }, { src: imagemDaPagina(c, 'tactical', imgTactical), nome: 'Tactical' }].filter(f => f.src);
+function Customizar({ c, opcoes }: { c: ConteudoSls; opcoes: { nome: string; titulo: string; capa: string | null }[] }) {
+  // Uma foto por tamanho/kit: a do editor da página tem prioridade; senão, a capa do produto.
+  const fotos = opcoes.map(o => { const chave = chaveTamanhoSls(o.titulo); return { nome: o.nome, src: chave ? imagemDaPagina(c, chave, o.capa) : o.capa }; }).filter(f => f.src);
   return <Secao id="customizar">
     <div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
       <div className="min-w-0">
@@ -336,7 +334,7 @@ function Customizar({ c }: { c: ConteudoSls }) {
           <Link to={LINK_CONFIGURADOR}>Montar minha Push Dagger<ArrowRight className="ml-2 h-4 w-4"/></Link>
         </Button>
       </div>
-      {fotos.length > 0 && <ul className="grid grid-cols-3 gap-2">
+      {fotos.length > 0 && <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {fotos.map(f => <li key={f.nome} className="min-w-0">
           <img src={f.src ?? undefined} alt={`Push Dagger ${f.nome}`} loading="lazy" className="aspect-[3/4] w-full rounded-lg object-contain"/>
           <p className={cn('mt-2 text-center text-xs', MUTED)}>{f.nome}</p>
@@ -463,7 +461,7 @@ export default function PushDaggerSlsVendas() {
       }
       case 'ficha': return <FichaComparativa ficha={pagina.ficha} nomes={pagina.itens.filter(i => !ehKitCompletoSls(i.item)).map(i => ({ id: i.item.id, nome: pagina.nomes[i.item.id] }))} inclusos={pagina.inclusos}/>;
       case 'paraQuem': return <ParaQuem c={c}/>;
-      case 'customizar': return <Customizar c={c}/>;
+      case 'customizar': return <Customizar c={c} opcoes={(pagina?.itens ?? []).map(i => ({ nome: pagina?.nomes[i.item.id] ?? i.item.titulo, titulo: i.item.titulo, capa: midiasDaOferta(i.oferta).find(m => m.tipo === 'imagem')?.url ?? null }))}/>;
       case 'garantia': return <Garantia c={c}/>;
       case 'perguntas': return <Perguntas c={c} prazo={null} parcelamento="em até 10x sem juros"/>;
       case 'fechamento': return <Fechamento c={c} origem={origem}/>;

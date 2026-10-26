@@ -90,7 +90,7 @@ export default function PaginaSlsAdmin() {
 
     <Secao titulo="Blocos da página"><SlsBlocosEditor blocos={c.blocos} onChange={b => set('blocos', b)} onBusy={imagemBusy}/></Secao>
     <Secao titulo="Imagens da página">
-      <div className="grid gap-6 sm:grid-cols-2">{([['hero', 'Foto do topo'], ['porte', 'Foto do porte'], ['acetinada', 'Foto Acetinada'], ['stoneWashed', 'Foto Stone Washed'], ['tactical', 'Foto Tactical']] as [ImagemSls, string][]).map(([chave, titulo]) => <SlsImagemEditor key={chave} id={`foto-${chave}`} titulo={titulo} valor={c.imagens[chave]} onBusy={imagemBusy} onChange={v => setC(prev => { if (!prev) return prev; const imagens = { ...prev.imagens }; if (v === undefined) delete imagens[chave]; else imagens[chave] = v; return { ...prev, imagens }; })}/>)}</div>
+      <div className="grid gap-6 sm:grid-cols-2">{([['hero', 'Foto do topo'], ['porte', 'Foto do porte'], ['micro', 'Foto Micro'], ['compact', 'Foto Compact'], ['standard', 'Foto Standard'], ['kit', 'Foto Kit Completo']] as [ImagemSls, string][]).map(([chave, titulo]) => <SlsImagemEditor key={chave} id={`foto-${chave}`} titulo={titulo} valor={c.imagens[chave]} onBusy={imagemBusy} onChange={v => setC(prev => { if (!prev) return prev; const imagens = { ...prev.imagens }; if (v === undefined) delete imagens[chave]; else imagens[chave] = v; return { ...prev, imagens }; })}/>)}</div>
     </Secao>
     <Secao titulo="Prazos">
       <div className="grid gap-3 sm:grid-cols-2">
