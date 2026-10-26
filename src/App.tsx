@@ -13,6 +13,7 @@ import Vitrine from "./pages/publico/Vitrine";
 import KitsPater from "./pages/publico/KitsPater";
 import PushDaggerLanding from "./pages/publico/PushDaggerLanding";
 import PushDaggerSlsVendas from "./pages/publico/PushDaggerSlsVendas";
+import PaginaSlsAdmin from "./pages/admin/PaginaSlsAdmin";
 import Montar from "./pages/publico/Montar";
 import ArsenalPublico from "./pages/publico/Arsenal";
 import Home from "./pages/Home";
@@ -114,6 +115,7 @@ const App = () => (
             <Route path="/tabela-push-dagger" element={<TabelaPrecosPushDagger />} />
             <Route path="/push-daggers" element={<PushDaggerLanding />} />
             <Route path="/sls" element={<PushDaggerSlsVendas />} />
+            <Route path="/admin/pagina-sls" element={<ProtectedRoute requireAdmin><Layout><PaginaSlsAdmin /></Layout></ProtectedRoute>} />
             <Route
               path="/admin/ofertas"
               element={

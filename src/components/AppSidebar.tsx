@@ -260,7 +260,7 @@ export function AppSidebar() {
   const { profile, signOut } = useAuth();
   const { pathname } = useLocation();
   const isAdmin = profile?.cargo === "admin" || profile?.cargo === "vendedor";
-  const adminItems = profile?.cargo === 'admin' ? [...ADMIN.slice(0, 3), { title: 'Campanhas', url: '/admin/campanhas', icon: Tag }, ...ADMIN.slice(3)] : ADMIN;
+  const adminItems = profile?.cargo === 'admin' ? [...ADMIN.slice(0, 3), { title: 'Campanhas', url: '/admin/campanhas', icon: Tag }, { title: 'Página SLS', url: '/admin/pagina-sls', icon: Tag }, ...ADMIN.slice(3)] : ADMIN;
   const [open, setOpen] = useState(false);
 
   const defaultOpen = useMemo(() => {
