@@ -1,5 +1,10 @@
 # Pronta Entrega — painel e notas
 
+## Ajustes da página /sls
+- [ ] Corrigir textos e regras de prazo/pagamento, destacar brindes reais e adicionar seção de porte.
+- [ ] Adicionar foto de porte editável na campanha com upload e prévia.
+- [ ] Validar dados reais em 375px/1280px, opções de tamanho, upload e compilação; informar limite de prévia social por rota.
+
 ## Campanhas minimalistas
 - [x] Mostrar a foto inteira no cartão (object-contain, fundo branco, 8px celular / 12px desktop, bolinhas inativas zinc-300); conferir 375px e 1280px com itens reais, modal intacto, 23 testes e compilação OK.
 - [x] Adicionar nome curto opcional na biblioteca/cadastro/importação, reorganizar brindes em grade de três e espaçar preço/parcelamento/botão; gravação e releitura reais conferidas, valores restaurados, 375px/desktop sem rolagem lateral, 23 testes e compilação OK.
