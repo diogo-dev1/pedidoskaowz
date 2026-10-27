@@ -11,7 +11,7 @@ import { Search, Loader2, MessageCircle, Check, X, Copy, ShoppingBag } from 'luc
 import { toast } from 'sonner';
 import { brl, dataHora, rotuloDias, STATUS_META, montarMensagem, type ClienteMensagem } from '@/lib/upsellMensagem';
 import type { FilaItem } from '@/components/fila/FilaEnvio';
-import { VARIAVEIS_MENSAGEM, varsMensagem } from '@/lib/upsellMensagem';
+import { varsMensagem } from '@/lib/upsellMensagem';
 import { agruparPedidosSite, type ClienteSite, type PedidoSite } from '@/lib/upsellSite';
 
 interface Template { id: string; nome: string; mensagem: string; ativo: boolean }
