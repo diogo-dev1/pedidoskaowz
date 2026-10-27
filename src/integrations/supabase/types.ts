@@ -1290,6 +1290,30 @@ export type Database = {
         }
         Relationships: []
       }
+      contatos_whatsapp_log: {
+        Row: {
+          enviado_em: string
+          enviado_por: string | null
+          id: string
+          origem: string
+          telefone: string
+        }
+        Insert: {
+          enviado_em?: string
+          enviado_por?: string | null
+          id?: string
+          origem: string
+          telefone: string
+        }
+        Update: {
+          enviado_em?: string
+          enviado_por?: string | null
+          id?: string
+          origem?: string
+          telefone?: string
+        }
+        Relationships: []
+      }
       equipe_expedicao: {
         Row: {
           ativo: boolean
