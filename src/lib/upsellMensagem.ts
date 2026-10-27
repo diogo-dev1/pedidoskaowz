@@ -32,7 +32,7 @@ export const VARIAVEIS_MENSAGEM = [
   '{qtd_pedidos}', '{ultimo_produto}', '{produtos}', '{dias_sem_comprar}',
 ];
 
-export function montarMensagem(tpl: string, c: ClienteMensagem, vendedor: string): string {
+export function varsMensagem(c: ClienteMensagem, vendedor: string): Record<string, string> {
   const nomeCompleto = c.nome ?? 'cliente';
   const produtos = (c.produtos ?? []).slice(0, 4).join(', ');
   const dias = diasDesde(c.ultimo_pedido_em);
@@ -52,6 +52,11 @@ export function montarMensagem(tpl: string, c: ClienteMensagem, vendedor: string
     '{data}': c.ultimo_pedido_em ? new Date(`${c.ultimo_pedido_em}T00:00:00`).toLocaleDateString('pt-BR') : '',
     '{pedido}': '',
   };
+  return vars;
+}
+
+export function montarMensagem(tpl: string, c: ClienteMensagem, vendedor: string): string {
+  const vars = varsMensagem(c, vendedor);
   let out = tpl;
   for (const [k, v] of Object.entries(vars)) out = out.split(k).join(v);
   return out;
