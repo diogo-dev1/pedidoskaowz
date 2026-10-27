@@ -2,11 +2,14 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3.23.8';
-import { buscarCheckouts, ShopifyHttpError } from '../_shared/checkoutsShopify.ts';
+import { buscarCheckoutsIntervalo, ShopifyHttpError } from '../_shared/checkoutsShopify.ts';
 
 const BodySchema = z.object({
-  dias: z.number().int().min(1).max(90).optional(),
+  dias: z.number().int().min(1).max(366).optional(),
+  de: z.string().datetime({ offset: true }).optional(),
+  ate: z.string().datetime({ offset: true }).optional(),
 });
+const LIMITE = 2000;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -46,11 +49,19 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    const { de, ate } = parsed.data;
     const dias = parsed.data.dias ?? 30;
+    const inicio = de ?? new Date(Date.now() - dias * 86400_000).toISOString();
+    if (ate && new Date(ate) < new Date(inicio)) {
+      return new Response(JSON.stringify({ error: 'Data final antes da inicial' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     try {
-      const simplificados = await buscarCheckouts(dias);
-      return new Response(JSON.stringify({ checkouts: simplificados }), {
+      const { checkouts, limiteAtingido } = await buscarCheckoutsIntervalo({ de: inicio, ate }, LIMITE);
+      const aviso = limiteAtingido ? `Limite de ${LIMITE} carrinhos atingido; refine o período.` : null;
+      return new Response(JSON.stringify({ checkouts, limite_atingido: limiteAtingido, aviso, de: inicio, ate: ate ?? null }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (e) {

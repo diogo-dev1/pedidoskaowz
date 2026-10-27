@@ -87,6 +87,10 @@ export default function CheckoutsAbandonados() {
   const [valorMin, setValorMin] = useState('');
   const [valorMax, setValorMax] = useState('');
   const [ordem, setOrdem] = useState('recentes');
+  const [dataDe, setDataDe] = useState('');
+  const [dataAte, setDataAte] = useState('');
+  const personalizado = dias === 'personalizado';
+  const intervaloOk = !personalizado || (!!dataDe && !!dataAte && dataDe <= dataAte);
 
   const [selecionado, setSelecionado] = useState<Checkout | null>(null);
   const [mensagem, setMensagem] = useState('');
@@ -96,12 +100,16 @@ export default function CheckoutsAbandonados() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ['shopify-checkouts', dias],
+    queryKey: ['shopify-checkouts', dias, dataDe, dataAte],
+    enabled: intervaloOk,
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('shopify-checkouts', { body: { dias: Number(dias) } });
+      const body = personalizado
+        ? { de: new Date(`${dataDe}T00:00:00-03:00`).toISOString(), ate: new Date(`${dataAte}T23:59:59-03:00`).toISOString() }
+        : { dias: Number(dias) };
+      const { data, error } = await supabase.functions.invoke('shopify-checkouts', { body });
       if (error) throw error;
       if (data?.error) throw new Error(typeof data.error === 'string' ? data.error : 'Erro na API Shopify');
-      return data as { checkouts: Checkout[] };
+      return data as { checkouts: Checkout[]; limite_atingido?: boolean; aviso?: string | null; de?: string };
     },
     staleTime: 60_000,
   });
@@ -153,6 +161,8 @@ export default function CheckoutsAbandonados() {
         resumoItens(c).toLowerCase().includes(q)
       );
     });
+    if (ordem === 'recentes') lista.sort((a, b) => (a.criado_em < b.criado_em ? 1 : a.criado_em > b.criado_em ? -1 : 0));
+    if (ordem === 'antigos') lista.sort((a, b) => (a.criado_em > b.criado_em ? 1 : a.criado_em < b.criado_em ? -1 : 0));
     if (ordem === 'maior') lista.sort((a, b) => (parseFloat(b.total) || 0) - (parseFloat(a.total) || 0));
     if (ordem === 'menor') lista.sort((a, b) => (parseFloat(a.total) || 0) - (parseFloat(b.total) || 0));
     return lista;
@@ -263,16 +273,34 @@ export default function CheckoutsAbandonados() {
           <Input placeholder="Buscar nome, e-mail, telefone ou produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={dias} onValueChange={setDias}>
-          <SelectTrigger className="w-full sm:w-[140px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[170px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="7">Últimos 7 dias</SelectItem>
             <SelectItem value="15">Últimos 15 dias</SelectItem>
             <SelectItem value="30">Últimos 30 dias</SelectItem>
             <SelectItem value="60">Últimos 60 dias</SelectItem>
             <SelectItem value="90">Últimos 90 dias</SelectItem>
+            <SelectItem value="180">Últimos 180 dias</SelectItem>
+            <SelectItem value="365">Último ano</SelectItem>
+            <SelectItem value="personalizado">Personalizado</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
+      {personalizado && (
+        <div className="flex gap-2">
+          <label className="flex-1 min-w-0 text-xs text-muted-foreground">De
+            <Input type="date" value={dataDe} max={dataAte || undefined} onChange={(e) => setDataDe(e.target.value)} aria-label="Data inicial" />
+          </label>
+          <label className="flex-1 min-w-0 text-xs text-muted-foreground">Até
+            <Input type="date" value={dataAte} min={dataDe || undefined} onChange={(e) => setDataAte(e.target.value)} aria-label="Data final" />
+          </label>
+        </div>
+      )}
+      {data?.aviso && <p className="text-xs text-amber-500">{data.aviso}</p>}
+      {(Number(dias) > 60 || personalizado) && (
+        <p className="text-[11px] text-muted-foreground">O Shopify mantém carrinhos abandonados por tempo limitado; os mais antigos podem não aparecer.</p>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="flex gap-2 flex-1 min-w-0">
@@ -283,6 +311,7 @@ export default function CheckoutsAbandonados() {
           <SelectTrigger className="w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="recentes">Mais recentes</SelectItem>
+            <SelectItem value="antigos">Mais antigos</SelectItem>
             <SelectItem value="maior">Maior valor</SelectItem>
             <SelectItem value="menor">Menor valor</SelectItem>
           </SelectContent>
