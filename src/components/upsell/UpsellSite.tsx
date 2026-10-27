@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Loader2, MessageCircle, Check, X, Copy, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import { brl, dataHora, rotuloDias, STATUS_META, montarMensagem, type ClienteMensagem } from '@/lib/upsellMensagem';
+import type { FilaItem } from '@/components/fila/FilaEnvio';
+import { varsMensagem } from '@/lib/upsellMensagem';
 import { agruparPedidosSite, type ClienteSite, type PedidoSite } from '@/lib/upsellSite';
 
 interface Template { id: string; nome: string; mensagem: string; ativo: boolean }
@@ -19,7 +21,7 @@ interface Linha extends ClienteSite { base: Base | null; status: string; contata
 const DIAS = [7, 15, 30, 60];
 const dataISO = (iso: string) => iso.slice(0, 10);
 
-export default function UpsellSite({ templates, vendedorNome }: { templates: Template[]; vendedorNome: string }) {
+export default function UpsellSite({ templates, vendedorNome, onFila }: { templates: Template[]; vendedorNome: string; onFila?: (itens: FilaItem[]) => void }) {
   const qc = useQueryClient();
   const [dias, setDias] = useState(15);
   const [busca, setBusca] = useState('');
@@ -79,6 +81,17 @@ export default function UpsellSite({ templates, vendedorNome }: { templates: Tem
     qtd_pedidos: l.base ? Math.max(l.base.qtd_pedidos, l.pedidos.length) : l.pedidos.length,
     produtos: l.produtos, ultimo_pedido_em: dataISO(l.ultimo),
   });
+
+  useEffect(() => {
+    if (!onFila) return;
+    onFila(filtradas.filter(l => l.status === 'pendente' && l.fone).map(l => ({
+      id: `site-${l.chave}`, telefone: l.fone, nome: l.nome,
+      local: [l.cidade, l.uf].filter(Boolean).join('/'),
+      detalhes: l.produtos.slice(0, 5).join(', '), valor: brl(l.total), quando: `comprou ${rotuloDias(dataISO(l.ultimo))}`,
+      vars: varsMensagem(paraMensagem(l), vendedorNome),
+      ref: { bling: l.base?.contato_bling_id ?? null, fone: l.fone },
+    })));
+  }, [filtradas, onFila]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!sel) return;

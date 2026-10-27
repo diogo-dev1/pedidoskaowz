@@ -16,7 +16,9 @@ import {
   Settings2, Copy, Plus, Trash2, Bookmark, BookmarkPlus, ClipboardList,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { brl, dataHora, rotuloDias, STATUS_META, VARIAVEIS_MENSAGEM, montarMensagem } from '@/lib/upsellMensagem';
+import { brl, dataHora, rotuloDias, STATUS_META, VARIAVEIS_MENSAGEM, montarMensagem, varsMensagem } from '@/lib/upsellMensagem';
+import FilaEnvio, { type FilaItem, type AcaoFila } from '@/components/fila/FilaEnvio';
+import { ListOrdered } from 'lucide-react';
 import UpsellSite from '@/components/upsell/UpsellSite';
 import BlingSyncStatus from '@/components/upsell/BlingSyncStatus';
 import {
@@ -91,6 +93,8 @@ export default function UpsellClientes() {
   const [templateId, setTemplateId] = useState('');
   const [gerenciarOpen, setGerenciarOpen] = useState(false);
   const [avulsoOpen, setAvulsoOpen] = useState(false);
+  const [filaOpen, setFilaOpen] = useState(false);
+  const [filaSite, setFilaSite] = useState<FilaItem[]>([]);
 
   // debounce da busca
   useEffect(() => {
@@ -199,6 +203,38 @@ export default function UpsellClientes() {
     setSelecionado(null);
   };
 
+  // ── Modo fila ──
+  const carregarFila = async (): Promise<FilaItem[]> => {
+    if (origem === 'site') return filaSite;
+    const { data, error } = await supabase.rpc('buscar_clientes_upsell', {
+      ...argsRpc(filtros, 'pendente'), p_so_whatsapp: true, p_ordem: filtros.ordem, p_limite: 1000, p_offset: 0,
+    });
+    if (error) throw error;
+    return ((data ?? []) as unknown as ClienteRow[]).map((c) => ({
+      id: `bling-${c.contato_bling_id}`,
+      telefone: normalizarTelefone(c.telefone_whatsapp),
+      nome: c.nome ?? 'Cliente',
+      local: [c.cidade, c.uf].filter(Boolean).join('/'),
+      detalhes: (c.produtos ?? []).slice(0, 5).join(', '),
+      valor: brl(c.total_gasto),
+      quando: `comprou ${rotuloDias(c.ultimo_pedido_em)}`,
+      vars: varsMensagem(c, vendedorNome),
+      ref: { bling: c.contato_bling_id, fone: normalizarTelefone(c.telefone_whatsapp) },
+    }));
+  };
+
+  const marcarFila = async (item: FilaItem, acao: AcaoFila) => {
+    const ref = item.ref as { bling: number | null; fone: string | null };
+    const novo = acao === 'negativo' ? 'sem_interesse' : acao;
+    const { data: u } = await supabase.auth.getUser();
+    const extra = { status: novo, contatado_em: novo === 'pendente' ? null : new Date().toISOString(), contatado_por: u?.user?.id ?? null };
+    const { error } = ref.bling
+      ? await supabase.from('upsell_clientes_contatos').upsert({ contato_bling_id: ref.bling, ...extra } as any, { onConflict: 'contato_bling_id' })
+      : await supabase.from('upsell_contatos_site').upsert({ telefone: ref.fone!, ...extra }, { onConflict: 'telefone' });
+    if (error) { toast.error('Erro ao salvar status: ' + error.message); return; }
+    ['upsell-clientes', 'upsell-resumo', 'upsell-site-cruzamento'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+  };
+
   const salvarSegmento = async () => {
     const nome = window.prompt('Nome do segmento:');
     if (!nome?.trim()) return;
@@ -234,6 +270,9 @@ export default function UpsellClientes() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2 shrink-0">
+          <Button className="gap-2 w-full sm:w-auto h-11 text-base" onClick={() => setFilaOpen(true)}>
+            <ListOrdered className="h-5 w-5" /> Iniciar fila
+          </Button>
           <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => navigate('/upsell-lista-avulsa')}>
             <ClipboardList className="h-4 w-4" /> Lista avulsa (feira)
           </Button>
@@ -266,7 +305,7 @@ export default function UpsellClientes() {
       </Tabs>
 
       {origem === 'site' ? (
-        <UpsellSite templates={(templates ?? []).filter((t) => t.ativo)} vendedorNome={vendedorNome} />
+        <UpsellSite templates={(templates ?? []).filter((t) => t.ativo)} vendedorNome={vendedorNome} onFila={setFilaSite} />
       ) : (<>
       {/* Resumo do segmento */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -488,6 +527,16 @@ export default function UpsellClientes() {
         onOpenChange={setAvulsoOpen}
         templates={(templates ?? []).filter((t) => t.ativo)}
         vendedorNome={vendedorNome}
+      />
+      <FilaEnvio
+        origem="upsell"
+        open={filaOpen}
+        onClose={() => setFilaOpen(false)}
+        carregar={carregarFila}
+        templates={(templates ?? []).filter((t) => t.ativo)}
+        variaveis={VARIAVEIS_MENSAGEM}
+        rotuloNegativo="Sem interesse"
+        marcar={marcarFila}
       />
     </div>
   );
