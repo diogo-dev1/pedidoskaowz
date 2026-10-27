@@ -266,7 +266,7 @@ function Oferta({ c, itens, nomes, campanha, parcelamento, origem, escolhido, se
     <TituloSecao apoio="Escolha sua opção e veja tudo o que vai na caixa.">Tudo o que você leva</TituloSecao>
     <div className="grid gap-8 md:grid-cols-2 md:gap-14">
       <div className="min-w-0 overflow-hidden rounded-lg">
-        <GaleriaCampanha key={atual.item.id} oferta={{ ...atual.oferta, midias: midiasDaOpcaoSls(c, atual) }} detalhe/>
+        <GaleriaCampanha key={atual.item.id} oferta={{ ...atual.oferta, midias: midiasDaOpcaoSls(c, atual) }} detalhe preco={atual.combo.preco}/>
       </div>
       <div className="min-w-0">
         <h3 className="mb-3 text-sm font-semibold">Escolha sua opção</h3>
