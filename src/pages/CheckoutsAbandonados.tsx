@@ -59,9 +59,9 @@ function resumoItens(c: Checkout): string {
   return c.itens.map((i) => `${i.quantidade}x ${i.titulo}${i.variante && i.variante !== 'Default Title' ? ` (${i.variante})` : ''}`).join(', ');
 }
 
-function montarMensagem(tpl: string, c: Checkout, vendedor: string): string {
+function varsCheckout(c: Checkout, vendedor: string): Record<string, string> {
   const primeiroNome = c.nome.split(' ')[0] || 'tudo bem';
-  const vars: Record<string, string> = {
+  return {
     '{nome_completo}': c.nome,
     '{nome}': primeiroNome,
     '{vendedor}': vendedor,
@@ -70,10 +70,15 @@ function montarMensagem(tpl: string, c: Checkout, vendedor: string): string {
     '{link}': c.abandoned_checkout_url ?? '',
     '{cidade}': c.cidade ?? '',
   };
+}
+
+function montarMensagem(tpl: string, c: Checkout, vendedor: string): string {
   let out = tpl;
-  for (const [k, v] of Object.entries(vars)) out = out.split(k).join(v);
+  for (const [k, v] of Object.entries(varsCheckout(c, vendedor))) out = out.split(k).join(v);
   return out;
 }
+
+const VARIAVEIS_CHECKOUT = ['{nome}', '{nome_completo}', '{itens}', '{total}', '{link}', '{cidade}', '{vendedor}'];
 
 
 // ── Página ───────────────────────────────────────────────────────────────────
