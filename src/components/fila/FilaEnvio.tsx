@@ -108,6 +108,13 @@ export default function FilaEnvio({ origem, open, onClose, carregar, templates, 
     return () => { vivo = false; };
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // modelos podem chegar depois da abertura
+  useEffect(() => {
+    if (etapa !== 'config' || templateId !== 'livre' || mensagens[0].trim() || !templates[0]) return;
+    setTemplateId(templates[0].id);
+    setMensagens((m) => [templates[0].mensagem, ...m.slice(1)]);
+  }, [templates, etapa]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // persistir sessão
   useEffect(() => { if (sessao) localStorage.setItem(chaveSessao, JSON.stringify(sessao)); }, [sessao, chaveSessao]);
 
@@ -246,12 +253,12 @@ export default function FilaEnvio({ origem, open, onClose, carregar, templates, 
   if (etapa === 'carregando' || etapa === 'config') {
     return (
       <Dialog open onOpenChange={(v) => !v && fechar()}>
-        <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-xl">
+        <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6 rounded-xl">
           <DialogHeader><DialogTitle className="text-base flex items-center gap-2"><ListOrdered className="h-4 w-4 text-primary" /> Mensagem desta fila</DialogTitle></DialogHeader>
           {etapa === 'carregando' ? (
             <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /> Montando a fila...</div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 min-w-0">
               {salva && (
                 <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 space-y-2">
                   <p className="text-sm">Você tem uma fila em andamento: <b>{salva.pos} de {salva.fila.length}</b>.</p>
@@ -262,12 +269,12 @@ export default function FilaEnvio({ origem, open, onClose, carregar, templates, 
                 Escolha a mensagem <b>uma vez</b>. Depois o app mostra um cliente por vez, já com a mensagem pronta — é só tocar em "Enviar no WhatsApp" e voltar para o app.
               </p>
               <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg border bg-card p-2.5">
+                <div className="rounded-lg border bg-card p-2.5 min-w-0">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Na fila</p>
                   <p className="text-lg font-bold">{candidatos.length}</p>
                   <p className="text-[10px] text-muted-foreground">pendentes com WhatsApp, sem contato hoje</p>
                 </div>
-                <label className="rounded-lg border bg-card p-2.5 block">
+                <label className="rounded-lg border bg-card p-2.5 block min-w-0">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Meta diária</p>
                   <Input type="number" min={1} value={meta} onChange={(e) => setMeta(Math.max(1, Number(e.target.value) || 1))} className="h-8 mt-1" aria-label="Meta diária" />
                   <p className="text-[10px] text-muted-foreground mt-1">{hoje} enviados hoje</p>
