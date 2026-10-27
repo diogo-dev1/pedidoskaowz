@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import FilaEnvio, { type FilaItem } from '@/components/fila/FilaEnvio';
+import { ListOrdered } from 'lucide-react';
 import {
   Search, Loader2, RefreshCw, ShoppingCart, MessageCircle, Check, X,
   Settings2, Copy, Plus, Trash2, ExternalLink, Bell,
@@ -102,6 +104,7 @@ export default function CheckoutsAbandonados() {
   const [templateId, setTemplateId] = useState<string>('');
   const [gerenciarOpen, setGerenciarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [filaOpen, setFilaOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
@@ -233,6 +236,23 @@ export default function CheckoutsAbandonados() {
     setSelecionado(null);
   };
 
+  // Fila: filtros atuais, só pendentes com WhatsApp, mais recentes primeiro
+  const carregarFila = async (): Promise<FilaItem[]> =>
+    filtrados
+      .filter((c) => (mapaContatos.get(c.id)?.status ?? 'pendente') === 'pendente')
+      .sort((a, b) => (a.criado_em < b.criado_em ? 1 : a.criado_em > b.criado_em ? -1 : 0))
+      .map((c) => ({
+        id: c.id,
+        telefone: normalizarTelefone(c.telefone),
+        nome: c.nome,
+        local: [c.cidade, c.estado].filter(Boolean).join('/'),
+        detalhes: resumoItens(c),
+        valor: brl(c.total),
+        quando: horasAtras(c.criado_em),
+        vars: varsCheckout(c, vendedorNome),
+        ref: c.id,
+      }));
+
   return (
     <div className="w-full max-w-5xl mx-auto py-4 sm:py-6 px-3 sm:px-4 space-y-4 sm:space-y-5 overflow-x-hidden">
       {/* Header */}
@@ -246,7 +266,10 @@ export default function CheckoutsAbandonados() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <Button className="gap-2 w-full sm:w-auto h-11 text-base" onClick={() => setFilaOpen(true)} disabled={isLoading}>
+            <ListOrdered className="h-5 w-5" /> Iniciar fila
+          </Button>
           <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={() => setGerenciarOpen(true)}>
             <Settings2 className="h-4 w-4" /> Modelos
           </Button>
@@ -457,6 +480,16 @@ export default function CheckoutsAbandonados() {
       </Dialog>
 
       <TemplatesDialog open={gerenciarOpen} onOpenChange={setGerenciarOpen} templates={templates ?? []} />
+      <FilaEnvio
+        origem="checkout"
+        open={filaOpen}
+        onClose={() => setFilaOpen(false)}
+        carregar={carregarFila}
+        templates={(templates ?? []).filter((t) => t.ativo)}
+        variaveis={VARIAVEIS_CHECKOUT}
+        rotuloNegativo="Perdido"
+        marcar={(item, acao) => marcarStatus(item.ref as string, acao === 'negativo' ? 'perdido' : acao)}
+      />
       <NotificacoesDialog open={notifOpen} onOpenChange={setNotifOpen} />
     </div>
   );
