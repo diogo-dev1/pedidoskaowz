@@ -22,13 +22,14 @@ export function MiniaturasBrindes({ brindes, variante = 'padrao' }: { brindes: E
   return <div className="flex shrink-0 items-center -space-x-2">{brindes.map(e => <div key={e.id} title={e.nome} className={`${tamanho} ${borda} relative shrink-0 overflow-hidden rounded-full border-[hsl(var(--campanha-circulo-borda))] bg-[hsl(var(--campanha-selo-fundo))] text-[hsl(var(--campanha-selo-texto))] flex items-center justify-center`}>{e.imagem_url?.trim() ? <img src={e.imagem_url} alt={e.nome} loading="lazy" className="h-full w-full object-contain"/> : <Gift className="h-3.5 w-3.5"/>}</div>)}</div>;
 }
 
-export function GaleriaCampanha({ oferta, detalhe = false }: { oferta: Oferta; detalhe?: boolean }) {
+export function GaleriaCampanha({ oferta, detalhe = false, preco = null }: { oferta: Oferta; detalhe?: boolean; preco?: number | null }) {
   const midias = midiasDaOferta(oferta);
   const [idx, setIdx] = useState(0);
   const [touch, setTouch] = useState<number | null>(null);
   useEffect(() => setIdx(0), [oferta.id]);
   const mover = (d: number) => { if (midias.length) setIdx(i => (i + d + midias.length) % midias.length); };
   return <div className={`relative overflow-hidden ${detalhe ? 'bg-[hsl(var(--oferta-superficie))] aspect-square md:aspect-auto md:h-[650px] md:sticky md:top-0' : 'bg-[hsl(var(--campanha-selo-fundo))] aspect-square'}`} onTouchStart={e => setTouch(e.touches[0].clientX)} onTouchEnd={e => { if (touch != null && Math.abs(e.changedTouches[0].clientX - touch) > 40) mover(e.changedTouches[0].clientX < touch ? 1 : -1); setTouch(null); }} onMouseEnter={() => { if (!detalhe && midias.length > 1) setIdx(1); }} onMouseLeave={() => { if (!detalhe) setIdx(0); }}>
+    {preco != null && preco > 0 && <span className="absolute right-2 top-2 z-10 rounded-full bg-accent px-2.5 py-1 text-xs font-bold tabular-nums text-accent-foreground shadow-sm">{moeda(preco)}</span>}
     {midias.length ? midias.map((m, i) => <div key={`${m.url}-${i}`} className={`absolute inset-0 transition-opacity duration-300 ${i === idx ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${detalhe ? '' : 'p-3'}`}><Midia item={m} titulo={oferta.titulo} ativa={i === idx} className="h-full w-full object-contain"/></div>) : <div className="absolute inset-0 flex items-center justify-center text-xs text-[hsl(var(--oferta-muted))]">Sem imagem</div>}
     {midias.length > 1 && detalhe && <><Button size="icon" variant="secondary" aria-label="Mídia anterior" className="absolute left-2 top-1/2 bg-[hsl(var(--campanha-barra)/0.9)] text-[hsl(var(--oferta-texto))]" onClick={() => mover(-1)}><ChevronLeft className="h-5 w-5"/></Button><Button size="icon" variant="secondary" aria-label="Próxima mídia" className="absolute right-2 top-1/2 bg-[hsl(var(--campanha-barra)/0.9)] text-[hsl(var(--oferta-texto))]" onClick={() => mover(1)}><ChevronRight className="h-5 w-5"/></Button></>}
     {midias.length > 1 && detalhe && <div className="absolute bottom-2 left-3 right-3 flex flex-wrap justify-center gap-1">{midias.map((_, i) => <span key={i} className={`h-1 w-1 rounded-full ${i === idx ? 'bg-accent' : 'bg-[hsl(var(--oferta-muted))]'}`}/>)}</div>}
