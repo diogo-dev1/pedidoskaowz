@@ -60,17 +60,25 @@ export class ShopifyHttpError extends Error {
 
 /** Checkouts abertos dos últimos `dias`, mais recentes primeiro. */
 export async function buscarCheckouts(dias: number): Promise<CheckoutSimplificado[]> {
+  return (await buscarCheckoutsIntervalo({ de: new Date(Date.now() - dias * 86400_000).toISOString() }, 10 * 250)).checkouts;
+}
+
+/** Checkouts abertos no intervalo [de, ate], paginando até cobrir tudo ou atingir `limite`. */
+export async function buscarCheckoutsIntervalo(
+  intervalo: { de: string; ate?: string }, limite = 2000,
+): Promise<{ checkouts: CheckoutSimplificado[]; limiteAtingido: boolean }> {
   const storeDomain = await resolveShopDomain();
   const accessToken = await getShopifyToken(storeDomain);
   const shopifyHeaders = { 'X-Shopify-Access-Token': accessToken, 'Content-Type': 'application/json' };
 
-  const since = new Date(Date.now() - dias * 86400_000).toISOString();
   let url: string | null =
-    `https://${storeDomain}/admin/api/${API_VERSION}/checkouts.json?limit=250&status=open&created_at_min=${encodeURIComponent(since)}`;
+    `https://${storeDomain}/admin/api/${API_VERSION}/checkouts.json?limit=250&status=open&created_at_min=${encodeURIComponent(intervalo.de)}` +
+    (intervalo.ate ? `&created_at_max=${encodeURIComponent(intervalo.ate)}` : '');
 
   const checkouts: any[] = [];
-  let pages = 0;
-  while (url && pages < 10) {
+  let limiteAtingido = false;
+  while (url) {
+    if (checkouts.length >= limite) { limiteAtingido = true; break; }
     const res: Response = await fetch(url, { headers: shopifyHeaders });
     if (!res.ok) {
       const text = await res.text();
@@ -83,8 +91,8 @@ export async function buscarCheckouts(dias: number): Promise<CheckoutSimplificad
     const next = link.split(',').find((p) => p.includes('rel="next"'));
     const match = next?.match(/<([^>]+)>/);
     url = match ? match[1] : null;
-    pages++;
   }
+  if (checkouts.length > limite) { checkouts.length = limite; limiteAtingido = true; }
 
   const simplificados: CheckoutSimplificado[] = checkouts.map((c) => {
     const cli = c.customer ?? {};
@@ -118,7 +126,7 @@ export async function buscarCheckouts(dias: number): Promise<CheckoutSimplificad
   });
 
   simplificados.sort((a, b) => (a.criado_em < b.criado_em ? 1 : -1));
-  return simplificados;
+  return { checkouts: simplificados, limiteAtingido };
 }
 
 /** Existe pedido desse e-mail criado depois de `depoisDe`? */
