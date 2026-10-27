@@ -32,3 +32,4 @@
 - Abandoned-checkout screen and push alerts both read Shopify through `supabase/functions/_shared/checkoutsShopify.ts`; notified carts must match the screen exactly.
 - Scheduled Bling sync authenticates with an x-cron-secret header matched in constant time against the server-only config row the cron job reads; the function stays private and never accepts the anon key.
 - Upsell "Site" view reuses the paid-orders Shopify lister and groups by normalized phone then e-mail; matched Bling contacts keep their upsell status, unmatched buyers store status by phone.
+- WhatsApp queue mode is one shared component fed by page-built items with their own status writer; same-day dedupe across pages uses the shared send log plus site upsell contacts, so pages never duplicate queue rules.
