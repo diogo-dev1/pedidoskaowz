@@ -14,7 +14,7 @@ const RECENT_LIMIT = 10;
 const viewLabels: Record<ListView, { select: string; empty: string }> = {
   today: { select: 'Hoje', empty: 'Nenhuma venda hoje' },
   week: { select: 'Esta semana', empty: 'Nenhuma venda esta semana' },
-  recent: { select: 'Últimas vendas', empty: 'Nenhuma venda registrada' },
+  recent: { select: 'Últimas do período', empty: 'Nenhuma venda no período' },
 };
 
 const initials = (name: string) =>
@@ -22,8 +22,8 @@ const initials = (name: string) =>
 
 const shortDate = (date: Date) => `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-export function SalesListCard({ sales }: { sales: Sale[] }) {
-  const [view, setView] = useState<ListView>('today');
+export function SalesListCard({ sales, defaultView = 'today' }: { sales: Sale[]; defaultView?: ListView }) {
+  const [view, setView] = useState<ListView>(defaultView);
 
   const { rows, caption } = useMemo(() => {
     const today = new Date();

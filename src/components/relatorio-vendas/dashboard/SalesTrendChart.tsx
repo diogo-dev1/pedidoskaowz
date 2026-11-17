@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { Sale } from '@/types/sales';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { aggregateSales, chartBuckets, periodSummaries, salesBRL, saoPauloDay, type SalesBucket, type SalesPeriod } from '@/lib/homeSalesChart';
+import { aggregateSales, chartBuckets, periodSummaries, rangeTotal, salesBRL, saoPauloDay, type SalesBucket, type SalesPeriod } from '@/lib/homeSalesChart';
+import type { PeriodoResolvido } from '@/lib/relatorioPeriodo';
 import { DashboardCard, DeltaBadge } from './shared';
 
 const periodLabels: Record<SalesPeriod, { select: string; current: string; previous: string }> = {
@@ -12,18 +13,26 @@ const periodLabels: Record<SalesPeriod, { select: string; current: string; previ
 };
 const countText = (count: number) => `${count} ${count === 1 ? 'venda' : 'vendas'}`;
 
-export function SalesTrendChart({ sales }: { sales: Sale[] }) {
+export function SalesTrendChart({ sales, periodo }: { sales: Sale[]; periodo?: PeriodoResolvido }) {
   const [period, setPeriod] = useState<SalesPeriod>('day');
   const days = useMemo(() => aggregateSales(sales), [sales]);
   const today = useMemo(() => saoPauloDay(), []);
-  const buckets = useMemo(() => chartBuckets(days, today, period), [days, today, period]);
-  const summary = useMemo(() => periodSummaries(days, today).find(s => s.type === period)!, [days, today, period]);
+  const buckets = useMemo(() => periodo
+    ? chartBuckets(days, today, 'day', { start: periodo.inicio, end: periodo.fim } as SalesBucket)
+    : chartBuckets(days, today, period), [days, today, period, periodo]);
+  const summary = useMemo(() => {
+    if (!periodo) return periodSummaries(days, today).find(s => s.type === period)!;
+    const total = rangeTotal(days, periodo.inicio, periodo.fim);
+    const previous = rangeTotal(days, periodo.prevInicio, periodo.prevFim).value;
+    return { ...total, previous, change: previous === 0 ? null : (total.value - previous) / previous * 100 };
+  }, [days, today, period, periodo]);
+  const labels = periodo ? { current: periodo.titulo, previous: periodo.comparacao } : periodLabels[period];
 
   return (
     <DashboardCard className="lg:col-span-2 flex flex-col">
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <h3 className="font-semibold">Evolução de Vendas</h3>
-        <Select value={period} onValueChange={v => setPeriod(v as SalesPeriod)}>
+        {!periodo && <Select value={period} onValueChange={v => setPeriod(v as SalesPeriod)}>
           <SelectTrigger className="h-8 w-auto gap-2 text-xs" aria-label="Período">
             <SelectValue />
           </SelectTrigger>
@@ -32,7 +41,7 @@ export function SalesTrendChart({ sales }: { sales: Sale[] }) {
               <SelectItem key={key} value={key} className="text-xs">{periodLabels[key].select}</SelectItem>
             ))}
           </SelectContent>
-        </Select>
+        </Select>}
       </div>
 
       <div className="flex flex-col-reverse md:flex-row gap-4 flex-1">
@@ -66,7 +75,7 @@ export function SalesTrendChart({ sales }: { sales: Sale[] }) {
                 stroke="hsl(var(--chart-1))"
                 strokeWidth={2}
                 fill="url(#trend-fill)"
-                dot={period === 'day' ? false : { r: 3, fill: 'hsl(var(--chart-1))', strokeWidth: 0 }}
+                dot={periodo || period === 'day' ? false : { r: 3, fill: 'hsl(var(--chart-1))', strokeWidth: 0 }}
                 activeDot={{ r: 4 }}
                 isAnimationActive={false}
               />
@@ -77,7 +86,7 @@ export function SalesTrendChart({ sales }: { sales: Sale[] }) {
         <div className="grid grid-cols-2 md:grid-cols-1 md:w-40 gap-3 md:content-start">
           <div className="rounded-lg border border-primary/60 p-3">
             <p className="text-lg sm:text-xl font-bold tabular-nums">{salesBRL(summary.value)}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">{periodLabels[period].current}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{labels.current}</p>
             <p className="text-[11px] text-muted-foreground">{countText(summary.count)}</p>
           </div>
           <div className="rounded-lg border p-3">
@@ -86,7 +95,7 @@ export function SalesTrendChart({ sales }: { sales: Sale[] }) {
             ) : (
               <DeltaBadge change={summary.change} className="text-base px-2" />
             )}
-            <p className="text-[11px] text-muted-foreground mt-1">{periodLabels[period].previous}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{labels.previous}</p>
             <p className="text-[11px] text-muted-foreground tabular-nums">{salesBRL(summary.previous)}</p>
           </div>
         </div>

@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import type { Sale } from '@/types/sales';
-import { addDays, aggregateSales, chartBuckets, rangeTotal, saoPauloDay } from '@/lib/homeSalesChart';
+import { addDays, aggregateSales, chartBuckets, rangeTotal, saoPauloDay, type SalesBucket } from '@/lib/homeSalesChart';
+import type { PeriodoResolvido } from '@/lib/relatorioPeriodo';
 import { DashboardCard, DeltaBadge, formatBRL, percentChange } from './shared';
 
 interface MetricCardProps {
@@ -51,16 +52,18 @@ interface MetricsCardsProps {
   totalSales: number;
   totalCount: number;
   averageTicket: number;
+  periodo: PeriodoResolvido;
 }
 
-// Badges compare the last 30 days with the 30 days before; today's card compares with yesterday.
-export function MetricsCards({ sales, totalSales, totalCount, averageTicket }: MetricsCardsProps) {
+// Badges compare the chosen period with its comparison range; today's card compares with yesterday.
+export function MetricsCards({ sales, totalSales, totalCount, averageTicket, periodo }: MetricsCardsProps) {
   const stats = useMemo(() => {
     const days = aggregateSales(sales);
     const today = saoPauloDay();
-    const buckets = chartBuckets(days, today, 'day');
-    const current = rangeTotal(days, addDays(today, -29), today);
-    const previous = rangeTotal(days, addDays(today, -59), addDays(today, -30));
+    const buckets = chartBuckets(days, today, 'day', { start: periodo.inicio, end: periodo.fim } as SalesBucket);
+    const lastWeek = chartBuckets(days, today, 'day').slice(-7).map(b => b.value);
+    const current = rangeTotal(days, periodo.inicio, periodo.fim);
+    const previous = rangeTotal(days, periodo.prevInicio, periodo.prevFim);
     const ticket = (t: { value: number; count: number }) => (t.count ? t.value / t.count : 0);
     const todayTotal = rangeTotal(days, today, today);
     const yesterday = rangeTotal(days, addDays(today, -1), addDays(today, -1));
@@ -72,23 +75,24 @@ export function MetricsCards({ sales, totalSales, totalCount, averageTicket }: M
       countChange: percentChange(current.count, previous.count),
       ticketChange: percentChange(ticket(current), ticket(previous)),
       todayTotal,
+      lastWeek,
       yesterday,
       todayChange: percentChange(todayTotal.value, yesterday.value),
     };
-  }, [sales]);
+  }, [sales, periodo]);
 
   return (
     <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-      <MetricCard id="total" title="Total de Vendas" value={formatBRL(totalSales)} change={stats.valueChange} subtitle="30 dias vs. 30 dias anteriores" trend={stats.valueTrend} />
+      <MetricCard id="total" title="Total de Vendas" value={formatBRL(totalSales)} change={stats.valueChange} subtitle={periodo.comparacao} trend={stats.valueTrend} />
       <MetricCard id="count" title="Quantidade" value={totalCount.toString()} change={stats.countChange} subtitle="transações" trend={stats.countTrend} />
-      <MetricCard id="ticket" title="Ticket Médio" value={formatBRL(averageTicket)} change={stats.ticketChange} subtitle="30 dias vs. 30 dias anteriores" trend={stats.ticketTrend} />
+      <MetricCard id="ticket" title="Ticket Médio" value={formatBRL(averageTicket)} change={stats.ticketChange} subtitle={periodo.comparacao} trend={stats.ticketTrend} />
       <MetricCard
         id="today"
         title="Vendas Hoje"
         value={formatBRL(stats.todayTotal.value)}
         change={stats.todayChange}
         subtitle={`${stats.todayTotal.count} ${stats.todayTotal.count === 1 ? 'venda' : 'vendas'} · ontem ${formatBRL(stats.yesterday.value, 0)}`}
-        trend={stats.valueTrend.slice(-7)}
+        trend={stats.lastWeek}
       />
     </div>
   );

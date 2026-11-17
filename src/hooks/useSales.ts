@@ -12,7 +12,7 @@ async function fetchSales(): Promise<{ sales: Sale[]; timestamp: string }> {
   return data;
 }
 
-function calculateMetrics(sales: Sale[]): SalesMetrics {
+export function calculateMetrics(sales: Sale[]): SalesMetrics {
   const totalSales = sales.reduce((sum, sale) => sum + sale.value, 0);
   const totalCount = sales.length;
   const averageTicket = totalCount > 0 ? totalSales / totalCount : 0;
