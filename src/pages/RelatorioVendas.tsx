@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useMemo, useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { calculateMetrics } from '@/hooks/useSales';
 import { saoPauloDay } from '@/lib/homeSalesChart';
 import { filtrarPeriodo, mesesDisponiveis, mesTitulo, resolverPeriodo, type PeriodoEscolha } from '@/lib/relatorioPeriodo';
@@ -66,8 +66,9 @@ export default function RelatorioVendas() {
               <SelectItem value="mes_atual">Este mês</SelectItem>
               <SelectItem value="mes_anterior">Mês anterior</SelectItem>
               <SelectItem value="ultimos30">Últimos 30 dias</SelectItem>
-              {meses.length > 0 && <><SelectSeparator /><SelectLabel className="text-xs text-muted-foreground">Escolher mês</SelectLabel></>}
-              {meses.map(k => <SelectItem key={k} value={`mes:${k}`}>{rotuloMes(k)}</SelectItem>)}
+              {meses.length > 0 && <SelectSeparator />}
+              {meses.length > 0 && <SelectGroup><SelectLabel className="text-xs text-muted-foreground">Escolher mês</SelectLabel>
+              {meses.map(k => <SelectItem key={k} value={`mes:${k}`}>{rotuloMes(k)}</SelectItem>)}</SelectGroup>}
               {escolha.startsWith('mes:') && !meses.includes(escolha.slice(4)) && <SelectItem value={escolha}>{rotuloMes(escolha.slice(4))}</SelectItem>}
             </SelectContent>
           </Select>
