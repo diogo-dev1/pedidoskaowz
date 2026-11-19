@@ -1,14 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { confirmedPayment, awaitingPayment } from '../_shared/salesPayment.ts';
 
 // Version for cache busting
-const VERSION = "v1.0.6";
+const VERSION = "v1.1.0-paid";
 
 console.log(`[${VERSION}] Edge function starting`);
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
 
 // Google Sheets public URL for CSV export
 const SPREADSHEET_ID = '1gSgwf7vOAHAk7fzA87_9Bo-darg1dSYyAf9lNk2p8pg';
@@ -315,13 +313,15 @@ serve(async (req) => {
     const csvData = await response.text();
     console.log('CSV data received, parsing...');
 
-    const sales = parseCSV(csvData);
+    const allSales = parseCSV(csvData);
+    const sales = allSales.filter(s => confirmedPayment(s.status));
+    const pendingSales = allSales.filter(s => awaitingPayment(s.status));
 
     // Calculate and log total for debugging
     const total = sales.reduce((sum, s) => sum + s.value, 0);
     console.log(`Parsed ${sales.length} sales records, Total: R$ ${total.toFixed(2)}`);
 
-    return new Response(JSON.stringify({ sales, timestamp: new Date().toISOString() }), {
+    return new Response(JSON.stringify({ sales, pendingSales, timestamp: new Date().toISOString() }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

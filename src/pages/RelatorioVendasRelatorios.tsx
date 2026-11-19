@@ -58,7 +58,7 @@ function MultiSellerFilter({ sellers, selectedSellers, onToggle, onClear }: {
 }
 
 export default function RelatorioVendasRelatorios() {
-  const { sales, lastUpdated, isLoading, isError, error, refetch, isFetching } = useSales();
+  const { sales, pendingSales, lastUpdated, isLoading, isError, error, refetch, isFetching } = useSales();
   const [activeTab, setActiveTab] = useState('daily');
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [selectedSellers, setSelectedSellers] = useState<string[]>([]);
@@ -162,6 +162,7 @@ export default function RelatorioVendasRelatorios() {
 
   // Apply search/filter on top of period filter
   const salesFilter = useSalesFilter(getCurrentPeriodSales());
+  const pendingFilter = useSalesFilter(pendingSales);
 
   // Get the final filtered sales for export and display
   const getCurrentSales = () => salesFilter.filteredSales;
@@ -613,7 +614,7 @@ export default function RelatorioVendasRelatorios() {
             variant="outline"
             size="sm"
             onClick={() => setExportDialogOpen(true)}
-            disabled={isLoading}
+            disabled={isLoading || activeTab === 'pending'}
           >
             <FileDown className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Exportar</span> PDF
@@ -643,7 +644,7 @@ export default function RelatorioVendasRelatorios() {
         <Skeleton className="h-[600px] rounded-lg" />
       ) : (
         <Tabs defaultValue="daily" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-4">
+          <TabsList className="grid w-full h-auto grid-cols-3 sm:grid-cols-6 mb-4">
             <TabsTrigger value="daily" className="text-xs sm:text-sm">
               Diário
               <span className="hidden sm:inline ml-1">({filteredSales.daily.length})</span>
@@ -662,7 +663,28 @@ export default function RelatorioVendasRelatorios() {
             <TabsTrigger value="sellers" className="text-xs sm:text-sm">
               Vendedores
             </TabsTrigger>
+            <TabsTrigger value="pending" className="text-xs sm:text-sm whitespace-normal">Aguardando pagamento</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="pending">
+            <p className="text-sm text-muted-foreground mb-3">{pendingFilter.filteredSales.length} pedidos aguardando pagamento · Não contabilizados no faturamento</p>
+            <SalesTable
+              sales={pendingSales}
+              filteredSales={pendingFilter.filteredSales}
+              filters={pendingFilter.filters}
+              onSearchChange={pendingFilter.setSearch}
+              onToggleValue={pendingFilter.toggleFilterValue}
+              onClearFilter={pendingFilter.clearFilter}
+              onDateChange={pendingFilter.setDateRange}
+              sellers={pendingFilter.sellers}
+              channels={pendingFilter.channels}
+              paymentMethods={pendingFilter.paymentMethods}
+              sortField={pendingFilter.sortField}
+              sortDirection={pendingFilter.sortDirection}
+              onSort={pendingFilter.handleSort}
+              showDateFilter
+            />
+          </TabsContent>
 
           <TabsContent value="daily">
             <div className="mb-3 p-3 bg-muted/50 rounded-lg">

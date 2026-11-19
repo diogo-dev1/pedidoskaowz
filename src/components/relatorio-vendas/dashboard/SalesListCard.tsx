@@ -8,13 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DashboardCard, formatBRL, parseSaleDate } from './shared';
 
-type ListView = 'today' | 'week' | 'recent';
+type ListView = 'today' | 'week' | 'recent' | 'pending';
 
 const RECENT_LIMIT = 10;
 const viewLabels: Record<ListView, { select: string; empty: string }> = {
   today: { select: 'Hoje', empty: 'Nenhuma venda hoje' },
   week: { select: 'Esta semana', empty: 'Nenhuma venda esta semana' },
   recent: { select: 'Últimas do período', empty: 'Nenhuma venda no período' },
+  pending: { select: 'Aguardando pagamento', empty: 'Nenhum pedido aguardando pagamento no período' },
 };
 
 const initials = (name: string) =>
@@ -22,10 +23,11 @@ const initials = (name: string) =>
 
 const shortDate = (date: Date) => `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-export function SalesListCard({ sales, defaultView = 'today' }: { sales: Sale[]; defaultView?: ListView }) {
+export function SalesListCard({ sales, pendingSales = [], defaultView = 'today' }: { sales: Sale[]; pendingSales?: Sale[]; defaultView?: ListView }) {
   const [view, setView] = useState<ListView>(defaultView);
 
   const { rows, caption } = useMemo(() => {
+    if (view === 'pending') return { rows: [...pendingSales].sort((a, b) => parseSaleDate(b.date).getTime() - parseSaleDate(a.date).getTime()), caption: 'Aguardando pagamento' };
     const today = new Date();
     const todayStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
     if (view === 'today') {
@@ -50,7 +52,7 @@ export function SalesListCard({ sales, defaultView = 'today' }: { sales: Sale[];
       rows: [...sales].sort((a, b) => parseSaleDate(b.date).getTime() - parseSaleDate(a.date).getTime()).slice(0, RECENT_LIMIT),
       caption: 'Mais recentes',
     };
-  }, [sales, view]);
+  }, [sales, pendingSales, view]);
 
   const total = rows.reduce((sum, sale) => sum + sale.value, 0);
 
@@ -71,7 +73,7 @@ export function SalesListCard({ sales, defaultView = 'today' }: { sales: Sale[];
           </Select>
         </div>
         <div className="text-right">
-          <p className="text-lg font-bold text-primary tabular-nums leading-tight">{formatBRL(total)}</p>
+          <p className="text-lg font-bold text-primary tabular-nums leading-tight">{view === 'pending' ? 'Não contabilizados' : formatBRL(total)}</p>
           <p className="text-[11px] text-muted-foreground">{caption} · {rows.length} {rows.length === 1 ? 'venda' : 'vendas'}</p>
         </div>
       </div>

@@ -1,5 +1,11 @@
 # Pronta Entrega — painel e notas
 
+## Receita confirmada
+- [x] Auditar a mesma planilha no CSV e com credencial Google: Pago/pago, zero pendentes, Novembro R$193.649,01 antes.
+- [x] Corrigir lançamento Shopify, pagamento tardio, valor líquido e cancelamentos sem alterar importação do banco; cron privado com espera de 120s e ontem/hoje, resposta 200 conferida.
+- [x] Filtrar receita confirmada em todos os consumidores/exportações e permitir acompanhar pendências separadamente no dashboard e relatórios.
+- [x] Limpeza: zero pendentes. Sincronização marcou #KWZ-2935 Cancelado (R$3.855) e trouxe #KWZ-2936 Pago (R$3.855), total final igual R$193.649,01. Duplicata de validação desfeita; 33 testes, build OK, telas reais 375/1280 sem erros/rolagem horizontal.
+
 ## Kit Completo SLS
 - [x] Substituir banner por carrossel de opções com Compact inicial e seleção compartilhada; retirar aviso e campo de banner.
 - [x] Conferir carrossel e seletor com dados reais em 375px/1280px: Compact centralizada, ordem correta, Kit selecionado ao clicar e rolagem até oferta, seleção reversa e hero preservados, sem rolagem lateral; campo retirado no painel e mídias do item disponíveis; 18 testes e compilação OK.

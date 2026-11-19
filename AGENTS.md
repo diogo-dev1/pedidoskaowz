@@ -34,3 +34,5 @@
 - Upsell "Site" view reuses the paid-orders Shopify lister and groups by normalized phone then e-mail; matched Bling contacts keep their upsell status, unmatched buyers store status by phone.
 - WhatsApp queue mode is one shared component fed by page-built items with their own status writer; same-day dedupe across pages uses the shared send log plus site upsell contacts, so pages never duplicate queue rules.
 - Relatório de Vendas filters every widget by a pure São Paulo period resolver (src/lib/relatorioPeriodo.ts); Home chart keeps its own periods.
+- Payment classification is shared in `_shared/salesPayment.ts` and re-exported to the frontend; fetch-sales separates confirmed revenue from pending rows so every consumer and export excludes unconfirmed payments.
+- Shopify sheet synchronization unions created/updated orders, deduplicates exact OBS markers, and patches only payment cells; audit/cleanup modes avoid database imports, preserving the independent order/dispatch/finance workflow.

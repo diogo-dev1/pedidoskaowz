@@ -21,6 +21,7 @@ const rotuloMes = (k: string) => { const [y, m] = k.split('-').map(Number); retu
 export default function RelatorioVendas() {
   const {
     sales: allSales,
+    pendingSales,
     lastUpdated,
     isLoading,
     isError,
@@ -37,6 +38,7 @@ export default function RelatorioVendas() {
   const periodo = useMemo(() => resolverPeriodo(paraEscolha(escolha), today), [escolha, todayKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const sales = useMemo(() => filtrarPeriodo(allSales, periodo.inicio, periodo.fim), [allSales, periodo]);
   const metrics = useMemo(() => calculateMetrics(sales), [sales]);
+  const pending = useMemo(() => filtrarPeriodo(pendingSales, periodo.inicio, periodo.fim), [pendingSales, periodo]);
   const meses = useMemo(() => mesesDisponiveis(allSales), [allSales]);
   const incluiHoje = periodo.inicio <= today && periodo.fim >= today;
 
@@ -113,7 +115,7 @@ export default function RelatorioVendas() {
           </div>
 
           <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-            <SalesListCard key={escolha} sales={sales} defaultView={incluiHoje ? 'today' : 'recent'} />
+            <SalesListCard key={escolha} sales={sales} pendingSales={pending} defaultView={incluiHoje ? 'today' : 'recent'} />
             <PerformanceCard sales={sales} />
           </div>
 

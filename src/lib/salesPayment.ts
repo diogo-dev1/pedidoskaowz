@@ -1,0 +1,2 @@
+// Shared with the edge functions so every report uses the same payment classification.
+export { confirmedPayment, awaitingPayment, normalizePaymentStatus } from '../../supabase/functions/_shared/salesPayment';

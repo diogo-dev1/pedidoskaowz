@@ -1,9 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { z } from 'npm:zod@3';
+import { authenticatedRequest, cronRequest } from '../_shared/auth.ts';
+import { shopifySheetStatus, netShopifyValue, paymentDate, shopifyMarker, sheetPaymentCellEqual, type PaymentTransaction } from '../_shared/salesPayment.ts';
 
 const API_VERSION = Deno.env.get('SHOPIFY_API_VERSION') ?? '2024-01';
 
@@ -28,7 +28,7 @@ async function getShopifyToken(shopDomain: string): Promise<string> {
     cachedToken = data.access_token;
     const expiresIn = typeof data.expires_in === 'number' ? data.expires_in : 86400;
     tokenExpiresAt = Date.now() + Math.max(0, expiresIn - 60) * 1000;
-    return cachedToken!;
+    return data.access_token;
   }
 
   const staticToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
@@ -72,6 +72,9 @@ interface ShopifyOrder {
   id: number;
   name: string;
   created_at: string;
+  processed_at?: string;
+  cancelled_at?: string | null;
+  refunds?: { transactions?: { kind: string; status: string; amount: string }[] }[];
   total_price: string;
   financial_status: string;
   payment_gateway_names: string[];
@@ -260,15 +263,44 @@ Deno.serve(async (req) => {
   }
 
   try {
-    let body: any = {};
-    try {
-      const text = await req.text();
-      if (text) body = JSON.parse(text);
-    } catch (_) {}
-
-    const dataInicio = body.data_inicio || new Date().toISOString().split('T')[0];
+    const supabase = createClient(Deno.env.get('SUPABASE_URL') || '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '');
+    if (!(await authenticatedRequest(req)) && !(await cronRequest(req, supabase, 'shopify_cron_secret'))) {
+      return new Response(JSON.stringify({ erro: 'Não autorizado' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v => Number.isFinite(Date.parse(v)));
+    const parsed = z.object({ data_inicio: day.optional(), data_fim: day.optional(), modo: z.enum(['sincronizar', 'auditar', 'limpar']).default('sincronizar') }).safeParse(await req.json().catch(() => ({})));
+    if (!parsed.success) return new Response(JSON.stringify({ erro: 'Datas ou modo inválidos' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const body = parsed.data;
+    const dataInicio = body.data_inicio || new Date().toLocaleDateString('en-CA', { timeZone: TIMEZONE_BR });
     const dataFim = body.data_fim || dataInicio;
+    if (dataInicio > dataFim) return new Response(JSON.stringify({ erro: 'Intervalo inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
+    const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
+    const vendasSpreadsheetId = Deno.env.get('GOOGLE_SHEETS_VENDAS_ID');
+    if (!serviceAccountKey || !vendasSpreadsheetId) throw new Error('Credenciais da planilha indisponíveis');
+    const initialSheetsToken = await getGoogleAccessToken(serviceAccountKey);
+    const initialRows = await lerVendas(initialSheetsToken, vendasSpreadsheetId);
+    if (body.modo === 'auditar') {
+      const nowBR = new Date().toLocaleDateString('en-CA', { timeZone: TIMEZONE_BR });
+      const month = nowBR.slice(0, 7);
+      const stats: Record<string, { linhas: number; soma: number; mes_linhas: number; mes_soma: number }> = {};
+      let pendentesShopify = 0;
+      let pendentesShopifyMes = 0;
+      for (const row of initialRows.slice(PRIMEIRA_LINHA_VENDAS - 1)) {
+        const ts = diaDaDataBR(row[0] || '');
+        if (ts === null) continue;
+        const date = new Date(ts).toISOString().slice(0, 10);
+        const raw = (row[4] || '').replace(/R\$|\s/g, '');
+        const value = Number(raw.includes(',') ? raw.replace(/\./g, '').replace(',', '.') : raw) || 0;
+        const status = (row[6] || '').trim() || '(vazio)';
+        const st = stats[status] ||= { linhas: 0, soma: 0, mes_linhas: 0, mes_soma: 0 };
+        st.linhas++; st.soma += value;
+        const current = date.startsWith(month) && date <= nowBR;
+        if (current) { st.mes_linhas++; st.mes_soma += value; }
+        if (status.toLowerCase() === 'pendente' && shopifyMarker(row[8] || '')) { pendentesShopify++; if (current) pendentesShopifyMes++; }
+      }
+      return new Response(JSON.stringify({ status: stats, pendentes_shopify: pendentesShopify, pendentes_shopify_mes: pendentesShopifyMes, mesma_planilha_relatorio: vendasSpreadsheetId === '1gSgwf7vOAHAk7fzA87_9Bo-darg1dSYyAf9lNk2p8pg' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     const shopDomain = await resolveShopDomain();
     const accessToken = await getShopifyToken(shopDomain);
     const baseUrl = `https://${shopDomain}/admin/api/${API_VERSION}`;
@@ -280,32 +312,38 @@ Deno.serve(async (req) => {
     const createdAtMin = `${dataInicio}T00:00:00-03:00`;
     const createdAtMax = `${dataFim}T23:59:59-03:00`;
 
-    let allOrders: ShopifyOrder[] = [];
-    let url: string | null = `${baseUrl}/orders.json?status=any&created_at_min=${encodeURIComponent(createdAtMin)}&created_at_max=${encodeURIComponent(createdAtMax)}&limit=250`;
-
-    while (url) {
-      const res: Response = await fetch(url, { headers: shopifyHeaders });
-      if (!res.ok) throw new Error(`Shopify orders error [${res.status}]: ${await res.text()}`);
-      const data = await res.json();
-      allOrders.push(...(data.orders || []));
-      const link: string = res.headers.get('link') ?? '';
-      const next: string | undefined = link.split(',').find((p: string) => p.includes('rel="next"'));
-      const match: RegExpMatchArray | null = next?.match(/<([^>]+)>/) ?? null;
-      url = match ? match[1] : null;
+    async function listOrders(url: string): Promise<ShopifyOrder[]> {
+      const orders: ShopifyOrder[] = [];
+      let next: string | null = url;
+      let pages = 0;
+      while (next) {
+        if (++pages > 100) throw new Error('Intervalo excede o limite seguro; reduza o período');
+        const res = await fetch(next, { headers: shopifyHeaders });
+        if (res.status === 429) { pages--; await new Promise(r => setTimeout(r, 2000)); continue; }
+        if (!res.ok) throw new Error(`Shopify orders error [${res.status}]`);
+        orders.push(...((await res.json()).orders || []));
+        next = res.headers.get('link')?.split(',').find(p => p.includes('rel="next"'))?.match(/<([^>]+)>/)?.[1] || null;
+        if (next) await new Promise(r => setTimeout(r, 550));
+      }
+      return orders;
     }
-
+    let allOrders: ShopifyOrder[];
+    if (body.modo === 'limpar') {
+      allOrders = [];
+      const markers = new Set(initialRows.filter(r => (r[6] || '').trim().toLowerCase() === 'pendente').map(r => shopifyMarker(r[8] || '')).filter(Boolean));
+      for (const name of markers) {
+        const matches = await listOrders(`${baseUrl}/orders.json?status=any&name=${encodeURIComponent(name || '')}&limit=250`);
+        const exact = matches.find(o => o.name === name);
+        if (!exact) throw new Error(`Pedido ${name} não encontrado para limpeza`);
+        allOrders.push(exact);
+        await new Promise(r => setTimeout(r, 550));
+      }
+    } else {
+      const created = await listOrders(`${baseUrl}/orders.json?status=any&created_at_min=${encodeURIComponent(createdAtMin)}&created_at_max=${encodeURIComponent(createdAtMax)}&limit=250`);
+      const updated = await listOrders(`${baseUrl}/orders.json?status=any&updated_at_min=${encodeURIComponent(createdAtMin)}&updated_at_max=${encodeURIComponent(createdAtMax)}&limit=250`);
+      allOrders = [...new Map([...created, ...updated].map(o => [o.id, o])).values()];
+    }
     console.log(`Shopify: ${allOrders.length} pedido(s) de ${dataInicio} a ${dataFim}`);
-
-    if (allOrders.length === 0) {
-      return new Response(
-        JSON.stringify({ sucesso: true, total: 0, mensagem: 'Nenhum pedido encontrado no período' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Filtrar pedidos já importados
     const orderIds = allOrders.map(o => o.id);
@@ -322,19 +360,18 @@ Deno.serve(async (req) => {
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
     // Preparar integração com a planilha de Relatório de Vendas (aba "Vendas Diário")
-    const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
-    const vendasSpreadsheetId = Deno.env.get('GOOGLE_SHEETS_VENDAS_ID');
     let sheetsToken: string | null = null;
     let sheetId: number | null = null;
     // Estado local da planilha, atualizado a cada gravação
     let colDatas: (number | null)[] = []; // data (dia) de cada linha
     let linhaVazia: boolean[] = []; // se a linha está sem dados em B (Data vazia = linha disponível)
+    let linhasVendas: string[][] = initialRows;
     let obsVendasExistentes: string[] = []; // coluna OBS — para deduplicação
     if (serviceAccountKey && vendasSpreadsheetId) {
       try {
-        sheetsToken = await getGoogleAccessToken(serviceAccountKey);
+        sheetsToken = initialSheetsToken;
         sheetId = await getSheetId(sheetsToken, vendasSpreadsheetId, ABA_VENDAS);
-        const linhas = await lerVendas(sheetsToken, vendasSpreadsheetId);
+        const linhas = initialRows;
         colDatas = linhas.map((r) => diaDaDataBR((r?.[0] || '').toString()));
         linhaVazia = linhas.map((r) => !((r?.[0] || '').toString().trim()));
         obsVendasExistentes = linhas.map((r) => (r?.[8] || '').toString());
@@ -352,10 +389,7 @@ Deno.serve(async (req) => {
     }
 
     // Verifica se um pedido Shopify já consta na planilha (pelo marcador na coluna OBS)
-    const jaNaPlanilha = (orderName: string): boolean => {
-      const marcador = marcadorShopify(orderName).toLowerCase();
-      return obsVendasExistentes.some((o) => o.toLowerCase().includes(marcador));
-    };
+    const linhaDoPedido = (orderName: string): number => obsVendasExistentes.findIndex(o => shopifyMarker(o) === orderName);
 
     /**
      * Primeira linha (0-based) disponível para gravar: sempre DEPOIS da última linha com Data
@@ -377,6 +411,8 @@ Deno.serve(async (req) => {
     let erros = 0;
     let planilhaLancados = 0;
     let planilhaDuplicados = 0;
+    let planilhaAtualizados = 0;
+    let planilhaIgnorados = 0;
 
     for (const order of pedidosOrdenados) {
       try {
@@ -388,7 +424,7 @@ Deno.serve(async (req) => {
         const cupom = (order.discount_codes || []).map(dc => dc.code).join(', ') || null;
 
         // ── Banco: só insere se o pedido ainda não foi importado (dedup via shopify_orders_sync) ──
-        if (!idsJaImportados.has(order.id)) {
+        if (body.modo !== 'limpar' && !idsJaImportados.has(order.id)) {
           try {
             // Gerar número do pedido
             const { data: numData } = await supabase.rpc('gerar_numero_pedido');
@@ -468,12 +504,40 @@ Deno.serve(async (req) => {
 
         // Lançar na planilha de Relatório de Vendas — na posição correta (dia/ordem) e sem duplicar
         if (sheetsToken && vendasSpreadsheetId && sheetId !== null) {
-          if (jaNaPlanilha(order.name)) {
+          const existing = linhaDoPedido(order.name);
+          const status = shopifySheetStatus(order);
+          if (existing >= 0) {
             planilhaDuplicados++;
-            console.log(`Pedido ${order.name} já existe na planilha de Vendas — não duplicado`);
-          } else {
+            if (status) {
+              const old = linhasVendas[existing] || [];
+              const row = [...old];
+              row[6] = status;
+              if (status === 'Pago') {
+                const res = await fetch(`${baseUrl}/orders/${order.id}/transactions.json`, { headers: shopifyHeaders });
+                if (!res.ok) throw new Error(`Falha ao buscar pagamento ${order.name}`);
+                row[0] = paymentDate(order, ((await res.json()).transactions || []) as PaymentTransaction[]);
+                row[4] = netShopifyValue(order).toFixed(2).replace('.', ',');
+                await new Promise(r => setTimeout(r, 550));
+              }
+              const changedCells = [0, 4, 6].filter(i => !sheetPaymentCellEqual(i, String(old[i] || ''), String(row[i] || '')));
+              if (changedCells.length > 0) {
+                // Only patch payment cells; keep formulas, notes, formatting and manual fields intact.
+                const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${vendasSpreadsheetId}/values:batchUpdate`, {
+                  method: 'POST', headers: { Authorization: `Bearer ${sheetsToken}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ valueInputOption: 'USER_ENTERED', data: changedCells.map(i => ({ range: `'${ABA_VENDAS}'!${['B', '', '', '', 'F', '', 'H'][i]}${existing + 1}`, values: [[row[i]]] })) }),
+                });
+                if (!res.ok) throw new Error('Falha ao atualizar pagamento na planilha');
+                linhasVendas[existing] = row;
+                colDatas[existing] = diaDaDataBR(row[0]);
+                planilhaAtualizados++;
+              }
+            } else planilhaIgnorados++;
+          } else if (status === 'Pago' && body.modo !== 'limpar') {
             try {
-              const dataBR = formatarDataBR(order.created_at);
+              const res = await fetch(`${baseUrl}/orders/${order.id}/transactions.json`, { headers: shopifyHeaders });
+              if (!res.ok) throw new Error(`Falha ao buscar pagamento ${order.name}`);
+              const dataBR = paymentDate(order, ((await res.json()).transactions || []) as PaymentTransaction[]);
+              await new Promise(r => setTimeout(r, 550));
               const diaTs = diaDaDataBR(dataBR) ?? Date.now();
               const obs = valorOuTraco([order.note, marcadorShopify(order.name)].filter(Boolean).join(' | '));
               const row = [
@@ -483,9 +547,9 @@ Deno.serve(async (req) => {
                 'Site',                                                             // E - Canal
 
 
-                (parseFloat(order.total_price) || 0).toFixed(2).replace('.', ','), // F - Valor (R$)
+                netShopifyValue(order).toFixed(2).replace('.', ','), // F - Valor líquido (R$)
                 mapPaymentGateway(order.payment_gateway_names),                     // G - Forma de Pag.
-                order.financial_status === 'paid' ? 'Pago' : 'Pendente',           // H - Status
+                'Pago',                                                             // H - Status
                 valorOuTraco(itensTexto),                                           // I - Item
                 obs,                                                                // J - OBS (inclui marcador de dedup)
                 valorOuTraco(cupom),                                                // K - Cupom
@@ -514,6 +578,7 @@ Deno.serve(async (req) => {
               colDatas[pos0] = diaTs;
               linhaVazia[pos0] = false;
               obsVendasExistentes[pos0] = obs;
+              linhasVendas[pos0] = row;
 
               planilhaLancados++;
               console.log(`Pedido ${order.name} gravado na planilha de Vendas (linha ${pos0 + 1})`);
@@ -533,6 +598,7 @@ Deno.serve(async (req) => {
     const partesMsg = [`${importados} pedido(s) importado(s) para o banco`];
     if (sheetsToken) {
       partesMsg.push(`${planilhaLancados} lançado(s) na planilha de Vendas`);
+      partesMsg.push(`${planilhaAtualizados} atualizado(s) na planilha`);
       if (planilhaDuplicados > 0) partesMsg.push(`${planilhaDuplicados} já existente(s) na planilha`);
     }
     if (erros > 0) partesMsg.push(`${erros} erro(s)`);
@@ -544,6 +610,8 @@ Deno.serve(async (req) => {
         importados,
         planilha_lancados: planilhaLancados,
         planilha_duplicados: planilhaDuplicados,
+        planilha_atualizados: planilhaAtualizados,
+        planilha_ignorados: planilhaIgnorados,
         erros,
         mensagem: partesMsg.join(' · '),
       }),

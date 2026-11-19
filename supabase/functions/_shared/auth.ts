@@ -13,10 +13,10 @@ export async function authenticatedRequest(req: Request): Promise<boolean> {
 }
 
 /** Scheduled jobs prove themselves with x-cron-secret, matched in constant time against the server-only config row. */
-export async function cronRequest(req: Request, db: any): Promise<boolean> {
+export async function cronRequest(req: Request, db: any, key = 'bling_cron_secret'): Promise<boolean> {
   const enviado = req.headers.get('x-cron-secret') ?? '';
   if (!enviado) return false;
-  const { data } = await db.from('config_servidor').select('valor').eq('chave', 'bling_cron_secret').maybeSingle();
+  const { data } = await db.from('config_servidor').select('valor').eq('chave', key).maybeSingle();
   const esperado: string = data?.valor ?? '';
   if (!esperado) return false;
   const a = new TextEncoder().encode(enviado);

@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Sale, SalesMetrics } from '@/types/sales';
+import { confirmedPayment, awaitingPayment } from '@/lib/salesPayment';
 
-async function fetchSales(): Promise<{ sales: Sale[]; timestamp: string }> {
+async function fetchSales(): Promise<{ sales: Sale[]; pendingSales?: Sale[]; timestamp: string }> {
   const { data, error } = await supabase.functions.invoke('fetch-sales');
 
   if (error) {
@@ -13,6 +14,7 @@ async function fetchSales(): Promise<{ sales: Sale[]; timestamp: string }> {
 }
 
 export function calculateMetrics(sales: Sale[]): SalesMetrics {
+  sales = sales.filter(s => confirmedPayment(s.status));
   const totalSales = sales.reduce((sum, sale) => sum + sale.value, 0);
   const totalCount = sales.length;
   const averageTicket = totalCount > 0 ? totalSales / totalCount : 0;
@@ -65,7 +67,7 @@ export function calculateMetrics(sales: Sale[]): SalesMetrics {
 
 export function useSales() {
   const query = useQuery({
-    queryKey: ['sales'],
+    queryKey: ['sales', 'confirmed-payment-v1'],
     queryFn: fetchSales,
     staleTime: 0,
     // Detecta também sincronizações agendadas ou feitas em outra sessão.
@@ -74,12 +76,14 @@ export function useSales() {
     refetchOnReconnect: 'always',
   });
 
-  const sales = query.data?.sales || [];
+  const sales = (query.data?.sales || []).filter(s => confirmedPayment(s.status));
+  const pendingSales = (query.data?.pendingSales || []).filter(s => awaitingPayment(s.status));
   const metrics = calculateMetrics(sales);
   const lastUpdated = query.data?.timestamp;
 
   return {
     sales,
+    pendingSales,
     metrics,
     lastUpdated,
     isLoading: query.isLoading,
