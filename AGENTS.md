@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Keep the barbecue presentation isolated: load existing public catalog models and visible gallery photos, with pure family/tier/media helpers and editable narrative settings in churrascoLanding; never add a separate product registry.
+
 - Campaign items may override description-derived inclusions with a nullable list; keep SLS carousel and offer selection shared, sourcing cards from item media, and treat its collection coin as an unpriced inclusion, never an extra.
 
 - SLS campaign test video is attached immediately after the mechanism block, independent of page JSON; its isolated player defers source loading until nearby and gates playback on visibility and visitor pause intent.

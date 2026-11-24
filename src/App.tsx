@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Descubra from "./pages/publico/Descubra";
 import Resultado from "./pages/publico/Resultado";
 import Vitrine from "./pages/publico/Vitrine";
+import Churrasco from "./pages/publico/Churrasco";
 import KitsPater from "./pages/publico/KitsPater";
 import PushDaggerLanding from "./pages/publico/PushDaggerLanding";
 import PushDaggerSlsVendas from "./pages/publico/PushDaggerSlsVendas";
@@ -108,6 +109,7 @@ const App = () => (
             <Route path="/descubra" element={<Descubra />} />
             <Route path="/descubra/resultado" element={<Resultado />} />
             <Route path="/vitrine" element={<Vitrine />} />
+            <Route path="/churrasco" element={<Churrasco />} />
             <Route path="/kits-pater" element={<KitsPater />} />
             <Route path="/ofertas/:slug" element={<CampanhaOferta />} />
             <Route path="/ofertas" element={<Ofertas />} />

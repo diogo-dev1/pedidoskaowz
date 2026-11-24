@@ -1,0 +1,18 @@
+/* Scoped layout only; all palette values come from the global public catalog tokens. */
+.publico:has(.churrasco-page) { overflow: clip; background: hsl(var(--oferta-fundo)); }
+.publico:has(.churrasco-page) > main { max-width: 1440px; padding-left: 0; padding-right: 0; padding-bottom: 0; }
+.churrasco-page { letter-spacing: 0; }
+.churrasco-page * { letter-spacing: 0; }
+.churrasco-hero { height: calc(100svh - 105px); min-height: 520px; }
+.churrasco-page .churrasco-manifesto { font-size: 56px; line-height: 1; }
+.churrasco-hero-shade { background: linear-gradient(to top, hsl(var(--oferta-fundo)) 0%, hsl(var(--oferta-fundo) / .78) 23%, hsl(var(--oferta-fundo) / 0) 65%, hsl(var(--oferta-fundo) / .65) 100%); }
+.churrasco-page a:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 4px; }
+.churrasco-card img { transition: opacity .2s ease; }
+@media (min-width: 768px) {
+  .churrasco-page .churrasco-manifesto { font-size: 88px; }
+  .churrasco-hero { min-height: 640px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .publico:has(.churrasco-page) > header { position: static; }
+  .churrasco-page *, .churrasco-page { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

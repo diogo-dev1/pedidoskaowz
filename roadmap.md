@@ -1,5 +1,9 @@
 # Pronta Entrega — painel e notas
 
+## Apresentação da linha de churrasco
+- [x] Criar /churrasco com narrativa, famílias, variações, escada e comparativo usando o catálogo público existente.
+- [x] Conferir filtros e preços: 12 testes; fotos, seleção e links com catálogo real em 375px/1280px, movimento reduzido estático no celular, sem erros ou rolagem lateral; relatório dos degraus e fotos ausentes entregue. Butcher original tem URLs inválidas: a opção fica indisponível e o cartão usa a variação própria com foto válida. Metadados específicos aplicados no navegador; prévia automática do WhatsApp não verificada.
+
 ## Receita confirmada
 - [x] Auditar a mesma planilha no CSV e com credencial Google: Pago/pago, zero pendentes, Novembro R$193.649,01 antes.
 - [x] Corrigir lançamento Shopify, pagamento tardio, valor líquido e cancelamentos sem alterar importação do banco; cron privado com espera de 120s e ontem/hoje, resposta 200 conferida.
