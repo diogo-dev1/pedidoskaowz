@@ -5,8 +5,7 @@ export const EASE = 'ease-[cubic-bezier(0.23,1,0.32,1)]';
 
 export const HAIRLINE = 'border-[hsl(var(--oferta-texto)/0.08)]';
 
-/** Altura do header do PublicoLayout: 62px no celular, 66px do md para cima. */
-export const TOPO_STICKY = 'top-[62px] md:top-[66px]';
+/** Tela cheia descontando o header do PublicoLayout (62px no celular, 66px do md para cima). */
 export const ALTURA_TELA = 'min-h-[calc(100svh-62px)] md:min-h-[calc(100svh-66px)]';
 
 /** Sai do container do PublicoLayout e ocupa a largura toda (o layout usa overflow-x-clip). */

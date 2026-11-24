@@ -5,7 +5,7 @@ import { PublicoLayout } from '@/components/publico/PublicoLayout';
 import { carregarLanding, mensagemVendedor, type ResultadoLanding } from '@/lib/landings';
 import { linkWhatsApp } from '@/lib/publico';
 import { Abertura } from '@/components/publico/landing/Abertura';
-import { PassosLista } from '@/components/publico/landing/PassosLista';
+import { PassosScrolly } from '@/components/publico/landing/PassosScrolly';
 import { EscadaValor } from '@/components/publico/landing/EscadaValor';
 import { Comparativo } from '@/components/publico/landing/Comparativo';
 import { Fechamento } from '@/components/publico/landing/Fechamento';
@@ -77,7 +77,7 @@ export default function LandingCategoria() {
       ) : (
         <>
           <Abertura landing={resultado.landing} preview={preview} />
-          <PassosLista passos={resultado.passos} landing={resultado.landing} />
+          <PassosScrolly passos={resultado.passos} landing={resultado.landing} />
           <EscadaValor landing={resultado.landing} laminas={resultado.laminas} />
           <Comparativo laminas={resultado.laminas} />
           <Fechamento linkVendedor={linkWhatsApp(mensagemVendedor(resultado.landing.mensagem_whatsapp))} />
