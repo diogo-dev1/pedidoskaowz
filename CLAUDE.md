@@ -430,6 +430,37 @@ Arquivo a modificar:
 
 ---
 
+## LANDINGS POR CATEGORIA
+
+Página pública por categoria de uso (ex.: Porte velado) com scrollytelling e a escada de valor.
+Plano e decisões em `PLANO_LANDINGS_CATEGORIA.md`.
+
+**Rotas:** `/categoria/:slug` (pública; `?preview=1` mostra rascunho só para admin) ·
+`/admin/landings` (lista) · `/admin/landings/:id` e `/admin/landings/nova` (editor).
+
+**Tabelas** (`supabase/migrations/20261123230000_landings_categoria.sql` — aplicar à mão no banco do Lovable):
+- `landings_categoria` — textos, capa, publicada, filtros (só para sugerir lâminas), padrões de preço e CTA por nível
+- `landing_passos` — passos do scroll (título, texto, mídia, foco)
+- `landing_laminas` — lâminas escolhidas (`modelo_id` → `catalogo_modelos`) com overrides
+- `landing_eventos` — `visita`, `fim_scroll`, `clique_cta`; métricas pela função `landing_metricas(_desde)`
+- RLS: público lê só landing publicada; escrita só `is_admin()` (cargo `admin`); vendedor vê o admin em somente leitura
+- Bucket `landings` para capa e mídias
+
+**Regras de exibição** (puras, com testes, em `src/lib/landingsRegras.ts`):
+- nível = override da lâmina → `posicao_escada` do modelo → `ideal`
+- texto = texto da categoria → `porque_texto` → `apresentacao_venda` sem HTML e sem o rótulo "Descrição do produto"
+- preço = override → padrão do nível (`mostrar` · `a_partir` · `consulta`)
+- CTA = override → padrão do nível: `detalhes` (URL da loja ou `/catalogo/:id`) · `montar` (`/montar?modelo=`) · `vendedor` (WhatsApp)
+- comparativo sem cadastro: prazo "Até 65 dias úteis" (ou "Pronta entrega") e garantia "Vitalícia"
+
+**Código:** dados em `src/lib/landings.ts`; página em `src/pages/publico/LandingCategoria.tsx` e
+`src/components/publico/landing/`; admin em `src/pages/admin/Landing*.tsx` e `src/components/admin/landings/`.
+Visual no padrão da `/ofertas` (tokens `--oferta-*`, Bebas nos nomes, laranja só no preço).
+Animação com `framer-motion`; com "reduzir movimento" tudo fica estático.
+`PublicoLayout` usa `overflow-x-clip` — `overflow-x-hidden` quebra o `position: sticky` do scroll.
+
+---
+
 ## DADOS REAIS PARA TESTES
 
 Pedidos reais na planilha de produção (Lotes 44, 52, 53, 54):

@@ -48,7 +48,7 @@ export function MidiaCampo({ url, tipo, pasta, onChange, idBase }: Props) {
           tipo === 'video' ? (
             <video src={url} className="h-full w-full object-cover" muted playsInline preload="metadata" />
           ) : (
-            <img src={url} alt="" className="h-full w-full object-cover" />
+            <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" />
           )
         ) : (
           <ImageIcon className="h-5 w-5 text-muted-foreground" aria-hidden />
