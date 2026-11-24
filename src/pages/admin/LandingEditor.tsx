@@ -22,6 +22,7 @@ import { AbaGeral } from '@/components/admin/landings/AbaGeral';
 import { AbaPassos } from '@/components/admin/landings/AbaPassos';
 import { AbaLaminas } from '@/components/admin/landings/AbaLaminas';
 import { AbaEscada } from '@/components/admin/landings/AbaEscada';
+import { MetricasLanding } from '@/components/admin/landings/MetricasLanding';
 import { landingVazia, type AtualizarLanding, type LaminaEditor, type PassoEdicao } from '@/components/admin/landings/tipos';
 
 const paraEdicao = (row: Landing): LandingEdicao => {
@@ -258,6 +259,8 @@ export default function LandingEditor() {
           </p>
         </div>
       )}
+
+      {landingId && !somenteLeitura && <MetricasLanding landingId={landingId} />}
 
       <Tabs value={aba} onValueChange={setAba}>
         <TabsList className="grid h-auto w-full grid-cols-4 sm:inline-grid sm:w-auto">

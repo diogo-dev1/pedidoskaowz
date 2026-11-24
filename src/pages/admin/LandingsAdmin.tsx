@@ -5,9 +5,32 @@ import { Copy, ExternalLink, ImageIcon, Loader2, Pencil, Plus } from 'lucide-rea
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { listarLandings, type LandingResumo } from '@/lib/landings';
+import {
+  carregarMetricas,
+  listarLandings,
+  taxaFim,
+  totalCliques,
+  type LandingResumo,
+  type MetricasLanding,
+} from '@/lib/landings';
 
 const linkPublico = (slug: string) => `${window.location.origin}/categoria/${slug}`;
+
+/** " · 120 visitas · 34% até o fim · 18 cliques em 30 dias" */
+function ResumoMetricas({ m }: { m: MetricasLanding | undefined }) {
+  const visitas = m?.visitas ?? 0;
+  const taxa = taxaFim(m);
+  return (
+    <>
+      {' · '}
+      {visitas.toLocaleString('pt-BR')} {visitas === 1 ? 'visita' : 'visitas'}
+      {' · '}
+      {taxa === null ? '—' : `${taxa}%`} até o fim
+      {' · '}
+      {totalCliques(m).toLocaleString('pt-BR')} cliques em 30 dias
+    </>
+  );
+}
 
 export default function LandingsAdmin() {
   const navigate = useNavigate();
@@ -17,11 +40,14 @@ export default function LandingsAdmin() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(false);
 
+  const [metricas, setMetricas] = useState<Record<string, MetricasLanding>>({});
+
   useEffect(() => {
     listarLandings()
       .then(setLandings)
       .catch(() => setErro(true))
       .finally(() => setCarregando(false));
+    carregarMetricas().then(setMetricas);
   }, []);
 
   const copiar = async (slug: string) => {
@@ -97,6 +123,7 @@ export default function LandingsAdmin() {
                   <p className="truncate font-mono text-xs text-muted-foreground">/categoria/{l.slug}</p>
                   <p className="text-xs tabular-nums text-muted-foreground">
                     {l.total_laminas} {l.total_laminas === 1 ? 'lâmina' : 'lâminas'}
+                    {!somenteLeitura && <ResumoMetricas m={metricas[l.id]} />}
                   </p>
                 </div>
               </div>

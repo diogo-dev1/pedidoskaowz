@@ -1,8 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { useInView } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { PublicoLayout } from '@/components/publico/PublicoLayout';
-import { carregarLanding, mensagemVendedor, type ResultadoLanding } from '@/lib/landings';
+import {
+  carregarLanding,
+  mensagemVendedor,
+  registrarEvento,
+  type CtaEvento,
+  type LaminaResolvida,
+  type ResultadoLanding,
+} from '@/lib/landings';
 import { linkWhatsApp } from '@/lib/publico';
 import { Abertura } from '@/components/publico/landing/Abertura';
 import { PassosScrolly } from '@/components/publico/landing/PassosScrolly';
@@ -75,14 +83,58 @@ export default function LandingCategoria() {
       ) : resultado.estado !== 'ok' ? (
         <LandingIndisponivel erro={resultado.estado === 'erro'} onTentarDeNovo={() => setTentativa((t) => t + 1)} />
       ) : (
-        <>
-          <Abertura landing={resultado.landing} preview={preview} />
-          <PassosScrolly passos={resultado.passos} landing={resultado.landing} />
-          <EscadaValor landing={resultado.landing} laminas={resultado.laminas} />
-          <Comparativo laminas={resultado.laminas} />
-          <Fechamento linkVendedor={linkWhatsApp(mensagemVendedor(resultado.landing.mensagem_whatsapp))} />
-        </>
+        <LandingConteudo resultado={resultado} preview={preview} />
       )}
     </PublicoLayout>
+  );
+}
+
+/**
+ * Seções da página + medição. Fica num componente próprio porque o useInView
+ * só observa o elemento que existe na montagem (o conteúdo chega depois do carregamento).
+ * Nada é registrado em modo preview.
+ */
+function LandingConteudo({ resultado, preview }: { resultado: Extract<ResultadoLanding, { estado: 'ok' }>; preview: boolean }) {
+  const { landing, passos, laminas } = resultado;
+  const fechamento = useRef<HTMLElement>(null);
+  const chegouAoFim = useInView(fechamento, { once: true, amount: 0.4 });
+  const visitaRegistrada = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (preview || visitaRegistrada.current === landing.id) return;
+    visitaRegistrada.current = landing.id;
+    registrarEvento(landing.id, 'visita');
+  }, [landing.id, preview]);
+
+  useEffect(() => {
+    if (preview || !chegouAoFim) return;
+    // Uma vez por sessão: voltar ao fim da página no mesmo acesso não conta de novo.
+    const chave = `kaowz_landing_fim_${landing.id}`;
+    try {
+      if (sessionStorage.getItem(chave)) return;
+      sessionStorage.setItem(chave, '1');
+    } catch {
+      /* sem sessionStorage (aba anônima restrita): registra uma vez por visita à página */
+    }
+    registrarEvento(landing.id, 'fim_scroll');
+  }, [chegouAoFim, landing.id, preview]);
+
+  const clique = (cta: CtaEvento, modeloId?: string) =>
+    registrarEvento(landing.id, 'clique_cta', { cta, modeloId }, { preview });
+  const cliqueLamina = (l: LaminaResolvida) => clique(l.cta, l.modelo.id);
+
+  return (
+    <>
+      <Abertura landing={landing} preview={preview} />
+      <PassosScrolly passos={passos} landing={landing} />
+      <EscadaValor landing={landing} laminas={laminas} onClique={cliqueLamina} />
+      <Comparativo laminas={laminas} onClique={cliqueLamina} />
+      <Fechamento
+        ref={fechamento}
+        linkVendedor={linkWhatsApp(mensagemVendedor(landing.mensagem_whatsapp))}
+        onQuiz={() => clique('quiz')}
+        onVendedor={() => clique('vendedor')}
+      />
+    </>
   );
 }
