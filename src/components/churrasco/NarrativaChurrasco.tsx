@@ -1,47 +1,44 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useTransform } from 'framer-motion';
-import { CHURRASCO, textoDoModelo, type FamiliaChurrasco } from '@/lib/churrascoLanding';
+import { CHURRASCO, escolherHeroi, type FamiliaChurrasco, type ModeloChurrasco } from '@/lib/churrascoLanding';
 import FotoChurrasco from './FotoChurrasco';
 
-function Fotos({ familia }: { familia: FamiliaChurrasco }) {
-  const [indice, setIndice] = useState(0);
-  const modelos = familia.id === 'complementos' ? [...new Map(familia.modelos.map(m => [m.nome_modelo.split(/[ -]/)[0].toLowerCase(), m])).values()].slice(0, 4) : familia.modelos.slice(indice, indice + 1);
-  return <div className={`h-full w-full ${modelos.length > 1 ? 'grid grid-cols-2 gap-2' : ''}`}>
-    {modelos.map(m => <div key={m.id} className="h-full min-h-0"><FotoChurrasco fotos={m.fotos} alt={m.nome_modelo} className="h-full w-full object-contain" onUnavailable={() => { if (familia.id !== 'complementos' && indice + 1 < familia.modelos.length) setIndice(i => i + 1); }} /></div>)}
+function Fotos({ familia, onUnavailable }: { familia: FamiliaChurrasco; onUnavailable: (id: string) => void }) {
+  const melhor = escolherHeroi(familia.modelos);
+  const modelos = familia.id === 'complementos' ? [...new Map(familia.modelos.map(m => [m.nome_modelo.split(/[ -]/)[0].toLowerCase(), m])).values()].slice(0, 3) : melhor ? [melhor] : [];
+  return <div className={`churrasco-story-photos ${modelos.length > 1 ? 'churrasco-mosaic' : ''}`}>
+    {modelos.map(m => <div key={m.id} className="relative min-h-0 overflow-hidden"><FotoChurrasco fotos={m.fotos} alt={m.nome_modelo} className="h-full w-full object-cover" onUnavailable={() => onUnavailable(m.id)} /></div>)}
   </div>;
 }
-function Passo({ familia, indice, ativar, estatico }: { familia: FamiliaChurrasco; indice: number; ativar: (i: number) => void; estatico: boolean }) {
+function Passo({ familia, indice, ativar, estatico, onUnavailable }: { familia: FamiliaChurrasco; indice: number; ativar: (i: number) => void; estatico: boolean; onUnavailable: (id: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
-  const visivel = useInView(ref, { margin: '-48% 0px -12% 0px' });
+  const visivel = useInView(ref, { margin: '-52% 0px -8% 0px' });
   useEffect(() => { if (visivel) ativar(indice); }, [visivel, indice, ativar]);
-  const m = familia.modelos[0];
-  return <div ref={ref} className={`churrasco-step ${estatico ? 'py-10' : 'flex min-h-[58svh] flex-col justify-center py-8 md:min-h-[85svh]'} px-2 sm:px-8`} data-step={familia.id}>
-    {estatico && <div className="mb-6 aspect-[4/3]"><Fotos familia={familia} /></div>}
-    <p className="mb-4 text-xs uppercase text-accent">{String(indice + 1).padStart(2, '0')} / {familia.nome}</p>
-    <h2 className="max-w-lg text-3xl font-bold leading-tight md:text-5xl">{familia.titulo}</h2>
-    <p className="mt-5 max-w-md text-sm leading-relaxed text-[hsl(var(--oferta-detalhe))] md:text-base">{m ? textoDoModelo(m, familia.apoio) : familia.apoio}</p>
-    <a href="#escada" className="mt-6 w-fit border-b border-accent pb-1 text-xs text-accent">Conhecer as variações</a>
+  return <div ref={ref} className={`churrasco-step ${estatico ? 'churrasco-step-static' : ''}`} data-step={familia.id} data-visible-piece={estatico ? escolherHeroi(familia.modelos)?.id : undefined}>
+    {estatico && <div className="churrasco-static-photo"><Fotos familia={familia} onUnavailable={onUnavailable} /></div>}
+    <div className="churrasco-step-copy"><h2>{familia.titulo}</h2>{familia.apoio && <p>{familia.apoio}</p>}</div>
   </div>;
 }
-export default function NarrativaChurrasco({ familias }: { familias: FamiliaChurrasco[] }) {
+interface Props { familias: FamiliaChurrasco[]; onVisible: (m: ModeloChurrasco | null) => void; onUnavailable: (id: string) => void }
+export default function NarrativaChurrasco({ familias, onVisible, onUnavailable }: Props) {
   const reduzido = !!useReducedMotion();
   const [ativo, setAtivo] = useState(0);
   const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start center', 'end end'] });
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.04]);
+  const visivel = useInView(ref, { margin: '-20% 0px -30% 0px' });
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.045]);
   const passos = CHURRASCO.passos.map(id => familias.find(f => f.id === id)).filter((f): f is FamiliaChurrasco => !!f);
   const atual = passos[ativo] || passos[0];
+  const modelo = atual ? escolherHeroi(atual.modelos) : undefined;
+  useEffect(() => { if (visivel) onVisible(modelo || null); }, [visivel, modelo?.id, onVisible]);
   if (!atual) return null;
-  return <section ref={ref} aria-label="Conheça a linha de churrasco" className={`churrasco-story relative border-b border-[hsl(var(--oferta-borda))] ${reduzido ? '' : 'flex flex-col md:grid md:grid-cols-2 md:items-start'}`}>
-    {!reduzido && <div className="churrasco-sticky sticky top-[65px] z-20 h-[42svh] shrink-0 overflow-hidden bg-[hsl(var(--oferta-fundo))] md:col-start-2 md:row-start-1 md:top-[85px] md:h-[75svh]">
+  return <section ref={ref} aria-label="Conheça a linha de churrasco" className={`churrasco-story ${reduzido ? 'churrasco-story-static' : ''}`}>
+    {!reduzido && <div className="churrasco-sticky" data-visible-piece={modelo?.id}>
       <AnimatePresence initial={false}>
-        <motion.div key={atual.id} className="absolute inset-0 p-3 md:p-6" style={{ scale }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .55 }}><Fotos familia={atual} /></motion.div>
+        <motion.div key={atual.id} className="absolute inset-0" style={{ scale }} initial={{ opacity: 0, scale: 1.025 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: .65 }}><Fotos familia={atual} onUnavailable={onUnavailable} /></motion.div>
       </AnimatePresence>
-      <div className="absolute bottom-0 left-0 right-0 bg-[hsl(var(--oferta-fundo))]/90 px-4 py-2">
-        <div className="mb-2 flex justify-between text-[10px] uppercase"><span>{atual.nome}</span><span>{ativo + 1} / {passos.length}</span></div>
-        <div className="flex gap-1" role="progressbar" aria-label="Progresso da apresentação" aria-valuemin={1} aria-valuemax={passos.length} aria-valuenow={ativo + 1}>{passos.map((p, i) => <span key={p.id} className={`h-0.5 flex-1 ${i <= ativo ? 'bg-accent' : 'bg-[hsl(var(--oferta-borda))]'}`} />)}</div>
-      </div>
+      <div className="churrasco-progress" role="progressbar" aria-label="Progresso da apresentação" aria-valuemin={1} aria-valuemax={passos.length} aria-valuenow={ativo + 1}><span style={{ height: `${((ativo + 1) / passos.length) * 100}%` }} /></div>
     </div>}
-    <div className={reduzido ? '' : 'md:col-start-1 md:row-start-1'}>{passos.map((f, i) => <Passo key={f.id} familia={f} indice={i} ativar={setAtivo} estatico={reduzido} />)}</div>
+    <div className="churrasco-story-steps">{passos.map((f, i) => <Passo key={f.id} familia={f} indice={i} ativar={setAtivo} estatico={reduzido} onUnavailable={onUnavailable} />)}</div>
   </section>;
 }

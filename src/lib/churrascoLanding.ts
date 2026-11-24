@@ -5,21 +5,29 @@ export const CHURRASCO = {
   titulo: 'Linha de Churrasco Kaowz — Refinar o simples',
   descricao: 'Descubra a linha de churrasco Kaowz: Picanheira, Butcher, Chef Royal e Kiritsuke. Do Inox 420 ao Sandvik, Tactical e Kit Pater. Feita para servir e durar.',
   manifesto: 'Refinar o simples.',
-  subtitulo: 'A linha de churrasco Kaowz. Feita para servir e durar.',
+  subtitulo: 'Facas de churrasco feitas à mão, uma a uma.',
   familias: [
-    { id: 'picanheira', nome: 'Picanheira', titulo: 'O corte que abre o churrasco', apoio: 'O primeiro corte tem seu lugar à mesa. Uma lâmina feita para servir e durar.' },
-    { id: 'butcher', nome: 'Butcher', titulo: 'Porcionar com precisão', apoio: 'Presença e controle, do preparo ao momento de servir.' },
-    { id: 'chef', nome: 'Chef Royal', titulo: 'Da tábua para a mesa', apoio: 'Uma peça para acompanhar cada etapa do seu ritual.' },
-    { id: 'kiritsuke', nome: 'Kiritsuke', titulo: 'Fatias finas, corte limpo', apoio: 'Cada fatia, um gesto preciso. Cada encontro, uma história.' },
-    { id: 'complementos', nome: 'Complementos da mesa', titulo: 'A mesa completa', apoio: 'Garfo, tábua, chaira e bainhas. Os detalhes que completam a mesa.' },
-    { id: 'pater', nome: 'Kit Pater', titulo: 'Pater. Defensor. Provisor.', apoio: 'Pater. Defensor. Provisor.' },
+    { id: 'picanheira', nome: 'Picanheira', titulo: 'O primeiro corte.', apoio: 'A peça que abre o ritual.' },
+    { id: 'butcher', nome: 'Butcher', titulo: 'Porcionar sem esforço.', apoio: '' },
+    { id: 'chef', nome: 'Chef Royal', titulo: 'Da tábua para a mesa.', apoio: '' },
+    { id: 'kiritsuke', nome: 'Kiritsuke', titulo: 'Fatias finas. Corte limpo.', apoio: '' },
+    { id: 'complementos', nome: 'Complementos da mesa', titulo: 'A mesa completa.', apoio: 'Garfo, tábua e chaira no mesmo padrão.' },
+    { id: 'pater', nome: 'Kit Pater', titulo: 'Pater. Defensor. Provisor.', apoio: '' },
   ],
   passos: ['picanheira', 'butcher', 'chef', 'kiritsuke', 'complementos'],
+  // Defina heroiId com o ID do catálogo para fixar uma peça; null escolhe a de mais fotos.
   degraus: [
-    { id: 'entrada', titulo: 'Entrada', material: 'Inox 420', apoio: 'Para começar o ritual com o pé direito.' },
-    { id: 'ideal', titulo: 'Ideal', material: 'Sandvik 14C28N', apoio: 'Mais fio, mais tempo entre uma afiação e outra.' },
-    { id: 'definitiva', titulo: 'Definitiva', material: 'Tactical e Kit Pater', apoio: 'Para quem faz do churrasco um legado.' },
+    { id: 'entrada', titulo: 'Para começar.', material: 'Inox 420', heroiId: null as string | null },
+    { id: 'ideal', titulo: 'Para durar.', material: 'Sandvik 14C28N', heroiId: null as string | null },
+    { id: 'definitiva', titulo: 'Para deixar.', material: 'Tactical e Kit Pater', heroiId: null as string | null },
   ],
+  acos: [
+    { id: 'entrada', nome: 'Inox 420', frase: 'Resistente e fácil de cuidar.' },
+    { id: 'ideal', nome: 'Sandvik 14C28N', frase: 'Mais fio por mais tempo.' },
+    { id: 'definitiva', nome: 'Tactical', frase: 'Acabamento de série limitada.' },
+  ],
+  confianca: 'Feita à mão · Garantia Kaowz · Até 10x sem juros',
+  parcelasSemJuros: 10,
   prazoPadrao: '65 dias úteis',
   fechamento: 'Monte a sua mesa.',
   mensagem: 'Olá! Vi a linha de churrasco da Kaowz e tenho interesse na ',
@@ -86,4 +94,15 @@ export function comparativo(modelos: ModeloChurrasco[]) {
     const precos = lista.map(m => m.preco_base);
     return { nome: ['Inox 420', 'Sandvik 14C28N', 'Tactical'][i], dureza: extrair(/\d+(?:[.,]\d+)?\s*(?:hrc|h\s*rc)\b/gi), espessura: extrair(/\d+(?:[.,]\d+)?\s*mm\b/gi), prazo: [...new Set(lista.map(m => m.prazo_entrega?.trim() || CHURRASCO.prazoPadrao))].join(' / ') || CHURRASCO.prazoPadrao, preco: precos.length ? `${brl(Math.min(...precos))} — ${brl(Math.max(...precos))}` : 'Não disponível' };
   });
+}
+
+export type DegrauChurrasco = typeof CHURRASCO.degraus[number];
+/** Explicit selection wins; the automatic hero uses actual photo counts, not video counts. */
+export function escolherHeroi(modelos: ModeloChurrasco[], heroiId: string | null = null): ModeloChurrasco | undefined {
+  const comFoto = modelos.filter(m => m.fotos.length > 0);
+  return comFoto.find(m => m.id === heroiId) || [...comFoto].sort((a, b) => b.fotos.length - a.fotos.length || a.preco_base - b.preco_base || a.nome_modelo.localeCompare(b.nome_modelo))[0];
+}
+export function menorPreco(modelos: ModeloChurrasco[]): number | null {
+  const precos = modelos.filter(m => m.fotos.length > 0).map(m => m.preco_base);
+  return precos.length ? Math.min(...precos) : null;
 }

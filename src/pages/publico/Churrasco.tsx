@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
-import { ArrowDown, ArrowUpRight, MessageCircle } from 'lucide-react';
+import { motion, useInView, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { PublicoLayout, TituloPublico } from '@/components/publico/PublicoLayout';
 import { Button } from '@/components/ui/button';
 import FamiliaCard from '@/components/churrasco/FamiliaCard';
@@ -10,7 +9,7 @@ import NarrativaChurrasco from '@/components/churrasco/NarrativaChurrasco';
 import FotoChurrasco from '@/components/churrasco/FotoChurrasco';
 import { supabase } from '@/integrations/supabase/client';
 import { carregarModelosPublicos, linkWhatsApp } from '@/lib/publico';
-import { agruparFamilias, CHURRASCO, comparativo, fotosDoModelo, pertenceChurrasco, type FamiliaChurrasco } from '@/lib/churrascoLanding';
+import { agruparFamilias, brl, CHURRASCO, escolherHeroi, fotosDoModelo, menorPreco, pertenceChurrasco, type ModeloChurrasco } from '@/lib/churrascoLanding';
 import './churrasco.css';
 
 async function carregarLinha() {
@@ -20,21 +19,16 @@ async function carregarLinha() {
   if (error) throw error;
   return modelos.map(m => ({ ...m, fotos: fotosDoModelo(m, data || []) }));
 }
-function Abertura({ familia }: { familia: FamiliaChurrasco }) {
+function Abertura({ modelo, onUnavailable }: { modelo: ModeloChurrasco; onUnavailable: (id: string) => void }) {
   const ref = useRef<HTMLElement>(null);
   const reduzido = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.12]);
-  return <section ref={ref} className="churrasco-hero relative isolate -mt-6 overflow-hidden">
-    <motion.div className="absolute inset-0" style={reduzido ? undefined : { scale }}><FotoChurrasco fotos={familia.modelos[0]?.fotos || []} alt={familia.modelos[0]?.nome_modelo || familia.nome} primeiraDobra className="h-full w-full object-cover" /></motion.div>
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
+  return <section ref={ref} className="churrasco-hero">
+    <motion.div className="absolute inset-0" style={reduzido ? undefined : { scale }}><FotoChurrasco fotos={modelo.fotos} alt={modelo.nome_modelo} primeiraDobra className="h-full w-full object-cover" onUnavailable={() => onUnavailable(modelo.id)} /></motion.div>
     <div className="churrasco-hero-shade absolute inset-0" />
-    <a href="#escada" className="absolute right-4 top-5 border-b border-accent pb-1 text-xs text-[hsl(var(--oferta-texto))] sm:right-8">Ver a linha completa</a>
-    <div className="relative flex h-full flex-col justify-end px-4 pb-12 sm:px-8 md:pb-16">
-      <p className="mb-4 text-xs uppercase text-accent">KAOWZ / LINHA DE CHURRASCO</p>
-      <TituloPublico className="churrasco-manifesto max-w-2xl">{CHURRASCO.manifesto}</TituloPublico>
-      <p className="mt-5 max-w-xs text-sm leading-relaxed md:max-w-lg md:text-lg">{CHURRASCO.subtitulo}</p>
-      <a href="#historia" className="mt-8 flex w-fit items-center gap-2 text-[11px] uppercase"><ArrowDown className="h-4 w-4 text-accent" />role para baixo</a>
-    </div>
+    <a href="#escada" className="churrasco-top-link">Ver a linha</a>
+    <div className="churrasco-cover-copy"><TituloPublico className="churrasco-manifesto">{CHURRASCO.manifesto}</TituloPublico><p>{CHURRASCO.subtitulo}</p><a href="#historia" aria-label="Conhecer a linha" className="churrasco-scroll-line" /></div>
   </section>;
 }
 function Metadados() {
@@ -54,32 +48,75 @@ function Metadados() {
   }, []);
   return null;
 }
+function Apresentacao({ modelos: originais }: { modelos: ModeloChurrasco[] }) {
+  const [indisponiveis, setIndisponiveis] = useState<string[]>([]);
+  const [peca, setPeca] = useState<ModeloChurrasco | null>(null);
+  const modelos = useMemo(() => originais.filter(m => m.fotos.length && !indisponiveis.includes(m.id)), [originais, indisponiveis]);
+  const familias = agruparFamilias(modelos);
+  const capa = escolherHeroi(familias.find(f => f.id === 'picanheira')?.modelos || []) || modelos[0];
+  const complementos = escolherHeroi(familias.find(f => f.id === 'complementos')?.modelos || []);
+  const pater = escolherHeroi(familias.find(f => f.id === 'pater')?.modelos || []);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const fimRef = useRef<HTMLElement>(null);
+  const capaVisivel = useInView(heroRef);
+  const fimVisivel = useInView(fimRef);
+  const onUnavailable = useCallback((id: string) => setIndisponiveis(ids => ids.includes(id) ? ids : [...ids, id]), []);
+  const onVisible = useCallback((m: ModeloChurrasco | null) => setPeca(m), []);
+  useEffect(() => {
+    let quadro = 0;
+    const atualizar = () => {
+      quadro = 0;
+      let melhor: ModeloChurrasco | null = null;
+      let area = 0;
+      document.querySelectorAll<HTMLElement>('[data-visible-piece]').forEach(el => {
+        const r = el.getBoundingClientRect();
+        const intersecao = Math.max(0, Math.min(r.bottom, innerHeight - 90) - Math.max(r.top, 70));
+        if (intersecao > area) { area = intersecao; melhor = modelos.find(m => m.id === el.dataset.visiblePiece) || null; }
+      });
+      setPeca(melhor);
+    };
+    const rolar = () => { if (!quadro) quadro = requestAnimationFrame(atualizar); };
+    window.addEventListener('scroll', rolar, { passive: true });
+    window.addEventListener('resize', rolar);
+    atualizar();
+    return () => { window.removeEventListener('scroll', rolar); window.removeEventListener('resize', rolar); cancelAnimationFrame(quadro); };
+  }, [modelos]);
+  if (!capa) return <EstadoVazio />;
+  const preco = peca?.preco_base ?? menorPreco(modelos);
+  const mensagem = peca ? CHURRASCO.mensagem + peca.nome_modelo : CHURRASCO.mensagemMesa;
+  return <>
+    <div ref={heroRef}><Abertura modelo={capa} onUnavailable={onUnavailable} /></div>
+    <p className="churrasco-trust">{CHURRASCO.confianca}</p>
+    <div id="historia"><NarrativaChurrasco familias={familias} onVisible={onVisible} onUnavailable={onUnavailable} /></div>
+    <section id="escada" className="churrasco-ladder" aria-label="Escolha a sua peça">
+      {CHURRASCO.degraus.map(d => {
+        const grupos = agruparFamilias(modelos, d.id);
+        if (!grupos.length) return null;
+        return <div key={d.id}>
+          {d.id === 'definitiva' && pater && <section className="churrasco-pater" aria-label="Kit Pater" data-visible-piece={pater.id}><FotoChurrasco fotos={pater.fotos} alt={pater.nome_modelo} className="h-full w-full object-cover" onUnavailable={() => onUnavailable(pater.id)} /><div className="churrasco-pater-shade" /><h2>{CHURRASCO.familias.find(f => f.id === 'pater')?.titulo}</h2></section>}
+          <FamiliaCard familias={grupos} degrau={d} onVisible={onVisible} onUnavailable={onUnavailable} />
+        </div>;
+      })}
+    </section>
+    <section className="churrasco-steels"><h2>Escolha o seu aço.</h2><div className="churrasco-steels-list">
+      {CHURRASCO.acos.map(aco => {
+        const preco = menorPreco(agruparFamilias(modelos, aco.id).flatMap(f => f.modelos));
+        return <div key={aco.id}><h3>{aco.nome}</h3><p>{aco.frase}</p>{preco !== null && <small>a partir de {brl(preco)}</small>}</div>;
+      })}
+    </div></section>
+    <section ref={fimRef} className="churrasco-closing" id="fechamento">
+      {(complementos || pater) && <div className="absolute inset-0"><FotoChurrasco fotos={(complementos || pater)?.fotos || []} alt={(complementos || pater)?.nome_modelo || 'Mesa Kaowz'} className="h-full w-full object-cover" onUnavailable={() => { const m = complementos || pater; if (m) onUnavailable(m.id); }} /></div>}
+      <div className="churrasco-closing-shade" /><div className="churrasco-closing-copy"><h2>{CHURRASCO.fechamento}</h2><Button asChild className="churrasco-cta"><a href={linkWhatsApp(CHURRASCO.mensagemMesa)} target="_blank" rel="noopener noreferrer">Falar com um vendedor</a></Button><Link to="/vitrine">Ver todas as lâminas</Link></div>
+    </section>
+    {!capaVisivel && !fimVisivel && <aside className="churrasco-mobile-bar" aria-label="Falar sobre a peça"><div><p>{peca?.nome_modelo || 'Linha de churrasco'}</p>{preco !== null && <small>a partir de {brl(preco)}</small>}</div><Button asChild className="churrasco-cta"><a href={linkWhatsApp(mensagem)} target="_blank" rel="noopener noreferrer">Falar com um vendedor</a></Button></aside>}
+  </>;
+}
+function EstadoVazio() {
+  return <div className="churrasco-empty"><TituloPublico>Linha de churrasco Kaowz</TituloPublico><p>Nossas peças chegam por aqui em breve.</p><Link to="/vitrine">Ver todas as lâminas</Link></div>;
+}
 export default function Churrasco() {
   const { data: modelos = [], isPending, isError, refetch } = useQuery({ queryKey: ['churrasco-publico'], queryFn: carregarLinha, staleTime: 300000 });
-  const [tentando, setTentando] = useState(false);
-  const familias = agruparFamilias(modelos);
-  const picanheira = familias.find(f => f.id === 'picanheira') || familias[0];
-  const comparacao = comparativo(modelos);
-  return <PublicoLayout mostrarSaida={false}><Metadados /><div className="churrasco-page text-[hsl(var(--oferta-texto))]">
-    {isPending ? <div role="status" aria-label="Carregando linha de churrasco" className="space-y-6 motion-safe:animate-pulse"><div className="h-[80svh] bg-[hsl(var(--campanha-barra))]" /><div className="grid grid-cols-2 gap-2">{[0, 1, 2, 3].map(i => <div key={i} className="aspect-[3/4] rounded-lg bg-[hsl(var(--oferta-superficie))]" />)}</div></div> : !picanheira || isError ? <div className="flex min-h-[60svh] flex-col items-center justify-center gap-5 px-4 text-center"><TituloPublico>Linha de churrasco Kaowz</TituloPublico><p className="text-sm text-[hsl(var(--oferta-muted))]">{isError ? 'Não conseguimos carregar a linha agora.' : 'Nossa linha de churrasco está sendo preparada por aqui.'}</p>{isError && <Button disabled={tentando} onClick={async () => { setTentando(true); await refetch(); setTentando(false); }}>Tentar novamente</Button>}<Button asChild variant="outline"><Link to="/vitrine">Ver todas as lâminas</Link></Button></div> : <>
-      <Abertura familia={picanheira} />
-      <div id="historia" className="scroll-mt-20"><NarrativaChurrasco familias={familias} /></div>
-      <section id="escada" className="scroll-mt-20 px-2 py-16 sm:px-8">
-        <p className="text-xs uppercase text-accent">Do primeiro corte ao legado</p><h2 className="mt-3 text-3xl font-bold md:text-5xl">O seu próximo ritual.</h2>
-        {CHURRASCO.degraus.map((d, i) => {
-          const grupos = agruparFamilias(modelos, d.id);
-          return <section key={d.id} data-tier={d.id} className="border-b border-[hsl(var(--oferta-borda))] py-12 last:border-0">
-            <div className="mb-6 flex items-start gap-4"><span className="pt-1 text-xs text-accent">0{i + 1}</span><div><p className="mb-1 text-[10px] uppercase text-[hsl(var(--oferta-muted))]">{d.titulo}</p><h3 className="text-2xl font-bold md:text-4xl">{d.material}</h3><p className="mt-3 text-sm text-[hsl(var(--oferta-detalhe))]">{d.apoio}</p></div></div>
-            {grupos.length ? <div className={`grid gap-3 sm:gap-5 ${d.id === 'definitiva' ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-4'}`}>{grupos.map(f => <FamiliaCard key={`${d.id}-${f.id}`} familia={f} definitiva={d.id === 'definitiva'} />)}</div> : <p className="py-6 text-sm text-[hsl(var(--oferta-muted))]">Novas peças deste degrau chegam em breve.</p>}
-          </section>;
-        })}
-      </section>
-      <section className="border-y border-[hsl(var(--oferta-borda))] px-2 py-12 sm:px-8"><p className="text-xs uppercase text-accent">Três caminhos. A mesma mesa.</p><h2 className="mb-8 mt-3 text-3xl font-bold">Escolha o seu aço.</h2>
-        <div className="overflow-x-auto overscroll-x-contain" tabIndex={0} aria-label="Comparativo dos aços">
-          <table className="w-full min-w-[700px] text-left text-xs"><thead><tr><th className="w-32 py-5 font-normal text-[hsl(var(--oferta-muted))]">Na sua mesa</th>{comparacao.map(c => <th key={c.nome} className="px-4 py-5 text-base text-accent">{c.nome}</th>)}</tr></thead><tbody>{[['Dureza', 'dureza'], ['Espessura', 'espessura'], ['Prazo de entrega', 'prazo'], ['Faixa de preço', 'preco']].map(([label, chave]) => <tr key={chave} className="border-t border-[hsl(var(--oferta-borda))]"><th className="py-5 font-normal text-[hsl(var(--oferta-muted))]">{label}</th>{comparacao.map(c => <td key={c.nome} className="px-4 py-5">{c[chave as 'dureza' | 'espessura' | 'prazo' | 'preco']}</td>)}</tr>)}</tbody></table>
-        </div>
-      </section>
-      <section className="px-4 py-20 text-center sm:px-8"><p className="text-xs uppercase text-accent">KAOWZ / FEITA PARA SERVIR E DURAR</p><h2 className="my-6 text-4xl font-bold md:text-6xl">{CHURRASCO.fechamento}</h2><div className="mx-auto flex max-w-lg flex-col justify-center gap-3 sm:flex-row"><Button asChild className="h-12 bg-accent text-[hsl(var(--oferta-preto))] hover:bg-accent/90"><a href={linkWhatsApp(CHURRASCO.mensagemMesa)} target="_blank" rel="noopener noreferrer"><MessageCircle className="mr-2 h-4 w-4" />Falar com um vendedor</a></Button><Button asChild variant="outline" className="h-12 border-[hsl(var(--oferta-borda))] bg-transparent text-[hsl(var(--oferta-texto))] hover:bg-[hsl(var(--oferta-superficie))]"><Link to="/vitrine">Ver todas as lâminas<ArrowUpRight className="ml-2 h-4 w-4" /></Link></Button></div></section>
-    </>}
+  return <PublicoLayout mostrarSaida={false}><Metadados /><div className="churrasco-page">
+    {isPending ? <div role="status" aria-label="Carregando linha de churrasco" className="churrasco-loading" /> : isError ? <div className="churrasco-empty"><p>Não conseguimos carregar a linha agora.</p><Button onClick={() => refetch()} className="churrasco-cta">Tentar novamente</Button><Link to="/vitrine">Ver todas as lâminas</Link></div> : <Apresentacao modelos={modelos} />}
   </div></PublicoLayout>;
 }
