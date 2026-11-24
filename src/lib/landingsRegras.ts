@@ -193,7 +193,15 @@ export function textoSemHtml(html: string | null | undefined): string {
     .trim();
 }
 
-/** texto = texto desta categoria → "porquê" do modelo → apresentação de venda (sem HTML). */
+/**
+ * Apresentação de venda copiada da Shopify: sem HTML e sem o rótulo "Descrição do produto"
+ * que abre a maioria delas (177 de 228 no catálogo em 11/2026).
+ */
+export function textoDeApresentacao(texto: string | null | undefined): string {
+  return textoSemHtml(texto).replace(/^descri[cç][aã]o do produto\s*[:–—-]?\s*/i, '');
+}
+
+/** texto = texto desta categoria → "porquê" do modelo → apresentação de venda (limpa). */
 export function textoEfetivo(
   lamina: Pick<LandingLamina, 'texto_categoria'>,
   modelo: Pick<ModeloLanding, 'porque_texto' | 'apresentacao_venda'>,
@@ -201,7 +209,7 @@ export function textoEfetivo(
   return (
     lamina.texto_categoria?.trim() ||
     modelo.porque_texto?.trim() ||
-    textoSemHtml(modelo.apresentacao_venda)
+    textoDeApresentacao(modelo.apresentacao_venda)
   );
 }
 
@@ -320,6 +328,22 @@ export function comparativo<T extends { nivel: NivelLanding; ordem: number }>(la
   const grupos = agruparPorNivel(laminas);
   return NIVEIS.map((n) => grupos[n][0]).filter((l): l is T => !!l);
 }
+
+/* ─────────── Comparativo ─────────── */
+
+/** Prazo padrão de produção (CLAUDE.md: +65 dias úteis da confirmação). */
+export const PRAZO_PADRAO = 'Até 65 dias úteis';
+/** Garantia da linha toda (rodapé público e faixa da /ofertas). */
+export const GARANTIA_PADRAO = 'Vitalícia';
+
+/** Pronta entrega → prazo cadastrado → prazo padrão da produção. */
+export function prazoTexto(m: Pick<ModeloLanding, 'prazo_entrega' | 'pronta_entrega'>): string {
+  if (m.pronta_entrega) return 'Pronta entrega';
+  return m.prazo_entrega?.trim() || PRAZO_PADRAO;
+}
+
+/** Garantia cadastrada → garantia vitalícia da linha. */
+export const garantiaTexto = (m: Pick<ModeloLanding, 'garantia'>): string => m.garantia?.trim() || GARANTIA_PADRAO;
 
 /* ─────────── Admin ─────────── */
 

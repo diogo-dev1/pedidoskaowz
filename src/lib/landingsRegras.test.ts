@@ -9,7 +9,9 @@ import {
   destinoCta,
   exibicaoPrecoEfetiva,
   formatarPreco,
+  garantiaTexto,
   gerarSlug,
+  prazoTexto,
   modeloEhPublico,
   nivelEfetivo,
   resolverLamina,
@@ -59,6 +61,12 @@ test('texto: categoria → porquê → apresentação sem HTML', () => {
   assert.equal(textoEfetivo(lamina({ texto_categoria: '   ' }), m), 'Porquê');
   assert.equal(textoEfetivo(lamina(), modelo({ apresentacao_venda: '<p>Aço <b>Sandvik</b>&nbsp;14C28N</p><p>Fosco</p>' })), 'Aço Sandvik 14C28N Fosco');
   assert.equal(textoEfetivo(lamina(), modelo()), '');
+});
+
+test('apresentação da Shopify perde o rótulo "Descrição do produto"', () => {
+  assert.equal(textoEfetivo(lamina(), modelo({ apresentacao_venda: 'Descrição do produto  O design da lâmina  Wharncliffe' })), 'O design da lâmina Wharncliffe');
+  assert.equal(textoEfetivo(lamina(), modelo({ apresentacao_venda: 'DESCRICAO DO PRODUTO: Aço 52100' })), 'Aço 52100');
+  assert.equal(textoEfetivo(lamina(), modelo({ apresentacao_venda: 'Essa é nossa EDC Ring' })), 'Essa é nossa EDC Ring');
 });
 
 test('textoSemHtml lida com quebras e entidades', () => {
@@ -142,6 +150,14 @@ test('slug', () => {
   assert.equal(slugValido('porte-velado'), true);
   assert.equal(slugValido('Porte velado'), false);
   assert.equal(slugValido('-x'), false);
+});
+
+test('prazo e garantia do comparativo', () => {
+  assert.equal(prazoTexto(modelo({ pronta_entrega: true, prazo_entrega: '65 dias úteis' })), 'Pronta entrega');
+  assert.equal(prazoTexto(modelo({ prazo_entrega: ' 40 dias úteis ' })), '40 dias úteis');
+  assert.equal(prazoTexto(modelo()), 'Até 65 dias úteis');
+  assert.equal(garantiaTexto(modelo({ garantia: 'Vitalicia' })), 'Vitalicia');
+  assert.equal(garantiaTexto(modelo({ garantia: '  ' })), 'Vitalícia');
 });
 
 test('taxa de fim', () => {

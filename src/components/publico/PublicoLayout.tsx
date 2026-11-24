@@ -14,7 +14,7 @@ export function PublicoLayout({ children, mostrarSaida = true }: Props) {
   const { pathname } = useLocation();
 
   return (
-    <div className="publico min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-zinc-950 text-white">
+    <div className="publico min-h-screen w-full max-w-[100vw] overflow-x-clip bg-zinc-950 text-white">
       <header className="sticky top-0 z-30 border-b border-zinc-800 bg-black/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 sm:px-4">
           <Link to="/descubra" className="flex flex-col leading-none">

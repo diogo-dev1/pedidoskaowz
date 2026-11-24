@@ -91,6 +91,7 @@ import Ofertas from "./pages/publico/Ofertas";
 import OfertasAdmin from "./pages/admin/OfertasAdmin";
 import LandingsAdmin from "./pages/admin/LandingsAdmin";
 import LandingEditor from "./pages/admin/LandingEditor";
+import LandingCategoria from "./pages/publico/LandingCategoria";
 import CampanhaOferta from "./pages/publico/CampanhaOferta";
 import CampanhasAdmin from "./pages/admin/CampanhasAdmin";
 import TabelaPrecosPushDagger from "./pages/publico/TabelaPrecosPushDagger";
@@ -110,6 +111,7 @@ const App = () => (
             <Route path="/descubra" element={<Descubra />} />
             <Route path="/descubra/resultado" element={<Resultado />} />
             <Route path="/vitrine" element={<Vitrine />} />
+            <Route path="/categoria/:slug" element={<LandingCategoria />} />
             <Route path="/kits-pater" element={<KitsPater />} />
             <Route path="/ofertas/:slug" element={<CampanhaOferta />} />
             <Route path="/ofertas" element={<Ofertas />} />
