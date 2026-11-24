@@ -89,6 +89,8 @@ import KnivesAdmin from "./pages/KnivesAdmin";
 import Showroom from "./pages/Showroom";
 import Ofertas from "./pages/publico/Ofertas";
 import OfertasAdmin from "./pages/admin/OfertasAdmin";
+import LandingsAdmin from "./pages/admin/LandingsAdmin";
+import LandingEditor from "./pages/admin/LandingEditor";
 import CampanhaOferta from "./pages/publico/CampanhaOferta";
 import CampanhasAdmin from "./pages/admin/CampanhasAdmin";
 import TabelaPrecosPushDagger from "./pages/publico/TabelaPrecosPushDagger";
@@ -126,6 +128,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/admin/landings" element={<ProtectedRoute requireAdmin><Layout><LandingsAdmin /></Layout></ProtectedRoute>} />
+            <Route path="/admin/landings/:id" element={<ProtectedRoute requireAdmin><Layout><LandingEditor /></Layout></ProtectedRoute>} />
             <Route path="/montar" element={<Montar />} />
             <Route path="/arsenal/:token" element={<ArsenalPublico />} />
             <Route path="/install" element={<Install />} />

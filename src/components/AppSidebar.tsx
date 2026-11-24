@@ -186,6 +186,11 @@ const GRUPOS: NavGroup[] = [
         url: "/admin/descubra",
         icon: Settings,
       },
+      {
+        title: "Landings por categoria (adm)",
+        url: "/admin/landings",
+        icon: Settings,
+      },
       { title: "Vitrine", url: "/vitrine", icon: Store },
       { title: "Montar Arsenal", url: "/montar", icon: Sliders },
       { title: "Showroom", url: "/showroom", icon: Eye },
