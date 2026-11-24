@@ -9,14 +9,14 @@ import { brl, CHURRASCO, chipDoModelo, escolherHeroi, type DegrauChurrasco, type
 interface Props { familias: FamiliaChurrasco[]; degrau: DegrauChurrasco; onVisible: (modelo: ModeloChurrasco | null) => void; onUnavailable: (id: string) => void }
 /** One unframed showcase per tier; the existing family variants stay together. */
 export default function FamiliaCard({ familias, degrau, onVisible, onUnavailable }: Props) {
-  const modelos = useMemo(() => familias.flatMap(f => f.modelos), [familias]);
-  const padrao = escolherHeroi(modelos, degrau.heroiId);
+  const modelos = useMemo(() => familias?.flatMap(f => f.modelos) ?? [], [familias]);
+  const padrao = escolherHeroi(modelos, degrau?.heroiId);
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const m = modelos.find(m => m.id === selecionado) || padrao;
   const ref = useRef<HTMLDivElement>(null);
   const visivel = useInView(ref, { amount: .25 });
-  useEffect(() => { if (visivel && m) onVisible(m); }, [visivel, m?.id, onVisible]);
-  if (!m) return null;
+  useEffect(() => { if (visivel && m) onVisible?.(m); }, [visivel, m?.id, onVisible]);
+  if (!m || !degrau) return null;
   const familia = familias.find(f => f.modelos.some(v => v.id === m.id));
   const pater = familia?.id === 'pater';
   const definitiva = degrau.id === 'definitiva';
